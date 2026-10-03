@@ -2,7 +2,7 @@
   "name": "asmblyr-collaborative",
   "private": true,
   "version": "0.0.0",
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.13.1",
   "engines": {
     "node": ">=22"
   },
@@ -17,7 +17,7 @@
     "build": "pnpm build:packages && pnpm --filter @asmblyr/core --filter @asmblyr/ui build",
     "build:plugins": "pnpm --filter @asmblyr/kit build && pnpm --filter @asmblyr/plugin-comments build",
     "build:packages": "pnpm --filter @asmblyr/sdk build && pnpm build:plugins",
-    "typecheck": "pnpm --filter @asmblyr/kit --filter @asmblyr/sdk build && pnpm -r typecheck",
+    "typecheck": "pnpm build:packages && pnpm build:examples && pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "test:all": "pnpm build:packages && pnpm build:examples && pnpm --filter @asmblyr/sdk test && node scripts/test.mjs all",
     "test": "pnpm test:all",

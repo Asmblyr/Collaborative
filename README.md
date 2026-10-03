@@ -38,7 +38,7 @@ Workspaces группируют коллекции; они не разделяю
 
 ## Начать работу
 
-Нужны **Node.js 22+, pnpm 11.13.0 и Docker Compose**. Из корня репозитория:
+Нужны **Node.js 22+, pnpm 11.13.1 и Docker Compose**. Из корня репозитория:
 
 ```sh
 pnpm install --frozen-lockfile

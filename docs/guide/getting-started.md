@@ -1,6 +1,6 @@
 # Локальный запуск
 
-Нужны Node.js 22+, pnpm 11.13.0, Docker Compose. Команды выполняются из корня репозитория.
+Нужны Node.js 22+, pnpm 11.13.1, Docker Compose. Команды выполняются из корня репозитория.
 
 ```powershell
 pnpm install --frozen-lockfile
