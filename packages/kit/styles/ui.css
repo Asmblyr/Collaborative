@@ -1,0 +1,2 @@
+/* Tailwind 4: resolve packaged component sources relative to this stylesheet. */
+@source "../dist/ui/**/*.js";

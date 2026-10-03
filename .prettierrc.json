@@ -1,0 +1,8 @@
+{
+  "printWidth": 80,
+  "tabWidth": 2,
+  "objectWrap": "preserve",
+  "singleAttributePerLine": true,
+  "trailingComma": "all",
+  "endOfLine": "lf"
+}

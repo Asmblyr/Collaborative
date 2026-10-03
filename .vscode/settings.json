@@ -1,0 +1,37 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "prettier.requireConfig": true,
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.pnpm-store": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/.turbo": true,
+    "**/*.tsbuildinfo": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.pnpm-store": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/.turbo": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.pnpm-store/**": true,
+    "**/.next/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/coverage/**": true,
+    "**/.turbo/**": true
+  }
+}

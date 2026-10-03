@@ -1,0 +1,42 @@
+{
+  "name": "@asmblyr/plugin-calculator",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    },
+    "./package.json": "./package.json",
+    "./routes": "./dist/routes.json",
+    "./collections": "./dist/collections.json",
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "default": "./dist/ui/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "asmblyr-plugin build"
+  },
+  "dependencies": {
+    "@asmblyr/kit": "workspace:*",
+    "h3": "2.0.1-rc.32"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "asmblyr": {
+    "manifest": {
+      "version": 1,
+      "namespace": "calculator",
+      "capabilities": []
+    }
+  },
+  "license": "MIT"
+}

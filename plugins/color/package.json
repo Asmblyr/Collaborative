@@ -1,0 +1,41 @@
+{
+  "name": "@asmblyr/plugin-color",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    },
+    "./package.json": "./package.json",
+    "./routes": "./dist/routes.json",
+    "./collections": "./dist/collections.json",
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "default": "./dist/ui/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "asmblyr-plugin build"
+  },
+  "dependencies": {
+    "@asmblyr/kit": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "asmblyr": {
+    "manifest": {
+      "version": 1,
+      "namespace": "color",
+      "capabilities": []
+    }
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,17 @@
+export const presencePages = [
+  "/",
+  "/files",
+  "/search",
+  "/settings",
+  "/access",
+  "/services",
+  "/oauth-apps",
+  "/system-settings",
+  "/system-settings/users",
+  "/system-settings/policies",
+  "/system-settings/services",
+  "/system-settings/assistant",
+  "/system-settings/plugins",
+  "/system-settings/terms",
+  "/system-settings/oauth",
+];

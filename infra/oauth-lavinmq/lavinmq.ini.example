@@ -1,0 +1,21 @@
+[main]
+auth_backends = oauth
+data_dir = /var/lib/lavinmq
+
+[mgmt]
+bind = 0.0.0.0
+port = 15672
+
+[amqp]
+bind = 127.0.0.1
+
+[oauth]
+issuer = http://localhost:3000/oauth
+client_id = REPLACE_WITH_APPLICATION_ID
+mgmt_base_url = http://localhost:15673
+mgmt_scopes = openid profile email lavinmq.tag:monitoring lavinmq.read:%2F/*
+audience = lavinmq
+resource_server_id = lavinmq
+preferred_username_claims = email,sub
+verify_aud = true
+jwks_cache_ttl = 300

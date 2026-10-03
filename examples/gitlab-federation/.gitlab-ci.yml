@@ -1,0 +1,17 @@
+stages: [test]
+
+federation-smoke:
+  image: node:22-alpine
+  stage: test
+  timeout: 5m
+  id_tokens:
+    ASMBLYR_ID_TOKEN:
+      aud: "urn:asmblyr:gitlab:d71f1329-c6a6-45e7-ad0c-1b4717836db1"
+  variables:
+    ASMBLYR_FEDERATION_ID: "21fcb7b6-0cb6-4328-a9fd-76cb2b55db72"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true" && $CI_PIPELINE_SOURCE != "merge_request_event"'
+      when: manual
+    - when: never
+  script:
+    - node federation-smoke.mjs

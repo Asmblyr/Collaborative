@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Asmblyr HTTP API</title>
+    <link rel="stylesheet" href="./swagger-ui.css" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="./swagger-ui-bundle.js"></script>
+    <script>
+      SwaggerUIBundle({
+        url: "../openapi.json", dom_id: "#swagger-ui", validatorUrl: null,
+        supportedSubmitMethods: [], persistAuthorization: false,
+        defaultModelsExpandDepth: 0,
+      });
+    </script>
+  </body>
+</html>

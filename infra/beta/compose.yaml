@@ -1,0 +1,100 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: asmblyr
+      POSTGRES_USER: asmblyr
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U asmblyr -d asmblyr]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    logging: &logging
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+  storage:
+    build: { context: ../.., dockerfile: infra/beta/storage.Dockerfile }
+    image: asmblyr-beta-storage:local
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${S3_USER:?Set S3_USER}
+      MINIO_ROOT_PASSWORD: ${S3_PASSWORD:?Set S3_PASSWORD}
+    volumes: [files_data:/data]
+    restart: unless-stopped
+    logging: *logging
+  migrate:
+    network_mode: service:storage
+    build: { context: ../.., target: core }
+    image: asmblyr-core:beta-local
+    user: node
+    command: [node, ../../scripts/beta-migrate.mjs]
+    environment:
+      DATABASE_URL: postgresql://asmblyr:${DB_PASSWORD}@db:5432/asmblyr
+      FILES_S3_ENDPOINT: http://127.0.0.1:9000
+      AWS_ACCESS_KEY_ID: ${S3_USER}
+      AWS_SECRET_ACCESS_KEY: ${S3_PASSWORD}
+    depends_on:
+      {
+        db: { condition: service_healthy },
+        storage: { condition: service_started },
+      }
+    logging: *logging
+  core:
+    network_mode: service:storage
+    image: asmblyr-core:beta-local
+    environment:
+      DATABASE_URL: postgresql://asmblyr:${DB_PASSWORD}@db:5432/asmblyr
+      ASMBLYR_SETUP_TOKEN: ${SETUP_TOKEN:?Set SETUP_TOKEN}
+      AUTH_UI_URL: ${UI_ORIGIN:-http://localhost:3300}
+      FILES_STORAGE: s3
+      FILES_BUCKET: asmblyr
+      FILES_S3_ENDPOINT: http://127.0.0.1:9000
+      FILES_S3_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${S3_USER}
+      AWS_SECRET_ACCESS_KEY: ${S3_PASSWORD}
+      ASSISTANT_ENABLED: "false"
+      HISTORY_RETENTION_DAYS: ${HISTORY_RETENTION_DAYS:-0}
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      storage: { condition: service_started }
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3001/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *logging
+  ui:
+    build: { context: ../.., target: ui }
+    image: asmblyr-ui:beta-local
+    environment:
+      CORE_URL: http://storage:3001
+      SESSION_COOKIE_PREFIX: asmblyr_beta
+    ports: ["127.0.0.1:${UI_PORT:-3300}:3000"]
+    depends_on: { core: { condition: service_healthy } }
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+volumes:
+  postgres_data:
+  files_data:

@@ -1,0 +1,17 @@
+node_modules
+.next
+dist
+.asmblyr
+.local-data
+.tmp
+artifacts
+pnpm-lock.yaml
+docs/.vitepress/cache
+docs/public
+docs/reference/sdk
+docs/reference/kit
+docs/reference/routes.md
+docs/reference/*-guide.md
+docs/reference/kit-*.md
+docs/reference/plugin-color.md
+docs/archive.md

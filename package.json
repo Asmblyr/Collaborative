@@ -1,0 +1,72 @@
+{
+  "name": "asmblyr-collaborative",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@11.13.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm build:packages && pnpm --parallel --filter @asmblyr/ui --filter @asmblyr/core dev",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @asmblyr/core db:migrate",
+    "db:rollback": "pnpm --filter @asmblyr/core db:rollback",
+    "db:status": "pnpm --filter @asmblyr/core db:status",
+    "test:integration": "pnpm build:packages && pnpm --filter @asmblyr/core test:integration",
+    "build": "pnpm build:packages && pnpm --filter @asmblyr/core --filter @asmblyr/ui build",
+    "build:plugins": "pnpm --filter @asmblyr/kit --filter \"./plugins/*\" build",
+    "build:packages": "pnpm --filter @asmblyr/sdk build && pnpm build:plugins",
+    "typecheck": "pnpm --filter @asmblyr/kit --filter @asmblyr/sdk build && pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test:all": "pnpm build:packages && pnpm --filter @asmblyr/sdk test && node scripts/test.mjs all",
+    "test": "pnpm test:all",
+    "test:unit": "pnpm build:packages && pnpm --filter @asmblyr/sdk test && pnpm -r test:unit",
+    "format": "prettier --write",
+    "format:check": "prettier --check",
+    "docs:generate": "node scripts/docs/generate.mjs",
+    "docs:check": "node scripts/docs/generate.mjs --check",
+    "docs:dev": "pnpm docs:generate && vitepress dev docs --host 127.0.0.1",
+    "docs:build": "pnpm docs:generate && pnpm docs:check && vitepress build docs",
+    "docs:preview": "vitepress preview docs --host 127.0.0.1",
+    "check": "pnpm typecheck && pnpm lint && pnpm test:all && pnpm docs:build"
+  },
+  "asmblyr": {
+    "plugins": [
+      "@asmblyr/plugin-comments",
+      "@asmblyr/plugin-overview",
+      "@asmblyr/plugin-calculator",
+      "@asmblyr/plugin-color"
+    ],
+    "pluginPermissions": {
+      "@asmblyr/plugin-comments": [
+        "identity.profile",
+        "items.read",
+        "collections.manage",
+        "storage.own",
+        "hooks.items",
+        "hooks.collections",
+        "settings"
+      ],
+      "@asmblyr/plugin-overview": [
+        "identity.profile"
+      ],
+      "@asmblyr/plugin-calculator": [],
+      "@asmblyr/plugin-color": []
+    }
+  },
+  "dependencies": {
+    "@asmblyr/plugin-calculator": "workspace:*",
+    "@asmblyr/plugin-color": "workspace:*",
+    "@asmblyr/plugin-comments": "workspace:*",
+    "@asmblyr/plugin-overview": "workspace:*"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2",
+    "typedoc": "0.28.20",
+    "typedoc-plugin-markdown": "4.13.1",
+    "vitepress": "1.6.4",
+    "swagger-ui-dist": "5.33.1"
+  },
+  "license": "MIT"
+}

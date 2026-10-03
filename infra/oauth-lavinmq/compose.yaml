@@ -1,0 +1,26 @@
+name: asmblyr-oauth-demo
+
+services:
+  gateway:
+    image: nginx:1.28-alpine
+    ports:
+      - "127.0.0.1:15673:15672"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  lavinmq:
+    image: cloudamqp/lavinmq:2.9.3
+    # The gateway maps container localhost:3000 to the host UI without publishing that port.
+    network_mode: service:gateway
+    depends_on:
+      - gateway
+    entrypoint: ["/usr/bin/lavinmq"]
+    command: ["-c", "/etc/asmblyr/lavinmq.ini"]
+    volumes:
+      - ../../.local-data/oauth-lavinmq/lavinmq.ini:/etc/asmblyr/lavinmq.ini:ro
+      - lavinmq_data:/var/lib/lavinmq
+
+volumes:
+  lavinmq_data:

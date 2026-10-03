@@ -1,0 +1,95 @@
+{
+  "name": "@asmblyr/kit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "asmblyr-plugin": "./bin/plugin.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
+    "./actions": {
+      "types": "./dist/action-contract.d.ts",
+      "default": "./dist/action-contract.js"
+    },
+    "./model": {
+      "types": "./dist/model-schema.d.ts",
+      "default": "./dist/model-schema.js"
+    },
+    "./ui/use-action": {
+      "types": "./dist/ui/use-action.d.ts",
+      "default": "./dist/ui/use-action.js"
+    },
+    "./ui/button": {
+      "types": "./dist/ui/button.d.ts",
+      "default": "./dist/ui/button.js"
+    },
+    "./ui/input": {
+      "types": "./dist/ui/input.d.ts",
+      "default": "./dist/ui/input.js"
+    },
+    "./ui/textarea": {
+      "types": "./dist/ui/textarea.d.ts",
+      "default": "./dist/ui/textarea.js"
+    },
+    "./ui/select": {
+      "types": "./dist/ui/select.d.ts",
+      "default": "./dist/ui/select.js"
+    },
+    "./ui/checkbox": {
+      "types": "./dist/ui/checkbox.d.ts",
+      "default": "./dist/ui/checkbox.js"
+    },
+    "./ui/tabs": {
+      "types": "./dist/ui/tabs.d.ts",
+      "default": "./dist/ui/tabs.js"
+    },
+    "./ui/portal-container": {
+      "types": "./dist/ui/portal-container.d.ts",
+      "default": "./dist/ui/portal-container.js"
+    },
+    "./ui/styles.css": "./styles/ui.css",
+    "./node": {
+      "types": "./dist/node/scan.d.ts",
+      "default": "./dist/node/scan.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.test.json",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@asmblyr/contracts": "workspace:*",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.4.0",
+    "h3": "2.0.1-rc.32",
+    "lucide-react": "^1.48.0",
+    "radix-ui": "^1.6.7",
+    "typescript": "^5.9.3",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/node": "^20.19.43"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "license": "MIT"
+}

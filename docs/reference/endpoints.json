@@ -1,0 +1,650 @@
+{
+  "POST /auth/invitations/claim": {
+    "access": "Одноразовый invitation/recovery token; создаёт человеческую сессию. Recovery отзывает прежние сеансы и способы входа",
+    "public": true
+  },
+  "POST /auth/passkeys/options": {
+    "access": "Публичный WebAuthn challenge, пять минут; общий credential rate limit",
+    "public": true
+  },
+  "POST /auth/passkeys/login": {
+    "access": "Одноразовый challenge, подпись сохранённого passkey, точный origin/RP ID и user verification; активный пользователь",
+    "public": true
+  },
+  "GET /users/me/passkeys": {
+    "access": "Собственная активная человеческая сессия; только публичные сведения о ключах",
+    "public": false
+  },
+  "POST /users/me/passkeys/options": {
+    "access": "Собственная активная человеческая сессия не старше пяти минут",
+    "public": false
+  },
+  "POST /users/me/passkeys": {
+    "access": "Собственный session-bound challenge, свежий вход и WebAuthn verification; до десяти ключей",
+    "public": false
+  },
+  "DELETE /users/me/passkeys/:id": {
+    "access": "Собственный ключ, свежий человеческий вход; нельзя удалить последний способ входа",
+    "public": false
+  },
+  "POST /users/me/password/setup": {
+    "access": "Собственная свежая человеческая сессия; только если пароля ещё нет",
+    "public": false
+  },
+  "POST /users/:id/recovery": {
+    "access": "Свежий человек-superuser; только другой активный обычный пользователь. Одноразовая ссылка на 30 минут, аудит; не делегируется",
+    "public": false
+  },
+  "POST /presence": {
+    "access": "Активная человеческая сессия; каждый heartbeat проверяет read коллекции/строки или доступ раздела. /files требует files/read либо update у человека, или superuser. Возвращает только ID, имя, аватар и число окон; без email/сессий/значений записи",
+    "public": false
+  },
+  "DELETE /presence/:clientId": {
+    "access": "Активная человеческая сессия; удаляет только собственное окно этой сессии, без требования сохраняющегося read",
+    "public": false
+  },
+  "POST /assistant/filter/validate": {
+    "access": "Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно",
+    "public": false
+  },
+  "POST /assistant/messages": {
+    "access": "Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно",
+    "public": false
+  },
+  "POST /assistant/messages/:id/cancel": {
+    "access": "Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно",
+    "public": false
+  },
+  "POST /assistant/selection/validate": {
+    "access": "Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно",
+    "public": false
+  },
+  "GET /assistant/status": {
+    "access": "Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно",
+    "public": false
+  },
+  "POST /auth/federation-token": {
+    "access": "Подписанный GitLab CI assertion и активная федерация",
+    "public": true
+  },
+  "POST /auth/invitations/accept": {
+    "access": "Одноразовый invitation token и новый пароль",
+    "public": true
+  },
+  "POST /auth/login": {
+    "access": "Проверка email и пароля; ограничение частоты",
+    "public": true
+  },
+  "POST /auth/logout": {
+    "access": "Refresh token в теле либо Bearer сессии",
+    "public": true
+  },
+  "GET /auth/me": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "GET /auth/providers": {
+    "access": "Публичные ID и подписи провайдеров",
+    "public": true
+  },
+  "POST /auth/refresh": {
+    "access": "Действительный refresh token; ротация и защита от повторного использования",
+    "public": true
+  },
+  "POST /auth/service-token": {
+    "access": "Действительный сервисный ключ",
+    "public": true
+  },
+  "POST /auth/setup": {
+    "access": "Setup secret и отсутствие созданных пользователей; ограничение частоты",
+    "public": true
+  },
+  "GET /auth/setup/status": {
+    "access": "Публичный статус первой настройки",
+    "public": true
+  },
+  "POST /auth/sso/:provider/callback": {
+    "access": "Проверка SSO flow, state/PKCE и ответа провайдера",
+    "public": true
+  },
+  "POST /auth/sso/:provider/start": {
+    "access": "Начало SSO; привязка требует действующей пользовательской сессии",
+    "public": true
+  },
+  "GET /collections": {
+    "access": "Активный principal; только доступные коллекции и поля",
+    "public": false
+  },
+  "POST /collections": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "DELETE /collections/:name": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/display": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "POST /collections/:name/fields": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "DELETE /collections/:name/fields/:field": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PATCH /collections/:name/fields/:field": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "POST /collections/:name/fields/:field/configuration": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/fields/:field/configuration": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "GET /collections/:name/fields/:field/impact": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/fields/:field/presentation": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/fields/:field/search": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PATCH /collections/:name/folder": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/form": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "GET /collections/:name/impact": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PATCH /collections/:name/navigation": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "POST /collections/:name/relations": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/relations/:field/search": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PATCH /collections/:name/settings": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "GET /collections/:name/terms": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/terms": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "DELETE /collections/:name/terms/:id": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PUT /collections/:name/terms/:id": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "GET /extensions": {
+    "access": "Активный principal; метаданные включённых UI-плагинов",
+    "public": false
+  },
+  "GET /extensions/:namespace/drafts/:id": {
+    "access": "Активный principal; подготовленный черновик только своего principal и namespace, с TTL",
+    "public": false
+  },
+  "GET /files": {
+    "access": "Человек + files/read либо update; superuser bypass. Общая библиотека команды",
+    "public": false
+  },
+  "POST /files": {
+    "access": "Человек + files/update; superuser bypass. Загрузка до 25 MiB, валидация метаданных, защита используемых ссылок",
+    "public": false
+  },
+  "DELETE /files/:id": {
+    "access": "Человек + files/update; superuser bypass. Загрузка до 25 MiB, валидация метаданных, защита используемых ссылок",
+    "public": false
+  },
+  "GET /files/:id": {
+    "access": "Активный principal: superuser, человек с files/read/update либо доступная ссылка в разрешённом поле записи; чужие файлы скрыты",
+    "public": false
+  },
+  "PATCH /files/:id": {
+    "access": "Человек + files/update; superuser bypass. Загрузка до 25 MiB, валидация метаданных, защита используемых ссылок",
+    "public": false
+  },
+  "GET /files/:id/content": {
+    "access": "Активный principal: superuser, человек с files/read/update либо доступная ссылка в разрешённом поле записи; чужие файлы скрыты",
+    "public": false
+  },
+  "GET /files/:id/events": {
+    "access": "Человек + files/read либо update; superuser bypass. Общая библиотека команды",
+    "public": false
+  },
+  "GET /files/resolve": {
+    "access": "Активный principal: superuser, человек с files/read/update либо доступная ссылка в разрешённом поле записи; чужие файлы скрыты",
+    "public": false
+  },
+  "GET /filter-presets/:collection": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "POST /filter-presets/:collection": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "DELETE /filter-presets/:collection/:id": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "PUT /filter-presets/:collection/:id": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "POST /folders": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "DELETE /folders/:id": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PATCH /folders/:id": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "PATCH /folders/:id/order": {
+    "access": "Человек: superuser; системная и plugin-owned структура дополнительно защищена",
+    "public": false
+  },
+  "GET /health": {
+    "access": "Публичная проверка процесса",
+    "public": true
+  },
+  "GET /item-events/:collection": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "GET /items/:collection": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "PATCH /items/:collection": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "POST /items/:collection": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "DELETE /items/:collection/:id": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "GET /items/:collection/:id": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "PATCH /items/:collection/:id": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "GET /items/:collection/:id/related": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "GET /items/:collection/:id/relations/:field": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "PATCH /items/:collection/:id/relations/:field": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "POST /items/:collection/:id/relations/:field": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "GET /items/:collection/:id/relations/:field/candidates": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "GET /items/:collection/:id/relations/:field/links/:linkId": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "PATCH /items/:collection/:id/relations/:field/links/:linkId": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "POST /items/:collection/:id/relations/:field/links/to/:targetId": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "POST /items/:collection/:id/relations/:field/records": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "POST /items/:collection/commit": {
+    "access": "Активный principal; личные read/create/update и поля всех затронутых записей. expectedValues требует чтения обновляемых полей; конфликт откатывает весь commit",
+    "public": false
+  },
+  "GET /oauth-apps": {
+    "access": "Человек: oauth/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "POST /oauth-apps": {
+    "access": "Человек: oauth/update; superuser bypass",
+    "public": false
+  },
+  "PUT /oauth-apps/:id": {
+    "access": "Человек: oauth/update; superuser bypass",
+    "public": false
+  },
+  "POST /oauth-apps/:id/secret": {
+    "access": "Человек: oauth/update; superuser bypass",
+    "public": false
+  },
+  "GET /oauth-apps/status": {
+    "access": "Человек: oauth/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "GET /oauth-interactions/:uid": {
+    "access": "Человек; UID, собственная сессия, правила приложения и согласие",
+    "public": false
+  },
+  "POST /oauth-interactions/:uid": {
+    "access": "Человек; UID, собственная сессия, правила приложения и согласие",
+    "public": false
+  },
+  "ALL /oauth/*": {
+    "access": "Протокольные endpoints oidc-provider: discovery/JWKS публичны, остальные используют проверки OAuth/OIDC",
+    "public": true
+  },
+  "GET /permissions": {
+    "access": "Человек: policies/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "POST /permissions": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "DELETE /permissions/:id": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "GET /permissions/:id": {
+    "access": "Человек: policies/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "PATCH /permissions/:id": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "GET /permissions/me": {
+    "access": "Активный principal; только собственные права",
+    "public": false
+  },
+  "GET /policies": {
+    "access": "Человек: policies/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "POST /policies": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "DELETE /policies/:id": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "GET /policies/:id": {
+    "access": "Человек: policies/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "PATCH /policies/:id": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "DELETE /policies/:id/permissions/:permissionId": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "PUT /policies/:id/permissions/:permissionId": {
+    "access": "Только человек-superuser: изменение состава политик и permissions",
+    "public": false
+  },
+  "DELETE /policies/:id/users/:userId": {
+    "access": "Человек: superuser ИЛИ policies/update + политика в разрешённом наборе; менеджер не меняет себя и superuser",
+    "public": false
+  },
+  "PUT /policies/:id/users/:userId": {
+    "access": "Человек: superuser ИЛИ policies/update + политика в разрешённом наборе; менеджер не меняет себя и superuser",
+    "public": false
+  },
+  "GET /ready": {
+    "access": "Публичная проверка готовности, без секретов",
+    "public": true
+  },
+  "GET /search": {
+    "access": "Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно",
+    "public": false
+  },
+  "GET /service-accounts": {
+    "access": "Человек: services/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "POST /service-accounts": {
+    "access": "Человек: superuser ИЛИ services/update; все текущие и запрошенные политики сервиса в разрешённом наборе, включая ключи и федерации",
+    "public": false
+  },
+  "GET /service-accounts/:id": {
+    "access": "Человек: services/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "PUT /service-accounts/:id": {
+    "access": "Человек: superuser ИЛИ services/update; все текущие и запрошенные политики сервиса в разрешённом наборе, включая ключи и федерации",
+    "public": false
+  },
+  "POST /service-accounts/:id/federations": {
+    "access": "Человек: superuser ИЛИ services/update; все текущие и запрошенные политики сервиса в разрешённом наборе, включая ключи и федерации",
+    "public": false
+  },
+  "DELETE /service-accounts/:id/federations/:federationId": {
+    "access": "Человек: superuser ИЛИ services/update; все текущие и запрошенные политики сервиса в разрешённом наборе, включая ключи и федерации",
+    "public": false
+  },
+  "POST /service-accounts/:id/keys": {
+    "access": "Человек: superuser ИЛИ services/update; все текущие и запрошенные политики сервиса в разрешённом наборе, включая ключи и федерации",
+    "public": false
+  },
+  "DELETE /service-accounts/:id/keys/:keyId": {
+    "access": "Человек: superuser ИЛИ services/update; все текущие и запрошенные политики сервиса в разрешённом наборе, включая ключи и федерации",
+    "public": false
+  },
+  "GET /settings/access": {
+    "access": "Активный человек; разделы, режим изменения и разрешённый набор назначаемых политик из актуальной БД",
+    "public": false
+  },
+  "GET /settings/assistant": {
+    "access": "Человек: assistant/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "PUT /settings/assistant": {
+    "access": "Человек: assistant/update; superuser bypass",
+    "public": false
+  },
+  "GET /settings/assistant/telemetry": {
+    "access": "Человек: assistant/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "GET /settings/options/collections": {
+    "access": "Человек: policies; только проекция схемы без записей; read ИЛИ update соответствующего раздела",
+    "public": false
+  },
+  "GET /settings/options/policies": {
+    "access": "Человек: users ИЛИ policies ИЛИ services; только ID/названия; read ИЛИ update соответствующего раздела",
+    "public": false
+  },
+  "GET /settings/options/users": {
+    "access": "Человек: oauth; только ID/email; read ИЛИ update соответствующего раздела",
+    "public": false
+  },
+  "GET /settings/plugins": {
+    "access": "Человек: plugins/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "GET /settings/plugins/:namespace": {
+    "access": "Человек: plugins/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "PUT /settings/plugins/:namespace": {
+    "access": "Человек: plugins/update; superuser bypass",
+    "public": false
+  },
+  "GET /settings/terms": {
+    "access": "Человек: terms/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "POST /settings/terms": {
+    "access": "Человек: terms/update; superuser bypass",
+    "public": false
+  },
+  "PUT /settings/terms/:id": {
+    "access": "Человек: terms/update; superuser bypass",
+    "public": false
+  },
+  "GET /table-views/:collection": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "POST /table-views/:collection": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "DELETE /table-views/:collection/:id": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "PUT /table-views/:collection/:id": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "GET /table-views/:collection/default": {
+    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "public": false
+  },
+  "GET /users": {
+    "access": "Человек: users/read или update ИЛИ policies/read или update; superuser bypass",
+    "public": false
+  },
+  "POST /users": {
+    "access": "Человек: users/update; superuser bypass",
+    "public": false
+  },
+  "GET /users/:id/access": {
+    "access": "Человек: users/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "POST /users/:id/invitation": {
+    "access": "Человек: superuser ИЛИ users/update; повторное приглашение только в пределах разрешённого набора, без доступа к аккаунтам с собственным делегированием",
+    "public": false
+  },
+  "GET /users/me": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "PATCH /users/me": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "GET /users/me/identities": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "DELETE /users/me/identities/:id": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "GET /users/me/oauth-apps": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "DELETE /users/me/oauth-apps/:id": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "POST /users/me/password": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "GET /users/me/preferences": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "PATCH /users/me/preferences": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "GET /users/me/sessions": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "DELETE /users/me/sessions/:id": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "GET /users/me/table-preferences/:collection": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "PATCH /users/me/table-preferences/:collection": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "PUT /users/me/workspace": {
+    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "public": false
+  },
+  "GET /workspaces": {
+    "access": "Человек; только пространства с доступными коллекциями (superuser видит все)",
+    "public": false
+  },
+  "POST /workspaces": {
+    "access": "Человек: superuser",
+    "public": false
+  },
+  "DELETE /workspaces/:id": {
+    "access": "Человек: superuser",
+    "public": false
+  },
+  "PUT /workspaces/:id": {
+    "access": "Человек: superuser",
+    "public": false
+  },
+  "PUT /users/:id/delegation": {
+    "access": "Только человек-superuser: явный набор готовых политик, которые пользователь вправе назначать",
+    "public": false
+  },
+  "PUT /policies/:id/users": {
+    "access": "Человек: superuser ИЛИ policies/update + политика в разрешённом наборе; атомарная замена назначений без изменения себя и superuser",
+    "public": false
+  }
+}

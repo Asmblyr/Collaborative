@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+  - plugins/*
+
+storeDir: .pnpm-store
+
+allowBuilds:
+  "@scarf/scarf": false
+  argon2: true
+  esbuild: true
+  sharp: false
+  unrs-resolver: false
+  vue-demi: true
+
+overrides:
+  "vitepress>vite": "6.4.3"
