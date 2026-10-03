@@ -20,12 +20,19 @@ export async function migratePluginCollections(
   const namespace = plugin.namespace!;
   const migrations = (plugin.migrations ?? [])
     .map((migration) => {
-      const parsed = parseMigration({ operations: migration.operations }, migration.name);
-      if (parsed.checksum !== migration.checksum) throw new Error("Invalid migration checksum");
+      const parsed = parseMigration(
+        { operations: migration.operations },
+        migration.name,
+      );
+      if (parsed.checksum !== migration.checksum)
+        throw new Error("Invalid migration checksum");
       return parsed;
     })
     .sort((a, b) => a.name.localeCompare(b.name));
-  if (new Set(migrations.map((migration) => migration.name)).size !== migrations.length)
+  if (
+    new Set(migrations.map((migration) => migration.name)).size !==
+    migrations.length
+  )
     throw new Error("Duplicate plugin migration");
   const history = await transaction<MigrationRow>("asmblyr_plugin_migrations")
     .withSchema("public")
@@ -33,14 +40,21 @@ export async function migratePluginCollections(
     .orderBy("name")
     .select("name", "checksum");
   for (const row of history) {
-    const declared = migrations.find((migration) => migration.name === row.name);
+    const declared = migrations.find(
+      (migration) => migration.name === row.name,
+    );
     if (!declared || declared.checksum !== row.checksum)
-      throw new Error(`Applied plugin migration was changed or removed: ${namespace}/${row.name}`);
+      throw new Error(
+        `Applied plugin migration was changed or removed: ${namespace}/${row.name}`,
+      );
   }
   const previousNames = new Set(history.map((entry) => entry.name));
   const latest = history.at(-1)?.name;
   const working = new Map(
-    installed.map((entry) => [entry.local_name, structuredClone(entry.definition)]),
+    installed.map((entry) => [
+      entry.local_name,
+      structuredClone(entry.definition),
+    ]),
   );
   for (const collection of plugin.collections ?? []) {
     if (fresh.has(collection.localName))
@@ -55,7 +69,9 @@ export async function migratePluginCollections(
     for (const operation of migration.operations) {
       const current = working.get(operation.collection);
       if (!current)
-        throw new Error(`Migration may only change owned collections: ${operation.collection}`);
+        throw new Error(
+          `Migration may only change owned collections: ${operation.collection}`,
+        );
       await applyMigrationOperation(
         transaction,
         namespace,

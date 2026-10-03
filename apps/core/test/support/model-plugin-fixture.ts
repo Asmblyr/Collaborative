@@ -50,11 +50,17 @@ export async function modelPluginFixture(t: TestContext) {
   await writeFile(path.join(root, "plugin.ts"), "export default {};");
   await mkdir(path.join(root, "server/api/example"), { recursive: true });
   await mkdir(path.join(root, "shared"));
-  const write = (file: string, source: string) => writeFile(path.join(root, file), source);
+  const write = (file: string, source: string) =>
+    writeFile(path.join(root, file), source);
   const build = () =>
     promisify(execFile)(
       process.execPath,
-      [fileURLToPath(new URL("../../../../packages/kit/bin/plugin.mjs", import.meta.url)), "build"],
+      [
+        fileURLToPath(
+          new URL("../../../../packages/kit/bin/plugin.mjs", import.meta.url),
+        ),
+        "build",
+      ],
       { cwd: root, windowsHide: true },
     );
   return { root, write, build };

@@ -4,7 +4,12 @@ import { ssoMessage, ssoProviderKey } from "../src/lib/sso";
 
 test("callback errors display only known messages, never provider text or object properties", () => {
   const fallback = ssoMessage("unknown");
-  for (const code of ["__proto__", "constructor", "toString", "<script>token</script>"]) {
+  for (const code of [
+    "__proto__",
+    "constructor",
+    "toString",
+    "<script>token</script>",
+  ]) {
     assert.equal(ssoMessage(code), fallback);
   }
   assert.equal(ssoMessage(null), null);

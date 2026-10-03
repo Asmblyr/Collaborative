@@ -20,7 +20,12 @@ export function createProgress(emit?: (progress: AssistantProgress) => void) {
   return {
     model() {
       modelCalls++;
-      emit?.({ phase: "model", label: "Обрабатываю запрос", modelCalls, toolCalls });
+      emit?.({
+        phase: "model",
+        label: "Обрабатываю запрос",
+        modelCalls,
+        toolCalls,
+      });
     },
     tool(name?: string) {
       toolCalls++;

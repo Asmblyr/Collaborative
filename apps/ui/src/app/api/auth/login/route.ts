@@ -13,14 +13,25 @@ export async function POST(request: Request) {
   }
   try {
     const upstream = await fetch(coreAddress("/auth/login"), {
-      method: "POST", headers: { "content-type": "application/json", "user-agent": request.headers.get("user-agent") ?? "" },
-      body: await request.text(), cache: "no-store", signal: AbortSignal.timeout(10000),
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "user-agent": request.headers.get("user-agent") ?? "",
+      },
+      body: await request.text(),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
     if (!upstream.ok) {
-      return new Response(await upstream.text(), { status: upstream.status,
-        headers: { "content-type": "application/json", "cache-control": "no-store" } });
+      return new Response(await upstream.text(), {
+        status: upstream.status,
+        headers: {
+          "content-type": "application/json",
+          "cache-control": "no-store",
+        },
+      });
     }
-    const pair = await upstream.json() as TokenPair;
+    const pair = (await upstream.json()) as TokenPair;
     const response = NextResponse.json({ ok: true });
     response.headers.set("Cache-Control", "no-store");
     setSessionCookies(response, request, pair);

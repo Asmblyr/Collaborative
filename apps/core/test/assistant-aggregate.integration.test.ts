@@ -41,13 +41,28 @@ test("aggregates calculate exact metrics over complete data with stable group pa
   }
   await db("asmblyr_permissions")
     .where({ id: permissions.get(names.posts) })
-    .update({ fields: ["title", "author_id", "amount", "quantity", "occurred", "metadata"] });
+    .update({
+      fields: [
+        "title",
+        "author_id",
+        "amount",
+        "quantity",
+        "occurred",
+        "metadata",
+      ],
+    });
   await db(names.posts)
     .where({ title: "Alpha" })
     .update({ amount: "10", quantity: 2, occurred: "2026-01-01T00:00:00Z" });
-  await db(names.posts).where({ title: "Beta" }).update({ amount: "2", quantity: 4 });
+  await db(names.posts)
+    .where({ title: "Beta" })
+    .update({ amount: "2", quantity: 4 });
   await db(names.posts).insert([
-    { title: "Gamma", author_id: "author-a", occurred: "2026-01-01T00:00:00.000001Z" },
+    {
+      title: "Gamma",
+      author_id: "author-a",
+      occurred: "2026-01-01T00:00:00.000001Z",
+    },
     {
       title: "",
       author_id: "author-a",
@@ -67,10 +82,16 @@ test("aggregates calculate exact metrics over complete data with stable group pa
   t.after(() => tools.close!());
   const execute = async (overrides: object = {}) =>
     json(
-      await tools.execute("aggregate_items", { collection: names.posts, ...query, ...overrides }),
+      await tools.execute("aggregate_items", {
+        collection: names.posts,
+        ...query,
+        ...overrides,
+      }),
     );
   assert.ok("error" in (await execute()));
-  const description = json(await tools.execute("describe_collection", { collection: names.posts }));
+  const description = json(
+    await tools.execute("describe_collection", { collection: names.posts }),
+  );
   assert.ok(
     description.filterPaths
       .find((path) => path.path === "amount")
@@ -81,7 +102,8 @@ test("aggregates calculate exact metrics over complete data with stable group pa
     undefined,
   );
   assert.equal(
-    description.filterPaths.find((path) => path.path === "author_id.title").aggregation,
+    description.filterPaths.find((path) => path.path === "author_id.title")
+      .aggregation,
     undefined,
   );
   const total = await execute({
@@ -94,7 +116,11 @@ test("aggregates calculate exact metrics over complete data with stable group pa
     ],
   });
   assert.equal(total.groups[0].count, "6");
-  assert.deepEqual(total.groups[0].metrics.slice(0, 3), ["6", "4", "9007199254741005.1234567890"]);
+  assert.deepEqual(total.groups[0].metrics.slice(0, 3), [
+    "6",
+    "4",
+    "9007199254741005.1234567890",
+  ]);
   assert.match(total.groups[0].metrics[3], /^1\.666666/);
   assert.equal(total.groups[0].metrics[4], "1");
   const dates = await execute({
@@ -107,8 +133,9 @@ test("aggregates calculate exact metrics over complete data with stable group pa
   assert.match(dates.groups[0].metrics[1], /^2026-02-01/);
   const dateGroups = await execute({ groupBy: ["occurred"] });
   assert.equal(
-    dateGroups.groups.find((group) => group.values.occurred === "2026-01-01T00:00:00.000001Z")
-      .resultId,
+    dateGroups.groups.find(
+      (group) => group.values.occurred === "2026-01-01T00:00:00.000001Z",
+    ).resultId,
     null,
   );
   const exactDate = dateGroups.groups.find(
@@ -116,7 +143,12 @@ test("aggregates calculate exact metrics over complete data with stable group pa
   );
   assert.ok(exactDate.resultId);
   assert.ok(
-    !("error" in (await tools.execute("present_selection", { resultId: exactDate.resultId }))),
+    !(
+      "error" in
+      (await tools.execute("present_selection", {
+        resultId: exactDate.resultId,
+      }))
+    ),
   );
   const grouped = await execute({
     groupBy: ["title"],
@@ -150,8 +182,12 @@ test("aggregates calculate exact metrics over complete data with stable group pa
   });
   assert.deepEqual(empty.groups[0].metrics, [null, null, "0"]);
   assert.equal(
-    (await execute({ groupBy: ["title"], filter: JSON.stringify(condition("title", "missing")) }))
-      .groups.length,
+    (
+      await execute({
+        groupBy: ["title"],
+        filter: JSON.stringify(condition("title", "missing")),
+      })
+    ).groups.length,
     0,
   );
   const related = await execute({
@@ -178,9 +214,13 @@ test("aggregates calculate exact metrics over complete data with stable group pa
         cancelled.signal,
       )),
   );
-  await db("asmblyr_collections").where({ name: names.posts }).update({ mcp_enabled: false });
+  await db("asmblyr_collections")
+    .where({ name: names.posts })
+    .update({ mcp_enabled: false });
   assert.ok("error" in (await execute()));
-  await db("asmblyr_collections").where({ name: names.posts }).update({ mcp_enabled: true });
+  await db("asmblyr_collections")
+    .where({ name: names.posts })
+    .update({ mcp_enabled: true });
   await db("asmblyr_permissions")
     .where({ id: permissions.get(names.posts) })
     .update({ fields: ["id"] });
@@ -192,7 +232,8 @@ test("aggregates calculate exact metrics over complete data with stable group pa
 });
 
 test("group drilldown uses verified terms/search and distinguishes null, empty and clipped keys", async (t) => {
-  const { app, db, names, access, reload, headers, suffix } = await mcpFixture(t);
+  const { app, db, names, access, reload, headers, suffix } =
+    await mcpFixture(t);
   await db(names.posts).insert([
     { title: "", author_id: "author-a" },
     { title: null },
@@ -202,7 +243,12 @@ test("group drilldown uses verified terms/search and distinguishes null, empty a
   const term = await app.inject({
     method: "POST",
     url: "/settings/terms",
-    payload: { name: `Aggregate ${suffix}`, description: "Only Ada", aliases: [], enabled: true },
+    payload: {
+      name: `Aggregate ${suffix}`,
+      description: "Only Ada",
+      aliases: [],
+      enabled: true,
+    },
   });
   assert.equal(term.statusCode, 201, term.body);
   const bound = await app.inject({
@@ -246,18 +292,33 @@ test("group drilldown uses verified terms/search and distinguishes null, empty a
   assert.equal(result.groups[0].values.title, "Alpha");
   assert.equal(result.conditions.q, "Al");
   assert.equal(result.conditions.appliedTerms.length, 1);
-  await tools.execute("present_selection", { resultId: result.groups[0].resultId });
+  await tools.execute("present_selection", {
+    resultId: result.groups[0].resultId,
+  });
   const card = tools.selections![0];
-  const params = new URLSearchParams({ q: card.q, filter: JSON.stringify(card.filter) });
-  const list = await app.inject({ method: "GET", url: `/items/${names.posts}?${params}`, headers });
+  const params = new URLSearchParams({
+    q: card.q,
+    filter: JSON.stringify(card.filter),
+  });
+  const list = await app.inject({
+    method: "GET",
+    url: `/items/${names.posts}?${params}`,
+    headers,
+  });
   assert.equal(list.json().page.total, "1");
   const all = json(
-    await tools.execute("aggregate_items", { ...query, collection: null, groupBy: ["title"] }),
+    await tools.execute("aggregate_items", {
+      ...query,
+      collection: null,
+      groupBy: ["title"],
+    }),
   );
   const long = all.groups.filter((group) => group.truncatedFields.length);
   assert.equal(long.length, 2);
   assert.equal(long[0].values.title, long[1].values.title);
-  assert.ok(long.every((group) => group.resultId === null && group.count === "1"));
+  assert.ok(
+    long.every((group) => group.resultId === null && group.count === "1"),
+  );
   const fullFilter = {
     logic: "and",
     children: Array(20).fill({ field: "title", op: "eq", value: "Alpha" }),

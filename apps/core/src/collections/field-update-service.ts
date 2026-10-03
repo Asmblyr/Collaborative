@@ -1,7 +1,10 @@
 import type { Knex } from "knex";
 import type { Collection } from "./types.js";
 import { listCollections } from "./catalog-repository.js";
-import { lockedCollectionSettings, isManagedColumn } from "./settings-repository.js";
+import {
+  lockedCollectionSettings,
+  isManagedColumn,
+} from "./settings-repository.js";
 import { readEditableField } from "./editable-field.js";
 import { normalizeFieldDefault } from "./field-default.js";
 import {
@@ -23,7 +26,9 @@ export async function updateCollectionField(
 ): Promise<Collection> {
   const name = parseMutableCollectionName(collectionName);
   await updateFieldDefinition(database, name, fieldName, body);
-  const collection = (await listCollections(database)).find((entry) => entry.name === name);
+  const collection = (await listCollections(database)).find(
+    (entry) => entry.name === name,
+  );
   if (!collection) throw new CollectionNotFoundError(name);
   return collection;
 }
@@ -43,11 +48,18 @@ export async function updateFieldDefinition(
     await database.transaction(async (transaction) => {
       const settings = await lockedCollectionSettings(transaction, name);
       if (isManagedColumn(settings, columnName)) {
-        throw new CollectionInputError(`Field is managed by Core: ${columnName}`);
+        throw new CollectionInputError(
+          `Field is managed by Core: ${columnName}`,
+        );
       }
 
       const current = await readEditableField(transaction, name, columnName);
-      const normalizedDefault = normalizeFieldDefault(current, columnName, update, presentation);
+      const normalizedDefault = normalizeFieldDefault(
+        current,
+        columnName,
+        update,
+        presentation,
+      );
 
       if (update.defaultValue !== undefined) {
         if (normalizedDefault === null) {
@@ -71,7 +83,10 @@ export async function updateFieldDefinition(
         }
       }
 
-      if (update.nullable !== undefined && update.nullable !== (current.is_nullable === "YES")) {
+      if (
+        update.nullable !== undefined &&
+        update.nullable !== (current.is_nullable === "YES")
+      ) {
         const constraint = update.nullable ? "DROP NOT NULL" : "SET NOT NULL";
         await transaction.raw(`ALTER TABLE ?? ALTER COLUMN ?? ${constraint}`, [
           `public.${name}`,
@@ -80,7 +95,8 @@ export async function updateFieldDefinition(
       }
 
       if (
-        (update.required !== undefined && update.required !== current.required) ||
+        (update.required !== undefined &&
+          update.required !== current.required) ||
         update.defaultValue !== undefined
       ) {
         await transaction("asmblyr_field_metadata")
@@ -90,17 +106,24 @@ export async function updateFieldDefinition(
             field_name: columnName,
             semantic_type: null,
             required: update.required ?? current.required,
-            default_value: normalizedDefault === null ? null : JSON.stringify(normalizedDefault),
+            default_value:
+              normalizedDefault === null
+                ? null
+                : JSON.stringify(normalizedDefault),
           })
           .onConflict(["collection_name", "field_name"])
           .merge({
             required: update.required ?? current.required,
-            default_value: normalizedDefault === null ? null : JSON.stringify(normalizedDefault),
+            default_value:
+              normalizedDefault === null
+                ? null
+                : JSON.stringify(normalizedDefault),
           });
       }
     });
   } catch (error) {
-    if (postgresCode(error) === "42703") throw new CollectionFieldNotFoundError(columnName);
+    if (postgresCode(error) === "42703")
+      throw new CollectionFieldNotFoundError(columnName);
     if (postgresCode(error) === "23502") {
       throw new CollectionFieldConflictError(
         "Cannot make field non-nullable while records contain NULL",

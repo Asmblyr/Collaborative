@@ -29,7 +29,8 @@ export function createAssistantJournal(
   database: Knex,
   warn: (id: string) => void,
 ): AssistantJournal {
-  const table = () => database("asmblyr_assistant_requests").withSchema("public");
+  const table = () =>
+    database("asmblyr_assistant_requests").withSchema("public");
   return {
     ...createTurnJournal(database, warn),
     async record<T extends AssistantAnswer>(
@@ -53,7 +54,9 @@ export function createAssistantJournal(
             api: config.api,
             requested_model: config.model,
             reasoning_effort:
-              config.api === "responses" || input.thinking ? input.reasoningEffort : null,
+              config.api === "responses" || input.thinking
+                ? input.reasoningEffort
+                : null,
             thinking: config.thinking === "unsupported" ? null : input.thinking,
           })
           .timeout(5000, { cancel: true });
@@ -100,9 +103,12 @@ export function createAssistantJournal(
       try {
         answer = await generate();
       } catch (error) {
-        const providerError = error instanceof AssistantProviderError ? error : null;
+        const providerError =
+          error instanceof AssistantProviderError ? error : null;
         await finish(
-          providerError?.code === "assistant_cancelled" ? "cancelled" : "failed",
+          providerError?.code === "assistant_cancelled"
+            ? "cancelled"
+            : "failed",
           providerError?.metadata,
           providerError?.code ?? "assistant_internal_error",
         );

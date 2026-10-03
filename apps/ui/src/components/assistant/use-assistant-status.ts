@@ -19,7 +19,10 @@ export function useAssistantStatus(open: boolean) {
       try {
         const response = await fetch("/api/assistant/status", {
           cache: "no-store",
-          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]),
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(8000),
+          ]),
         });
         const data: AssistantStatus = response.ok
           ? (await response.json()).data
@@ -31,7 +34,8 @@ export function useAssistantStatus(open: boolean) {
           data.settings?.reasoningOptions.includes(previous.reasoningEffort)
             ? { reasoningEffort: previous.reasoningEffort }
             : {}),
-          ...(data.settings?.thinking === "optional" && previous.thinking !== undefined
+          ...(data.settings?.thinking === "optional" &&
+          previous.thinking !== undefined
             ? { thinking: previous.thinking }
             : {}),
         }));

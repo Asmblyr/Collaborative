@@ -11,5 +11,7 @@ export interface FileStorage {
 
 export class StorageError extends Error {
   readonly statusCode = 503;
-  constructor() { super("Файловое хранилище недоступно. Повторите попытку позже."); }
+  constructor() {
+    super("Файловое хранилище недоступно. Повторите попытку позже.");
+  }
 }

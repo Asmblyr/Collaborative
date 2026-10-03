@@ -5,7 +5,10 @@ import type { FieldPresentation } from "../collections/field-presentation-valida
 export interface ItemField {
   name: string;
   type: FieldType | "relation" | null;
-  relation?: { collection: string; primaryKeyType: "uuid" | "serial" | "bigserial" | "text" };
+  relation?: {
+    collection: string;
+    primaryKeyType: "uuid" | "serial" | "bigserial" | "text";
+  };
   required: boolean;
   nullable: boolean;
   defaultValue?: JsonValue;

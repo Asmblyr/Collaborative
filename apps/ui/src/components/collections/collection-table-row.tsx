@@ -79,7 +79,9 @@ export function CollectionTableRow({
     Number(collection.timestamps.createdAt) +
     Number(collection.timestamps.updatedAt);
   const canOpenItems =
-    collection.access.read || collection.access.create || collection.access.update;
+    collection.access.read ||
+    collection.access.create ||
+    collection.access.update;
   const before =
     dropTarget?.kind === "row" &&
     dropTarget.name === collection.name &&
@@ -136,10 +138,15 @@ export function CollectionTableRow({
                 aria-expanded={!childrenCollapsed}
                 onClick={onToggleChildren}
               >
-                <ChevronRight className={childrenCollapsed ? "size-4" : "size-4 rotate-90"} />
+                <ChevronRight
+                  className={childrenCollapsed ? "size-4" : "size-4 rotate-90"}
+                />
               </Button>
             ) : (
-              <span className="size-7 shrink-0" aria-hidden="true" />
+              <span
+                className="size-7 shrink-0"
+                aria-hidden="true"
+              />
             )}
             <Button
               type="button"
@@ -147,23 +154,34 @@ export function CollectionTableRow({
               size="sm"
               className="max-w-full justify-start gap-2 font-mono font-medium"
               aria-expanded={isExpanded}
-              aria-controls={isExpanded ? `collection-fields-${collection.name}` : undefined}
+              aria-controls={
+                isExpanded ? `collection-fields-${collection.name}` : undefined
+              }
               onClick={onToggleExpanded}
             >
               <Table2 aria-hidden="true" />
-              <span className="truncate">{collection.displayName || collection.name}</span>
+              <span className="truncate">
+                {collection.displayName || collection.name}
+              </span>
               {collection.displayName && (
                 <span className="truncate font-mono text-xs text-muted-foreground">
                   {collection.name}
                 </span>
               )}
               {collection.hidden && (
-                <Badge variant="outline" className="font-sans font-normal text-muted-foreground">
+                <Badge
+                  variant="outline"
+                  className="font-sans font-normal text-muted-foreground"
+                >
                   Скрыта
                 </Badge>
               )}
             </Button>
-            {inside && <span className="ml-2 shrink-0 text-xs text-primary">Вложить сюда</span>}
+            {inside && (
+              <span className="ml-2 shrink-0 text-xs text-primary">
+                Вложить сюда
+              </span>
+            )}
           </div>
         </TableCell>
         <TableCell>
@@ -173,7 +191,9 @@ export function CollectionTableRow({
         </TableCell>
         <TableCell className="font-mono text-xs">
           {collection.primaryKey.name}{" "}
-          <span className="text-muted-foreground">· {collection.primaryKey.type}</span>
+          <span className="text-muted-foreground">
+            · {collection.primaryKey.type}
+          </span>
         </TableCell>
         <TableCell className="tabular-nums">{fieldCount}</TableCell>
         <TableCell className="pr-4 text-right">
@@ -185,12 +205,20 @@ export function CollectionTableRow({
                 location={collectionLocation(collection)}
                 collections={catalog.filter((entry) => entry.access.structure)}
                 folders={folders}
-                onChange={(location) => onMoveCollection(collection.name, location)}
+                onChange={(location) =>
+                  onMoveCollection(collection.name, location)
+                }
               />
             )}
             {canOpenItems && (
-              <Button asChild size="sm" variant="ghost">
-                <Link href={`/items/${encodeURIComponent(collection.name)}`}>Записи</Link>
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+              >
+                <Link href={`/items/${encodeURIComponent(collection.name)}`}>
+                  Записи
+                </Link>
               </Button>
             )}
             {canEdit && (
@@ -209,8 +237,14 @@ export function CollectionTableRow({
         </TableCell>
       </TableRow>
       {isExpanded && (
-        <TableRow id={`collection-fields-${collection.name}`} className="hover:bg-transparent">
-          <TableCell colSpan={5} className="bg-muted/20 p-0 whitespace-normal">
+        <TableRow
+          id={`collection-fields-${collection.name}`}
+          className="hover:bg-transparent"
+        >
+          <TableCell
+            colSpan={5}
+            className="bg-muted/20 p-0 whitespace-normal"
+          >
             <CollectionFields
               collection={collection}
               superuser={superuser}

@@ -1,7 +1,9 @@
 export interface ClientOptions {
   /** API root, e.g. https://example.com/api or /api in a browser. */
   baseUrl: string;
-  accessToken?: string | (() => string | undefined | Promise<string | undefined>);
+  accessToken?:
+    | string
+    | (() => string | undefined | Promise<string | undefined>);
   headers?: HeadersInit;
   credentials?: RequestCredentials;
   /** Defaults to 10 seconds. Zero disables the timeout. */

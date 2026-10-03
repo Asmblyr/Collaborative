@@ -12,7 +12,12 @@ export interface ApplicationInput extends ApplicationAccess {
   scopes: string[];
 }
 
-function text(value: unknown, label: string, max: number, empty = false): string {
+function text(
+  value: unknown,
+  label: string,
+  max: number,
+  empty = false,
+): string {
   if (
     typeof value !== "string" ||
     (!empty && !value.trim()) ||
@@ -24,7 +29,8 @@ function text(value: unknown, label: string, max: number, empty = false): string
 }
 
 function strings(value: unknown, label: string, max: number): string[] {
-  if (!Array.isArray(value) || value.length > max) throw new AuthInputError(`Invalid ${label}`);
+  if (!Array.isArray(value) || value.length > max)
+    throw new AuthInputError(`Invalid ${label}`);
   return [...new Set(value.map((entry) => text(entry, label, 2048)))];
 }
 
@@ -48,11 +54,13 @@ export function parseApplication(value: unknown): ApplicationInput {
     throw new AuthInputError("Unknown application setting");
   const name = text(input.name, "name", 120);
   const description = text(input.description, "description", 1000, true);
-  if (typeof input.enabled !== "boolean") throw new AuthInputError("Invalid enabled value");
+  if (typeof input.enabled !== "boolean")
+    throw new AuthInputError("Invalid enabled value");
   if (input.clientType !== "public" && input.clientType !== "confidential")
     throw new AuthInputError("Invalid client type");
   const redirectUris = strings(input.redirectUris, "redirect URI", 10);
-  if (!redirectUris.length) throw new AuthInputError("At least one redirect URI is required");
+  if (!redirectUris.length)
+    throw new AuthInputError("At least one redirect URI is required");
   for (const uri of redirectUris) {
     let url: URL;
     try {
@@ -61,8 +69,15 @@ export function parseApplication(value: unknown): ApplicationInput {
       throw new AuthInputError("Invalid redirect URI");
     }
     const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-    const insecure = url.protocol !== "https:" && !(local && url.protocol === "http:");
-    if (insecure || url.username || url.password || url.hash || uri.includes("*")) {
+    const insecure =
+      url.protocol !== "https:" && !(local && url.protocol === "http:");
+    if (
+      insecure ||
+      url.username ||
+      url.password ||
+      url.hash ||
+      uri.includes("*")
+    ) {
       throw new AuthInputError(
         "Redirect URI requires HTTPS, no wildcard or fragment (HTTP allowed on localhost)",
       );
@@ -71,7 +86,10 @@ export function parseApplication(value: unknown): ApplicationInput {
   const userIds = strings(input.userIds, "user ID", 1000);
   if (
     userIds.some(
-      (id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      (id) =>
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          id,
+        ),
     )
   ) {
     throw new AuthInputError("Invalid user ID");
@@ -86,7 +104,8 @@ export function parseApplication(value: unknown): ApplicationInput {
     )
   )
     throw new AuthInputError("Invalid service scope");
-  if (scopes.length && !audience) throw new AuthInputError("Service scopes require an audience");
+  if (scopes.length && !audience)
+    throw new AuthInputError("Service scopes require an audience");
   const access = parseApplicationAccess(input);
   return {
     ...access,

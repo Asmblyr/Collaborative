@@ -6,7 +6,10 @@ import { createRequire } from "node:module";
 import test from "node:test";
 import knex from "knex";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
-import { createAssistantProvider, AssistantProviderError } from "../src/assistant/provider.js";
+import {
+  createAssistantProvider,
+  AssistantProviderError,
+} from "../src/assistant/provider.js";
 import { AssistantService } from "../src/assistant/service.js";
 import { createAssistantJournal } from "../src/assistant/telemetry/journal.js";
 import { readAssistantTelemetry } from "../src/assistant/telemetry/repository.js";
@@ -52,11 +55,19 @@ test("long turns persist complete metrics, partial usage and failures after succ
       ],
       ...(calls === 3
         ? {}
-        : { usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 } }),
+        : {
+            usage: {
+              prompt_tokens: 10,
+              completion_tokens: 2,
+              total_tokens: 12,
+            },
+          }),
     });
   });
   const service = new AssistantService(config, provider);
-  const journal = createAssistantJournal(db, () => assert.fail("Journal should finalize"));
+  const journal = createAssistantJournal(db, () =>
+    assert.fail("Journal should finalize"),
+  );
   const send = () =>
     service.respond(
       userId,
@@ -109,7 +120,9 @@ test("long turns persist complete metrics, partial usage and failures after succ
         assert.ok(error instanceof AssistantProviderError);
         assert.equal(
           error.code,
-          next === "context" ? "assistant_context_limit" : "assistant_cancelled",
+          next === "context"
+            ? "assistant_context_limit"
+            : "assistant_cancelled",
         );
         assert.equal(error.summary?.modelCalls, 1);
         assert.equal(error.summary?.toolCalls, 1);
@@ -117,18 +130,32 @@ test("long turns persist complete metrics, partial usage and failures after succ
         return true;
       });
     }
-    const telemetry = await readAssistantTelemetry(db, parseTelemetryQuery({ userId }));
+    const telemetry = await readAssistantTelemetry(
+      db,
+      parseTelemetryQuery({ userId }),
+    );
     assert.equal(telemetry.summary.requests, 10);
     assert.equal(telemetry.summary.succeeded, 10);
-    assert.ok(telemetry.items.some((item) => item.turnSummary?.status === "failed"));
-    assert.ok(telemetry.items.some((item) => item.turnSummary?.status === "cancelled"));
+    assert.ok(
+      telemetry.items.some((item) => item.turnSummary?.status === "failed"),
+    );
+    assert.ok(
+      telemetry.items.some((item) => item.turnSummary?.status === "cancelled"),
+    );
     const migration = createRequire(import.meta.url)(
       "../migrations/20261001060000_assistant_turn_metrics.cjs",
     );
-    await assert.rejects(migration.down(db), /Cannot discard assistant turn history/);
+    await assert.rejects(
+      migration.down(db),
+      /Cannot discard assistant turn history/,
+    );
   } finally {
-    await db("public.asmblyr_assistant_requests").where({ user_id: userId }).delete();
-    await db("public.asmblyr_assistant_turns").where({ user_id: userId }).delete();
+    await db("public.asmblyr_assistant_requests")
+      .where({ user_id: userId })
+      .delete();
+    await db("public.asmblyr_assistant_turns")
+      .where({ user_id: userId })
+      .delete();
     await db.destroy();
   }
 });

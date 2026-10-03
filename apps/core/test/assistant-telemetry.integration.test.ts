@@ -16,7 +16,9 @@ import { initialAssistantDefaults } from "../src/assistant/settings.js";
 test("request journal persists actor, usage and failures; admin reads with stable pagination and safe rollback", async () => {
   assert.ok(process.env.DATABASE_URL);
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const original = await db("asmblyr_settings").where({ key: "assistant" }).first();
+  const original = await db("asmblyr_settings")
+    .where({ key: "assistant" })
+    .first();
   const ids: string[] = [];
   const metadata = responseMetadata(
     {
@@ -35,36 +37,77 @@ test("request journal persists actor, usage and failures; admin reads with stabl
   const assistant = new AssistantService(config, async () => {
     called++;
     assert.ok(
-      await db("asmblyr_assistant_requests").where({ user_id: ids[0], status: "pending" }).first(),
+      await db("asmblyr_assistant_requests")
+        .where({ user_id: ids[0], status: "pending" })
+        .first(),
     );
     if (mode === "empty")
-      throw new AssistantProviderError(502, "assistant_empty_response", "safe", metadata);
-    if (mode === "cancel") throw new AssistantProviderError(499, "assistant_cancelled", "safe");
-    if (mode === "timeout") throw new AssistantProviderError(504, "assistant_timeout", "safe");
+      throw new AssistantProviderError(
+        502,
+        "assistant_empty_response",
+        "safe",
+        metadata,
+      );
+    if (mode === "cancel")
+      throw new AssistantProviderError(499, "assistant_cancelled", "safe");
+    if (mode === "timeout")
+      throw new AssistantProviderError(504, "assistant_timeout", "safe");
     return { content: "private answer", truncated: false, metadata };
   });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false, assistant });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+    assistant,
+  });
   try {
     await db("asmblyr_settings")
-      .insert({ key: "assistant", value: JSON.stringify(initialAssistantDefaults) })
+      .insert({
+        key: "assistant",
+        value: JSON.stringify(initialAssistantDefaults),
+      })
       .onConflict("key")
       .merge();
     const users = await db("asmblyr_users")
       .insert([
-        { email: `telemetry-admin-${randomUUID()}@example.test`, superuser: true },
-        { email: `telemetry-member-${randomUUID()}@example.test`, superuser: false },
+        {
+          email: `telemetry-admin-${randomUUID()}@example.test`,
+          superuser: true,
+        },
+        {
+          email: `telemetry-member-${randomUUID()}@example.test`,
+          superuser: false,
+        },
       ])
       .returning<{ id: string }[]>("id");
     ids.push(...users.map((user) => user.id));
-    const admin = { authorization: `Bearer ${(await issueUserTokens(db, ids[0])).accessToken}` };
-    const member = { authorization: `Bearer ${(await issueUserTokens(db, ids[1])).accessToken}` };
+    const admin = {
+      authorization: `Bearer ${(await issueUserTokens(db, ids[0])).accessToken}`,
+    };
+    const member = {
+      authorization: `Bearer ${(await issueUserTokens(db, ids[1])).accessToken}`,
+    };
     const path = "/settings/assistant/telemetry";
-    assert.equal((await app.inject({ method: "GET", url: path })).statusCode, 401);
-    assert.equal((await app.inject({ method: "GET", url: path, headers: member })).statusCode, 403);
+    assert.equal(
+      (await app.inject({ method: "GET", url: path })).statusCode,
+      401,
+    );
+    assert.equal(
+      (await app.inject({ method: "GET", url: path, headers: member }))
+        .statusCode,
+      403,
+    );
     const send = (
       headers = admin,
-      payload: unknown = { messages: [{ role: "user", content: "private prompt" }] },
-    ) => app.inject({ method: "POST", url: "/assistant/messages", headers, payload });
+      payload: unknown = {
+        messages: [{ role: "user", content: "private prompt" }],
+      },
+    ) =>
+      app.inject({
+        method: "POST",
+        url: "/assistant/messages",
+        headers,
+        payload,
+      });
     assert.equal((await send(member)).statusCode, 403);
     assert.equal((await send(admin, { invalid: true })).statusCode, 400);
     assert.equal(called, 0);
@@ -99,12 +142,29 @@ test("request journal persists actor, usage and failures; admin reads with stabl
     assert.equal(summary.totalTokens, 240);
     assert.equal(summary.withUsage, 2);
     assert.equal(summary.reasoningTokens, null);
-    assert.equal(items.find((row) => row.status === "succeeded").model, "actual-model");
-    assert.equal(items.find((row) => row.status === "succeeded").requestedModel, "requested-model");
-    assert.equal(items.find((row) => row.status === "cancelled").usage.inputTokens, null);
-    assert.equal(items.find((row) => row.status === "cancelled").turnSummary.status, "cancelled");
-    assert.equal(items.find((row) => row.status === "succeeded").turnSummary.toolCalls, 0);
-    const records = await db("asmblyr_assistant_requests").where({ user_id: ids[0] });
+    assert.equal(
+      items.find((row) => row.status === "succeeded").model,
+      "actual-model",
+    );
+    assert.equal(
+      items.find((row) => row.status === "succeeded").requestedModel,
+      "requested-model",
+    );
+    assert.equal(
+      items.find((row) => row.status === "cancelled").usage.inputTokens,
+      null,
+    );
+    assert.equal(
+      items.find((row) => row.status === "cancelled").turnSummary.status,
+      "cancelled",
+    );
+    assert.equal(
+      items.find((row) => row.status === "succeeded").turnSummary.toolCalls,
+      0,
+    );
+    const records = await db("asmblyr_assistant_requests").where({
+      user_id: ids[0],
+    });
     assert.ok(records.every((row) => row.finished_at && row.duration_ms >= 0));
     assert.ok(!JSON.stringify(records).includes("private"));
     assert.ok(!result.body.includes("private"));
@@ -121,7 +181,11 @@ test("request journal persists actor, usage and failures; admin reads with stabl
       })),
     );
     const first = (
-      await app.inject({ method: "GET", url: `${path}?userId=${ids[1]}`, headers: admin })
+      await app.inject({
+        method: "GET",
+        url: `${path}?userId=${ids[1]}`,
+        headers: admin,
+      })
     ).json().data;
     assert.equal(first.items.length, 25);
     assert.ok(first.nextCursor);
@@ -132,29 +196,50 @@ test("request journal persists actor, usage and failures; admin reads with stabl
       cursor: first.nextCursor,
     });
     const second = (
-      await app.inject({ method: "GET", url: `${path}?${query}`, headers: admin })
+      await app.inject({
+        method: "GET",
+        url: `${path}?${query}`,
+        headers: admin,
+      })
     ).json().data;
     assert.equal(second.items.length, 5);
     assert.equal(second.nextCursor, null);
-    assert.equal(new Set([...first.items, ...second.items].map((row) => row.id)).size, 30);
+    assert.equal(
+      new Set([...first.items, ...second.items].map((row) => row.id)).size,
+      30,
+    );
     await db("asmblyr_users").where({ id: ids[1] }).delete();
     const deleted = (
-      await app.inject({ method: "GET", url: `${path}?userId=${ids[1]}`, headers: admin })
+      await app.inject({
+        method: "GET",
+        url: `${path}?userId=${ids[1]}`,
+        headers: admin,
+      })
     ).json().data;
     assert.equal(deleted.summary.requests, 30);
     assert.equal(deleted.items[0].user.id, ids[1]);
     assert.equal(deleted.items[0].user.email, null);
     assert.equal(
-      (await app.inject({ method: "GET", url: `${path}?days=all`, headers: admin })).statusCode,
+      (
+        await app.inject({
+          method: "GET",
+          url: `${path}?days=all`,
+          headers: admin,
+        })
+      ).statusCode,
       400,
     );
     const migration = createRequire(import.meta.url)(
       "../migrations/20260930080000_assistant_requests.cjs",
     );
-    await assert.rejects(migration.down(db), /Cannot discard assistant request history/);
+    await assert.rejects(
+      migration.down(db),
+      /Cannot discard assistant request history/,
+    );
   } finally {
     await app.close();
-    if (original) await db("asmblyr_settings").insert(original).onConflict("key").merge();
+    if (original)
+      await db("asmblyr_settings").insert(original).onConflict("key").merge();
     else await db("asmblyr_settings").where({ key: "assistant" }).delete();
     if (ids.length) {
       await db("asmblyr_assistant_requests").whereIn("user_id", ids).delete();

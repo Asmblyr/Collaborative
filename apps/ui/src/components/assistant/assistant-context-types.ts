@@ -22,7 +22,10 @@ export function contextScope(context: PageContext | null): string {
     ? `${context.workspaceId ?? "all"}:${context.page}:${context.collection ?? ""}`
     : "chat";
 }
-export function canApplyProposal(context: PageContext | null, proposal: FilterProposal): boolean {
+export function canApplyProposal(
+  context: PageContext | null,
+  proposal: FilterProposal,
+): boolean {
   return Boolean(
     context?.page === "items" &&
       context.table &&

@@ -57,9 +57,24 @@ test("group selections preserve OR, NULL and empty keys, refuse previews and non
   const result = captureAggregateSelections({
     ...base,
     groups: [
-      { values: { title: null }, count: "3", truncatedFields: [], selectable: true },
-      { values: { title: "" }, count: "2", truncatedFields: [], selectable: true },
-      { values: { title: "preview" }, count: "1", truncatedFields: ["title"], selectable: false },
+      {
+        values: { title: null },
+        count: "3",
+        truncatedFields: [],
+        selectable: true,
+      },
+      {
+        values: { title: "" },
+        count: "2",
+        truncatedFields: [],
+        selectable: true,
+      },
+      {
+        values: { title: "preview" },
+        count: "1",
+        truncatedFields: ["title"],
+        selectable: false,
+      },
     ],
   });
   assert.equal(result.selections.length, 2);
@@ -76,9 +91,19 @@ test("group selections preserve OR, NULL and empty keys, refuse previews and non
     ...base,
     conditions: {
       q: "",
-      filter: { logic: "and", children: Array(20).fill({ field: "a", op: "eq", value: "1" }) },
+      filter: {
+        logic: "and",
+        children: Array(20).fill({ field: "a", op: "eq", value: "1" }),
+      },
     },
-    groups: [{ values: { title: "value" }, count: "1", truncatedFields: [], selectable: false }],
+    groups: [
+      {
+        values: { title: "value" },
+        count: "1",
+        truncatedFields: [],
+        selectable: false,
+      },
+    ],
   });
   assert.equal(unselectable.selections.length, 0);
 });

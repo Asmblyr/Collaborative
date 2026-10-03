@@ -6,11 +6,23 @@ import { cn } from "cn";
 import { usePortalContainer } from "@asmblyr/kit/ui/portal-container";
 
 function Popover(props: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
+  return (
+    <PopoverPrimitive.Root
+      data-slot="popover"
+      {...props}
+    />
+  );
 }
 
-function PopoverTrigger(props: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+function PopoverTrigger(
+  props: React.ComponentProps<typeof PopoverPrimitive.Trigger>,
+) {
+  return (
+    <PopoverPrimitive.Trigger
+      data-slot="popover-trigger"
+      {...props}
+    />
+  );
 }
 
 function PopoverContent({
@@ -19,7 +31,9 @@ function PopoverContent({
   sideOffset = 8,
   container,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content> & { container?: HTMLElement | null }) {
+}: React.ComponentProps<typeof PopoverPrimitive.Content> & {
+  container?: HTMLElement | null;
+}) {
   const inheritedContainer = usePortalContainer();
   return (
     <PopoverPrimitive.Portal container={container ?? inheritedContainer}>

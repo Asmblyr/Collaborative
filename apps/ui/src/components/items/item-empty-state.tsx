@@ -18,7 +18,10 @@ export function ItemEmptyState({
   return (
     <div className="flex h-full min-h-72 flex-col items-center justify-center px-6 py-12 text-center">
       <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
-        <Icon aria-hidden="true" className="size-6 text-muted-foreground" />
+        <Icon
+          aria-hidden="true"
+          className="size-6 text-muted-foreground"
+        />
       </div>
       <h2 className="text-base font-medium">
         {outOfRange
@@ -38,11 +41,17 @@ export function ItemEmptyState({
       </p>
       <div className="mt-5">
         {outOfRange ? (
-          <Button variant="outline" onClick={onFirstPage}>
+          <Button
+            variant="outline"
+            onClick={onFirstPage}
+          >
             На первую страницу
           </Button>
         ) : filtered ? (
-          <Button variant="outline" onClick={onReset}>
+          <Button
+            variant="outline"
+            onClick={onReset}
+          >
             Сбросить поиск и фильтры
           </Button>
         ) : (

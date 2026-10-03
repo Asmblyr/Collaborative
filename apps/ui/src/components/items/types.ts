@@ -1,5 +1,12 @@
-import type { FormLayout, FieldPresentation, CollectionState } from "@asmblyr/contracts";
-export type { FieldPresentation, RelationPresentation } from "@asmblyr/contracts";
+import type {
+  FormLayout,
+  FieldPresentation,
+  CollectionState,
+} from "@asmblyr/contracts";
+export type {
+  FieldPresentation,
+  RelationPresentation,
+} from "@asmblyr/contracts";
 
 export interface CollectionField {
   name: string;

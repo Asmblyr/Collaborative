@@ -23,7 +23,10 @@ test(
     await mkdir(path.join(root, "node_modules"));
     await writeFile(
       path.join(root, "package.json"),
-      JSON.stringify({ type: "module", asmblyr: { plugins: ["watch-plugin"] } }),
+      JSON.stringify({
+        type: "module",
+        asmblyr: { plugins: ["watch-plugin"] },
+      }),
     );
     await writeFile(
       path.join(local, "package.json"),
@@ -31,14 +34,23 @@ test(
         name: "watch-plugin",
         type: "module",
         asmblyr: { manifest: { version: 1 } },
-        exports: { ".": "./dist/plugin.js", "./package.json": "./package.json" },
+        exports: {
+          ".": "./dist/plugin.js",
+          "./package.json": "./package.json",
+        },
       }),
     );
     await writeFile(path.join(local, "plugin.ts"), "export default {};");
-    await symlink(local, path.join(root, "node_modules/watch-plugin"), "junction");
+    await symlink(
+      local,
+      path.join(root, "node_modules/watch-plugin"),
+      "junction",
+    );
 
     const moduleUrl = (name: string) =>
-      JSON.stringify(new URL(`../src/plugins/${name}.ts`, import.meta.url).href);
+      JSON.stringify(
+        new URL(`../src/plugins/${name}.ts`, import.meta.url).href,
+      );
     const entry = path.join(root, "host.ts");
     await writeFile(
       entry,
@@ -59,14 +71,22 @@ console.log('WATCH_ADDRESS=' + address);
 
     const watcher = spawn(
       process.execPath,
-      [require.resolve("tsx/cli"), "watch", "--include", "plugins/**/*.ts", entry],
+      [
+        require.resolve("tsx/cli"),
+        "watch",
+        "--include",
+        "plugins/**/*.ts",
+        entry,
+      ],
       { cwd: root, stdio: ["pipe", "pipe", "pipe"], windowsHide: true },
     );
     let address = "";
     let output = "";
     watcher.stdout.on("data", (chunk) => {
       output += String(chunk);
-      const addresses = [...output.matchAll(/WATCH_ADDRESS=(http:\/\/127\.0\.0\.1:\d+)/g)];
+      const addresses = [
+        ...output.matchAll(/WATCH_ADDRESS=(http:\/\/127\.0\.0\.1:\d+)/g),
+      ];
       if (addresses.length) address = addresses[addresses.length - 1][1];
     });
     watcher.stderr.on("data", (chunk) => {
@@ -75,12 +95,18 @@ console.log('WATCH_ADDRESS=' + address);
     t.after(async () => {
       if (watcher.pid && watcher.exitCode === null) {
         if (process.platform === "win32") {
-          await promisify(execFile)("taskkill", ["/PID", String(watcher.pid), "/T", "/F"], {
-            windowsHide: true,
-          });
+          await promisify(execFile)(
+            "taskkill",
+            ["/PID", String(watcher.pid), "/T", "/F"],
+            {
+              windowsHide: true,
+            },
+          );
         } else {
           watcher.kill("SIGTERM");
-          await new Promise<void>((resolve) => watcher.once("exit", () => resolve()));
+          await new Promise<void>((resolve) =>
+            watcher.once("exit", () => resolve()),
+          );
         }
       }
       assert.equal(path.dirname(root), path.resolve(base));
@@ -106,7 +132,9 @@ console.log('WATCH_ADDRESS=' + address);
         }
         await setTimeout(50);
       }
-      assert.fail(`Expected ${status} ${body ?? ""}; watcher output: ${output}`);
+      assert.fail(
+        `Expected ${status} ${body ?? ""}; watcher output: ${output}`,
+      );
     }
 
     await waitFor(404);

@@ -2,7 +2,11 @@ import { ApiError, responseError } from "./error.js";
 import type { ClientOptions, RequestOptions } from "./options.js";
 
 export interface Transport {
-  get<Result>(path: string, query?: URLSearchParams, options?: RequestOptions): Promise<Result>;
+  get<Result>(
+    path: string,
+    query?: URLSearchParams,
+    options?: RequestOptions,
+  ): Promise<Result>;
   write<Result>(
     method: "POST" | "PATCH" | "DELETE",
     path: string,
@@ -13,7 +17,9 @@ export interface Transport {
 
 function apiRoot(value: string): string {
   if (typeof value !== "string" || !value || value !== value.trim()) {
-    throw new TypeError("baseUrl must be an absolute HTTP URL or a root-relative path");
+    throw new TypeError(
+      "baseUrl must be an absolute HTTP URL or a root-relative path",
+    );
   }
   const relative = value.startsWith("/") && !value.startsWith("//");
   const url = new URL(value, relative ? "http://asmblyr.local" : undefined);
@@ -25,14 +31,22 @@ function apiRoot(value: string): string {
     url.hash ||
     value.includes("\\")
   ) {
-    throw new TypeError("baseUrl must be an HTTP API root without credentials, query or fragment");
+    throw new TypeError(
+      "baseUrl must be an HTTP API root without credentials, query or fragment",
+    );
   }
   return (relative ? url.pathname : url.href).replace(/\/+$/, "");
 }
 
 function validateTimeout(timeoutMs: number): number {
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 0 || timeoutMs > 2_147_483_647) {
-    throw new TypeError("timeoutMs must be a nonnegative integer up to 2147483647");
+  if (
+    !Number.isSafeInteger(timeoutMs) ||
+    timeoutMs < 0 ||
+    timeoutMs > 2_147_483_647
+  ) {
+    throw new TypeError(
+      "timeoutMs must be a nonnegative integer up to 2147483647",
+    );
   }
   return timeoutMs;
 }
@@ -41,7 +55,11 @@ export function createTransport(options: ClientOptions): Transport {
   const root = apiRoot(options.baseUrl);
   const defaultTimeout = validateTimeout(options.timeoutMs ?? 10_000);
   const baseHeaders = new Headers(options.headers);
-  const { accessToken, credentials = "same-origin", fetch: customFetch } = options;
+  const {
+    accessToken,
+    credentials = "same-origin",
+    fetch: customFetch,
+  } = options;
   const send = customFetch ?? ((input, init) => globalThis.fetch(input, init));
 
   async function request<Result>(
@@ -57,7 +75,8 @@ export function createTransport(options: ClientOptions): Transport {
     headers.set("accept", "application/json");
     const payload = body === undefined ? undefined : JSON.stringify(body);
     if (payload !== undefined) headers.set("content-type", "application/json");
-    const token = typeof accessToken === "function" ? await accessToken() : accessToken;
+    const token =
+      typeof accessToken === "function" ? await accessToken() : accessToken;
     if (token !== undefined) headers.set("authorization", `Bearer ${token}`);
     const signals: AbortSignal[] = [];
     if (options.signal) signals.push(options.signal);
@@ -85,11 +104,17 @@ export function createTransport(options: ClientOptions): Transport {
       return (await response.json()) as Result;
     } catch (error) {
       if (signal?.aborted || !(error instanceof SyntaxError)) throw error;
-      throw new ApiError("API returned invalid JSON", response.status, "INVALID_RESPONSE");
+      throw new ApiError(
+        "API returned invalid JSON",
+        response.status,
+        "INVALID_RESPONSE",
+      );
     }
   }
   return {
-    get: (path, query, options) => request("GET", path, query, undefined, options),
-    write: (method, path, body, options) => request(method, path, undefined, body, options),
+    get: (path, query, options) =>
+      request("GET", path, query, undefined, options),
+    write: (method, path, body, options) =>
+      request(method, path, undefined, body, options),
   };
 }

@@ -16,18 +16,30 @@ test("system state rejects ambiguous or invalid definitions before DDL", () => {
     { hidden: "yes" },
   ]) {
     assert.throws(
-      () => parseCollectionState({ ...state, statuses: [{ ...state.statuses[0], ...patch }] }),
+      () =>
+        parseCollectionState({
+          ...state,
+          statuses: [{ ...state.statuses[0], ...patch }],
+        }),
       { statusCode: 400 },
     );
   }
   assert.throws(
     () =>
-      parseCreateCollection({ name: "posts", state, fields: [{ name: "status", type: "text" }] }),
+      parseCreateCollection({
+        name: "posts",
+        state,
+        fields: [{ name: "status", type: "text" }],
+      }),
     { statusCode: 400 },
   );
   assert.throws(
     () =>
-      parseCreateCollection({ name: "posts", state, primaryKey: { name: "status", type: "text" } }),
+      parseCreateCollection({
+        name: "posts",
+        state,
+        primaryKey: { name: "status", type: "text" },
+      }),
     { statusCode: 400 },
   );
   assert.deepEqual(parseCollectionState(state), state);

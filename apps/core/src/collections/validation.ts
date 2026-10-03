@@ -84,7 +84,9 @@ export function object(value: unknown): Record<string, unknown> | null {
 }
 
 export function validName(value: unknown): value is string {
-  return typeof value === "string" && value.length <= 63 && identifier.test(value);
+  return (
+    typeof value === "string" && value.length <= 63 && identifier.test(value)
+  );
 }
 
 export function parseMutableCollectionName(value: unknown): string {
@@ -106,7 +108,9 @@ export function parseFolderId(value: unknown): string | null {
   if (value === undefined || value === null) return null;
   if (
     typeof value !== "string" ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value,
+    )
   ) {
     throw new CollectionInputError("Invalid folder ID");
   }
@@ -119,7 +123,14 @@ export function parseField(value: unknown): CollectionField {
     !field ||
     Object.keys(field).some(
       (key) =>
-        !["name", "type", "required", "nullable", "defaultValue", "searchable"].includes(key),
+        ![
+          "name",
+          "type",
+          "required",
+          "nullable",
+          "defaultValue",
+          "searchable",
+        ].includes(key),
     ) ||
     !validName(field.name) ||
     !fieldTypes.includes(field.type as FieldType) ||
@@ -131,7 +142,8 @@ export function parseField(value: unknown): CollectionField {
         field.type === "file" ||
         field.type === "files")) ||
     ("searchable" in field &&
-      (typeof field.searchable !== "boolean" || (field.type !== "text" && field.type !== "email")))
+      (typeof field.searchable !== "boolean" ||
+        (field.type !== "text" && field.type !== "email")))
   ) {
     throw new CollectionInputError(
       "Field needs a valid name, type and optional required, nullable and defaultValue settings",
@@ -174,7 +186,9 @@ export function parseDefaultValue(
 
 export function parseMutableFieldName(value: unknown): string {
   if (!validName(value)) {
-    throw new CollectionInputError("Field name must use lowercase letters, digits and underscores");
+    throw new CollectionInputError(
+      "Field name must use lowercase letters, digits and underscores",
+    );
   }
   return value;
 }
@@ -188,17 +202,23 @@ export interface UpdateFieldInput {
 export function parseUpdateField(value: unknown): UpdateFieldInput {
   const input = object(value);
   if (input && "name" in input) {
-    throw new CollectionInputError("Field name cannot be changed after creation");
+    throw new CollectionInputError(
+      "Field name cannot be changed after creation",
+    );
   }
   if (
     !input ||
     Object.keys(input).length === 0 ||
-    Object.keys(input).some((key) => !["required", "nullable", "defaultValue"].includes(key)) ||
+    Object.keys(input).some(
+      (key) => !["required", "nullable", "defaultValue"].includes(key),
+    ) ||
     ("required" in input && typeof input.required !== "boolean") ||
     ("nullable" in input && typeof input.nullable !== "boolean") ||
     ("defaultValue" in input && input.defaultValue === undefined)
   ) {
-    throw new CollectionInputError("Expected a required, nullable or defaultValue setting");
+    throw new CollectionInputError(
+      "Expected a required, nullable or defaultValue setting",
+    );
   }
   return {
     ...("required" in input ? { required: input.required as boolean } : {}),

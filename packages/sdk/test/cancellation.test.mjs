@@ -11,7 +11,9 @@ test("an already aborted call never requests credentials or sends HTTP", async (
     accessToken: () => assert.fail("token accessed"),
     fetch: () => assert.fail("HTTP sent"),
   });
-  await assert.rejects(client.users.me({ signal: controller.signal }), { name: "AbortError" });
+  await assert.rejects(client.users.me({ signal: controller.signal }), {
+    name: "AbortError",
+  });
 });
 
 test("HTTP waits honor cancellation and timeout without retrying", async () => {
@@ -22,12 +24,18 @@ test("HTTP waits honor cancellation and timeout without retrying", async () => {
     fetch: async (_url, { signal }) => {
       calls++;
       return new Promise((_resolve, reject) => {
-        signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+        signal.addEventListener("abort", () => reject(signal.reason), {
+          once: true,
+        });
       });
     },
   });
   const controller = new AbortController();
-  const aborted = client.items.list("articles", {}, { signal: controller.signal });
+  const aborted = client.items.list(
+    "articles",
+    {},
+    { signal: controller.signal },
+  );
   controller.abort();
   await assert.rejects(aborted, { name: "AbortError" });
   await Promise.all([
@@ -46,7 +54,11 @@ test("cancellation during an error body remains cancellation, not an API error",
       new Response(
         new ReadableStream({
           start(stream) {
-            signal.addEventListener("abort", () => stream.error(signal.reason), { once: true });
+            signal.addEventListener(
+              "abort",
+              () => stream.error(signal.reason),
+              { once: true },
+            );
           },
         }),
         { status: 503 },

@@ -8,7 +8,10 @@ import { mcpFixture } from "./support/assistant-mcp-fixture.js";
 
 test("assistant discovers and reads through MCP from another page, journals calls and honors context off", async (t) => {
   const config = {
-    ...assistantConfigFromEnv({ OPENAI_API_KEY: "test", OPENAI_API_MODEL: "test" })!,
+    ...assistantConfigFromEnv({
+      OPENAI_API_KEY: "test",
+      OPENAI_API_MODEL: "test",
+    })!,
     api: "chat-completions" as const,
   };
   let collection = "";
@@ -32,7 +35,10 @@ test("assistant discovers and reads through MCP from another page, journals call
         };
       } else if (step === 1) {
         assert.equal(results[0].collections[0].name, collection);
-        call = { name: "describe_collection", arguments: JSON.stringify({ collection }) };
+        call = {
+          name: "describe_collection",
+          arguments: JSON.stringify({ collection }),
+        };
       } else if (step === 2) {
         assert.equal(results[1].collection, collection);
         call = {
@@ -67,7 +73,11 @@ test("assistant discovers and reads through MCP from another page, journals call
             role: "assistant",
             content: call ? null : "Verified through MCP",
             ...(call
-              ? { tool_calls: [{ id: `call-${step}`, type: "function", function: call }] }
+              ? {
+                  tool_calls: [
+                    { id: `call-${step}`, type: "function", function: call },
+                  ],
+                }
               : {}),
           },
         },
@@ -101,7 +111,11 @@ test("assistant discovers and reads through MCP from another page, journals call
     [1, 2, 3, 4],
   );
   assert.ok(journal.every((row) => row.status === "succeeded"));
-  assert.ok(!/Alpha|Beta|hidden-post-value|Find permitted records/.test(JSON.stringify(journal)));
+  assert.ok(
+    !/Alpha|Beta|hidden-post-value|Find permitted records/.test(
+      JSON.stringify(journal),
+    ),
+  );
 
   plainChat = true;
   const plain = await app.inject({

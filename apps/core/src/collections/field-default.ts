@@ -3,7 +3,11 @@ import type { EditableField } from "./editable-field.js";
 import { parseFieldPresentation } from "./field-presentation-validation.js";
 import { parsePresentedValue } from "./presented-value.js";
 import type { JsonValue } from "./structured-values.js";
-import { CollectionInputError, parseDefaultValue, type UpdateFieldInput } from "./validation.js";
+import {
+  CollectionInputError,
+  parseDefaultValue,
+  type UpdateFieldInput,
+} from "./validation.js";
 
 export function normalizeFieldDefault(
   current: EditableField,
@@ -11,12 +15,17 @@ export function normalizeFieldDefault(
   update: UpdateFieldInput,
   presentationInput?: unknown,
 ): JsonValue {
-  const type = current.relation_key_type ? "relation" : (current.type ?? current.data_type);
+  const type = current.relation_key_type
+    ? "relation"
+    : (current.type ?? current.data_type);
   const presentation =
     presentationInput === undefined
       ? current.presentation
       : parseFieldPresentation(presentationInput, type);
-  const value = update.defaultValue === undefined ? current.default_value : update.defaultValue;
+  const value =
+    update.defaultValue === undefined
+      ? current.default_value
+      : update.defaultValue;
   if (value === null) return null;
 
   if (current.type === "file" || current.type === "files") {

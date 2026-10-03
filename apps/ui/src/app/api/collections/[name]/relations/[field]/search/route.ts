@@ -5,6 +5,9 @@ export async function PUT(
   { params }: { params: Promise<{ name: string; field: string }> },
 ) {
   const { name, field } = await params;
-  return proxyCore(request,
-    `/collections/${encodeURIComponent(name)}/relations/${encodeURIComponent(field)}/search`, "PUT");
+  return proxyCore(
+    request,
+    `/collections/${encodeURIComponent(name)}/relations/${encodeURIComponent(field)}/search`,
+    "PUT",
+  );
 }

@@ -4,7 +4,10 @@ import type { MigrationOperation } from "@asmblyr/kit";
 import type { Knex } from "knex";
 import { addFieldColumn } from "../collections/field-types.js";
 import { saveFieldMetadata } from "../collections/field-metadata.js";
-import { parsePluginCollection, type PluginCollection } from "./collection-definition.js";
+import {
+  parsePluginCollection,
+  type PluginCollection,
+} from "./collection-definition.js";
 
 /** Only scoped, additive operations are available in the first migration API. */
 export async function applyMigrationOperation(
@@ -28,16 +31,24 @@ export async function applyMigrationOperation(
       current.localName,
     );
     const field = parsed.input.fields[0];
-    const existing = current.input.fields.find((entry) => entry.name === field.name);
+    const existing = current.input.fields.find(
+      (entry) => entry.name === field.name,
+    );
     if (baseline) {
       if (
         !isDeepStrictEqual(existing, field) ||
-        !isDeepStrictEqual(current.presentation[field.name], parsed.presentation[field.name])
+        !isDeepStrictEqual(
+          current.presentation[field.name],
+          parsed.presentation[field.name],
+        )
       )
-        throw new Error(`Baseline migration disagrees with declaration: ${name}.${field.name}`);
+        throw new Error(
+          `Baseline migration disagrees with declaration: ${name}.${field.name}`,
+        );
       return;
     }
-    if (existing) throw new Error(`Migration field already exists: ${name}.${field.name}`);
+    if (existing)
+      throw new Error(`Migration field already exists: ${name}.${field.name}`);
     await transaction.schema
       .withSchema("public")
       .alterTable(name, (table) => addFieldColumn(table, field));

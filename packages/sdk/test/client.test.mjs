@@ -10,7 +10,13 @@ test("list serializes HTTP query options once and preserves the API envelope", a
   const result = {
     data: [{ id: 1, title: "Hello" }],
     labels: { 1: "Hello" },
-    page: { number: 2, size: 20, total: "9007199254740993", sort: "title", direction: "desc" },
+    page: {
+      number: 2,
+      size: 20,
+      total: "9007199254740993",
+      sort: "title",
+      direction: "desc",
+    },
   };
   const client = createClient({
     baseUrl: "https://example.test/api/",
@@ -74,19 +80,37 @@ test("token providers refresh per request and headers never bleed between client
   let token = "first";
   const calls = [];
   const fetch = async (url, init) => {
-    calls.push([url, init.headers.get("authorization"), init.headers.get("x-client")]);
+    calls.push([
+      url,
+      init.headers.get("authorization"),
+      init.headers.get("x-client"),
+    ]);
     return Response.json({ data: { id: "user" } });
   };
   const headers = new Headers({ "x-client": "sdk" });
-  const one = createClient({ baseUrl: "/api", accessToken: async () => token, fetch, headers });
+  const one = createClient({
+    baseUrl: "/api",
+    accessToken: async () => token,
+    fetch,
+    headers,
+  });
   const two = createClient({ baseUrl: "http://localhost:3001", fetch });
   headers.set("x-client", "changed");
   assert.deepEqual(await one.users.me(), { data: { id: "user" } });
   token = "second";
   await Promise.all([one.users.me(), two.users.me()]);
-  assert.ok(calls.some((call) => call[1] === "Bearer first" && call[2] === "sdk"));
-  assert.ok(calls.some((call) => call[1] === "Bearer second" && call[2] === "sdk"));
-  assert.ok(calls.some((call) => call[0] === "http://localhost:3001/users/me" && call[1] === null));
+  assert.ok(
+    calls.some((call) => call[1] === "Bearer first" && call[2] === "sdk"),
+  );
+  assert.ok(
+    calls.some((call) => call[1] === "Bearer second" && call[2] === "sdk"),
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call[0] === "http://localhost:3001/users/me" && call[1] === null,
+    ),
+  );
 });
 
 test("API failures retain status, code and requestId without retries", async () => {
@@ -114,11 +138,18 @@ test("API failures retain status, code and requestId without retries", async () 
   }
   const proxy = createClient({
     baseUrl: "/api",
-    fetch: async () => new Response("<html>upstream unavailable</html>", { status: 502 }),
+    fetch: async () =>
+      new Response("<html>upstream unavailable</html>", { status: 502 }),
   });
   await assert.rejects(proxy.users.me(), { name: "ApiError", status: 502 });
-  const broken = createClient({ baseUrl: "/api", fetch: async () => new Response("not JSON") });
-  await assert.rejects(broken.users.me(), { name: "ApiError", code: "INVALID_RESPONSE" });
+  const broken = createClient({
+    baseUrl: "/api",
+    fetch: async () => new Response("not JSON"),
+  });
+  await assert.rejects(broken.users.me(), {
+    name: "ApiError",
+    code: "INVALID_RESPONSE",
+  });
 });
 
 test("invalid IDs cannot change endpoint paths or lose numeric precision", async () => {
@@ -130,13 +161,26 @@ test("invalid IDs cannot change endpoint paths or lose numeric precision", async
       return Response.json({});
     },
   });
-  for (const id of [undefined, null, {}, "", ".", "..", NaN, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+  for (const id of [
+    undefined,
+    null,
+    {},
+    "",
+    ".",
+    "..",
+    NaN,
+    1.5,
+    Number.MAX_SAFE_INTEGER + 1,
+  ]) {
     await assert.rejects(client.items.get("articles", id), TypeError);
   }
   for (const collection of ["../users", "articles/1", "//other.test", "a?b"]) {
     await assert.rejects(client.items.list(collection), TypeError);
   }
-  await assert.rejects(client.items.list("articles", { fields: ["id,secret"] }), TypeError);
+  await assert.rejects(
+    client.items.list("articles", { fields: ["id,secret"] }),
+    TypeError,
+  );
   assert.equal(calls, 0);
   for (const baseUrl of [
     "//other.test",

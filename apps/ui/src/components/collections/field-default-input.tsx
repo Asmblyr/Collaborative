@@ -38,8 +38,15 @@ export function FieldDefaultInput({
     );
   if (type === "boolean") {
     return (
-      <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger id="field-editor-default-value" className="h-10 w-full">
+      <Select
+        value={value || undefined}
+        onValueChange={onChange}
+        disabled={disabled}
+      >
+        <SelectTrigger
+          id="field-editor-default-value"
+          className="h-10 w-full"
+        >
           <SelectValue placeholder="Выберите значение" />
         </SelectTrigger>
         <SelectContent container={portalContainer}>

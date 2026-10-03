@@ -2,14 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { Knex } from "knex";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
-import { createAssistantProvider, AssistantProviderError } from "../src/assistant/provider.js";
+import {
+  createAssistantProvider,
+  AssistantProviderError,
+} from "../src/assistant/provider.js";
 import { AssistantService } from "../src/assistant/service.js";
 import { parseAssistantInput } from "../src/assistant/validation.js";
 import { responseMetadata } from "../src/assistant/telemetry/usage.js";
 import { createAssistantJournal } from "../src/assistant/telemetry/journal.js";
 import { parseTelemetryQuery } from "../src/assistant/telemetry/query.js";
 
-const config = assistantConfigFromEnv({ OPENAI_API_KEY: "test", OPENAI_API_MODEL: "test-model" })!;
+const config = assistantConfigFromEnv({
+  OPENAI_API_KEY: "test",
+  OPENAI_API_MODEL: "test-model",
+})!;
 const body = { messages: [{ role: "user", content: "private test prompt" }] };
 
 test("both API formats normalize usage without estimating or double counting subsets", () => {
@@ -91,7 +97,8 @@ test("successful, truncated, empty and failed provider output preserve usage bef
   for (const api of ["responses", "chat-completions"] as const) {
     for (const mode of ["success", "truncated", "empty", "failed"] as const) {
       const selected = { ...config, api };
-      const content = mode === "empty" || mode === "failed" ? "" : "private response";
+      const content =
+        mode === "empty" || mode === "failed" ? "" : "private response";
       const provider = createAssistantProvider(selected, async () =>
         Response.json(
           api === "responses"
@@ -100,27 +107,46 @@ test("successful, truncated, empty and failed provider output preserve usage bef
                 id: "response-id",
                 model: "actual-model",
                 status:
-                  mode === "failed" ? "failed" : mode === "truncated" ? "incomplete" : "completed",
-                output: [{ type: "message", content: [{ type: "output_text", text: content }] }],
+                  mode === "failed"
+                    ? "failed"
+                    : mode === "truncated"
+                      ? "incomplete"
+                      : "completed",
+                output: [
+                  {
+                    type: "message",
+                    content: [{ type: "output_text", text: content }],
+                  },
+                ],
                 usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
               }
             : {
                 id: "response-id",
                 model: "actual-model",
                 choices: [
-                  { message: { content }, finish_reason: mode === "truncated" ? "length" : "stop" },
+                  {
+                    message: { content },
+                    finish_reason: mode === "truncated" ? "length" : "stop",
+                  },
                 ],
-                usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+                usage: {
+                  prompt_tokens: 10,
+                  completion_tokens: 5,
+                  total_tokens: 15,
+                },
               },
           { headers: { "x-request-id": "http-id" } },
         ),
       );
       if (!content)
-        await assert.rejects(provider(parseAssistantInput(body, selected)), (error) => {
-          assert.ok(error instanceof AssistantProviderError);
-          assert.equal(error.metadata?.usage.totalTokens, 15);
-          return true;
-        });
+        await assert.rejects(
+          provider(parseAssistantInput(body, selected)),
+          (error) => {
+            assert.ok(error instanceof AssistantProviderError);
+            assert.equal(error.metadata?.usage.totalTokens, 15);
+            return true;
+          },
+        );
       else {
         const answer = await provider(parseAssistantInput(body, selected));
         assert.equal(answer.metadata?.model, "actual-model");
@@ -154,21 +180,31 @@ test("journal refuses an unrecorded attempt and preserves answers when finalizat
       },
     }),
   };
-  const journal = createAssistantJournal((() => query) as unknown as Knex, (id) =>
-    warnings.push(id),
+  const journal = createAssistantJournal(
+    (() => query) as unknown as Knex,
+    (id) => warnings.push(id),
   );
   const generate = async () => {
     invoked++;
     return { content: "answer", truncated: false };
   };
   const service = new AssistantService(config, generate);
-  await assert.rejects(service.respond("user", body, undefined, undefined, journal), {
-    code: "assistant_telemetry_unavailable",
-  });
+  await assert.rejects(
+    service.respond("user", body, undefined, undefined, journal),
+    {
+      code: "assistant_telemetry_unavailable",
+    },
+  );
   assert.equal(invoked, 0);
   assert.equal(finishes, 0);
   failStart = false;
-  const answer = await service.respond("user", body, undefined, undefined, journal);
+  const answer = await service.respond(
+    "user",
+    body,
+    undefined,
+    undefined,
+    journal,
+  );
   assert.equal(answer.content, "answer");
   assert.equal(answer.truncated, false);
   assert.equal(answer.summary.modelCalls, 1);
@@ -178,28 +214,38 @@ test("journal refuses an unrecorded attempt and preserves answers when finalizat
   assert.equal(finishes, 2);
   assert.equal(warnings.length, 2);
   assert.match(warnings[0], /^[a-f0-9-]{36}$/);
-  await assert.rejects(service.respond("user", { bad: "input" }, undefined, undefined, journal));
+  await assert.rejects(
+    service.respond("user", { bad: "input" }, undefined, undefined, journal),
+  );
   const abort = new AbortController();
   abort.abort();
-  await assert.rejects(service.respond("user", body, abort.signal, undefined, journal), {
-    code: "assistant_cancelled",
-  });
+  await assert.rejects(
+    service.respond("user", body, abort.signal, undefined, journal),
+    {
+      code: "assistant_cancelled",
+    },
+  );
   assert.equal(starts, 3);
 });
 
 test("malformed output retains known usage; HTTP errors retain safe request identifiers", async () => {
-  const malformed = createAssistantProvider({ ...config, api: "chat-completions" }, async () =>
-    Response.json({
-      model: "actual",
-      usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 },
-      choices: null,
-    }),
+  const malformed = createAssistantProvider(
+    { ...config, api: "chat-completions" },
+    async () =>
+      Response.json({
+        model: "actual",
+        usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 },
+        choices: null,
+      }),
   );
-  await assert.rejects(malformed(parseAssistantInput(body, config)), (error) => {
-    assert.ok(error instanceof AssistantProviderError);
-    assert.equal(error.metadata?.usage.totalTokens, 12);
-    return true;
-  });
+  await assert.rejects(
+    malformed(parseAssistantInput(body, config)),
+    (error) => {
+      assert.ok(error instanceof AssistantProviderError);
+      assert.equal(error.metadata?.usage.totalTokens, 12);
+      return true;
+    },
+  );
   const rejected = createAssistantProvider(config, async () =>
     Response.json(
       { error: { message: "private provider error" } },

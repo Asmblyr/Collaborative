@@ -13,7 +13,11 @@ test("SSO routes link explicitly, reject replay and cross-account access, preser
   const database = knex({ client: "pg", connection: process.env.DATABASE_URL });
   const fake = await fakeSsoProvider();
   const sso = new SsoService([fake.provider], new SsoProtocol(fake.transport));
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false, sso });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+    sso,
+  });
   const ids = [randomUUID(), randomUUID()];
   await database("public.asmblyr_users").insert(
     ids.map((id, index) => ({
@@ -22,11 +26,17 @@ test("SSO routes link explicitly, reject replay and cross-account access, preser
       superuser: false,
     })),
   );
-  const [session, other] = await Promise.all(ids.map((id) => issueUserTokens(database, id)));
+  const [session, other] = await Promise.all(
+    ids.map((id) => issueUserTokens(database, id)),
+  );
   const auth = { authorization: `Bearer ${session.accessToken}` };
   const otherAuth = { authorization: `Bearer ${other.accessToken}` };
 
-  async function start(intent: "link" | "login", headers = auth, subject = "person-1") {
+  async function start(
+    intent: "link" | "login",
+    headers = auth,
+    subject = "person-1",
+  ) {
     const browserToken = randomBytes(32).toString("base64url");
     const response = await app.inject({
       method: "POST",
@@ -40,13 +50,27 @@ test("SSO routes link explicitly, reject replay and cross-account access, preser
       },
     });
     assert.equal(response.statusCode, 200, response.body);
-    return { browserToken, query: fake.authorize(response.json().authorizationUrl, subject) };
+    return {
+      browserToken,
+      query: fake.authorize(response.json().authorizationUrl, subject),
+    };
   }
-  function complete(payload: { browserToken: string; query: string }, headers = auth) {
-    return app.inject({ method: "POST", url: "/auth/sso/okkam/callback", headers, payload });
+  function complete(
+    payload: { browserToken: string; query: string },
+    headers = auth,
+  ) {
+    return app.inject({
+      method: "POST",
+      url: "/auth/sso/okkam/callback",
+      headers,
+      payload,
+    });
   }
   try {
-    const providers = await app.inject({ method: "GET", url: "/auth/providers" });
+    const providers = await app.inject({
+      method: "GET",
+      url: "/auth/providers",
+    });
     assert.deepEqual(providers.json().data, [
       { id: "okkam", label: "Test GitLab", driver: "openid" },
     ]);
@@ -54,24 +78,38 @@ test("SSO routes link explicitly, reject replay and cross-account access, preser
     const notLinked = await complete(await start("login"));
     assert.equal(notLinked.json().code, "SSO_NOT_LINKED", notLinked.body);
     assert.equal((await database("public.asmblyr_user_identities")).length, 0);
-    assert.equal((await database("public.asmblyr_users").whereIn("id", ids)).length, 2);
+    assert.equal(
+      (await database("public.asmblyr_users").whereIn("id", ids)).length,
+      2,
+    );
 
     const unsigned = await app.inject({
       method: "POST",
       url: "/auth/sso/okkam/start",
-      payload: { browserToken: "b".repeat(43), intent: "link", uiOrigin: "http://localhost:3000" },
+      payload: {
+        browserToken: "b".repeat(43),
+        intent: "link",
+        uiOrigin: "http://localhost:3000",
+      },
     });
     assert.equal(unsigned.statusCode, 401);
     const origin = await app.inject({
       method: "POST",
       url: "/auth/sso/okkam/start",
       headers: auth,
-      payload: { browserToken: "b".repeat(43), intent: "link", uiOrigin: "https://evil.test" },
+      payload: {
+        browserToken: "b".repeat(43),
+        intent: "link",
+        uiOrigin: "https://evil.test",
+      },
     });
     assert.equal(origin.json().code, "SSO_WRONG_ORIGIN");
 
     const link = await start("link");
-    assert.equal((await complete(link, otherAuth)).json().code, "SSO_INVALID_FLOW");
+    assert.equal(
+      (await complete(link, otherAuth)).json().code,
+      "SSO_INVALID_FLOW",
+    );
     const beforeExchange = fake.exchanges();
     assert.equal(
       (await complete({ ...link, browserToken: "z".repeat(43) })).json().code,
@@ -90,8 +128,13 @@ test("SSO routes link explicitly, reject replay and cross-account access, preser
 
     const login = await start("login");
     const results = await Promise.all([complete(login), complete(login)]);
-    assert.equal(results.filter((response) => response.statusCode === 200).length, 1);
-    const tokens = results.find((response) => response.statusCode === 200)!.json().tokens;
+    assert.equal(
+      results.filter((response) => response.statusCode === 200).length,
+      1,
+    );
+    const tokens = results
+      .find((response) => response.statusCode === 200)!
+      .json().tokens;
     const me = await app.inject({
       method: "GET",
       url: "/auth/me",
@@ -112,17 +155,34 @@ test("SSO routes link explicitly, reject replay and cross-account access, preser
     );
 
     const expired = await start("login");
-    await database("public.asmblyr_auth_flows").update({ expires_at: new Date(Date.now() - 1000) });
+    await database("public.asmblyr_auth_flows").update({
+      expires_at: new Date(Date.now() - 1000),
+    });
     assert.equal((await complete(expired)).json().code, "SSO_INVALID_FLOW");
-    await database("public.asmblyr_users").where({ id: ids[0] }).update({ status: "disabled" });
-    assert.equal((await complete(await start("login"))).json().code, "SSO_AUTH_FAILED");
-    await database("public.asmblyr_users").where({ id: ids[0] }).update({ status: "active" });
+    await database("public.asmblyr_users")
+      .where({ id: ids[0] })
+      .update({ status: "disabled" });
+    assert.equal(
+      (await complete(await start("login"))).json().code,
+      "SSO_AUTH_FAILED",
+    );
+    await database("public.asmblyr_users")
+      .where({ id: ids[0] })
+      .update({ status: "active" });
 
-    const list = await app.inject({ method: "GET", url: "/users/me/identities", headers: auth });
+    const list = await app.inject({
+      method: "GET",
+      url: "/users/me/identities",
+      headers: auth,
+    });
     assert.equal(list.json().data.length, 1);
     const identityId = list.json().data[0].id;
     const remove = (headers = auth) =>
-      app.inject({ method: "DELETE", url: `/users/me/identities/${identityId}`, headers });
+      app.inject({
+        method: "DELETE",
+        url: `/users/me/identities/${identityId}`,
+        headers,
+      });
     assert.equal((await remove(otherAuth)).json().code, "SSO_NOT_LINKED");
     assert.equal((await remove()).json().code, "SSO_LAST_IDENTITY");
     await database("public.asmblyr_password_credentials").insert({
@@ -130,8 +190,13 @@ test("SSO routes link explicitly, reject replay and cross-account access, preser
       password_hash: "unused-in-test",
     });
     assert.equal((await remove()).statusCode, 204);
-    assert.equal((await complete(await start("login"))).json().code, "SSO_NOT_LINKED");
-    const audit = await database("public.asmblyr_security_events").where({ actor_id: ids[0] });
+    assert.equal(
+      (await complete(await start("login"))).json().code,
+      "SSO_NOT_LINKED",
+    );
+    const audit = await database("public.asmblyr_security_events").where({
+      actor_id: ids[0],
+    });
     assert.ok(audit.some((row) => row.action === "user.identity_linked"));
     assert.ok(audit.some((row) => row.action === "user.sso_login"));
     assert.ok(audit.some((row) => row.action === "user.identity_unlinked"));

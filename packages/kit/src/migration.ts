@@ -20,6 +20,8 @@ export interface MigrationDefinition {
 }
 
 /** Core validates and executes the plan in its installation transaction. */
-export function defineMigration(definition: MigrationDefinition): MigrationDefinition {
+export function defineMigration(
+  definition: MigrationDefinition,
+): MigrationDefinition {
   return definition;
 }

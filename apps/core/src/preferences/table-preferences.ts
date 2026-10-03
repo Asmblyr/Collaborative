@@ -1,5 +1,9 @@
 import type { Knex } from "knex";
-import { requireGrant, requireHuman, type Access } from "../permissions/access.js";
+import {
+  requireGrant,
+  requireHuman,
+  type Access,
+} from "../permissions/access.js";
 import { collectionSchema } from "../items/schema-repository.js";
 import { AuthInputError } from "../auth/validation.js";
 import { objectInput } from "../shared/input.js";
@@ -19,24 +23,44 @@ async function context(db: Knex, name: string, access: Access) {
   requireHuman(access);
   const grant = requireGrant(access, name, "read");
   const { settings, fields } = await collectionSchema(db, name);
-  const readable = (field: string) => grant.includes("*") || grant.includes(field);
+  const readable = (field: string) =>
+    grant.includes("*") || grant.includes(field);
   const names = [
     settings.primaryKey.name,
     ...[...fields.keys()].filter(readable),
-    ...(settings.timestamps.createdAt && readable("created_at") ? ["created_at"] : []),
-    ...(settings.timestamps.updatedAt && readable("updated_at") ? ["updated_at"] : []),
+    ...(settings.timestamps.createdAt && readable("created_at")
+      ? ["created_at"]
+      : []),
+    ...(settings.timestamps.updatedAt && readable("updated_at")
+      ? ["updated_at"]
+      : []),
   ];
-  return { names, id: settings.internalId, primaryKey: settings.primaryKey.name };
+  return {
+    names,
+    id: settings.internalId,
+    primaryKey: settings.primaryKey.name,
+  };
 }
 
 function reconcile(columns: Columns | null, names: string[]): Columns | null {
   if (!columns) return null;
-  const order = [...new Set([...columns.order.filter((name) => names.includes(name)), ...names])];
-  const hidden = [...new Set(columns.hidden.filter((name) => names.includes(name)))];
+  const order = [
+    ...new Set([
+      ...columns.order.filter((name) => names.includes(name)),
+      ...names,
+    ]),
+  ];
+  const hidden = [
+    ...new Set(columns.hidden.filter((name) => names.includes(name))),
+  ];
   return { order, hidden: hidden.length >= order.length ? [] : hidden };
 }
 
-export async function getTablePreferences(db: Knex, name: string, access: Access) {
+export async function getTablePreferences(
+  db: Knex,
+  name: string,
+  access: Access,
+) {
   const ctx = await context(db, name, access);
   const row = await db(table)
     .where({ user_id: access.principal.id, collection_id: ctx.id })
@@ -55,7 +79,12 @@ export async function getTablePreferences(db: Knex, name: string, access: Access
   };
 }
 
-export async function saveTablePreferences(db: Knex, name: string, access: Access, value: unknown) {
+export async function saveTablePreferences(
+  db: Knex,
+  name: string,
+  access: Access,
+  value: unknown,
+) {
   const body = objectInput(value, ["columns", "pageSize", "sort"]);
   const ctx = await context(db, name, access);
   const update: Record<string, unknown> = {};
@@ -71,10 +100,15 @@ export async function saveTablePreferences(db: Knex, name: string, access: Acces
         throw new AuthInputError("Invalid or inaccessible table columns");
       }
     }
-    update.columns = JSON.stringify(reconcile(columns as unknown as Columns, ctx.names));
+    update.columns = JSON.stringify(
+      reconcile(columns as unknown as Columns, ctx.names),
+    );
   }
   if ("pageSize" in body) {
-    if (typeof body.pageSize !== "number" || ![10, 25, 50, 100].includes(body.pageSize))
+    if (
+      typeof body.pageSize !== "number" ||
+      ![10, 25, 50, 100].includes(body.pageSize)
+    )
       throw new AuthInputError("Invalid page size");
     update.page_size = body.pageSize;
   }
@@ -90,7 +124,8 @@ export async function saveTablePreferences(db: Knex, name: string, access: Acces
     }
     update.sort = JSON.stringify(sort);
   }
-  if (!Object.keys(update).length) throw new AuthInputError("No preferences supplied");
+  if (!Object.keys(update).length)
+    throw new AuthInputError("No preferences supplied");
   // Merge only supplied properties: changing page size must not overwrite another tab's columns.
   await db(table)
     .insert({ user_id: access.principal.id, collection_id: ctx.id, ...update })

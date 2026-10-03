@@ -17,17 +17,26 @@ test("panel requests stay in the plugin namespace and preserve errors without re
   };
   t.after(() => {
     globalThis.fetch = originalFetch;
-    if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
+    if (originalWindow)
+      Object.defineProperty(globalThis, "window", originalWindow);
     else Reflect.deleteProperty(globalThis, "window");
   });
   const request = pluginRequest("comments");
   assert.deepEqual(await request("/articles/1"), { data: [] });
   assert.equal(calls[0].url, "http://localhost:3000/api/comments/articles/1");
   assert.equal(calls[0].init?.redirect, "error");
-  for (const path of ["https://other.invalid/", "//other.invalid/", "/../users", "/%2e%2e/users"])
+  for (const path of [
+    "https://other.invalid/",
+    "//other.invalid/",
+    "/../users",
+    "/%2e%2e/users",
+  ])
     await assert.rejects(request(path), /path|namespace/);
   assert.equal(calls.length, 1);
   response = Response.json({ message: "not allowed" }, { status: 403 });
-  await assert.rejects(request("/articles/1", { method: "POST", body: "{}" }), /Нет доступа/);
+  await assert.rejects(
+    request("/articles/1", { method: "POST", body: "{}" }),
+    /Нет доступа/,
+  );
   assert.equal(calls.length, 2);
 });

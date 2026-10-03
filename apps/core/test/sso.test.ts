@@ -21,16 +21,32 @@ test("provider keys are explicit, multiple providers are independent, secrets st
     AUTH_PERSONAL_CLIENT_SECRET: "second-secret",
   };
   const providers = ssoFromEnv(env);
-  assert.equal(providers[0].callbackUrl, "http://localhost:3000/sign/sso/okkam/callback");
-  assert.equal(providers[1].callbackUrl, "http://localhost:3000/sign/sso/personal/callback");
+  assert.equal(
+    providers[0].callbackUrl,
+    "http://localhost:3000/sign/sso/okkam/callback",
+  );
+  assert.equal(
+    providers[1].callbackUrl,
+    "http://localhost:3000/sign/sso/personal/callback",
+  );
   assert.equal(providers[0].issuer, "https://gitlab.com");
   assert.equal(providers[1].clientId, "second");
   assert.deepEqual(ssoFromEnv({}), []);
-  for (const key of ["OKKAM", "okkam,okkam", "okkam,", "../okkam", "okkam-test"]) {
+  for (const key of [
+    "OKKAM",
+    "okkam,okkam",
+    "okkam,",
+    "../okkam",
+    "okkam-test",
+  ]) {
     assert.throws(() => ssoFromEnv({ ...env, AUTH_PROVIDERS: key }));
   }
-  assert.throws(() => ssoFromEnv({ ...env, AUTH_UI_URL: "http://admin.example.com" }));
-  assert.throws(() => ssoFromEnv({ ...env, AUTH_OKKAM_ISSUER_URL: "http://gitlab.com" }));
+  assert.throws(() =>
+    ssoFromEnv({ ...env, AUTH_UI_URL: "http://admin.example.com" }),
+  );
+  assert.throws(() =>
+    ssoFromEnv({ ...env, AUTH_OKKAM_ISSUER_URL: "http://gitlab.com" }),
+  );
   assert.throws(() => ssoFromEnv({ ...env, AUTH_OKKAM_CLIENT_SECRET: "" }));
 });
 
@@ -44,7 +60,10 @@ test("SSO input blocks open redirects and duplicate callback parameters", () => 
   ]) {
     assert.equal(safeReturnTo(target), "/");
   }
-  assert.equal(safeReturnTo("/items/shops/4?tab=data"), "/items/shops/4?tab=data");
+  assert.equal(
+    safeReturnTo("/items/shops/4?tab=data"),
+    "/items/shops/4?tab=data",
+  );
   assert.throws(() =>
     parseSsoCallback({
       browserToken: "b".repeat(43),
@@ -56,7 +75,14 @@ test("SSO input blocks open redirects and duplicate callback parameters", () => 
 test("OIDC validates signed identity and rejects nonce, issuer, audience, expiry and signature attacks", async () => {
   const fake = await fakeSsoProvider();
   const protocol = new SsoProtocol(fake.transport);
-  for (const fault of [undefined, "nonce", "issuer", "audience", "expiry", "signature"]) {
+  for (const fault of [
+    undefined,
+    "nonce",
+    "issuer",
+    "audience",
+    "expiry",
+    "signature",
+  ]) {
     const proof = newProof();
     const url = await protocol.authorize(fake.provider, proof);
     const query = fake.authorize(url, "stable-id", fault);
@@ -76,7 +102,9 @@ test("OIDC validates signed identity and rejects nonce, issuer, audience, expiry
   const query = fake.authorize(await protocol.authorize(fake.provider, proof));
   const altered = new URLSearchParams(query);
   altered.set("state", "wrong");
-  await assert.rejects(protocol.verify(fake.provider, proof, altered.toString()));
+  await assert.rejects(
+    protocol.verify(fake.provider, proof, altered.toString()),
+  );
 });
 
 test("OAuth2 verifies PKCE and maps the configured stable profile ID", async () => {
@@ -85,7 +113,11 @@ test("OAuth2 verifies PKCE and maps the configured stable profile ID", async () 
   const proof = newProof();
   const url = await protocol.authorize(fake.provider, proof);
   assert.equal(new URL(url).searchParams.has("nonce"), false);
-  const identity = await protocol.verify(fake.provider, proof, fake.authorize(url, "12345"));
+  const identity = await protocol.verify(
+    fake.provider,
+    proof,
+    fake.authorize(url, "12345"),
+  );
   assert.equal(identity.subject, "12345");
   assert.equal(identity.issuer, fake.provider.issuer);
 });
@@ -96,7 +128,11 @@ test("OIDC and OAuth2 support client_secret_post without an Authorization header
     const protocol = new SsoProtocol(fake.transport);
     const proof = newProof();
     const url = await protocol.authorize(fake.provider, proof);
-    const identity = await protocol.verify(fake.provider, proof, fake.authorize(url, "post-user"));
+    const identity = await protocol.verify(
+      fake.provider,
+      proof,
+      fake.authorize(url, "post-user"),
+    );
     assert.equal(identity.subject, "post-user");
   }
 });
@@ -108,7 +144,12 @@ test("SSO diagnostics retain safe protocol codes without leaking messages, token
     message: "secret-in-message",
     response: { access_token: "secret-in-response" },
     cause: [
-      { parameters: { error: "invalid_client", error_description: "secret-in-description" } },
+      {
+        parameters: {
+          error: "invalid_client",
+          error_description: "secret-in-description",
+        },
+      },
     ],
   };
   const diagnostic = ssoDiagnostic("okkam", "verify", error);
@@ -121,5 +162,8 @@ test("SSO diagnostics retain safe protocol codes without leaking messages, token
     error: "secret-error",
     cause: { attribute: "secret-attribute" },
   });
-  assert.equal(JSON.stringify(unknown), '{"provider":"okkam","phase":"verify"}');
+  assert.equal(
+    JSON.stringify(unknown),
+    '{"provider":"okkam","phase":"verify"}',
+  );
 });

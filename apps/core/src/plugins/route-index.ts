@@ -14,7 +14,9 @@ export interface PendingEndpoint {
   model?: ModelDefinition;
 }
 
-export async function sourceEndpoints(packageRoot: string): Promise<PendingEndpoint[]> {
+export async function sourceEndpoints(
+  packageRoot: string,
+): Promise<PendingEndpoint[]> {
   const directory = path.join(packageRoot, "server/api");
   const routes = await scanApiRoutes(directory);
   const models = await sourceModelDefinitions(packageRoot, routes);
@@ -26,14 +28,20 @@ export async function sourceEndpoints(packageRoot: string): Promise<PendingEndpo
   }));
 }
 
-export async function builtEndpoints(index: URL, name: string): Promise<PendingEndpoint[]> {
+export async function builtEndpoints(
+  index: URL,
+  name: string,
+): Promise<PendingEndpoint[]> {
   const value: unknown = JSON.parse(await readFile(index, "utf8"));
-  if (!Array.isArray(value)) throw new Error(`Plugin ${name}: invalid route index`);
+  if (!Array.isArray(value))
+    throw new Error(`Plugin ${name}: invalid route index`);
   const routes: PendingEndpoint[] = [];
   for (const entry of value) {
     if (
       !isRecord(entry) ||
-      Object.keys(entry).some((key) => !["method", "path", "file", "model"].includes(key)) ||
+      Object.keys(entry).some(
+        (key) => !["method", "path", "file", "model"].includes(key),
+      ) ||
       typeof entry.file !== "string" ||
       !/^\.\/server\/api\/[a-zA-Z0-9_\-/\[\].]+\.js$/.test(entry.file) ||
       entry.file
@@ -78,7 +86,9 @@ export async function importEndpoints(
     );
     if (route.model) bindModelDefinition(endpoint.handler, route.model);
     if (endpoint.handler.meta?.asmblyrModel && !route.model) {
-      throw new Error(`Plugin ${name}: model schema is missing; rebuild the plugin`);
+      throw new Error(
+        `Plugin ${name}: model schema is missing; rebuild the plugin`,
+      );
     }
     endpoints.push(endpoint);
   }

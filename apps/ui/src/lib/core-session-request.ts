@@ -26,13 +26,18 @@ export async function requestCoreWithSession(
       redirect: request.redirect,
       headers: {
         authorization: `Bearer ${token}`,
-        ...(request.body !== undefined ? { "content-type": "application/json" } : {}),
+        ...(request.body !== undefined
+          ? { "content-type": "application/json" }
+          : {}),
         ...request.headers,
       },
       body: request.body,
       cache: "no-store",
       signal: request.signal
-        ? AbortSignal.any([request.signal, AbortSignal.timeout(request.timeoutMs)])
+        ? AbortSignal.any([
+            request.signal,
+            AbortSignal.timeout(request.timeoutMs),
+          ])
         : AbortSignal.timeout(request.timeoutMs),
     });
 

@@ -7,13 +7,33 @@ import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 test("HTTP SDK and local kit read the same Core data and permissions", async (t) => {
   const fixture = await pluginItemsFixture();
   t.after(fixture.close);
-  const { app, call, collection, memberToken, outsiderToken, member, db, adminToken } = fixture;
+  const {
+    app,
+    call,
+    collection,
+    memberToken,
+    outsiderToken,
+    member,
+    db,
+    adminToken,
+  } = fixture;
   const baseUrl = await app.listen({ host: "127.0.0.1", port: 0 });
   const client = createClient({ baseUrl, accessToken: memberToken });
-  const options = { fields: ["title"], limit: 2, sort: "title", direction: "desc" as const };
+  const options = {
+    fields: ["title"],
+    limit: 2,
+    sort: "title",
+    direction: "desc" as const,
+  };
   assert.deepEqual(
     await client.items.list(collection, options),
-    await call("POST", "/reader/list", { collection, options }, 200, memberToken),
+    await call(
+      "POST",
+      "/reader/list",
+      { collection, options },
+      200,
+      memberToken,
+    ),
   );
   assert.deepEqual(
     await client.items.get(collection, 1, { fields: ["title"] }),
@@ -25,7 +45,10 @@ test("HTTP SDK and local kit read the same Core data and permissions", async (t)
       memberToken,
     ),
   );
-  assert.deepEqual((await client.items.get(collection, 1, { fields: [] })).data, { id: 1 });
+  assert.deepEqual(
+    (await client.items.get(collection, 1, { fields: [] })).data,
+    { id: 1 },
+  );
   assert.deepEqual((await client.items.list(collection, { fields: [] })).data, [
     { id: 1 },
     { id: 2 },
@@ -47,10 +70,14 @@ test("HTTP SDK and local kit read the same Core data and permissions", async (t)
   await assert.rejects(
     client.items.get(collection, 1, { fields: ["secret"] }),
     (error: unknown) =>
-      error instanceof ApiError && error.status === 403 && Boolean(error.requestId),
+      error instanceof ApiError &&
+      error.status === 403 &&
+      Boolean(error.requestId),
   );
   await assert.rejects(client.items.get(collection, 999), { status: 404 });
-  await assert.rejects(client.items.list(collection, { limit: 101 }), { status: 400 });
+  await assert.rejects(client.items.list(collection, { limit: 101 }), {
+    status: 400,
+  });
   const outsider = createClient({ baseUrl, accessToken: outsiderToken });
   await assert.rejects(outsider.items.list(collection), { status: 403 });
   await assert.rejects(createClient({ baseUrl }).users.me(), { status: 401 });

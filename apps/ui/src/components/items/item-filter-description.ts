@@ -1,4 +1,8 @@
-import { hasNoValue, operatorLabels, type FilterNode } from "./item-filter-options";
+import {
+  hasNoValue,
+  operatorLabels,
+  type FilterNode,
+} from "./item-filter-options";
 
 export function describeFilter(
   node: FilterNode,
@@ -15,7 +19,8 @@ export function describeFilter(
         ? "Хотя бы одна связь: "
         : "";
   const labelFor = (value: string) =>
-    choices.get(node.field)?.find((option) => option.value === value)?.label ?? value;
+    choices.get(node.field)?.find((option) => option.value === value)?.label ??
+    value;
   const value = Array.isArray(node.value)
     ? node.value.map(labelFor).join(", ")
     : labelFor(node.value ?? "");

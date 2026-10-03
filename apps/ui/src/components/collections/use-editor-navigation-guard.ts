@@ -21,11 +21,17 @@ const guards = new Set<Guard>();
 let approved = false;
 
 function activeGuards() {
-  return [...guards].filter((guard) => guard.element.open && guard.element.isConnected);
+  return [...guards].filter(
+    (guard) => guard.element.open && guard.element.isConnected,
+  );
 }
 function block(resume: () => void) {
   const active = activeGuards();
-  if (!active.length || approved || !active.some((guard) => guard.dirty || guard.busy))
+  if (
+    !active.length ||
+    approved ||
+    !active.some((guard) => guard.dirty || guard.busy)
+  )
     return false;
   if (active.some((guard) => guard.busy)) return true;
   const dialogs = [...document.querySelectorAll("dialog[open]")];
@@ -67,7 +73,8 @@ export function useEditorNavigationGuard(
 
   useEffect(() => {
     if (!element || !enabled) return;
-    const navigation = (window as Window & { navigation?: NavigationApi }).navigation;
+    const navigation = (window as Window & { navigation?: NavigationApi })
+      .navigation;
     const navigate = (raw: Event) => {
       const event = raw as NavigateEvent;
       if (
@@ -98,7 +105,10 @@ export function useEditorNavigationGuard(
         event.altKey
       )
         return;
-      const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      const anchor =
+        event.target instanceof Element
+          ? event.target.closest("a[href]")
+          : null;
       if (
         !(anchor instanceof HTMLAnchorElement) ||
         anchor.target === "_blank" ||
@@ -114,7 +124,10 @@ export function useEditorNavigationGuard(
       }
     };
     const unload = (event: BeforeUnloadEvent) => {
-      if (!approved && activeGuards().some((entry) => entry.dirty || entry.busy)) {
+      if (
+        !approved &&
+        activeGuards().some((entry) => entry.dirty || entry.busy)
+      ) {
         event.preventDefault();
         event.returnValue = "";
       }

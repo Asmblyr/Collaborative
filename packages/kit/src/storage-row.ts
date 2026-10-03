@@ -2,7 +2,12 @@ import type { ItemRecord, JsonValue } from "@asmblyr/contracts";
 import type { CollectionDefinition } from "./collection.js";
 import type { CollectionRow } from "./collection-types.js";
 
-function fieldValue(value: unknown, type: string, nullable: boolean, address: string): JsonValue {
+function fieldValue(
+  value: unknown,
+  type: string,
+  nullable: boolean,
+  address: string,
+): JsonValue {
   if (value === null && nullable) return null;
 
   switch (type) {
@@ -16,7 +21,8 @@ function fieldValue(value: unknown, type: string, nullable: boolean, address: st
       break;
     case "integer":
     case "serial":
-      if (typeof value === "number" && Number.isSafeInteger(value)) return value;
+      if (typeof value === "number" && Number.isSafeInteger(value))
+        return value;
       break;
     case "boolean":
       if (typeof value === "boolean") return value;
@@ -28,14 +34,21 @@ function fieldValue(value: unknown, type: string, nullable: boolean, address: st
       break;
     }
     case "files":
-      if (Array.isArray(value) && value.every((entry) => typeof entry === "string")) return value;
+      if (
+        Array.isArray(value) &&
+        value.every((entry) => typeof entry === "string")
+      )
+        return value;
       break;
     case "json":
       // PostgreSQL jsonb already contains JSON values, including the JSON null literal.
-      if (value !== undefined) return JSON.parse(JSON.stringify(value)) as JsonValue;
+      if (value !== undefined)
+        return JSON.parse(JSON.stringify(value)) as JsonValue;
       break;
   }
-  throw new Error(`Storage value does not match collection declaration: ${address}`);
+  throw new Error(
+    `Storage value does not match collection declaration: ${address}`,
+  );
 }
 
 /** Check the boundary once, before exposing an inferred row to plugin code. */
@@ -45,9 +58,19 @@ export function collectionRow<Definition extends CollectionDefinition>(
 ): CollectionRow<Definition> {
   const result: Record<string, JsonValue> = {};
   const key = definition.primaryKey;
-  result[key.name] = fieldValue(row[key.name], key.type, false, `${definition.name}.${key.name}`);
+  result[key.name] = fieldValue(
+    row[key.name],
+    key.type,
+    false,
+    `${definition.name}.${key.name}`,
+  );
   for (const [name, field] of Object.entries(definition.fields)) {
-    result[name] = fieldValue(row[name], field.type, field.nullable, `${definition.name}.${name}`);
+    result[name] = fieldValue(
+      row[name],
+      field.type,
+      field.nullable,
+      `${definition.name}.${name}`,
+    );
   }
   if (definition.timestamps?.createdAt)
     result.created_at = fieldValue(

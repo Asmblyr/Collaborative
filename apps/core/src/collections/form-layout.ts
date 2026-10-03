@@ -4,7 +4,10 @@ import { CollectionInputError } from "./validation.js";
 
 type Field = { name: string; type: string };
 
-export function parseFormLayout(value: unknown, fields: Field[]): FormLayout | null {
+export function parseFormLayout(
+  value: unknown,
+  fields: Field[],
+): FormLayout | null {
   if (value === null) return null;
   const fail = (message: string): never => {
     throw new CollectionInputError(`Invalid form layout: ${message}`);
@@ -20,13 +23,20 @@ export function parseFormLayout(value: unknown, fields: Field[]): FormLayout | n
     return v as Record<string, unknown>;
   };
   const text = (v: unknown, max: number, required = false): string => {
-    if (typeof v !== "string" || v.length > max || v.includes("\0") || (required && !v.trim()))
+    if (
+      typeof v !== "string" ||
+      v.length > max ||
+      v.includes("\0") ||
+      (required && !v.trim())
+    )
       return fail("invalid label");
     return v.trim();
   };
   const ids = new Set<string>(),
     used = new Set<string>();
-  const available = new Map(fields.filter((f) => f.type !== "alias").map((f) => [f.name, f.type]));
+  const available = new Map(
+    fields.filter((f) => f.type !== "alias").map((f) => [f.name, f.type]),
+  );
   const identity = (v: unknown) => {
     if (typeof v !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(v) || ids.has(v))
       return fail("duplicate or invalid node ID");
@@ -50,9 +60,15 @@ export function parseFormLayout(value: unknown, fields: Field[]): FormLayout | n
         const r = object(entry, ["field", "operator", "value"]);
         if (
           typeof r.field !== "string" ||
-          !["text", "email", "integer", "decimal", "boolean", "datetime", "relation"].includes(
-            available.get(r.field) ?? "",
-          ) ||
+          ![
+            "text",
+            "email",
+            "integer",
+            "decimal",
+            "boolean",
+            "datetime",
+            "relation",
+          ].includes(available.get(r.field) ?? "") ||
           !["eq", "ne", "empty", "notEmpty"].includes(r.operator as string)
         )
           return fail("unknown condition field or operator");
@@ -62,7 +78,8 @@ export function parseFormLayout(value: unknown, fields: Field[]): FormLayout | n
         }
         if (
           !["string", "number", "boolean"].includes(typeof r.value) ||
-          (typeof r.value === "string" && (r.value.length > 500 || r.value.includes("\0"))) ||
+          (typeof r.value === "string" &&
+            (r.value.length > 500 || r.value.includes("\0"))) ||
           (typeof r.value === "number" && !Number.isFinite(r.value))
         )
           return fail("invalid comparison value");
@@ -75,7 +92,8 @@ export function parseFormLayout(value: unknown, fields: Field[]): FormLayout | n
     };
   };
   const nodes = (v: unknown, depth: number): FormNode[] => {
-    if (!Array.isArray(v) || depth > 3) return fail("sections support at most three nested levels");
+    if (!Array.isArray(v) || depth > 3)
+      return fail("sections support at most three nested levels");
     return v.map((entry): FormNode => {
       const n = object(entry, [
         "id",
@@ -101,7 +119,8 @@ export function parseFormLayout(value: unknown, fields: Field[]): FormLayout | n
         )
           return fail("unknown or duplicated field");
         used.add(n.field);
-        if (when?.rules.some((r) => r.field === n.field)) return fail("a field cannot hide itself");
+        if (when?.rules.some((r) => r.field === n.field))
+          return fail("a field cannot hide itself");
         return {
           id,
           kind: "field",
@@ -165,7 +184,9 @@ export function parseFormLayout(value: unknown, fields: Field[]): FormLayout | n
 
 export function formFields(nodes: FormNode[]): Set<string> {
   return new Set(
-    nodes.flatMap((n) => (n.kind === "field" ? [n.field] : [...formFields(n.children)])),
+    nodes.flatMap((n) =>
+      n.kind === "field" ? [n.field] : [...formFields(n.children)],
+    ),
   );
 }
 
@@ -180,8 +201,17 @@ export function reconcileForm(
     nodes.flatMap((node) => {
       if (node.kind === "field" && !available.has(node.field)) return [];
       const { when, ...rest } = node;
-      const safe = when?.rules.every((r) => available.has(r.field)) ? { ...rest, when } : rest;
-      return [safe.kind === "group" ? { ...safe, children: walk(safe.children) } : safe];
+      const safe = when?.rules.every((r) => available.has(r.field))
+        ? { ...rest, when }
+        : rest;
+      return [
+        safe.kind === "group"
+          ? { ...safe, children: walk(safe.children) }
+          : safe,
+      ];
     });
-  return { version: 1, tabs: layout.tabs.map((tab) => ({ ...tab, children: walk(tab.children) })) };
+  return {
+    version: 1,
+    tabs: layout.tabs.map((tab) => ({ ...tab, children: walk(tab.children) })),
+  };
 }

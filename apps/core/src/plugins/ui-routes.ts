@@ -10,7 +10,9 @@ export function registerPluginUiRoutes(
 ): void {
   app.get("/extensions", async (request, reply) => {
     if (!database)
-      throw Object.assign(new Error("Database is not configured"), { statusCode: 503 });
+      throw Object.assign(new Error("Database is not configured"), {
+        statusCode: 503,
+      });
     await loadAccess(database, request.headers.authorization);
     return reply.header("Cache-Control", "no-store").send({
       data: plugins

@@ -10,7 +10,12 @@ export interface AggregateGroup {
   truncatedFields: string[];
 }
 
-function metricSql(db: Knex, collection: string, metric: AggregateMetric, index: number): Knex.Raw {
+function metricSql(
+  db: Knex,
+  collection: string,
+  metric: AggregateMetric,
+  index: number,
+): Knex.Raw {
   const alias = `m${index}`;
   if (metric.field === null) return db.raw("count(*) as ??", [alias]);
   const column = `${collection}.${metric.field}`;
@@ -33,7 +38,9 @@ export async function aggregateQuery(
   input: AggregateInput,
   groupTypes: FilterFieldType[],
 ): Promise<{ groups: AggregateGroup[]; hasMore: boolean }> {
-  const grouped = source.clone().select(db.raw("count(*) as ??", ["row_count"]));
+  const grouped = source
+    .clone()
+    .select(db.raw("count(*) as ??", ["row_count"]));
   for (const [index, field] of input.groupBy.entries()) {
     grouped.select(db.raw("?? as ??", [`${name}.${field}`, `g${index}`]));
     grouped.groupBy(`${name}.${field}`);
@@ -67,7 +74,11 @@ export async function aggregateQuery(
     query.select(db.raw("??::text as ??", [`${alias}.m${index}`, `m${index}`]));
   });
   // Qualify aliases to sort native numeric/date values, never the text projection.
-  query.orderBy(`${alias}.m${input.orderBy.metric}`, input.orderBy.direction, "last");
+  query.orderBy(
+    `${alias}.m${input.orderBy.metric}`,
+    input.orderBy.direction,
+    "last",
+  );
   for (let index = 0; index < input.groupBy.length; index++)
     query.orderBy(`${alias}.g${index}`, "asc", "last");
   const rows: Record<string, string | null>[] = await query

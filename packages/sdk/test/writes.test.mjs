@@ -24,9 +24,14 @@ test("mutations preserve JSON, use the API methods and handle empty delete respo
     meta: { tags: [1, "a"], optional: null },
     enabled: false,
   };
-  assert.deepEqual(await client.items.create("articles", values), { data: null });
+  assert.deepEqual(await client.items.create("articles", values), {
+    data: null,
+  });
   await client.items.update("articles", "a /?#", { title: null });
-  assert.equal(await client.items.delete("articles", "9223372036854775806"), undefined);
+  assert.equal(
+    await client.items.delete("articles", "9223372036854775806"),
+    undefined,
+  );
   assert.deepEqual(calls, [
     ["/api/items/articles", "POST", JSON.stringify(values)],
     ["/api/items/articles/a%20%2F%3F%23", "PATCH", '{"title":null}'],
@@ -41,7 +46,10 @@ test("a draft is sent as one commit with all related changes", async () => {
     values: { title: "Parent" },
     references: { category_id: { values: { title: "Category" } } },
     relations: {
-      tags: { attach: [{ id: "3", record: { values: { note: "Link" } } }], detach: ["4"] },
+      tags: {
+        attach: [{ id: "3", record: { values: { note: "Link" } } }],
+        detach: ["4"],
+      },
     },
   };
   const client = createClient({
@@ -56,9 +64,12 @@ test("a draft is sent as one commit with all related changes", async () => {
       return Response.json({ data: { id: "1" } });
     },
   });
-  assert.deepEqual(await client.items.commit("articles", draft, { timeoutMs: 0 }), {
-    data: { id: "1" },
-  });
+  assert.deepEqual(
+    await client.items.commit("articles", draft, { timeoutMs: 0 }),
+    {
+      data: { id: "1" },
+    },
+  );
   assert.equal(calls, 1);
 });
 
@@ -70,35 +81,58 @@ test("failed or uncertain writes are never retried", async () => {
       fetch: async () => {
         calls++;
         if (outcome === "network") throw new TypeError("Connection lost");
-        if (outcome === "invalid-response") return new Response("broken JSON", { status: 201 });
+        if (outcome === "invalid-response")
+          return new Response("broken JSON", { status: 201 });
         return Response.json(
-          { message: "Write failed", code: "WRITE_ERROR", requestId: "request-1" },
+          {
+            message: "Write failed",
+            code: "WRITE_ERROR",
+            requestId: "request-1",
+          },
           { status: outcome },
         );
       },
     });
-    await assert.rejects(client.items.create("articles", { title: "Once" }), (error) => {
-      if (typeof outcome === "number") {
-        assert.equal(error.status, outcome);
-        assert.equal(error.code, "WRITE_ERROR");
-      }
-      return true;
-    });
+    await assert.rejects(
+      client.items.create("articles", { title: "Once" }),
+      (error) => {
+        if (typeof outcome === "number") {
+          assert.equal(error.status, outcome);
+          assert.equal(error.code, "WRITE_ERROR");
+        }
+        return true;
+      },
+    );
     assert.equal(calls, 1);
   }
 });
 
 test("aborted and unserializable writes do not send HTTP", async () => {
-  const client = createClient({ baseUrl: "/api", fetch: () => assert.fail("HTTP sent") });
+  const client = createClient({
+    baseUrl: "/api",
+    fetch: () => assert.fail("HTTP sent"),
+  });
   const controller = new AbortController();
   controller.abort();
   const request = { signal: controller.signal };
-  await assert.rejects(client.items.create("articles", {}, request), { name: "AbortError" });
-  await assert.rejects(client.items.update("articles", 1, {}, request), { name: "AbortError" });
-  await assert.rejects(client.items.delete("articles", 1, request), { name: "AbortError" });
+  await assert.rejects(client.items.create("articles", {}, request), {
+    name: "AbortError",
+  });
+  await assert.rejects(client.items.update("articles", 1, {}, request), {
+    name: "AbortError",
+  });
+  await assert.rejects(client.items.delete("articles", 1, request), {
+    name: "AbortError",
+  });
   const cycle = {};
   cycle.self = cycle;
   await assert.rejects(client.items.create("articles", cycle), TypeError);
-  await assert.rejects(client.items.create("articles", { large: 3n }), TypeError);
-  await assert.rejects(client.items.create("articles", {}, { timeoutMs: -1 }), TypeError);
+  await assert.rejects(
+    client.items.create("articles", { large: 3n }),
+    TypeError,
+  );
+  await assert.rejects(
+    client.items.create("articles", {}, { timeoutMs: -1 }),
+    TypeError,
+  );
 });

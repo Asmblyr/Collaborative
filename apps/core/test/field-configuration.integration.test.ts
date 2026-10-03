@@ -7,18 +7,35 @@ import { authorizeTestApp } from "./support/authorized-app.js";
 
 test("field configuration validates the final state and rolls back DDL and metadata together", async () => {
   const database = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+  });
   await authorizeTestApp(app, database);
   const name = "test_atomic_field";
-  const configure = (field: string, payload: object, method: "POST" | "PUT" = "PUT") =>
-    app.inject({ method, url: `/collections/${name}/fields/${field}/configuration`, payload });
+  const configure = (
+    field: string,
+    payload: object,
+    method: "POST" | "PUT" = "PUT",
+  ) =>
+    app.inject({
+      method,
+      url: `/collections/${name}/fields/${field}/configuration`,
+      payload,
+    });
   const presentation = (value: string) => ({
     interface: "select",
     options: [{ value, label: value }],
   });
   try {
     assert.equal(
-      (await app.inject({ method: "POST", url: "/collections", payload: { name } })).statusCode,
+      (
+        await app.inject({
+          method: "POST",
+          url: "/collections",
+          payload: { name },
+        })
+      ).statusCode,
       201,
     );
     const created = await configure(
@@ -53,7 +70,10 @@ test("field configuration validates the final state and rolls back DDL and metad
     assert.equal(metadata.default_value, "b");
     assert.equal(metadata.required, true);
     assert.equal(metadata.presentation.options[0].value, "b");
-    assert.equal((await database(name).insert({}).returning("status"))[0].status, "b");
+    assert.equal(
+      (await database(name).insert({}).returning("status"))[0].status,
+      "b",
+    );
 
     const invalidCreate = await configure(
       "bad",
@@ -75,8 +95,14 @@ test("field configuration validates the final state and rolls back DDL and metad
 
 for (const keyType of ["bigserial", "text"] as const) {
   test(`relation defaults retain the ${keyType} key contract when required changes`, async () => {
-    const database = knex({ client: "pg", connection: process.env.DATABASE_URL });
-    const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
+    const database = knex({
+      client: "pg",
+      connection: process.env.DATABASE_URL,
+    });
+    const app = createApp({
+      databaseUrl: process.env.DATABASE_URL,
+      logger: false,
+    });
     await authorizeTestApp(app, database);
     const source = `test_fk_source_${keyType}`;
     const target = `test_fk_target_${keyType}`;

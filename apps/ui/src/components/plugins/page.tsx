@@ -7,9 +7,17 @@ import { pluginRequest } from "./request";
 import { PluginUiHost } from "./ui-host";
 import { PreparedPluginPage } from "./prepared-page";
 
-export function PluginPage({ namespace, pageId }: { namespace: string; pageId: string }) {
+export function PluginPage({
+  namespace,
+  pageId,
+}: {
+  namespace: string;
+  pageId: string;
+}) {
   const pages = usePluginPages();
-  const page = pages.find((entry) => entry.namespace === namespace && entry.id === pageId);
+  const page = pages.find(
+    (entry) => entry.namespace === namespace && entry.id === pageId,
+  );
   const request = useMemo(() => pluginRequest(namespace), [namespace]);
   const draftId = useSearchParams().get("draft");
   if (!page) notFound();

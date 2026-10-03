@@ -1,6 +1,9 @@
 "use client";
 
-import { defaultCollectionState, type CollectionState } from "@asmblyr/contracts";
+import {
+  defaultCollectionState,
+  type CollectionState,
+} from "@asmblyr/contracts";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@asmblyr/kit/ui/button";
 import { Checkbox } from "@asmblyr/kit/ui/checkbox";
@@ -16,7 +19,11 @@ import {
 import type { Collection } from "@/components/items/types";
 
 type StateOption = CollectionState["statuses"][number];
-const colors: { value: StateOption["color"]; label: string; className: string }[] = [
+const colors: {
+  value: StateOption["color"];
+  label: string;
+  className: string;
+}[] = [
   { value: "green", label: "Зелёный", className: "bg-emerald-500" },
   { value: "gray", label: "Серый", className: "bg-slate-400" },
   { value: "amber", label: "Янтарный", className: "bg-amber-500" },
@@ -48,7 +55,8 @@ export function CollectionStateFields({
       i === index ? { ...status, ...patch } : status,
     );
     const defaultValue =
-      patch.value !== undefined && value.defaultValue === value.statuses[index].value
+      patch.value !== undefined &&
+      value.defaultValue === value.statuses[index].value
         ? patch.value
         : value.defaultValue;
     onChange({ ...value, defaultValue, statuses });
@@ -56,12 +64,18 @@ export function CollectionStateFields({
   function addStatus() {
     if (!value) return;
     let number = value.statuses.length + 1;
-    while (value.statuses.some((status) => status.value === `state_${number}`)) number += 1;
+    while (value.statuses.some((status) => status.value === `state_${number}`))
+      number += 1;
     onChange({
       ...value,
       statuses: [
         ...value.statuses,
-        { value: `state_${number}`, label: "Новое состояние", color: "blue", hidden: false },
+        {
+          value: `state_${number}`,
+          label: "Новое состояние",
+          color: "blue",
+          hidden: false,
+        },
       ],
     });
   }
@@ -78,7 +92,9 @@ export function CollectionStateFields({
           }
         />
         <div className="space-y-1">
-          <Label htmlFor="system-state-enabled">Системное поле «Состояние»</Label>
+          <Label htmlFor="system-state-enabled">
+            Системное поле «Состояние»
+          </Label>
           <p className="text-xs leading-relaxed text-muted-foreground">
             {incompatible
               ? "Имя status уже занято несовместимым полем. Для состояния нужно обычное текстовое поле."
@@ -96,12 +112,15 @@ export function CollectionStateFields({
             <div>
               <h3 className="text-sm font-medium">Состояния записей</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                «В списке» определяет начальный фильтр таблицы. Скрытые записи можно показать,
-                изменив фильтр.
+                «В списке» определяет начальный фильтр таблицы. Скрытые записи
+                можно показать, изменив фильтр.
               </p>
             </div>
             {value.statuses.map((status, index) => (
-              <div key={index} className="space-y-3 rounded-xl border p-3">
+              <div
+                key={index}
+                className="space-y-3 rounded-xl border p-3"
+              >
                 <div className="flex items-center gap-2">
                   <span
                     aria-hidden
@@ -113,7 +132,9 @@ export function CollectionStateFields({
                     maxLength={100}
                     required
                     disabled={disabled}
-                    onChange={(event) => changeStatus(index, { label: event.target.value })}
+                    onChange={(event) =>
+                      changeStatus(index, { label: event.target.value })
+                    }
                     className="flex-1"
                   />
                   <Button
@@ -122,10 +143,15 @@ export function CollectionStateFields({
                     size="icon-sm"
                     aria-label={`Удалить состояние ${status.label}`}
                     disabled={
-                      disabled || value.statuses.length === 1 || status.value === value.defaultValue
+                      disabled ||
+                      value.statuses.length === 1 ||
+                      status.value === value.defaultValue
                     }
                     onClick={() =>
-                      onChange({ ...value, statuses: value.statuses.filter((_, i) => i !== index) })
+                      onChange({
+                        ...value,
+                        statuses: value.statuses.filter((_, i) => i !== index),
+                      })
                     }
                   >
                     <Trash2 className="size-4" />
@@ -147,7 +173,9 @@ export function CollectionStateFields({
                       pattern="[a-z][a-z0-9_]*"
                       disabled={disabled}
                       className="font-mono text-xs"
-                      onChange={(event) => changeStatus(index, { value: event.target.value })}
+                      onChange={(event) =>
+                        changeStatus(index, { value: event.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -161,15 +189,23 @@ export function CollectionStateFields({
                       value={status.color}
                       disabled={disabled}
                       onValueChange={(color) =>
-                        changeStatus(index, { color: color as StateOption["color"] })
+                        changeStatus(index, {
+                          color: color as StateOption["color"],
+                        })
                       }
                     >
-                      <SelectTrigger id={`state-color-${index}`} className="w-full">
+                      <SelectTrigger
+                        id={`state-color-${index}`}
+                        className="w-full"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent container={container}>
                         {colors.map((color) => (
-                          <SelectItem key={color.value} value={color.value}>
+                          <SelectItem
+                            key={color.value}
+                            value={color.value}
+                          >
                             <span
                               aria-hidden
                               className={`size-2 rounded-full ${color.className}`}
@@ -189,7 +225,10 @@ export function CollectionStateFields({
                         changeStatus(index, { hidden: checked !== true })
                       }
                     />
-                    <Label htmlFor={`state-visible-${index}`} className="whitespace-nowrap text-xs">
+                    <Label
+                      htmlFor={`state-visible-${index}`}
+                      className="whitespace-nowrap text-xs"
+                    >
                       В списке
                     </Label>
                   </div>
@@ -207,8 +246,8 @@ export function CollectionStateFields({
               Добавить состояние
             </Button>
             <p className="text-xs text-muted-foreground">
-              Код нельзя удалить или заменить, пока его используют записи. Название и цвет можно
-              менять свободно.
+              Код нельзя удалить или заменить, пока его используют записи.
+              Название и цвет можно менять свободно.
             </p>
           </div>
           <div className="space-y-2 border-t pt-4">
@@ -216,9 +255,14 @@ export function CollectionStateFields({
             <Select
               value={value.defaultValue}
               disabled={disabled}
-              onValueChange={(defaultValue) => onChange({ ...value, defaultValue })}
+              onValueChange={(defaultValue) =>
+                onChange({ ...value, defaultValue })
+              }
             >
-              <SelectTrigger id="state-default" className="w-full">
+              <SelectTrigger
+                id="state-default"
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={container}>
@@ -226,10 +270,14 @@ export function CollectionStateFields({
                   .filter(
                     (status, index, all) =>
                       status.value &&
-                      all.findIndex((item) => item.value === status.value) === index,
+                      all.findIndex((item) => item.value === status.value) ===
+                        index,
                   )
                   .map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
+                    <SelectItem
+                      key={status.value}
+                      value={status.value}
+                    >
                       {status.label || status.value}
                     </SelectItem>
                   ))}

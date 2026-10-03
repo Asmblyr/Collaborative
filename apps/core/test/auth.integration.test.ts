@@ -8,7 +8,10 @@ import { createApp } from "../src/app.js";
 import { bootstrapSuperuser } from "../src/auth/users.js";
 
 test("local login issues, rotates and revokes user tokens", async () => {
-  assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required for integration tests");
+  assert.ok(
+    process.env.DATABASE_URL,
+    "DATABASE_URL is required for integration tests",
+  );
   const database = knex({ client: "pg", connection: process.env.DATABASE_URL });
   const setupToken = "test-setup-token-with-enough-entropy-123456789";
   const app = createApp({
@@ -22,14 +25,21 @@ test("local login issues, rotates and revokes user tokens", async () => {
   let setupUserId: string | undefined;
 
   try {
-    const before = await app.inject({ method: "GET", url: "/auth/setup/status" });
+    const before = await app.inject({
+      method: "GET",
+      url: "/auth/setup/status",
+    });
     assert.equal(before.statusCode, 200, before.body);
     assert.equal(before.json().configured, true);
     if (before.json().needsSetup) {
       const rejected = await app.inject({
         method: "POST",
         url: "/auth/setup",
-        payload: { email: "setup@example.test", password, setupToken: "wrong-token" },
+        payload: {
+          email: "setup@example.test",
+          password,
+          setupToken: "wrong-token",
+        },
       });
       assert.equal(rejected.statusCode, 401, rejected.body);
 
@@ -40,7 +50,10 @@ test("local login issues, rotates and revokes user tokens", async () => {
       });
       assert.equal(setup.statusCode, 201, setup.body);
       setupUserId = setup.json().data.id as string;
-      const after = await app.inject({ method: "GET", url: "/auth/setup/status" });
+      const after = await app.inject({
+        method: "GET",
+        url: "/auth/setup/status",
+      });
       assert.equal(after.json().needsSetup, false);
 
       const duplicate = await app.inject({
@@ -49,7 +62,10 @@ test("local login issues, rotates and revokes user tokens", async () => {
         payload: { email: "second@example.test", password, setupToken },
       });
       assert.equal(duplicate.statusCode, 409, duplicate.body);
-      await database("asmblyr_users").withSchema("public").where({ id: setupUserId }).delete();
+      await database("asmblyr_users")
+        .withSchema("public")
+        .where({ id: setupUserId })
+        .delete();
       setupUserId = undefined;
     }
 
@@ -109,7 +125,10 @@ test("local login issues, rotates and revokes user tokens", async () => {
       payload: { refreshToken: first.refreshToken },
     });
     assert.equal(refresh.statusCode, 200, refresh.body);
-    const second = refresh.json() as { accessToken: string; refreshToken: string };
+    const second = refresh.json() as {
+      accessToken: string;
+      refreshToken: string;
+    };
     assert.notEqual(second.accessToken, first.accessToken);
     assert.notEqual(second.refreshToken, first.refreshToken);
 
@@ -159,7 +178,10 @@ test("local login issues, rotates and revokes user tokens", async () => {
       payload: { email, password },
     });
     assert.equal(lastLogin.statusCode, 200, lastLogin.body);
-    const lastPair = lastLogin.json() as { accessToken: string; refreshToken: string };
+    const lastPair = lastLogin.json() as {
+      accessToken: string;
+      refreshToken: string;
+    };
     const refreshLogout = await app.inject({
       method: "POST",
       url: "/auth/logout",
@@ -189,8 +211,15 @@ test("local login issues, rotates and revokes user tokens", async () => {
     assert.equal(disabled.statusCode, 401, disabled.body);
   } finally {
     if (setupUserId)
-      await database("asmblyr_users").withSchema("public").where({ id: setupUserId }).delete();
-    if (userId) await database("asmblyr_users").withSchema("public").where({ id: userId }).delete();
+      await database("asmblyr_users")
+        .withSchema("public")
+        .where({ id: setupUserId })
+        .delete();
+    if (userId)
+      await database("asmblyr_users")
+        .withSchema("public")
+        .where({ id: userId })
+        .delete();
     await database.destroy();
     await app.close();
   }

@@ -3,7 +3,10 @@ import { readEditableField } from "./editable-field.js";
 import { parseFieldPresentation } from "./field-presentation-validation.js";
 import { validateRelationPresentation } from "./relation-presentation.js";
 import { parsePresentedValue } from "./presented-value.js";
-import { lockedCollectionSettings, isManagedColumn } from "./settings-repository.js";
+import {
+  lockedCollectionSettings,
+  isManagedColumn,
+} from "./settings-repository.js";
 import {
   CollectionInputError,
   CollectionNotFoundError,
@@ -21,7 +24,11 @@ export async function updateFieldPresentation(
   const column = parseMutableFieldName(field);
   try {
     return await database.transaction(async (transaction) => {
-      const settings = await lockedCollectionSettings(transaction, name, "ACCESS SHARE");
+      const settings = await lockedCollectionSettings(
+        transaction,
+        name,
+        "ACCESS SHARE",
+      );
       if (isManagedColumn(settings, column))
         throw new CollectionInputError(`Field is managed by Core: ${column}`);
       const alias = await transaction("asmblyr_relation_aliases")
@@ -44,7 +51,9 @@ export async function updateFieldPresentation(
         return presentation;
       }
       const row = await readEditableField(transaction, name, column);
-      const type = row.relation_key_type ? "relation" : (row.type ?? row.data_type);
+      const type = row.relation_key_type
+        ? "relation"
+        : (row.type ?? row.data_type);
       const presentation = parseFieldPresentation(body, type);
       if (row.default_value !== null) {
         try {
@@ -67,7 +76,12 @@ export async function updateFieldPresentation(
       return presentation;
     });
   } catch (error) {
-    if (typeof error === "object" && error !== null && "code" in error && error.code === "42P01") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "42P01"
+    ) {
       throw new CollectionNotFoundError(name);
     }
     throw error;

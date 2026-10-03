@@ -10,6 +10,9 @@ export function displayValue(value: ItemValue, type: string): string {
       : `${date.toLocaleString("ru-RU", { timeZone: "UTC" })} UTC`;
   }
   if (type === "json" || type === "files") return JSON.stringify(value);
-  if (type === "decimal") return String(value).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+  if (type === "decimal")
+    return String(value)
+      .replace(/(\.\d*?)0+$/, "$1")
+      .replace(/\.$/, "");
   return String(value);
 }

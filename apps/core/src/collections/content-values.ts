@@ -5,7 +5,10 @@ import sanitizeHtml from "sanitize-html";
 import { decodeHTML } from "entities";
 import { CollectionInputError } from "./validation.js";
 
-export function parseConstraints(value: unknown, type: string): FieldConstraints {
+export function parseConstraints(
+  value: unknown,
+  type: string,
+): FieldConstraints {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new CollectionInputError("Invalid field constraints");
   const result = value as FieldConstraints;
@@ -23,7 +26,9 @@ export function parseConstraints(value: unknown, type: string): FieldConstraints
         ? bound < 0 || bound > 100000
         : bound < -2147483648 || bound > 2147483647)
     ) {
-      throw new CollectionInputError("Invalid or incompatible field constraint");
+      throw new CollectionInputError(
+        "Invalid or incompatible field constraint",
+      );
     }
   }
   if (
@@ -41,7 +46,9 @@ export function safeHtml(value: string): string {
 
 export function parseContentValue(
   value: string | number,
-  presentation: { interface?: string; constraints?: FieldConstraints } | undefined,
+  presentation:
+    | { interface?: string; constraints?: FieldConstraints }
+    | undefined,
   required = false,
 ) {
   let output = value;
@@ -57,16 +64,21 @@ export function parseContentValue(
       )
         throw new Error();
     } catch {
-      throw new Error("Supply an absolute HTTP or HTTPS URL without credentials");
+      throw new Error(
+        "Supply an absolute HTTP or HTTPS URL without credentials",
+      );
     }
   }
   if (typeof output === "string" && editor === "richtext") {
-    if (output.length > 100000) throw new Error("Formatted text exceeds 100000 characters");
+    if (output.length > 100000)
+      throw new Error("Formatted text exceeds 100000 characters");
     output = safeHtml(output);
   }
   const plain =
     typeof output === "string" && editor === "richtext"
-      ? decodeHTML(sanitizeHtml(output, { allowedTags: [], allowedAttributes: {} })).trim()
+      ? decodeHTML(
+          sanitizeHtml(output, { allowedTags: [], allowedAttributes: {} }),
+        ).trim()
       : output;
   if (required && typeof plain === "string" && !plain.trim())
     throw new Error("Field requires a nonempty value");

@@ -41,26 +41,38 @@ export function responseMetadata(
   const response = object(value),
     usage = object(response.usage);
   const responses = api === "responses";
-  const choice = object(Array.isArray(response.choices) ? response.choices[0] : undefined);
+  const choice = object(
+    Array.isArray(response.choices) ? response.choices[0] : undefined,
+  );
   return {
     model: identifier(response.model),
     responseId: identifier(response.id),
-    requestId: identifier(response._request_id) ?? identifier(response.request_id),
+    requestId:
+      identifier(response._request_id) ?? identifier(response.request_id),
     finishReason: identifier(
       responses
         ? (object(response.incomplete_details).reason ?? response.status)
         : choice.finish_reason,
     ),
     usage: {
-      inputTokens: counter(responses ? usage.input_tokens : usage.prompt_tokens),
-      outputTokens: counter(responses ? usage.output_tokens : usage.completion_tokens),
+      inputTokens: counter(
+        responses ? usage.input_tokens : usage.prompt_tokens,
+      ),
+      outputTokens: counter(
+        responses ? usage.output_tokens : usage.completion_tokens,
+      ),
       totalTokens: counter(usage.total_tokens),
       cachedTokens: counter(
-        object(responses ? usage.input_tokens_details : usage.prompt_tokens_details).cached_tokens,
+        object(
+          responses ? usage.input_tokens_details : usage.prompt_tokens_details,
+        ).cached_tokens,
       ),
       reasoningTokens: counter(
-        object(responses ? usage.output_tokens_details : usage.completion_tokens_details)
-          .reasoning_tokens,
+        object(
+          responses
+            ? usage.output_tokens_details
+            : usage.completion_tokens_details,
+        ).reasoning_tokens,
       ),
     },
   };

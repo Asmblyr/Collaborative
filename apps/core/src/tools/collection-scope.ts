@@ -8,7 +8,9 @@ export function requireMcpCollection(settings: { mcp?: { enabled: boolean } }) {
 }
 
 export function mcpCatalog(catalog: Collection[]): Collection[] {
-  const enabled = new Set(catalog.filter((c) => c.mcp?.enabled !== false).map((c) => c.name));
+  const enabled = new Set(
+    catalog.filter((c) => c.mcp?.enabled !== false).map((c) => c.name),
+  );
   return catalog
     .filter((c) => enabled.has(c.name))
     .map((c) => ({
@@ -17,7 +19,8 @@ export function mcpCatalog(catalog: Collection[]): Collection[] {
         (field) =>
           !field.relation ||
           (enabled.has(field.relation.collection) &&
-            (field.relation.kind === "m2o" || enabled.has(field.relation.throughCollection))),
+            (field.relation.kind === "m2o" ||
+              enabled.has(field.relation.throughCollection))),
       ),
     }));
 }

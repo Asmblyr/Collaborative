@@ -29,23 +29,36 @@ export function AliasFieldEditor({
     message,
     changed,
   } = editor;
-  const target = collections.find((entry) => entry.name === field.relation?.collection);
+  const target = collections.find(
+    (entry) => entry.name === field.relation?.collection,
+  );
   return (
-    <form onSubmit={submit} className="space-y-6 text-sm">
-      <Tabs defaultValue="basic" className="space-y-4">
+    <form
+      onSubmit={submit}
+      className="space-y-6 text-sm"
+    >
+      <Tabs
+        defaultValue="basic"
+        className="space-y-4"
+      >
         <TabsList className="h-auto w-full flex-wrap justify-start">
           <TabsTrigger value="basic">Основное</TabsTrigger>
           <TabsTrigger value="presentation">Отображение</TabsTrigger>
           <TabsTrigger value="relation">Связанные записи</TabsTrigger>
           <TabsTrigger value="search">Поиск</TabsTrigger>
         </TabsList>
-        <TabsContent value="basic" className="space-y-4">
+        <TabsContent
+          value="basic"
+          className="space-y-4"
+        >
           <p>
             <span className="font-medium">Поле:</span> <code>{field.name}</code>
           </p>
           <p>
             <span className="font-medium">Вид:</span>{" "}
-            {field.relation?.kind === "m2m" ? "Многие ко многим" : "Один ко многим"}
+            {field.relation?.kind === "m2m"
+              ? "Многие ко многим"
+              : "Один ко многим"}
           </p>
           <p>
             <span className="font-medium">Связанная коллекция:</span>{" "}
@@ -96,15 +109,26 @@ export function AliasFieldEditor({
         </TabsContent>
       </Tabs>
       {message && (
-        <p role="status" className="text-sm text-destructive">
+        <p
+          role="status"
+          className="text-sm text-destructive"
+        >
           {message}
         </p>
       )}
       <div className="flex gap-2">
-        <Button type="submit" disabled={pending || !changed}>
+        <Button
+          type="submit"
+          disabled={pending || !changed}
+        >
           {pending ? "Сохраняем…" : "Сохранить изменения"}
         </Button>
-        <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={pending}
+          onClick={onCancel}
+        >
           Отмена
         </Button>
       </div>

@@ -1,7 +1,9 @@
 import { lstat, readdir } from "node:fs/promises";
 
 /** Missing declarations are valid for plugins that only provide handlers. */
-export async function scanCollectionFiles(directory: string): Promise<string[]> {
+export async function scanCollectionFiles(
+  directory: string,
+): Promise<string[]> {
   const info = await lstat(directory).catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT") return null;
     throw error;
@@ -13,7 +15,9 @@ export async function scanCollectionFiles(directory: string): Promise<string[]> 
   const files: string[] = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     if (entry.isSymbolicLink() || entry.isDirectory()) {
-      throw new Error(`Place declarations directly in server/collections: ${entry.name}`);
+      throw new Error(
+        `Place declarations directly in server/collections: ${entry.name}`,
+      );
     }
     if (!entry.name.endsWith(".ts") || entry.name.endsWith(".d.ts")) continue;
     if (!/^[a-z][a-z0-9_]*\.ts$/.test(entry.name)) {

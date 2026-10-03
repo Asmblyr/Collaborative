@@ -5,7 +5,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr/kit/ui/select";
-import type { FilterCondition, FilterField, FilterScope } from "./item-filter-options";
+import type {
+  FilterCondition,
+  FilterField,
+  FilterScope,
+} from "./item-filter-options";
 import {
   changeRelationSelectionOperator,
   isManyRelation,
@@ -48,7 +52,9 @@ export function ItemFilterRelationOperator({
   return (
     <Select
       value={relationSelectionOperator(condition, scope)}
-      onValueChange={(op) => onChange(changeRelationSelectionOperator(condition, scope, op))}
+      onValueChange={(op) =>
+        onChange(changeRelationSelectionOperator(condition, scope, op))
+      }
     >
       <SelectTrigger
         aria-label="Условие для связи"
@@ -59,7 +65,10 @@ export function ItemFilterRelationOperator({
       </SelectTrigger>
       <SelectContent>
         {options.map(([value, label]) => (
-          <SelectItem key={value} value={value}>
+          <SelectItem
+            key={value}
+            value={value}
+          >
             {label}
           </SelectItem>
         ))}

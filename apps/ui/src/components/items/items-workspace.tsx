@@ -71,7 +71,13 @@ export function ItemsWorkspace({
     selectPage,
     removeSelected,
     saveBulk,
-  } = useItemSelection({ collection, items, page, setMessage, onNavigate: navigate });
+  } = useItemSelection({
+    collection,
+    items,
+    page,
+    setMessage,
+    onNavigate: navigate,
+  });
   const columns = useItemColumns(collection, userId, preferences);
   const {
     root: columnRoot,
@@ -89,10 +95,20 @@ export function ItemsWorkspace({
   const canRead = Boolean(collection.access.read);
   const itemKey = (item: Item) => String(item[collection.primaryKey.name]);
   const canCreate =
-    Boolean(collection.access.create) && (collection.mode === "multiple" || page.total === "0");
+    Boolean(collection.access.create) &&
+    (collection.mode === "multiple" || page.total === "0");
 
-  function navigate(changes: Partial<ItemPage>, nextFilter = filter, nextQuery = q) {
-    const href = itemsPageHref(pathname, { ...page, ...changes }, nextQuery, nextFilter);
+  function navigate(
+    changes: Partial<ItemPage>,
+    nextFilter = filter,
+    nextQuery = q,
+  ) {
+    const href = itemsPageHref(
+      pathname,
+      { ...page, ...changes },
+      nextQuery,
+      nextFilter,
+    );
     setCreating(false);
     setSelected(new Set());
     setConfirmDelete(false);
@@ -106,8 +122,14 @@ export function ItemsWorkspace({
   }
 
   const createButton = canCreate && (
-    <Button type="button" size="sm" onClick={openCreate} disabled={pending}>
-      <Plus aria-hidden="true" /> {collection.mode === "single" ? "Создать объект" : "Новая запись"}
+    <Button
+      type="button"
+      size="sm"
+      onClick={openCreate}
+      disabled={pending}
+    >
+      <Plus aria-hidden="true" />{" "}
+      {collection.mode === "single" ? "Создать объект" : "Новая запись"}
     </Button>
   );
 
@@ -140,14 +162,24 @@ export function ItemsWorkspace({
         <div className="flex justify-end">{createButton}</div>
       )}
       {message && !recordId && !creating && (
-        <p role="status" className="shrink-0 rounded-lg bg-muted px-4 py-3 text-sm">
+        <p
+          role="status"
+          className="shrink-0 rounded-lg bg-muted px-4 py-3 text-sm"
+        >
           {message}
         </p>
       )}
       {columns.error && (
-        <p role="alert" className="shrink-0 text-sm text-destructive">
+        <p
+          role="alert"
+          className="shrink-0 text-sm text-destructive"
+        >
           {columns.error}
-          <Button size="sm" variant="ghost" onClick={columns.retry}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={columns.retry}
+          >
             Повторить
           </Button>
         </p>
@@ -160,7 +192,9 @@ export function ItemsWorkspace({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
           <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 py-3">
             {collection.mode === "single" && (
-              <span className="text-sm text-muted-foreground">Коллекция с одним объектом</span>
+              <span className="text-sm text-muted-foreground">
+                Коллекция с одним объектом
+              </span>
             )}
             {items.length > 0 && (
               <span className="hidden text-xs text-muted-foreground lg:block">
@@ -173,7 +207,9 @@ export function ItemsWorkspace({
                 catalog={catalog}
                 userId={userId}
                 filter={filter}
-                onApply={(group) => navigate({ number: 1 }, group ? JSON.stringify(group) : "")}
+                onApply={(group) =>
+                  navigate({ number: 1 }, group ? JSON.stringify(group) : "")
+                }
               />
               <ItemViewMenu
                 all={columns.all}
@@ -192,7 +228,9 @@ export function ItemsWorkspace({
                       sort: view.definition.sort.field,
                       direction: view.definition.sort.direction,
                     },
-                    view.definition.filter ? JSON.stringify(view.definition.filter) : "",
+                    view.definition.filter
+                      ? JSON.stringify(view.definition.filter)
+                      : "",
                     view.definition.q,
                   );
                 }}
@@ -201,7 +239,11 @@ export function ItemsWorkspace({
                   changeColumnVisibility(name, show, () => {
                     columns.toggle(name, show);
                     if (!show && page.sort === name)
-                      navigate({ number: 1, sort: collection.primaryKey.name, direction: "asc" });
+                      navigate({
+                        number: 1,
+                        sort: collection.primaryKey.name,
+                        direction: "asc",
+                      });
                   })
                 }
               />
@@ -213,7 +255,9 @@ export function ItemsWorkspace({
             catalog={catalog}
             q={q}
             filter={filter}
-            onChange={(nextFilter, nextQuery) => navigate({ number: 1 }, nextFilter, nextQuery)}
+            onChange={(nextFilter, nextQuery) =>
+              navigate({ number: 1 }, nextFilter, nextQuery)
+            }
           />
           <div
             ref={columnRoot}
@@ -250,7 +294,10 @@ export function ItemsWorkspace({
                   navigate({
                     number: 1,
                     sort: name,
-                    direction: page.sort === name && page.direction === "asc" ? "desc" : "asc",
+                    direction:
+                      page.sort === name && page.direction === "asc"
+                        ? "desc"
+                        : "asc",
                   })
                 }
                 onMove={columns.move}
@@ -327,7 +374,10 @@ export function ItemsWorkspace({
       )}
       {creating && (
         <ItemEditorDialog
-          request={{ collection: collection.name, onSaved: () => setMessage("Запись создана") }}
+          request={{
+            collection: collection.name,
+            onSaved: () => setMessage("Запись создана"),
+          }}
           catalog={catalog}
           onClose={() => setCreating(false)}
         />

@@ -36,11 +36,15 @@ export function ItemFilterMenu({
           onKeyDown={(event) => {
             if (event.key === "ArrowDown") {
               event.preventDefault();
-              list.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+              list.current
+                ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
+                ?.focus();
             }
             if (event.key === "Enter") {
               event.preventDefault();
-              list.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.click();
+              list.current
+                ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
+                ?.click();
             }
           }}
         />
@@ -51,7 +55,9 @@ export function ItemFilterMenu({
         onKeyDown={(event) => {
           if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
           const buttons = Array.from(
-            event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+            event.currentTarget.querySelectorAll<HTMLButtonElement>(
+              "button:not(:disabled)",
+            ),
           );
           const index = buttons.indexOf(event.target as HTMLButtonElement);
           if (index < 0) return;

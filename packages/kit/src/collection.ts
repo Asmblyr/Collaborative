@@ -54,7 +54,8 @@ export interface CollectionDefinition<Name extends string = string> {
 
 /** Describes a collection without validating it at runtime or changing the database. */
 export function defineCollection<const Definition extends CollectionDefinition>(
-  definition: Definition & Record<Exclude<keyof Definition, keyof CollectionDefinition>, never>,
+  definition: Definition &
+    Record<Exclude<keyof Definition, keyof CollectionDefinition>, never>,
 ): Definition {
   return definition;
 }

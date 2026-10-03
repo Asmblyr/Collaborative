@@ -28,7 +28,9 @@ export function registerPluginBoundary(app: FastifyInstance): void {
       request.headers["x-asmblyr-plugin-route"] === "1" &&
       !request.routeOptions.config.asmblyrPlugin
     ) {
-      return reply.code(404).send({ code: "NOT_FOUND", message: "Plugin endpoint not found" });
+      return reply
+        .code(404)
+        .send({ code: "NOT_FOUND", message: "Plugin endpoint not found" });
     }
   });
 }

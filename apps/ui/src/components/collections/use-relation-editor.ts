@@ -8,7 +8,8 @@ export type Kind = "m2o" | "o2m" | "m2m";
 export type DeleteAction = "restrict" | "setNull" | "setDefault" | "cascade";
 export type Section = "basic" | "structure" | "behavior";
 type FormIssue = { section: Section; id: string; message: string };
-const validName = (value: string) => value.length <= 63 && /^[a-z][a-z0-9_]*$/.test(value);
+const validName = (value: string) =>
+  value.length <= 63 && /^[a-z][a-z0-9_]*$/.test(value);
 
 export function useRelationEditor(
   collection: string,
@@ -29,8 +30,12 @@ export function useRelationEditor(
   const [sourceKey, setSourceKey] = useState("");
   const [targetKey, setTargetKey] = useState("");
   const [allowDuplicates, setAllowDuplicates] = useState(false);
-  const [sourceOnDelete, setSourceOnDelete] = useState<"restrict" | "cascade">("cascade");
-  const [targetOnDelete, setTargetOnDelete] = useState<"restrict" | "cascade">("cascade");
+  const [sourceOnDelete, setSourceOnDelete] = useState<"restrict" | "cascade">(
+    "cascade",
+  );
+  const [targetOnDelete, setTargetOnDelete] = useState<"restrict" | "cascade">(
+    "cascade",
+  );
   const [required, setRequired] = useState(false);
   const [nullable, setNullable] = useState(true);
   const [onDelete, setOnDelete] = useState<DeleteAction>("restrict");
@@ -65,11 +70,14 @@ export function useRelationEditor(
         field.relation?.kind === "m2o" &&
         field.relation.collection === collection,
     ) ?? [];
-  const junctionName = junctionCollection || `${collection}_${targetCollection}`;
+  const junctionName =
+    junctionCollection || `${collection}_${targetCollection}`;
   const sourceKeyName =
-    sourceKey || (collection === targetCollection ? "source_id" : `${collection}_id`);
+    sourceKey ||
+    (collection === targetCollection ? "source_id" : `${collection}_id`);
   const targetKeyName =
-    targetKey || (collection === targetCollection ? "target_id" : `${targetCollection}_id`);
+    targetKey ||
+    (collection === targetCollection ? "target_id" : `${targetCollection}_id`);
 
   useEffect(() => {
     const id = focusField.current;
@@ -83,11 +91,23 @@ export function useRelationEditor(
 
   function validate(): FormIssue | null {
     if (!validName(name))
-      return { section: "basic", id: "relation-name", message: "Введите корректное имя поля" };
+      return {
+        section: "basic",
+        id: "relation-name",
+        message: "Введите корректное имя поля",
+      };
     if (!targetCollection)
-      return { section: "basic", id: "relation-target", message: "Выберите связанную коллекцию" };
+      return {
+        section: "basic",
+        id: "relation-target",
+        message: "Выберите связанную коллекцию",
+      };
     if (kind !== "o2m" && reverseField && !validName(reverseField)) {
-      return { section: "basic", id: "relation-reverse", message: "Проверьте имя обратного поля" };
+      return {
+        section: "basic",
+        id: "relation-reverse",
+        message: "Проверьте имя обратного поля",
+      };
     }
     if (kind === "o2m") {
       if (reuseExisting && !foreignKey) {
@@ -202,11 +222,14 @@ export function useRelationEditor(
         break;
     }
     try {
-      const response = await fetch(`/api/collections/${encodeURIComponent(collection)}/relations`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `/api/collections/${encodeURIComponent(collection)}/relations`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
       if (!response.ok) {
         const result = (await response.json()) as { message?: string };
         setMessage(result.message ?? "Не удалось создать связь");

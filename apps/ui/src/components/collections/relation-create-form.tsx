@@ -1,6 +1,10 @@
 "use client";
 
-import { useRelationEditor, type Kind, type Section } from "./use-relation-editor";
+import {
+  useRelationEditor,
+  type Kind,
+  type Section,
+} from "./use-relation-editor";
 import { NameInput } from "./relation-name-input";
 import { RelationBehaviorSettings } from "./relation-behavior-settings";
 
@@ -108,20 +112,34 @@ export function RelationCreateForm({
           setMessage("");
         }}
       >
-        <TabsList className={`grid w-full ${kind === "m2o" ? "grid-cols-2" : "grid-cols-3"}`}>
-          <TabsTrigger value="basic" disabled={pending}>
+        <TabsList
+          className={`grid w-full ${kind === "m2o" ? "grid-cols-2" : "grid-cols-3"}`}
+        >
+          <TabsTrigger
+            value="basic"
+            disabled={pending}
+          >
             Основное
           </TabsTrigger>
           {kind !== "m2o" && (
-            <TabsTrigger value="structure" disabled={pending}>
+            <TabsTrigger
+              value="structure"
+              disabled={pending}
+            >
               Структура
             </TabsTrigger>
           )}
-          <TabsTrigger value="behavior" disabled={pending}>
+          <TabsTrigger
+            value="behavior"
+            disabled={pending}
+          >
             Поведение
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="basic" className="space-y-5 pt-5">
+        <TabsContent
+          value="basic"
+          className="space-y-5 pt-5"
+        >
           <NameInput
             id="relation-name"
             label={kind === "m2o" ? "Имя внешнего ключа" : "Имя поля связи"}
@@ -146,13 +164,21 @@ export function RelationCreateForm({
               }}
               disabled={pending}
             >
-              <SelectTrigger id="relation-target" className="h-10 w-full">
+              <SelectTrigger
+                id="relation-target"
+                className="h-10 w-full"
+              >
                 <SelectValue placeholder="Выберите коллекцию" />
               </SelectTrigger>
               <SelectContent container={portalContainer}>
                 {collections.map((entry) => (
-                  <SelectItem key={entry.name} value={entry.name}>
-                    {entry.displayName ? `${entry.displayName} (${entry.name})` : entry.name}
+                  <SelectItem
+                    key={entry.name}
+                    value={entry.name}
+                  >
+                    {entry.displayName
+                      ? `${entry.displayName} (${entry.name})`
+                      : entry.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -170,7 +196,10 @@ export function RelationCreateForm({
         </TabsContent>
 
         {kind !== "m2o" && (
-          <TabsContent value="structure" className="space-y-5 pt-5">
+          <TabsContent
+            value="structure"
+            className="space-y-5 pt-5"
+          >
             {!targetCollection && (
               <p className="text-sm text-muted-foreground">
                 Сначала выберите связанную коллекцию на вкладке «Основное».
@@ -193,7 +222,9 @@ export function RelationCreateForm({
                 )}
                 {reuseExisting ? (
                   <div className="space-y-2">
-                    <Label htmlFor="relation-existing-key">Внешний ключ в {targetCollection}</Label>
+                    <Label htmlFor="relation-existing-key">
+                      Внешний ключ в {targetCollection}
+                    </Label>
                     <Select
                       value={foreignKey}
                       onValueChange={(value) => {
@@ -202,12 +233,18 @@ export function RelationCreateForm({
                       }}
                       disabled={pending}
                     >
-                      <SelectTrigger id="relation-existing-key" className="h-10 w-full">
+                      <SelectTrigger
+                        id="relation-existing-key"
+                        className="h-10 w-full"
+                      >
                         <SelectValue placeholder="Выберите поле" />
                       </SelectTrigger>
                       <SelectContent container={portalContainer}>
                         {existingKeys.map((field) => (
-                          <SelectItem key={field.name} value={field.name}>
+                          <SelectItem
+                            key={field.name}
+                            value={field.name}
+                          >
                             {field.name}
                           </SelectItem>
                         ))}
@@ -255,7 +292,9 @@ export function RelationCreateForm({
                 <label className="flex items-center gap-3 text-sm">
                   <Checkbox
                     checked={allowDuplicates}
-                    onCheckedChange={(checked) => setAllowDuplicates(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setAllowDuplicates(checked === true)
+                    }
                   />
                   Разрешить повторные пары записей
                 </label>
@@ -272,10 +311,18 @@ export function RelationCreateForm({
         />
       </Tabs>
       <div className="flex gap-2">
-        <Button type="submit" disabled={pending}>
+        <Button
+          type="submit"
+          disabled={pending}
+        >
           {pending ? "Создаём…" : "Создать связь"}
         </Button>
-        <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={pending}
+          onClick={onCancel}
+        >
           Отмена
         </Button>
       </div>

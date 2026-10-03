@@ -20,9 +20,14 @@ export async function saveFieldMetadata(
       configuredFields.map((field) => ({
         collection_name: collectionName,
         field_name: field.name,
-        semantic_type: ["email", "file", "files"].includes(field.type) ? field.type : null,
+        semantic_type: ["email", "file", "files"].includes(field.type)
+          ? field.type
+          : null,
         required: field.required,
-        default_value: field.defaultValue === undefined ? null : JSON.stringify(field.defaultValue),
+        default_value:
+          field.defaultValue === undefined
+            ? null
+            : JSON.stringify(field.defaultValue),
         searchable: field.searchable !== false,
       })),
     );

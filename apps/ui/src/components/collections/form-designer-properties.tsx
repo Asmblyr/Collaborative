@@ -45,7 +45,9 @@ export function FormDesignerProperties({
   if (tab)
     return (
       <div className="space-y-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Вкладка</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Вкладка
+        </p>
         <label className="block space-y-2 text-sm">
           Название вкладки
           <Input
@@ -63,8 +65,8 @@ export function FormDesignerProperties({
           />
         </label>
         <p className="text-xs text-muted-foreground">
-          Вкладка появится в форме, если содержит доступные поля. При одной вкладке переключатель не
-          показывается.
+          Вкладка появится в форме, если содержит доступные поля. При одной
+          вкладке переключатель не показывается.
         </p>
         {layout.tabs.length > 1 && (
           <Button
@@ -73,7 +75,10 @@ export function FormDesignerProperties({
             disabled={disabled}
             onClick={() => {
               const tabs = layout.tabs.filter((t) => t.id !== tab.id);
-              tabs[0] = { ...tabs[0], children: [...tabs[0].children, ...tab.children] };
+              tabs[0] = {
+                ...tabs[0],
+                children: [...tabs[0].children, ...tab.children],
+              };
               onChange({ ...layout, tabs });
               onSelect(tabs[0].id);
             }}
@@ -83,9 +88,18 @@ export function FormDesignerProperties({
         )}
       </div>
     );
-  if (!node) return <p className="text-sm text-muted-foreground">Выберите элемент слева.</p>;
+  if (!node)
+    return (
+      <p className="text-sm text-muted-foreground">Выберите элемент слева.</p>
+    );
   const update = (patch: Partial<typeof node>) =>
-    onChange(changeFormNode(layout, node.id, (n) => ({ ...n, ...patch }) as typeof node));
+    onChange(
+      changeFormNode(
+        layout,
+        node.id,
+        (n) => ({ ...n, ...patch }) as typeof node,
+      ),
+    );
   const parent = formParentOf(layout, node.id)!;
   const childFields = new Set(fieldsInNodes([node]));
   return (
@@ -139,7 +153,10 @@ export function FormDesignerProperties({
           disabled={disabled}
           onValueChange={(width) => update({ width: width as "full" | "half" })}
         >
-          <SelectTrigger aria-label="Ширина поля в форме" className="w-full">
+          <SelectTrigger
+            aria-label="Ширина поля в форме"
+            className="w-full"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent container={container}>
@@ -157,14 +174,20 @@ export function FormDesignerProperties({
             onChange(appendFormNode(removeFormNode(layout, node.id), id, node))
           }
         >
-          <SelectTrigger aria-label="Перенести в" className="w-full">
+          <SelectTrigger
+            aria-label="Перенести в"
+            className="w-full"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent container={container}>
             {formParents(layout, node.id)
               .filter((p) => p.depth + formNodeDepth(node) <= 3)
               .map((p) => (
-                <SelectItem key={p.id} value={p.id}>
+                <SelectItem
+                  key={p.id}
+                  value={p.id}
+                >
                   {p.label}
                 </SelectItem>
               ))}
@@ -195,7 +218,9 @@ export function FormDesignerProperties({
           onSelect(parent);
         }}
       >
-        {node.kind === "group" ? "Убрать секцию, оставить поля" : "Убрать из раскладки"}
+        {node.kind === "group"
+          ? "Убрать секцию, оставить поля"
+          : "Убрать из раскладки"}
       </Button>
       {node.kind === "field" && (
         <p className="text-xs text-muted-foreground">

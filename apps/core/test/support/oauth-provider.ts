@@ -5,7 +5,9 @@ import knex from "knex";
 import { createApp } from "../../src/app.js";
 import { issueUserTokens } from "../../src/auth/tokens.js";
 
-export async function oauthFixture(options: { issuer?: string; redirectUri?: string } = {}) {
+export async function oauthFixture(
+  options: { issuer?: string; redirectUri?: string } = {},
+) {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
   const { privateKey } = await generateKeyPair("RS256", { extractable: true });
   const config = {
@@ -13,10 +15,21 @@ export async function oauthFixture(options: { issuer?: string; redirectUri?: str
     cookieKeys: [randomBytes(32).toString("base64url")],
     storageKey: randomBytes(32).toString("base64url"),
     jwks: {
-      keys: [{ ...(await exportJWK(privateKey)), kid: "test-rsa", alg: "RS256", use: "sig" }],
+      keys: [
+        {
+          ...(await exportJWK(privateKey)),
+          kid: "test-rsa",
+          alg: "RS256",
+          use: "sig",
+        },
+      ],
     },
   };
-  let app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false, oauth: config });
+  let app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+    oauth: config,
+  });
   const users = [randomUUID(), randomUUID()];
   await db("public.asmblyr_users").insert(
     users.map((id, index) => ({
@@ -35,7 +48,9 @@ export async function oauthFixture(options: { issuer?: string; redirectUri?: str
     description: "OIDC test",
     enabled: true,
     clientType: "public",
-    redirectUris: [options.redirectUri ?? "http://localhost:4567/oauth/callback"],
+    redirectUris: [
+      options.redirectUri ?? "http://localhost:4567/oauth/callback",
+    ],
     userIds: [users[0]],
     audience: "lavinmq",
     scopes: ["lavinmq.tag:monitoring", "lavinmq.read:%2F/*"],
@@ -83,7 +98,10 @@ export async function oauthFixture(options: { issuer?: string; redirectUri?: str
       code_challenge_method: "S256",
       ...parameters,
     });
-    const start = await app.inject({ url: `/oauth/auth?${query}`, headers: { cookie: cookies() } });
+    const start = await app.inject({
+      url: `/oauth/auth?${query}`,
+      headers: { cookie: cookies() },
+    });
     remember(start);
     assert.equal(start.statusCode, 303, start.body);
     const location = new URL(String(start.headers.location));
@@ -93,7 +111,11 @@ export async function oauthFixture(options: { issuer?: string; redirectUri?: str
       headers: { ...headers, cookie: cookies() },
     });
     assert.equal(details.statusCode, 200, details.body);
-    async function decision(approve = true, overrides = {}, currentHeaders = headers) {
+    async function decision(
+      approve = true,
+      overrides = {},
+      currentHeaders = headers,
+    ) {
       return app.inject({
         method: "POST",
         url: `/oauth-interactions/${uid}`,
@@ -110,21 +132,32 @@ export async function oauthFixture(options: { issuer?: string; redirectUri?: str
       remember(response);
       return response;
     }
-    async function consent(approve = true, overrides = {}, currentHeaders = headers) {
+    async function consent(
+      approve = true,
+      overrides = {},
+      currentHeaders = headers,
+    ) {
       const response = await decision(approve, overrides, currentHeaders);
       if (response.statusCode !== 200) return response;
       return resume(response.json().data.redirectTo);
     }
     return { verifier, query, start, details, consent, decision, resume, jar };
   }
-  function exchange(code: string, verifier: string, clientId = application.id, secret?: string) {
+  function exchange(
+    code: string,
+    verifier: string,
+    clientId = application.id,
+    secret?: string,
+  ) {
     return app.inject({
       method: "POST",
       url: "/oauth/token",
       headers: {
         "content-type": "application/x-www-form-urlencoded",
         ...(secret
-          ? { authorization: `Basic ${Buffer.from(`${clientId}:${secret}`).toString("base64")}` }
+          ? {
+              authorization: `Basic ${Buffer.from(`${clientId}:${secret}`).toString("base64")}`,
+            }
           : {}),
       },
       payload: new URLSearchParams({
@@ -140,13 +173,19 @@ export async function oauthFixture(options: { issuer?: string; redirectUri?: str
     await app.close();
     await db("public.asmblyr_oauth_state").delete();
     await db("public.asmblyr_oauth_apps").delete();
-    await db("public.asmblyr_security_events").whereIn("actor_id", users).delete();
+    await db("public.asmblyr_security_events")
+      .whereIn("actor_id", users)
+      .delete();
     await db("public.asmblyr_users").whereIn("id", users).delete();
     await db.destroy();
   }
   async function restart() {
     await app.close();
-    app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false, oauth: config });
+    app = createApp({
+      databaseUrl: process.env.DATABASE_URL,
+      logger: false,
+      oauth: config,
+    });
   }
   return {
     get app() {

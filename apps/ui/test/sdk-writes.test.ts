@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { saveEditorDraft } from "../src/lib/item-write";
-import { serializeDraft, type RecordDraft } from "../src/components/items/record-draft-model";
+import {
+  serializeDraft,
+  type RecordDraft,
+} from "../src/components/items/record-draft-model";
 
 test("new and existing editor records save through one SDK commit with their relations", async (t) => {
   const requests: { url: string; body: unknown }[] = [];
@@ -18,19 +21,34 @@ test("new and existing editor records save through one SDK commit with their rel
     preview: { title: "UI only" },
     label: "Preview",
     references: {
-      category_id: { key: "draft:category", values: { title: "Category" }, label: "Category" },
+      category_id: {
+        key: "draft:category",
+        values: { title: "Category" },
+        label: "Category",
+      },
     },
     relations: {
       tags: {
         attach: [
-          { id: "1", label: "Label", preview: { id: 1 }, record: { values: { note: "Link" } } },
+          {
+            id: "1",
+            label: "Label",
+            preview: { id: 1 },
+            record: { values: { note: "Link" } },
+          },
         ],
       },
     },
   };
-  assert.equal(await saveEditorDraft("articles", serializeDraft(draft)), "saved");
   assert.equal(
-    await saveEditorDraft("articles", serializeDraft({ values: { title: "New" } })),
+    await saveEditorDraft("articles", serializeDraft(draft)),
+    "saved",
+  );
+  assert.equal(
+    await saveEditorDraft(
+      "articles",
+      serializeDraft({ values: { title: "New" } }),
+    ),
     "saved",
   );
   assert.equal(requests.length, 2);
@@ -38,10 +56,21 @@ test("new and existing editor records save through one SDK commit with their rel
   assert.deepEqual(requests[0].body, {
     id: "4",
     values: { title: "Article" },
-    references: { category_id: { values: { title: "Category" }, references: {}, relations: {} } },
+    references: {
+      category_id: {
+        values: { title: "Category" },
+        references: {},
+        relations: {},
+      },
+    },
     relations: {
       tags: {
-        attach: [{ id: "1", record: { values: { note: "Link" }, references: {}, relations: {} } }],
+        attach: [
+          {
+            id: "1",
+            record: { values: { note: "Link" }, references: {}, relations: {} },
+          },
+        ],
       },
     },
   });
@@ -57,7 +86,10 @@ test("a relation conflict stays actionable and the editor draft is not changed",
     );
   });
   const draft = { id: "1", values: { title: "Unsaved" } };
-  await assert.rejects(saveEditorDraft("articles", draft), /Изменения не сохранены/);
+  await assert.rejects(
+    saveEditorDraft("articles", draft),
+    /Изменения не сохранены/,
+  );
   assert.deepEqual(draft, { id: "1", values: { title: "Unsaved" } });
   assert.equal(calls, 1);
 });

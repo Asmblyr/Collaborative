@@ -16,7 +16,14 @@ export type FilterNode = FilterGroup | FilterCondition;
 export interface FilterField {
   name: string;
   label: string;
-  type: "text" | "email" | "integer" | "decimal" | "boolean" | "datetime" | "key";
+  type:
+    | "text"
+    | "email"
+    | "integer"
+    | "decimal"
+    | "boolean"
+    | "datetime"
+    | "key";
   keyType?: Collection["primaryKey"]["type"];
   nullable: boolean;
   relationKind?: "m2o" | "o2m" | "m2m";
@@ -69,13 +76,27 @@ function fieldsOf(
   for (const field of collection.fields) {
     if (!visible(collection, field.name) || field.type === "alias") continue;
     const type =
-      field.type === "relation" || field.type === "file" || field.type === "uuid"
+      field.type === "relation" ||
+      field.type === "file" ||
+      field.type === "uuid"
         ? "key"
         : field.type;
-    if (!["text", "email", "integer", "decimal", "boolean", "datetime", "key"].includes(type))
+    if (
+      ![
+        "text",
+        "email",
+        "integer",
+        "decimal",
+        "boolean",
+        "datetime",
+        "key",
+      ].includes(type)
+    )
       continue;
     const fieldLabel = field.presentation?.label || field.name;
-    const label = prefix ? `${prefix.slice(0, -1)} → ${fieldLabel}` : fieldLabel;
+    const label = prefix
+      ? `${prefix.slice(0, -1)} → ${fieldLabel}`
+      : fieldLabel;
     fields.push({
       ...add(
         field.name,
@@ -95,7 +116,9 @@ function fieldsOf(
   }
   for (const timestamp of ["created_at", "updated_at"] as const) {
     if (
-      collection.timestamps[timestamp === "created_at" ? "createdAt" : "updatedAt"] &&
+      collection.timestamps[
+        timestamp === "created_at" ? "createdAt" : "updatedAt"
+      ] &&
       visible(collection, timestamp)
     ) {
       fields.push(
@@ -111,19 +134,31 @@ function fieldsOf(
   return fields;
 }
 
-export function filterFields(collection: Collection, catalog: Collection[]): FilterField[] {
+export function filterFields(
+  collection: Collection,
+  catalog: Collection[],
+): FilterField[] {
   const fields = fieldsOf(collection);
   for (const field of collection.fields) {
     if (!field.relation || !visible(collection, field.name)) continue;
-    const target = catalog.find((entry) => entry.name === field.relation?.collection);
+    const target = catalog.find(
+      (entry) => entry.name === field.relation?.collection,
+    );
     if (!target?.access.read) continue;
-    if (field.relation.kind === "o2m" && !visible(target, field.relation.throughField)) continue;
+    if (
+      field.relation.kind === "o2m" &&
+      !visible(target, field.relation.throughField)
+    )
+      continue;
     fields.push(...fieldsOf(target, `${field.name}.`, field.relation.kind));
   }
   return fields;
 }
 
-export function filterScopes(collection: Collection, catalog: Collection[]): FilterScope[] {
+export function filterScopes(
+  collection: Collection,
+  catalog: Collection[],
+): FilterScope[] {
   const fields = filterFields(collection, catalog);
   const scopes: FilterScope[] = [
     {
@@ -135,11 +170,14 @@ export function filterScopes(collection: Collection, catalog: Collection[]): Fil
   for (const relationField of collection.fields) {
     const relation = relationField.relation;
     if (!relation) continue;
-    const related = fields.filter((field) => field.name.startsWith(`${relationField.name}.`));
+    const related = fields.filter((field) =>
+      field.name.startsWith(`${relationField.name}.`),
+    );
     if (related.length === 0) continue;
     const target = catalog.find((entry) => entry.name === relation.collection);
     const presenceField = related.find(
-      (field) => field.name === `${relationField.name}.${target?.primaryKey.name}`,
+      (field) =>
+        field.name === `${relationField.name}.${target?.primaryKey.name}`,
     )?.name;
     scopes.push({
       id: relationField.name,
@@ -205,23 +243,31 @@ export function fieldOperators(field: FilterField): string[] {
       "notEmpty",
     );
   }
-  if (field.type === "integer" || field.type === "decimal" || field.type === "datetime") {
+  if (
+    field.type === "integer" ||
+    field.type === "decimal" ||
+    field.type === "datetime"
+  ) {
     ops.push("gt", "gte", "lt", "lte", "between", "notBetween");
   }
   // Imported managed timestamps can retain unknown historical dates.
-  if (field.nullable || field.type === "datetime") ops.push("isNull", "notNull");
+  if (field.nullable || field.type === "datetime")
+    ops.push("isNull", "notNull");
   return ops;
 }
 
 export const hasNoValue = (op: string) =>
-  ["isNull", "notNull", "isEmpty", "notEmpty", "exists", "notExists"].includes(op);
+  ["isNull", "notNull", "isEmpty", "notEmpty", "exists", "notExists"].includes(
+    op,
+  );
 export const hasMultipleValues = (op: string) =>
   ["in", "notIn", "between", "notBetween"].includes(op);
 
 export function readFilter(raw: string): FilterGroup {
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed)) return { logic: "and", children: parsed as FilterCondition[] };
+    if (Array.isArray(parsed))
+      return { logic: "and", children: parsed as FilterCondition[] };
     if (
       parsed &&
       typeof parsed === "object" &&

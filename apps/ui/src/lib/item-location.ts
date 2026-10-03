@@ -8,7 +8,12 @@ export function itemHref(collection: string, id: string): string {
 
 export function itemsPageHref(
   pathname: string,
-  page: { number: number | bigint; size: number; sort: string; direction: "asc" | "desc" },
+  page: {
+    number: number | bigint;
+    size: number;
+    sort: string;
+    direction: "asc" | "desc";
+  },
   q: string,
   filter: string,
 ): string {
@@ -24,12 +29,18 @@ export function itemsPageHref(
   return `${pathname}?${query}`;
 }
 
-export function isCollectionPath(pathname: string, collection: string): boolean {
+export function isCollectionPath(
+  pathname: string,
+  collection: string,
+): boolean {
   const base = collectionHref(collection);
   return pathname === base || pathname.startsWith(`${base}/`);
 }
 
-export function recordIdFromPath(pathname: string, collection: string): string | null {
+export function recordIdFromPath(
+  pathname: string,
+  collection: string,
+): string | null {
   const prefix = `${collectionHref(collection)}/`;
   if (!pathname.startsWith(prefix)) return null;
   const segment = pathname.slice(prefix.length);

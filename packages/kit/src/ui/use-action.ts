@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { modelField, modelValidator, type ModelDefinition } from "../model-schema.js";
+import {
+  modelField,
+  modelValidator,
+  type ModelDefinition,
+} from "../model-schema.js";
 import type { PluginPageProps } from "../ui.js";
 import type { PluginActionResult } from "@asmblyr/contracts";
 
@@ -12,16 +16,26 @@ export function useAction<Input extends object, Output extends object>(
   options: { path: string; initialInput: Input },
 ) {
   type Values = Partial<Input>;
-  const inputValidator = useMemo(() => modelValidator<Input>(contract.inputSchema), [contract]);
-  const outputValidator = useMemo(() => modelValidator<Output>(contract.outputSchema), [contract]);
+  const inputValidator = useMemo(
+    () => modelValidator<Input>(contract.inputSchema),
+    [contract],
+  );
+  const outputValidator = useMemo(
+    () => modelValidator<Output>(contract.outputSchema),
+    [contract],
+  );
   const [input, setInput] = useState<Values>(() => {
     if (props.preparedAction && props.preparedAction.actionId !== contract.id) {
       throw new Error("Prepared form belongs to another action");
     }
-    return inputValidator.parse(props.preparedAction?.input ?? options.initialInput);
+    return inputValidator.parse(
+      props.preparedAction?.input ?? options.initialInput,
+    );
   });
   const [output, setOutput] = useState<Output | null>(() =>
-    props.preparedAction ? outputValidator.parse(props.preparedAction.output) : null,
+    props.preparedAction
+      ? outputValidator.parse(props.preparedAction.output)
+      : null,
   );
   const [baseline, setBaseline] = useState(() => JSON.stringify(input));
   const [busy, setBusy] = useState(false);
@@ -54,7 +68,10 @@ export function useAction<Input extends object, Output extends object>(
       setError(
         parsed.error.issues
           .map((issue) => {
-            const field = modelField(contract.inputSchema, String(issue.path[0]));
+            const field = modelField(
+              contract.inputSchema,
+              String(issue.path[0]),
+            );
             const label = field.title ?? issue.path.join(".");
             return label ? `${label}: ${issue.message}` : issue.message;
           })
@@ -67,19 +84,26 @@ export function useAction<Input extends object, Output extends object>(
     setBusy(true);
     setError("");
     try {
-      const { data: result } = await props.request<{ data: PluginActionResult }>(options.path, {
+      const { data: result } = await props.request<{
+        data: PluginActionResult;
+      }>(options.path, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(parsed.data),
         signal: controller.signal,
       });
-      if (result.actionId !== contract.id) throw new Error("Response belongs to another action");
+      if (result.actionId !== contract.id)
+        throw new Error("Response belongs to another action");
       if (controller.signal.aborted) return;
       setOutput(outputValidator.parse(result.output));
       setBaseline(JSON.stringify(input));
     } catch (failure) {
       if (!controller.signal.aborted)
-        setError(failure instanceof Error ? failure.message : "Не удалось выполнить действие.");
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : "Не удалось выполнить действие.",
+        );
     } finally {
       if (!controller.signal.aborted) setBusy(false);
       if (active.current === controller) active.current = null;

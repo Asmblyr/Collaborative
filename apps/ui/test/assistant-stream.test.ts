@@ -24,7 +24,9 @@ test("stream decoder handles split UTF-8/JSON and refuses an incomplete final ev
   assert.deepEqual(events, [event]);
   await assert.rejects(async () => {
     for await (const event of readAssistantEvents(
-      new Response('{"type":', { headers: { "content-type": "application/x-ndjson" } }),
+      new Response('{"type":', {
+        headers: { "content-type": "application/x-ndjson" },
+      }),
     ))
       void event;
   }, /оборвался/);
@@ -39,7 +41,11 @@ test("Stop before started is delivered once without closing the answer stream", 
       stops++;
       stream.enqueue(
         new TextEncoder().encode(
-          JSON.stringify({ type: "error", code: "assistant_cancelled", message: "Stopped" }) + "\n",
+          JSON.stringify({
+            type: "error",
+            code: "assistant_cancelled",
+            message: "Stopped",
+          }) + "\n",
         ),
       );
       stream.close();
@@ -57,7 +63,9 @@ test("Stop before started is delivered once without closing the answer stream", 
   const pending = request.send({}, () => {});
   request.stop();
   request.stop();
-  stream.enqueue(new TextEncoder().encode('{"type":"started","requestId":"owned"}\n'));
+  stream.enqueue(
+    new TextEncoder().encode('{"type":"started","requestId":"owned"}\n'),
+  );
   await assert.rejects(pending, { code: "assistant_cancelled" });
   assert.equal(stops, 1);
   assert.equal(request.controller.signal.aborted, false);
@@ -90,7 +98,11 @@ test("cancelled turns remain visible but are excluded as complete pairs from mod
       "next",
       {
         available: true,
-        limits: { maxMessages: 10, maxMessageChars: 100, maxConversationChars: 1000 },
+        limits: {
+          maxMessages: 10,
+          maxMessageChars: 100,
+          maxConversationChars: 1000,
+        },
       },
     ),
     [{ role: "user", content: "next" }],

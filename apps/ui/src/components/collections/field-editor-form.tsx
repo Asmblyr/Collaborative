@@ -80,7 +80,10 @@ export function FieldEditorForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form
+      onSubmit={submit}
+      className="space-y-6"
+    >
       {!field && onBack && (
         <Button
           type="button"
@@ -97,7 +100,9 @@ export function FieldEditorForm({
         {field ? (
           <>
             <span className="text-sm font-medium">Имя поля</span>
-            <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">{field.name}</div>
+            <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">
+              {field.name}
+            </div>
             <p className="text-xs text-muted-foreground">
               Имя поля нельзя изменить после создания.
             </p>
@@ -126,13 +131,19 @@ export function FieldEditorForm({
       {field ? (
         <div className="space-y-2 text-sm">
           <span className="font-medium">Тип данных</span>
-          <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">{field.type}</div>
-          <p className="text-xs text-muted-foreground">Тип поля нельзя изменить после создания.</p>
+          <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">
+            {field.type}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Тип поля нельзя изменить после создания.
+          </p>
         </div>
       ) : (
         <div className="space-y-2 text-sm">
           <span className="font-medium">Тип данных</span>
-          <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">{selectedType}</div>
+          <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">
+            {selectedType}
+          </div>
         </div>
       )}
 
@@ -143,25 +154,32 @@ export function FieldEditorForm({
             {field?.relation?.collection}
           </div>
           <p className="text-xs text-muted-foreground">
-            В этой коллекции появится внешний ключ. Обратные записи будут видны в карточке целевой
-            записи.
+            В этой коллекции появится внешний ключ. Обратные записи будут видны
+            в карточке целевой записи.
           </p>
           {field?.relation?.kind === "m2o" && (
             <p className="text-xs text-muted-foreground">
-              При удалении связанной записи: <code>{field.relation.onDelete}</code>
+              При удалении связанной записи:{" "}
+              <code>{field.relation.onDelete}</code>
             </p>
           )}
         </div>
       )}
 
-      <Tabs defaultValue="basic" className="space-y-4">
+      <Tabs
+        defaultValue="basic"
+        className="space-y-4"
+      >
         <TabsList className="w-full justify-start">
           <TabsTrigger value="basic">Основное</TabsTrigger>
           <TabsTrigger value="presentation">Отображение</TabsTrigger>
           {textField && <TabsTrigger value="search">Поиск</TabsTrigger>}
           {relationField && <TabsTrigger value="search">Поиск</TabsTrigger>}
         </TabsList>
-        <TabsContent value="basic" className="space-y-6">
+        <TabsContent
+          value="basic"
+          className="space-y-6"
+        >
           <div className="space-y-4 rounded-xl border p-4">
             <div className="flex items-start gap-3">
               <Checkbox
@@ -187,9 +205,12 @@ export function FieldEditorForm({
                 className="mt-1"
               />
               <div className="space-y-1">
-                <Label htmlFor="field-editor-nullable">Разрешить NULL в БД</Label>
+                <Label htmlFor="field-editor-nullable">
+                  Разрешить NULL в БД
+                </Label>
                 <p className="text-xs text-muted-foreground">
-                  При отключении существующие пустые значения помешают сохранению.
+                  При отключении существующие пустые значения помешают
+                  сохранению.
                 </p>
               </div>
             </div>
@@ -206,7 +227,9 @@ export function FieldEditorForm({
                   className="mt-1"
                 />
                 <div className="space-y-1">
-                  <Label htmlFor="field-editor-has-default">Значение по умолчанию</Label>
+                  <Label htmlFor="field-editor-has-default">
+                    Значение по умолчанию
+                  </Label>
                   <p className="text-xs text-muted-foreground">
                     Применяется при создании записи, если поле не передано.
                   </p>
@@ -227,8 +250,8 @@ export function FieldEditorForm({
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                При добавлении поля default заполнит существующие строки. Изменение default позже их
-                не меняет.
+                При добавлении поля default заполнит существующие строки.
+                Изменение default позже их не меняет.
               </p>
             </div>
           )}
@@ -265,15 +288,30 @@ export function FieldEditorForm({
       </Tabs>
 
       {message && (
-        <p role="status" className="text-sm text-destructive">
+        <p
+          role="status"
+          className="text-sm text-destructive"
+        >
           {message}
         </p>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={pending || !changed}>
-          {pending ? "Сохраняем…" : field ? "Сохранить изменения" : "Добавить поле"}
+        <Button
+          type="submit"
+          disabled={pending || !changed}
+        >
+          {pending
+            ? "Сохраняем…"
+            : field
+              ? "Сохранить изменения"
+              : "Добавить поле"}
         </Button>
-        <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={pending}
+          onClick={onCancel}
+        >
           Отмена
         </Button>
       </div>

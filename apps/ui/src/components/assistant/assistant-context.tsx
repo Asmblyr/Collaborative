@@ -12,7 +12,11 @@ import {
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import { apiRequest } from "@/lib/api-request";
-import { canApplyProposal, type PageContext, type FilterProposal } from "./assistant-context-types";
+import {
+  canApplyProposal,
+  type PageContext,
+  type FilterProposal,
+} from "./assistant-context-types";
 
 interface Registration {
   pathname: string;
@@ -40,34 +44,45 @@ export function AssistantContextProvider({
   const workspaceId = workspace?.active?.id ?? null;
   const [registration, setRegistration] = useState<Registration | null>(null);
   const current =
-    registration?.pathname === pathname && registration.context.workspaceId === workspaceId
+    registration?.pathname === pathname &&
+    registration.context.workspaceId === workspaceId
       ? registration
       : null;
   const page = pathname === "/" ? "collections" : pathname.slice(1);
   const context: PageContext | null =
-    current?.context ?? (pathname.startsWith("/items/") ? null : { page, workspaceId });
+    current?.context ??
+    (pathname.startsWith("/items/") ? null : { page, workspaceId });
   const latest = useRef({ context, current });
   useLayoutEffect(() => {
     latest.current = { context, current };
   });
   const publish = useCallback((value: Registration) => {
     setRegistration(value);
-    return () => setRegistration((previous) => (previous === value ? null : previous));
+    return () =>
+      setRegistration((previous) => (previous === value ? null : previous));
   }, []);
   async function apply(proposal: FilterProposal) {
     const snapshot = latest.current;
     if (!canApplyProposal(snapshot.context, proposal) || !snapshot.current)
-      throw new Error("Откройте исходную коллекцию и закройте редактор записи.");
-    const result = await apiRequest<{ filter: object }>("/api/assistant/filter/validate", "POST", {
-      context: snapshot.context,
-      collectionId: proposal.collectionId,
-      filter: proposal.filter,
-    });
+      throw new Error(
+        "Откройте исходную коллекцию и закройте редактор записи.",
+      );
+    const result = await apiRequest<{ filter: object }>(
+      "/api/assistant/filter/validate",
+      "POST",
+      {
+        context: snapshot.context,
+        collectionId: proposal.collectionId,
+        filter: proposal.filter,
+      },
+    );
     if (
       latest.current.current !== snapshot.current ||
       !canApplyProposal(latest.current.context, proposal)
     ) {
-      throw new Error("Страница изменилась. Проверьте предложение и нажмите ещё раз.");
+      throw new Error(
+        "Страница изменилась. Проверьте предложение и нажмите ещё раз.",
+      );
     }
     snapshot.current.apply(JSON.stringify(result.filter));
   }
@@ -108,7 +123,11 @@ export function useAssistantTableContext(
   useEffect(() => {
     const snapshot = JSON.parse(serialized) as PageContext | null;
     if (!publish || !snapshot) return;
-    return publish({ pathname, context: snapshot, apply: (filter) => apply.current(filter) });
+    return publish({
+      pathname,
+      context: snapshot,
+      apply: (filter) => apply.current(filter),
+    });
   }, [publish, pathname, serialized]);
 }
 

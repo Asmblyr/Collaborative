@@ -5,7 +5,13 @@ import { Check, Link2 } from "lucide-react";
 import { Button } from "@asmblyr/kit/ui/button";
 import { itemHref } from "@/lib/item-location";
 
-export function RecordLinkButton({ collection, id }: { collection: string; id: string }) {
+export function RecordLinkButton({
+  collection,
+  id,
+}: {
+  collection: string;
+  id: string;
+}) {
   const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
   useEffect(() => {
     if (status === "idle") return;
@@ -14,17 +20,42 @@ export function RecordLinkButton({ collection, id }: { collection: string; id: s
   }, [status]);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(new URL(itemHref(collection, id), window.location.origin).href);
+      await navigator.clipboard.writeText(
+        new URL(itemHref(collection, id), window.location.origin).href,
+      );
       setStatus("copied");
-    } catch { setStatus("error"); }
+    } catch {
+      setStatus("error");
+    }
   }
-  return <div className="shrink-0 text-right">
-    <Button type="button" variant="ghost" size="sm" onClick={copy} aria-label="Скопировать ссылку на запись">
-      {status === "copied" ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />}
-      {status === "copied" ? "Скопировано" : "Ссылка"}
-    </Button>
-    <span role="status" className={status === "error" ? "block text-xs text-destructive" : "sr-only"}>
-      {status === "error" ? "Не удалось скопировать ссылку" : status === "copied" ? "Ссылка скопирована" : ""}
-    </span>
-  </div>;
+  return (
+    <div className="shrink-0 text-right">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={copy}
+        aria-label="Скопировать ссылку на запись"
+      >
+        {status === "copied" ? (
+          <Check aria-hidden="true" />
+        ) : (
+          <Link2 aria-hidden="true" />
+        )}
+        {status === "copied" ? "Скопировано" : "Ссылка"}
+      </Button>
+      <span
+        role="status"
+        className={
+          status === "error" ? "block text-xs text-destructive" : "sr-only"
+        }
+      >
+        {status === "error"
+          ? "Не удалось скопировать ссылку"
+          : status === "copied"
+            ? "Ссылка скопирована"
+            : ""}
+      </span>
+    </div>
+  );
 }

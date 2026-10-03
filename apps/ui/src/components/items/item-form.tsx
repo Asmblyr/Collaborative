@@ -65,18 +65,25 @@ export function ItemForm({
   const formId = useId();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      fields.map((field) => [field.name, inputValue(field, { ...item, ...initialValues })]),
+      fields.map((field) => [
+        field.name,
+        inputValue(field, { ...item, ...initialValues }),
+      ]),
     ),
   );
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [manualKey, setManualKey] = useState(String(initialValues?.[primaryKey.name] ?? ""));
+  const [manualKey, setManualKey] = useState(
+    String(initialValues?.[primaryKey.name] ?? ""),
+  );
   const [issue, setIssue] = useState({ field: "", attempt: 0 });
   const [showHidden, setShowHidden] = useState(false);
   const writable = fields.filter((f) => !readOnlyFields.includes(f.name));
   const changedCount =
     writable.filter((field) =>
-      item ? values[field.name] !== inputValue(field, item) : values[field.name] !== "",
+      item
+        ? values[field.name] !== inputValue(field, item)
+        : values[field.name] !== "",
     ).length + (!item && manualKey ? 1 : 0);
   useLayoutEffect(() => {
     onDirtyChange?.(changedCount);
@@ -108,7 +115,9 @@ export function ItemForm({
     setIssue((v) => ({ field, attempt: v.attempt + 1 }));
     window.requestAnimationFrame(() => {
       const block = field
-        ? form.querySelector<HTMLElement>(`[data-form-field="${CSS.escape(field)}"]`)
+        ? form.querySelector<HTMLElement>(
+            `[data-form-field="${CSS.escape(field)}"]`,
+          )
         : form;
       block?.scrollIntoView({ block: "nearest", behavior: "smooth" });
       block
@@ -145,21 +154,29 @@ export function ItemForm({
       return;
     }
     const changed = writable.filter((field) =>
-      item ? values[field.name] !== inputValue(field, item) : values[field.name] !== "",
+      item
+        ? values[field.name] !== inputValue(field, item)
+        : values[field.name] !== "",
     );
     const invalid = [
-      ...event.currentTarget.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-        "input, textarea",
-      ),
+      ...event.currentTarget.querySelectorAll<
+        HTMLInputElement | HTMLTextAreaElement
+      >("input, textarea"),
     ].find((el) => {
-      const name = el.closest<HTMLElement>("[data-form-field]")?.dataset.formField;
-      return !el.disabled && (!item || changed.some((f) => f.name === name)) && !el.checkValidity();
+      const name =
+        el.closest<HTMLElement>("[data-form-field]")?.dataset.formField;
+      return (
+        !el.disabled &&
+        (!item || changed.some((f) => f.name === name)) &&
+        !el.checkValidity()
+      );
     });
     if (invalid) {
       showError(
         event.currentTarget,
         invalid.validationMessage,
-        invalid.closest<HTMLElement>("[data-form-field]")?.dataset.formField ?? "",
+        invalid.closest<HTMLElement>("[data-form-field]")?.dataset.formField ??
+          "",
       );
       return;
     }
@@ -175,10 +192,15 @@ export function ItemForm({
           payload[field.name] = payloadValue(field, values[field.name]);
           const repeater = field.presentation?.repeater;
           const rows = payload[field.name];
-          if (field.presentation?.interface === "repeater" && repeater && rows !== null) {
+          if (
+            field.presentation?.interface === "repeater" &&
+            repeater &&
+            rows !== null
+          ) {
             if (
               !Array.isArray(rows) ||
-              rows.length < Math.max(repeater.minItems, field.required ? 1 : 0) ||
+              rows.length <
+                Math.max(repeater.minItems, field.required ? 1 : 0) ||
               rows.length > repeater.maxItems
             )
               throw new Error(
@@ -191,9 +213,12 @@ export function ItemForm({
                 if (
                   child.required &&
                   (row[child.name] == null ||
-                    (typeof row[child.name] === "string" && !String(row[child.name]).trim()))
+                    (typeof row[child.name] === "string" &&
+                      !String(row[child.name]).trim()))
                 )
-                  throw new Error(`Элемент ${index + 1}: заполните ${child.label || child.name}`);
+                  throw new Error(
+                    `Элемент ${index + 1}: заполните ${child.label || child.name}`,
+                  );
             }
           }
         } catch (cause) {
@@ -205,10 +230,13 @@ export function ItemForm({
           return;
         }
       }
-      if (!item && primaryKey.type === "text") payload[primaryKey.name] = manualKey;
+      if (!item && primaryKey.type === "text")
+        payload[primaryKey.name] = manualKey;
       await onSave(payload);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Проверьте значения полей");
+      setMessage(
+        error instanceof Error ? error.message : "Проверьте значения полей",
+      );
     }
   }
 
@@ -217,14 +245,21 @@ export function ItemForm({
       id={id}
       noValidate
       onSubmit={submit}
-      className={embedded ? "space-y-5" : "space-y-4 rounded-xl border bg-card p-5"}
+      className={
+        embedded ? "space-y-5" : "space-y-4 rounded-xl border bg-card p-5"
+      }
     >
       {!embedded && (
-        <h2 className="text-lg font-semibold">{item ? "Изменить запись" : "Новая запись"}</h2>
+        <h2 className="text-lg font-semibold">
+          {item ? "Изменить запись" : "Новая запись"}
+        </h2>
       )}
       {!item && primaryKey.type === "text" && (
         <div className="space-y-1">
-          <Label htmlFor={`${formId}-manual-key`} className="font-mono">
+          <Label
+            htmlFor={`${formId}-manual-key`}
+            className="font-mono"
+          >
             {primaryKey.name} *
           </Label>
           <Input
@@ -236,7 +271,9 @@ export function ItemForm({
             disabled={pending}
             className="h-9 font-mono"
           />
-          <p className="text-xs text-muted-foreground">Укажите уникальный строковый ключ записи.</p>
+          <p className="text-xs text-muted-foreground">
+            Укажите уникальный строковый ключ записи.
+          </p>
         </div>
       )}
       {formLayout && layoutHasConditions(formLayout) && (
@@ -249,7 +286,9 @@ export function ItemForm({
             disabled={pending}
             onClick={() => setShowHidden(!showHidden)}
           >
-            {showHidden ? "Применить условия видимости" : "Показать все доступные поля"}
+            {showHidden
+              ? "Применить условия видимости"
+              : "Показать все доступные поля"}
           </Button>
         </div>
       )}
@@ -273,9 +312,12 @@ export function ItemForm({
                 field.defaultValue === undefined && (
                   <span aria-label="значение необходимо"> *</span>
                 )}
-              {field.type === "datetime" && !readOnlyFields.includes(field.name) && (
-                <span className="ml-2 font-sans text-xs text-muted-foreground">UTC</span>
-              )}
+              {field.type === "datetime" &&
+                !readOnlyFields.includes(field.name) && (
+                  <span className="ml-2 font-sans text-xs text-muted-foreground">
+                    UTC
+                  </span>
+                )}
             </Label>
             {readOnlyFields.includes(field.name) && item ? (
               <ItemReadonlyField
@@ -293,7 +335,8 @@ export function ItemForm({
                 creating={!item}
                 onChange={(value) => {
                   setValues((current) => ({ ...current, [field.name]: value }));
-                  if (field.relation?.kind === "m2o") onReferenceChange?.(field.name, value);
+                  if (field.relation?.kind === "m2o")
+                    onReferenceChange?.(field.name, value);
                 }}
                 onOpenRelated={onOpenRelated}
                 onBusy={(busy) => {
@@ -301,11 +344,15 @@ export function ItemForm({
                   onBusyChange?.(busy);
                 }}
                 disabled={
-                  pending || uploading || (preview && ["file", "files"].includes(field.type))
+                  pending ||
+                  uploading ||
+                  (preview && ["file", "files"].includes(field.type))
                 }
                 container={portalContainer}
                 required={
-                  !item && (field.required || !field.nullable) && field.defaultValue === undefined
+                  !item &&
+                  (field.required || !field.nullable) &&
+                  field.defaultValue === undefined
                 }
               />
             )}
@@ -317,16 +364,18 @@ export function ItemForm({
                 {field.presentation.description}
               </p>
             )}
-            {field.type === "datetime" && !readOnlyFields.includes(field.name) && (
-              <p className="text-xs text-muted-foreground">
-                Время UTC, без пересчёта из часового пояса устройства.
-              </p>
-            )}
+            {field.type === "datetime" &&
+              !readOnlyFields.includes(field.name) && (
+                <p className="text-xs text-muted-foreground">
+                  Время UTC, без пересчёта из часового пояса устройства.
+                </p>
+              )}
             {!item && field.defaultValue !== undefined && (
               <p className="text-xs text-muted-foreground">
                 По умолчанию:{" "}
-                {field.presentation?.options?.find((option) => option.value === field.defaultValue)
-                  ?.label ?? displayValue(field.defaultValue, field.type)}
+                {field.presentation?.options?.find(
+                  (option) => option.value === field.defaultValue,
+                )?.label ?? displayValue(field.defaultValue, field.type)}
               </p>
             )}
           </>
@@ -341,7 +390,10 @@ export function ItemForm({
         />
       )}
       {message && (
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="text-sm text-destructive"
+        >
           {message}
         </p>
       )}

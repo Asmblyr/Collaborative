@@ -13,28 +13,40 @@ import { objectInput } from "../shared/input.js";
 import { ItemError } from "../items/validation.js";
 import { parseId } from "../policies/validation.js";
 import { connectInternalMcp } from "../mcp/internal-client.js";
-import { collectionData, toolCollectionName } from "../tools/collection-data.js";
+import {
+  collectionData,
+  toolCollectionName,
+} from "../tools/collection-data.js";
 import { createToolSession, unavailableToolResult } from "../tools/session.js";
 import { validateToolFilter } from "../tools/filter.js";
-import { parseAssistantContext, type AssistantContext } from "./context-input.js";
+import {
+  parseAssistantContext,
+  type AssistantContext,
+} from "./context-input.js";
 import {
   assistantToolDefinitions,
   type AssistantTools,
   type FilterProposal,
 } from "./tool-contract.js";
 
-async function pageSnapshot(db: Knex, access: Access, context: AssistantContext) {
+async function pageSnapshot(
+  db: Knex,
+  access: Access,
+  context: AssistantContext,
+) {
   const workspace = context.workspaceId
     ? (await listWorkspaces(db, access)).workspaces.find(
         (entry) => entry.id === context.workspaceId,
       )
     : null;
-  if (context.workspaceId && !workspace) throw new ItemError("Workspace not found", 404);
+  if (context.workspaceId && !workspace)
+    throw new ItemError("Workspace not found", 404);
   const snapshot = {
     page: context.page,
     workspace: workspace ? { id: workspace.id, name: workspace.name } : null,
   };
-  if (!context.collection || !context.table) return { snapshot, collectionId: null, enabled: true };
+  if (!context.collection || !context.table)
+    return { snapshot, collectionId: null, enabled: true };
 
   const name = context.collection;
   requireGrant(access, name, "read");
@@ -113,26 +125,40 @@ export async function createContextTools(
   if (!page.enabled) return tools;
 
   const pinned = new Map<string, string>();
-  if (context.collection && page.collectionId) pinned.set(context.collection, page.collectionId);
+  if (context.collection && page.collectionId)
+    pinned.set(context.collection, page.collectionId);
   const session = createToolSession(db, access, reloadAccess, pinned);
   const mcp = await connectInternalMcp(session, actions);
   tools.close = () => mcp.close();
-  tools.definitions = assistantToolDefinitions(mcp.definitions, Boolean(context.table));
+  tools.definitions = assistantToolDefinitions(
+    mcp.definitions,
+    Boolean(context.table),
+  );
   const results = new Map<string, AssistantSelection>();
   tools.execute = async (name, args, signal) => {
     try {
       const definition = tools.definitions.find((tool) => tool.name === name);
       if (!definition) return unavailableToolResult;
-      const body = objectInput(args, Object.keys(definition.parameters.properties));
+      const body = objectInput(
+        args,
+        Object.keys(definition.parameters.properties),
+      );
       signal?.throwIfAborted();
       if (name === "present_plugin_result") {
-        return pluginResults.present(actions, await session.authorize(signal), body);
+        return pluginResults.present(
+          actions,
+          await session.authorize(signal),
+          body,
+        );
       }
       if (name === "present_selection") {
         const selection =
-          typeof body.resultId === "string" ? results.get(body.resultId) : undefined;
+          typeof body.resultId === "string"
+            ? results.get(body.resultId)
+            : undefined;
         if (!selection) return unavailableToolResult;
-        const { collection, collectionId, q, filter, sort, direction } = selection;
+        const { collection, collectionId, q, filter, sort, direction } =
+          selection;
         await validateSelection(db, await session.authorize(signal), {
           collection,
           collectionId,
@@ -142,19 +168,26 @@ export async function createContextTools(
           direction,
         });
         signal?.throwIfAborted();
-        if (!selections.some((entry) => entry.resultId === selection.resultId)) {
+        if (
+          !selections.some((entry) => entry.resultId === selection.resultId)
+        ) {
           selections.push(selection);
         }
         return { presented: true, requiresUserClick: true };
       }
       if (name === "propose_filter") {
-        if (!context.collection || !page.collectionId) return unavailableToolResult;
+        if (!context.collection || !page.collectionId)
+          return unavailableToolResult;
         const result = await mcp.call(
           "validate_filter",
           { collection: context.collection, filter: body.filter },
           signal,
         );
-        if (!("filter" in result) || !result.filter || typeof result.filter !== "object")
+        if (
+          !("filter" in result) ||
+          !result.filter ||
+          typeof result.filter !== "object"
+        )
           return result;
         const proposal: FilterProposal = {
           type: "filter",
@@ -168,9 +201,16 @@ export async function createContextTools(
           filter: result.filter,
         };
         tools.proposals.splice(0, tools.proposals.length, proposal);
-        return { proposed: true, filter: result.filter, requiresUserClick: true };
+        return {
+          proposed: true,
+          filter: result.filter,
+          requiresUserClick: true,
+        };
       }
-      const resolvedArgs = Object.hasOwn(definition.parameters.properties, "collection")
+      const resolvedArgs = Object.hasOwn(
+        definition.parameters.properties,
+        "collection",
+      )
         ? contextualArguments(name, body, context)
         : body;
       const result = await mcp.call(name, resolvedArgs, signal);
@@ -180,7 +220,8 @@ export async function createContextTools(
       }
       if (name === "aggregate_items") {
         const captured = captureAggregateSelections(result);
-        for (const selection of captured.selections) results.set(selection.resultId, selection);
+        for (const selection of captured.selections)
+          results.set(selection.resultId, selection);
         return captured.result;
       }
       const selection = captureSelection(name, result);
@@ -194,13 +235,22 @@ export async function createContextTools(
   return tools;
 }
 
-export async function validateFilterProposal(db: Knex, access: Access, value: unknown) {
+export async function validateFilterProposal(
+  db: Knex,
+  access: Access,
+  value: unknown,
+) {
   const body = objectInput(value, ["context", "collectionId", "filter"]);
-  if (!body.filter || typeof body.filter !== "object" || Array.isArray(body.filter)) {
+  if (
+    !body.filter ||
+    typeof body.filter !== "object" ||
+    Array.isArray(body.filter)
+  ) {
     throw new ItemError("Filter group required", 400);
   }
   const context = parseAssistantContext(body.context);
-  if (!context?.collection) throw new ItemError("Collection context required", 400);
+  if (!context?.collection)
+    throw new ItemError("Collection context required", 400);
   const page = await pageSnapshot(db, access, context);
   const data = await collectionData(db, access, context.collection);
   if (
@@ -210,7 +260,11 @@ export async function validateFilterProposal(db: Knex, access: Access, value: un
     throw new ItemError("Collection changed; request a new proposal", 409);
   }
   return {
-    filter: validateToolFilter(context.collection, JSON.stringify(body.filter), data, access)
-      .filter,
+    filter: validateToolFilter(
+      context.collection,
+      JSON.stringify(body.filter),
+      data,
+      access,
+    ).filter,
   };
 }

@@ -7,7 +7,9 @@ export class EndpointError extends Error {
   ) {
     super(message);
     if (!Number.isInteger(statusCode) || statusCode < 400 || statusCode > 499) {
-      throw new RangeError("EndpointError requires a status between 400 and 499");
+      throw new RangeError(
+        "EndpointError requires a status between 400 and 499",
+      );
     }
     this.name = "EndpointError";
   }

@@ -20,11 +20,17 @@ export function termFilter(
     data.catalog,
     access,
   );
-  if (!filter.children.length) throw new ItemError("Добавьте хотя бы одно условие термина", 400);
+  if (!filter.children.length)
+    throw new ItemError("Добавьте хотя бы одно условие термина", 400);
   return filter;
 }
 
-export async function availableTerms(db: Knex, name: string, data: CollectionData, access: Access) {
+export async function availableTerms(
+  db: Knex,
+  name: string,
+  data: CollectionData,
+  access: Access,
+) {
   const terms = await boundTerms(db, data.schema.settings.internalId);
   return terms.flatMap((term) => {
     if (!term.enabled) return [];
@@ -46,7 +52,12 @@ export async function availableTerms(db: Knex, name: string, data: CollectionDat
   });
 }
 
-export async function describeTerms(db: Knex, name: string, data: CollectionData, access: Access) {
+export async function describeTerms(
+  db: Knex,
+  name: string,
+  data: CollectionData,
+  access: Access,
+) {
   const available = await availableTerms(db, name, data, access);
   const terms: typeof available = [];
   let size = 0;
@@ -74,22 +85,48 @@ export async function applyTerms(
   const available = await boundTerms(db, data.schema.settings.internalId);
   const selected = ids.map((id): BoundTerm => {
     const term = available.find((entry) => entry.id === id && entry.enabled);
-    if (!term) throw new ItemError("Term unavailable; describe the collection again", 400);
+    if (!term)
+      throw new ItemError(
+        "Term unavailable; describe the collection again",
+        400,
+      );
     return term;
   });
-  const base = parseItemFilters(rawFilter, name, data.schema, data.allowed, data.catalog, access);
-  const groups = selected.map((term) => termFilter(name, term.filter, data, access));
+  const base = parseItemFilters(
+    rawFilter,
+    name,
+    data.schema,
+    data.allowed,
+    data.catalog,
+    access,
+  );
+  const groups = selected.map((term) =>
+    termFilter(name, term.filter, data, access),
+  );
   if (base.children.length) groups.unshift(base);
   // Flatten only AND roots; OR groups retain their meaning. The final parser
   // enforces the same combined depth/condition/size bounds as ordinary filters.
   const combined: FilterGroup = {
     logic: "and",
-    children: groups.flatMap((group) => (group.logic === "and" ? group.children : [group])),
+    children: groups.flatMap((group) =>
+      group.logic === "and" ? group.children : [group],
+    ),
   };
   const filter = JSON.stringify(plainFilter(combined));
-  parseItemFilters(filter, name, data.schema, data.allowed, data.catalog, access);
+  parseItemFilters(
+    filter,
+    name,
+    data.schema,
+    data.allowed,
+    data.catalog,
+    access,
+  );
   return {
     filter,
-    appliedTerms: selected.map((term) => ({ id: term.id, name: term.name, filter: term.filter })),
+    appliedTerms: selected.map((term) => ({
+      id: term.id,
+      name: term.name,
+      filter: term.filter,
+    })),
   };
 }

@@ -6,7 +6,10 @@ import { updateFieldPresentation } from "./field-presentation.js";
 import { updateFieldDefinition } from "./field-update-service.js";
 import { updateRelationSearch } from "./relation-search.js";
 import { addFieldDefinition } from "./service.js";
-import { lockedCollectionSettings, isManagedColumn } from "./settings-repository.js";
+import {
+  lockedCollectionSettings,
+  isManagedColumn,
+} from "./settings-repository.js";
 import {
   CollectionInputError,
   CollectionNotFoundError,
@@ -25,8 +28,14 @@ export async function saveFieldConfiguration(
 ) {
   const name = parseMutableCollectionName(collection);
   const column = parseMutableFieldName(field);
-  const input = objectInput(body, ["field", "presentation", "searchable", "relationSearchable"]);
-  if (!Object.keys(input).length) throw new CollectionInputError("Expected field configuration");
+  const input = objectInput(body, [
+    "field",
+    "presentation",
+    "searchable",
+    "relationSearchable",
+  ]);
+  if (!Object.keys(input).length)
+    throw new CollectionInputError("Expected field configuration");
   for (const key of ["searchable", "relationSearchable"] as const) {
     if (input[key] !== undefined && typeof input[key] !== "boolean") {
       throw new CollectionInputError(`Expected a boolean: ${key}`);
@@ -50,19 +59,39 @@ export async function saveFieldConfiguration(
         throw new CollectionInputError("Field name does not match URL");
       await addFieldDefinition(transaction, name, definition);
     } else if (input.field !== undefined) {
-      await updateFieldDefinition(transaction, name, column, input.field, input.presentation);
+      await updateFieldDefinition(
+        transaction,
+        name,
+        column,
+        input.field,
+        input.presentation,
+      );
     }
     if (input.presentation !== undefined) {
-      await updateFieldPresentation(transaction, name, column, input.presentation);
+      await updateFieldPresentation(
+        transaction,
+        name,
+        column,
+        input.presentation,
+      );
     }
     if (input.searchable !== undefined) {
       const current = await readEditableField(transaction, name, column);
-      if (current.relation_key_type || !["text", "email"].includes(current.type ?? "")) {
-        throw new CollectionInputError("Search settings require a text or email field");
+      if (
+        current.relation_key_type ||
+        !["text", "email"].includes(current.type ?? "")
+      ) {
+        throw new CollectionInputError(
+          "Search settings require a text or email field",
+        );
       }
       await transaction("asmblyr_field_metadata")
         .withSchema("public")
-        .insert({ collection_name: name, field_name: column, searchable: input.searchable })
+        .insert({
+          collection_name: name,
+          field_name: column,
+          searchable: input.searchable,
+        })
         .onConflict(["collection_name", "field_name"])
         .merge({ searchable: input.searchable });
     }
@@ -71,7 +100,9 @@ export async function saveFieldConfiguration(
         searchable: input.relationSearchable,
       });
     }
-    const result = (await listCollections(transaction)).find((entry) => entry.name === name);
+    const result = (await listCollections(transaction)).find(
+      (entry) => entry.name === name,
+    );
     if (!result) throw new CollectionNotFoundError(name);
     return result;
   });

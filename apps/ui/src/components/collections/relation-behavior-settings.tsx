@@ -40,54 +40,75 @@ export function RelationBehaviorSettings({
     setMessage,
   } = editor;
   return (
-    <TabsContent value="behavior" className="space-y-5 pt-5">
+    <TabsContent
+      value="behavior"
+      className="space-y-5 pt-5"
+    >
       {kind === "o2m" && reuseExisting && (
         <p className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-          Для существующего внешнего ключа правила обязательности и удаления уже заданы в целевой
-          коллекции.
+          Для существующего внешнего ключа правила обязательности и удаления уже
+          заданы в целевой коллекции.
         </p>
       )}
       {kind === "m2m" && (
         <div className="space-y-4 rounded-xl border p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="relation-source-delete">При удалении записи из {collection}</Label>
+              <Label htmlFor="relation-source-delete">
+                При удалении записи из {collection}
+              </Label>
               <Select
                 value={sourceOnDelete}
-                onValueChange={(value) => setSourceOnDelete(value as "restrict" | "cascade")}
+                onValueChange={(value) =>
+                  setSourceOnDelete(value as "restrict" | "cascade")
+                }
                 disabled={pending}
               >
-                <SelectTrigger id="relation-source-delete" className="h-10 w-full">
+                <SelectTrigger
+                  id="relation-source-delete"
+                  className="h-10 w-full"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent container={portalContainer}>
                   <SelectItem value="cascade">Удалить строки связи</SelectItem>
-                  <SelectItem value="restrict">Запретить удаление записи</SelectItem>
+                  <SelectItem value="restrict">
+                    Запретить удаление записи
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="relation-target-delete">
-                При удалении записи из {targetCollection || "связанной коллекции"}
+                При удалении записи из{" "}
+                {targetCollection || "связанной коллекции"}
               </Label>
               <Select
                 value={targetOnDelete}
-                onValueChange={(value) => setTargetOnDelete(value as "restrict" | "cascade")}
+                onValueChange={(value) =>
+                  setTargetOnDelete(value as "restrict" | "cascade")
+                }
                 disabled={pending}
               >
-                <SelectTrigger id="relation-target-delete" className="h-10 w-full">
+                <SelectTrigger
+                  id="relation-target-delete"
+                  className="h-10 w-full"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent container={portalContainer}>
                   <SelectItem value="cascade">Удалить строки связи</SelectItem>
-                  <SelectItem value="restrict">Запретить удаление записи</SelectItem>
+                  <SelectItem value="restrict">
+                    Запретить удаление записи
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           {(sourceOnDelete === "cascade" || targetOnDelete === "cascade") && (
             <p className="text-xs text-muted-foreground">
-              Удаление строк связи самой БД пока не записывается отдельно в историю.
+              Удаление строк связи самой БД пока не записывается отдельно в
+              историю.
             </p>
           )}
         </div>
@@ -106,13 +127,16 @@ export function RelationBehaviorSettings({
               checked={nullable}
               onCheckedChange={(checked) => {
                 setNullable(checked === true);
-                if (checked !== true && onDelete === "setNull") setOnDelete("restrict");
+                if (checked !== true && onDelete === "setNull")
+                  setOnDelete("restrict");
               }}
             />
             Разрешить NULL в БД
           </label>
           <div className="space-y-2">
-            <Label htmlFor="relation-delete">При удалении связанной записи</Label>
+            <Label htmlFor="relation-delete">
+              При удалении связанной записи
+            </Label>
             <Select
               value={onDelete}
               onValueChange={(value) => {
@@ -121,14 +145,23 @@ export function RelationBehaviorSettings({
               }}
               disabled={pending}
             >
-              <SelectTrigger id="relation-delete" className="h-10 w-full">
+              <SelectTrigger
+                id="relation-delete"
+                className="h-10 w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={portalContainer}>
                 <SelectItem value="restrict">Запретить удаление</SelectItem>
-                {nullable && <SelectItem value="setNull">Очистить внешний ключ</SelectItem>}
-                <SelectItem value="setDefault">Установить значение по умолчанию</SelectItem>
-                <SelectItem value="cascade">Удалить связанные записи</SelectItem>
+                {nullable && (
+                  <SelectItem value="setNull">Очистить внешний ключ</SelectItem>
+                )}
+                <SelectItem value="setDefault">
+                  Установить значение по умолчанию
+                </SelectItem>
+                <SelectItem value="cascade">
+                  Удалить связанные записи
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -149,8 +182,8 @@ export function RelationBehaviorSettings({
           )}
           {onDelete !== "restrict" && (
             <p className="text-xs text-muted-foreground">
-              Изменения других записей, выполненные самой БД при удалении, пока не получают
-              отдельные записи в истории.
+              Изменения других записей, выполненные самой БД при удалении, пока
+              не получают отдельные записи в истории.
             </p>
           )}
         </div>

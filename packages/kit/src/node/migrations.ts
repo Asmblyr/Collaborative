@@ -16,7 +16,9 @@ export async function scanMigrationFiles(directory: string): Promise<string[]> {
       throw new Error("Place migration files directly in server/migrations");
     if (!entry.name.endsWith(".ts") || entry.name.endsWith(".d.ts")) continue;
     if (!migrationNamePattern.test(entry.name.slice(0, -3)))
-      throw new Error(`Invalid migration filename: ${entry.name}; use YYYYMMDDHHmmss_name.ts`);
+      throw new Error(
+        `Invalid migration filename: ${entry.name}; use YYYYMMDDHHmmss_name.ts`,
+      );
     files.push(entry.name);
   }
   return files.sort();

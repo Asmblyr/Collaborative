@@ -13,7 +13,9 @@ const identityScopes = "openid profile email";
 
 function code(response: Awaited<ReturnType<Flow["consent"]>>) {
   assert.equal(response.statusCode, 303, response.body);
-  const value = new URL(String(response.headers.location)).searchParams.get("code");
+  const value = new URL(String(response.headers.location)).searchParams.get(
+    "code",
+  );
   assert.ok(value, String(response.headers.location));
   return value;
 }
@@ -44,19 +46,33 @@ test("Consent persists across restarts and grant expiry; subset reuse, expansion
     assert.equal(first.details.json().data.canReuseConsent, false);
     assert.equal((await first.decision(true, { reuse: true })).statusCode, 409);
     code(await first.consent());
-    const sameBrowser = await f.flow(f.application.id, "openid email", f.auth, {}, first.jar);
+    const sameBrowser = await f.flow(
+      f.application.id,
+      "openid email",
+      f.auth,
+      {},
+      first.jar,
+    );
     assert.equal(sameBrowser.details.json().data.canReuseConsent, true);
     code(await sameBrowser.consent(true, { reuse: true }));
     const approved = await f.db("public.asmblyr_oauth_consents").first();
     assert.ok(approved.last_used_at);
-    await f.db("public.asmblyr_oauth_state").update({ expires_at: new Date(0) });
-    await f.db("public.asmblyr_oauth_grants").update({ expires_at: new Date(0) });
+    await f
+      .db("public.asmblyr_oauth_state")
+      .update({ expires_at: new Date(0) });
+    await f
+      .db("public.asmblyr_oauth_grants")
+      .update({ expires_at: new Date(0) });
     await f.restart();
     const repeat = await f.flow(f.application.id, "openid email");
     assert.equal(repeat.details.json().data.canReuseConsent, true);
     assert.equal(
-      (await f.exchange(code(await repeat.consent(true, { reuse: true })), repeat.verifier))
-        .statusCode,
+      (
+        await f.exchange(
+          code(await repeat.consent(true, { reuse: true })),
+          repeat.verifier,
+        )
+      ).statusCode,
       200,
     );
     const subset = await f.flow(f.application.id, "openid");
@@ -64,15 +80,28 @@ test("Consent persists across restarts and grant expiry; subset reuse, expansion
     code(await subset.consent(true, { reuse: true }));
     const expanded = await f.flow();
     assert.equal(expanded.details.json().data.canReuseConsent, false);
-    assert.equal((await expanded.decision(true, { reuse: true })).statusCode, 409);
+    assert.equal(
+      (await expanded.decision(true, { reuse: true })).statusCode,
+      409,
+    );
     code(await expanded.consent());
-    const forced = await f.flow(f.application.id, identityScopes, f.auth, { prompt: "consent" });
+    const forced = await f.flow(f.application.id, identityScopes, f.auth, {
+      prompt: "consent",
+    });
     assert.equal(forced.details.json().data.canReuseConsent, false);
-    assert.equal((await forced.decision(true, { reuse: true })).statusCode, 409);
+    assert.equal(
+      (await forced.decision(true, { reuse: true })).statusCode,
+      409,
+    );
     code(await forced.consent());
     assert.equal((await f.db("public.asmblyr_oauth_consents")).length, 1);
-    const rejected = await f.flow(f.application.id, identityScopes, f.auth, { prompt: "consent" });
-    assert.match(String((await rejected.consent(false)).headers.location), /error=access_denied/);
+    const rejected = await f.flow(f.application.id, identityScopes, f.auth, {
+      prompt: "consent",
+    });
+    assert.match(
+      String((await rejected.consent(false)).headers.location),
+      /error=access_denied/,
+    );
     assert.equal((await f.flow()).details.json().data.canReuseConsent, true);
   } finally {
     await f.close();
@@ -84,14 +113,23 @@ test("Connected apps belong to the current user; revoke isolates users and kills
   try {
     await configure(f, { accessMode: "all", audience: "", scopes: [] });
     const first = await f.flow(f.application.id, identityScopes);
-    const firstToken = await f.exchange(code(await first.consent()), first.verifier);
+    const firstToken = await f.exchange(
+      code(await first.consent()),
+      first.verifier,
+    );
     assert.equal(firstToken.statusCode, 200, firstToken.body);
     const other = await f.flow(f.application.id, identityScopes, f.otherAuth);
     assert.equal(other.details.json().data.canReuseConsent, false);
     // A different Asmblyr account cannot complete an interaction bound to the first account.
     const switched = await f.flow(f.application.id, identityScopes);
-    assert.equal((await switched.consent(true, { reuse: true }, f.otherAuth)).statusCode, 400);
-    const otherToken = await f.exchange(code(await other.consent()), other.verifier);
+    assert.equal(
+      (await switched.consent(true, { reuse: true }, f.otherAuth)).statusCode,
+      400,
+    );
+    const otherToken = await f.exchange(
+      code(await other.consent()),
+      other.verifier,
+    );
     assert.equal(otherToken.statusCode, 200, otherToken.body);
     const pending = await f.flow(f.application.id, identityScopes);
     const pendingCode = code(await pending.consent(true, { reuse: true }));
@@ -100,27 +138,58 @@ test("Connected apps belong to the current user; revoke isolates users and kills
     assert.equal(decision.statusCode, 200, decision.body);
     const stale = await f.flow(f.application.id, identityScopes);
     assert.equal(stale.details.json().data.canReuseConsent, true);
-    const list = await f.app.inject({ url: "/users/me/oauth-apps", headers: f.auth });
+    const list = await f.app.inject({
+      url: "/users/me/oauth-apps",
+      headers: f.auth,
+    });
     assert.equal(list.json().data.length, 1);
-    assert.deepEqual(list.json().data[0].scopes, ["email", "openid", "profile"]);
+    assert.deepEqual(list.json().data[0].scopes, [
+      "email",
+      "openid",
+      "profile",
+    ]);
     assert.ok(list.json().data[0].lastUsedAt);
-    assert.equal((await f.app.inject({ url: "/users/me/oauth-apps" })).statusCode, 401);
+    assert.equal(
+      (await f.app.inject({ url: "/users/me/oauth-apps" })).statusCode,
+      401,
+    );
     await revoke(f);
     assert.equal((await stale.decision(true, { reuse: true })).statusCode, 409);
-    assert.equal((await f.exchange(pendingCode, pending.verifier)).json().error, "invalid_grant");
+    assert.equal(
+      (await f.exchange(pendingCode, pending.verifier)).json().error,
+      "invalid_grant",
+    );
     const resumed = await pendingResume.resume(decision.json().data.redirectTo);
-    assert.ok(!String(resumed.headers.location).includes("code="), resumed.body);
+    assert.ok(
+      !String(resumed.headers.location).includes("code="),
+      resumed.body,
+    );
     const profile = (token: string) =>
-      f.app.inject({ url: "/oauth/me", headers: { authorization: `Bearer ${token}` } });
-    assert.equal((await profile(firstToken.json().access_token)).statusCode, 401);
-    assert.equal((await profile(otherToken.json().access_token)).statusCode, 200);
+      f.app.inject({
+        url: "/oauth/me",
+        headers: { authorization: `Bearer ${token}` },
+      });
+    assert.equal(
+      (await profile(firstToken.json().access_token)).statusCode,
+      401,
+    );
+    assert.equal(
+      (await profile(otherToken.json().access_token)).statusCode,
+      200,
+    );
     assert.deepEqual(
-      (await f.app.inject({ url: "/users/me/oauth-apps", headers: f.auth })).json().data,
+      (
+        await f.app.inject({ url: "/users/me/oauth-apps", headers: f.auth })
+      ).json().data,
       [],
     );
     assert.equal(
-      (await f.app.inject({ url: "/users/me/oauth-apps", headers: f.otherAuth })).json().data
-        .length,
+      (
+        await f.app.inject({
+          url: "/users/me/oauth-apps",
+          headers: f.otherAuth,
+        })
+      ).json().data.length,
       1,
     );
     await revoke(f); // Idempotent; no other user's consent is removed.
@@ -128,10 +197,14 @@ test("Connected apps belong to the current user; revoke isolates users and kills
     assert.equal(again.details.json().data.canReuseConsent, false);
     code(await again.consent());
     assert.equal(
-      (await f.flow(f.application.id, identityScopes)).details.json().data.canReuseConsent,
+      (await f.flow(f.application.id, identityScopes)).details.json().data
+        .canReuseConsent,
       false,
     );
-    assert.equal((await profile(firstToken.json().access_token)).statusCode, 401);
+    assert.equal(
+      (await profile(firstToken.json().access_token)).statusCode,
+      401,
+    );
   } finally {
     await f.close();
   }
@@ -144,14 +217,19 @@ test("Reuse rechecks eligibility; cosmetic edits preserve consent while new reci
     await configure(f, { name: "New name" });
     assert.equal((await f.flow()).details.json().data.canReuseConsent, true);
     const stale = await f.flow();
-    await f.db("public.asmblyr_oauth_app_users").where({ app_id: f.application.id }).delete();
+    await f
+      .db("public.asmblyr_oauth_app_users")
+      .where({ app_id: f.application.id })
+      .delete();
     assert.equal((await f.flow()).details.json().data.canReuseConsent, false);
     assert.match(
       String((await stale.consent(true, { reuse: true })).headers.location),
       /error=access_denied/,
     );
     await configure(f, {});
-    await configure(f, { redirectUris: [...f.input.redirectUris, "http://localhost:4567/other"] });
+    await configure(f, {
+      redirectUris: [...f.input.redirectUris, "http://localhost:4567/other"],
+    });
     assert.equal((await f.flow()).details.json().data.canReuseConsent, false);
     code(await (await f.flow()).consent());
     await configure(f, { audience: "different-service" });
@@ -173,11 +251,17 @@ test("Consent migration preserves existing applications, never backfills approva
     await f.db.transaction(async (trx) => {
       await migration.down(trx);
       await migration.up(trx);
-      assert.equal((await trx("public.asmblyr_oauth_apps").first()).id, f.application.id);
+      assert.equal(
+        (await trx("public.asmblyr_oauth_apps").first()).id,
+        f.application.id,
+      );
       assert.deepEqual(await trx("public.asmblyr_oauth_consents"), []);
     });
     code(await (await f.flow()).consent());
-    await assert.rejects(migration.down(f.db), /Cannot discard saved OAuth consents/);
+    await assert.rejects(
+      migration.down(f.db),
+      /Cannot discard saved OAuth consents/,
+    );
   } finally {
     await f.close();
   }
@@ -189,8 +273,16 @@ test("An in-flight grant cannot be saved after revocation, even after the user a
     const { applications, provider } = createOAuthProvider(f.db, f.config);
     const consents = new OAuthConsents(f.db, applications);
     const request = consentRequest({ scope: identityScopes });
-    const old = await consents.authorize(f.application.id, f.users[0], request, false);
-    const grant = new provider.Grant({ clientId: f.application.id, accountId: f.users[0] });
+    const old = await consents.authorize(
+      f.application.id,
+      f.users[0],
+      request,
+      false,
+    );
+    const grant = new provider.Grant({
+      clientId: f.application.id,
+      accountId: f.users[0],
+    });
     grant.jti = old.grantId;
     grant.addOIDCScope(identityScopes);
     await grant.save();

@@ -8,8 +8,17 @@ test("login keeps a record link and its table query", () => {
 });
 
 test("login return paths cannot redirect outside the app", () => {
-  for (const path of [null, "", "https://example.com", "//example.com", "/\\example.com",
-    "/\t/example.com", "/\n/example.com", "/a/..//example.com", "/\n/["]) {
+  for (const path of [
+    null,
+    "",
+    "https://example.com",
+    "//example.com",
+    "/\\example.com",
+    "/\t/example.com",
+    "/\n/example.com",
+    "/a/..//example.com",
+    "/\n/[",
+  ]) {
     assert.equal(safeNext(path), "/", JSON.stringify(path));
   }
 });

@@ -10,11 +10,26 @@ defineCollection({
       nullable: true,
       presentation: { interface: "textarea", width: "full" },
     },
-    resolved: { type: "boolean", required: false, nullable: false, defaultValue: false },
+    resolved: {
+      type: "boolean",
+      required: false,
+      nullable: false,
+      defaultValue: false,
+    },
     // @ts-expect-error Boolean fields cannot have string defaults.
-    invalidDefault: { type: "boolean", required: false, nullable: false, defaultValue: "false" },
+    invalidDefault: {
+      type: "boolean",
+      required: false,
+      nullable: false,
+      defaultValue: "false",
+    },
     // @ts-expect-error Search participation is currently supported only for text and email.
-    invalidSearch: { type: "integer", required: false, nullable: true, searchable: true },
+    invalidSearch: {
+      type: "integer",
+      required: false,
+      nullable: true,
+      searchable: true,
+    },
     // @ts-expect-error Core does not support arbitrary scalar types.
     invalidType: { type: "money", required: false, nullable: true },
     // @ts-expect-error Database nullability must be explicit and separate from API requiredness.

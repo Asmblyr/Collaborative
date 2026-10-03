@@ -32,7 +32,9 @@ export async function bulkUpdateItems(
       const schema = await lockedCollectionSchema(transaction, name);
       assertWritableFields(body.values, allowed);
       const values = parseItem(body.values, schema.fields, false);
-      const ids = body.ids.map((id) => parseItemId(id, schema.settings.primaryKey.type));
+      const ids = body.ids.map((id) =>
+        parseItemId(id, schema.settings.primaryKey.type),
+      );
       // Lock all selected rows in the same database order across concurrent batches.
       const rows = await transaction(name)
         .withSchema("public")
@@ -41,7 +43,10 @@ export async function bulkUpdateItems(
         .forUpdate()
         .select(schema.settings.primaryKey.name);
       if (rows.length !== ids.length)
-        throw new ItemError("Some selected items no longer exist; nothing was changed", 404);
+        throw new ItemError(
+          "Some selected items no longer exist; nothing was changed",
+          404,
+        );
       let changed = 0;
       for (const row of rows) {
         const result = await updateItemRow(

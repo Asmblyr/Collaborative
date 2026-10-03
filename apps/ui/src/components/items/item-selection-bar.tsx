@@ -37,11 +37,18 @@ export function ItemSelectionBar({
         <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted tabular-nums">
           {count}
         </span>
-        <span>{confirming ? "Удалить выбранные записи?" : "Выбрано на странице"}</span>
+        <span>
+          {confirming ? "Удалить выбранные записи?" : "Выбрано на странице"}
+        </span>
       </div>
       <div className="flex items-center gap-2">
         {canEdit && !confirming && (
-          <Button size="sm" variant="outline" disabled={pending || disabled} onClick={onEdit}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pending || disabled}
+            onClick={onEdit}
+          >
             <Pencil />
             Изменить
           </Button>
@@ -49,10 +56,20 @@ export function ItemSelectionBar({
         {canDelete &&
           (confirming ? (
             <>
-              <Button size="sm" variant="destructive" disabled={pending} onClick={onDelete}>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={pending}
+                onClick={onDelete}
+              >
                 Да, удалить
               </Button>
-              <Button size="sm" variant="ghost" disabled={pending} onClick={onCancel}>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={pending}
+                onClick={onCancel}
+              >
                 Отмена
               </Button>
             </>

@@ -62,16 +62,14 @@ export function registerPasskeyRoutes(
       "/users/me/passkeys",
       { preHandler: credentialRateLimit(10) },
       async (request, reply) =>
-        reply
-          .code(201)
-          .send({
-            data: await registerPasskey(
-              db(),
-              config,
-              await authenticateAccess(db(), request.headers.authorization),
-              request.body,
-            ),
-          }),
+        reply.code(201).send({
+          data: await registerPasskey(
+            db(),
+            config,
+            await authenticateAccess(db(), request.headers.authorization),
+            request.body,
+          ),
+        }),
     );
     scope.delete<{ Params: { id: string } }>(
       "/users/me/passkeys/:id",

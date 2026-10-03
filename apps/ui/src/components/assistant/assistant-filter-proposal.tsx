@@ -4,10 +4,17 @@ import { useState } from "react";
 import { Check, ListFilter, LoaderCircle } from "lucide-react";
 import { Button } from "@asmblyr/kit/ui/button";
 import { describeFilter } from "@/components/items/item-filter-description";
-import { canApplyProposal, type FilterProposal } from "./assistant-context-types";
+import {
+  canApplyProposal,
+  type FilterProposal,
+} from "./assistant-context-types";
 import { useAssistantContext } from "./assistant-context";
 
-export function AssistantFilterProposal({ proposal }: { proposal: FilterProposal }) {
+export function AssistantFilterProposal({
+  proposal,
+}: {
+  proposal: FilterProposal;
+}) {
   const page = useAssistantContext();
   const collectionName =
     page?.collectionDisplayName(proposal.collection) ||
@@ -25,7 +32,11 @@ export function AssistantFilterProposal({ proposal }: { proposal: FilterProposal
       await page!.apply(proposal);
       setApplied(true);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Не удалось применить фильтр");
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Не удалось применить фильтр",
+      );
     } finally {
       setPending(false);
     }
@@ -51,11 +62,24 @@ export function AssistantFilterProposal({ proposal }: { proposal: FilterProposal
         disabled={!available || pending}
         onClick={() => void apply()}
       >
-        {pending ? <LoaderCircle className="animate-spin" /> : applied ? <Check /> : <ListFilter />}
-        {pending ? "Проверяем…" : applied ? "Применить ещё раз" : "Применить фильтр"}
+        {pending ? (
+          <LoaderCircle className="animate-spin" />
+        ) : applied ? (
+          <Check />
+        ) : (
+          <ListFilter />
+        )}
+        {pending
+          ? "Проверяем…"
+          : applied
+            ? "Применить ещё раз"
+            : "Применить фильтр"}
       </Button>
       {applied && (
-        <p role="status" className="text-muted-foreground">
+        <p
+          role="status"
+          className="text-muted-foreground"
+        >
           Фильтр применён
         </p>
       )}
@@ -65,7 +89,10 @@ export function AssistantFilterProposal({ proposal }: { proposal: FilterProposal
         </p>
       )}
       {error && (
-        <p role="alert" className="text-destructive">
+        <p
+          role="alert"
+          className="text-destructive"
+        >
           {error}
         </p>
       )}

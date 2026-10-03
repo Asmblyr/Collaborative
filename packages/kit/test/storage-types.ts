@@ -1,4 +1,8 @@
-import { defineCollection, type CollectionRow, type CollectionStorage } from "../src/index.js";
+import {
+  defineCollection,
+  type CollectionRow,
+  type CollectionStorage,
+} from "../src/index.js";
 
 const entries = defineCollection({
   name: "entries",
@@ -7,7 +11,12 @@ const entries = defineCollection({
   fields: {
     body: { type: "text", required: true, nullable: true },
     author: { type: "uuid", required: false, nullable: true },
-    resolved: { type: "boolean", required: false, nullable: false, defaultValue: false },
+    resolved: {
+      type: "boolean",
+      required: false,
+      nullable: false,
+      defaultValue: false,
+    },
     price: { type: "decimal", required: false, nullable: true },
   },
 });
@@ -67,7 +76,12 @@ const defaults = defineCollection({
   name: "defaults",
   primaryKey: { name: "id", type: "serial" },
   fields: {
-    title: { type: "text", required: true, nullable: false, defaultValue: "Untitled" },
+    title: {
+      type: "text",
+      required: true,
+      nullable: false,
+      defaultValue: "Untitled",
+    },
     payload: { type: "json", required: false, nullable: false },
   },
 });

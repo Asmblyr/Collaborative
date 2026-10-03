@@ -5,5 +5,9 @@ export async function DELETE(
   { params }: { params: Promise<{ name: string }> },
 ) {
   const { name } = await params;
-  return proxyCollectionDeletion(request, `/collections/${encodeURIComponent(name)}`, "DELETE");
+  return proxyCollectionDeletion(
+    request,
+    `/collections/${encodeURIComponent(name)}`,
+    "DELETE",
+  );
 }

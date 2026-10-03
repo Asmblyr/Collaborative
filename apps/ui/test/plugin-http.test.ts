@@ -14,7 +14,8 @@ test("plugin request forwards custom headers and cookies but never browser sessi
   const request = new Request("http://localhost/api/example", {
     headers: {
       authorization: "Bearer injected",
-      cookie: "asmblyr_access=secret; preference=compact; asmblyr_refresh=secret",
+      cookie:
+        "asmblyr_access=secret; preference=compact; asmblyr_refresh=secret",
       connection: "x-private",
       "x-private": "hop-only",
       "x-custom": "kept",
@@ -35,7 +36,10 @@ test("plugin request forwards custom headers and cookies but never browser sessi
 
 test("plugin body preserves binary data and rejects oversized bodies without Content-Length", async () => {
   const bytes = new Uint8Array([0, 255, 128, 65]);
-  const request = new Request("http://localhost/", { method: "POST", body: bytes });
+  const request = new Request("http://localhost/", {
+    method: "POST",
+    body: bytes,
+  });
   assert.deepEqual(await readPluginBody(request), bytes);
   const oversized = new Request("http://localhost/", {
     method: "POST",
@@ -60,18 +64,26 @@ test("proxy forwards the first stream chunk without waiting for the rest and pro
   const response = pluginResponse(upstream);
   assert.equal(response.headers.get("content-type"), "text/event-stream");
   const reader = response.body!.getReader();
-  assert.equal(new TextDecoder().decode((await reader.read()).value), "first\n");
+  assert.equal(
+    new TextDecoder().decode((await reader.read()).value),
+    "first\n",
+  );
   await reader.cancel();
   assert.equal(cancelled, true);
 });
 
 test("proxy preserves redirect, headers, cookies and binary responses; reserved cookies cannot overwrite sessions", async () => {
-  const headers = new Headers({ location: "/api/example/done", "x-custom": "kept" });
+  const headers = new Headers({
+    location: "/api/example/done",
+    "x-custom": "kept",
+  });
   headers.append("set-cookie", "plugin=one; Path=/api/example; HttpOnly");
   headers.append("set-cookie", "second=two; Path=/api/example; HttpOnly");
   headers.append("set-cookie", "asmblyr_access=bad; Path=/");
   headers.append("set-cookie", "asmblyr_refresh=bad; Path=/");
-  const forwarded = pluginResponse(new Response(null, { status: 302, headers }));
+  const forwarded = pluginResponse(
+    new Response(null, { status: 302, headers }),
+  );
   const response = new NextResponse(forwarded.body, {
     status: forwarded.status,
     headers: forwarded.headers,
@@ -120,10 +132,19 @@ test("session refresh replays the original plugin bytes and never follows upstre
     calls++;
     assert.deepEqual(init.body, body);
     assert.equal(init.redirect, "manual");
-    assert.equal(new Headers(init.headers).get("content-type"), "application/octet-stream");
+    assert.equal(
+      new Headers(init.headers).get("content-type"),
+      "application/octet-stream",
+    );
     if (calls === 1) return new Response(null, { status: 401 });
-    assert.equal(new Headers(init.headers).get("authorization"), "Bearer renewed");
-    return new Response(null, { status: 302, headers: { location: "https://example.test/" } });
+    assert.equal(
+      new Headers(init.headers).get("authorization"),
+      "Bearer renewed",
+    );
+    return new Response(null, {
+      status: 302,
+      headers: { location: "https://example.test/" },
+    });
   });
   const response = await requestCoreWithSession(
     "/example/upload",

@@ -10,7 +10,8 @@ export async function readEditorItem(
   linkEndpoint?: string,
 ): Promise<ItemResult<JsonRecord>> {
   try {
-    if (linkEndpoint) return await requestJson(linkEndpoint, "GET", undefined, signal);
+    if (linkEndpoint)
+      return await requestJson(linkEndpoint, "GET", undefined, signal);
     return await asmblyr.items.get(collection, id, undefined, { signal });
   } catch (error) {
     const status =

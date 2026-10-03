@@ -9,10 +9,16 @@ import {
 } from "./validation.js";
 import type { Collection } from "./types.js";
 import { addFieldColumn } from "./field-types.js";
-import { findCollectionSettings, isManagedColumn } from "./settings-repository.js";
+import {
+  findCollectionSettings,
+  isManagedColumn,
+} from "./settings-repository.js";
 import { listCollections } from "./catalog-repository.js";
 import { lockCollectionOrder } from "./ordering.js";
-import { parseCollectionLocation, validateCollectionLocation } from "./navigation.js";
+import {
+  parseCollectionLocation,
+  validateCollectionLocation,
+} from "./navigation.js";
 import { assertNoAlias } from "./field-name.js";
 import { postgresCode } from "../shared/postgres-error.js";
 import { createCollectionStorage } from "./create-storage.js";
@@ -21,7 +27,10 @@ import { saveFieldMetadata } from "./field-metadata.js";
 export { listCollections } from "./catalog-repository.js";
 export { updateCollectionField } from "./field-update-service.js";
 
-export async function createCollection(database: Knex, body: unknown): Promise<Collection> {
+export async function createCollection(
+  database: Knex,
+  body: unknown,
+): Promise<Collection> {
   const input = parseCreateCollection(body);
   const {
     name,
@@ -51,14 +60,18 @@ export async function createCollection(database: Knex, body: unknown): Promise<C
           .forShare()
           .first("id"))
       ) {
-        throw Object.assign(new Error("Workspace not found"), { statusCode: 404 });
+        throw Object.assign(new Error("Workspace not found"), {
+          statusCode: 404,
+        });
       }
       const row = await createCollectionStorage(transaction, input);
       return row.created_at;
     });
 
     if (state) {
-      const collection = (await listCollections(database)).find((entry) => entry.name === name);
+      const collection = (await listCollections(database)).find(
+        (entry) => entry.name === name,
+      );
       if (!collection) throw new CollectionNotFoundError(name);
       return collection;
     }
@@ -94,7 +107,9 @@ export async function addCollectionField(
 ): Promise<Collection> {
   const name = parseMutableCollectionName(collectionName);
   await addFieldDefinition(database, name, body);
-  const collection = (await listCollections(database)).find((entry) => entry.name === name);
+  const collection = (await listCollections(database)).find(
+    (entry) => entry.name === name,
+  );
   if (!collection) throw new CollectionNotFoundError(name);
   return collection;
 }
@@ -112,17 +127,23 @@ export async function addFieldDefinition(
       const settings = await findCollectionSettings(transaction, name);
       if (!settings) throw new CollectionNotFoundError(name);
       if (isManagedColumn(settings, field.name)) {
-        throw new CollectionFieldConflictError(`Field name is managed: ${field.name}`);
+        throw new CollectionFieldConflictError(
+          `Field name is managed: ${field.name}`,
+        );
       }
       await assertNoAlias(transaction, name, field.name);
-      await transaction.schema.withSchema("public").alterTable(name, (table) => {
-        addFieldColumn(table, field);
-      });
+      await transaction.schema
+        .withSchema("public")
+        .alterTable(name, (table) => {
+          addFieldColumn(table, field);
+        });
       await saveFieldMetadata(transaction, name, [field]);
     });
   } catch (error) {
     if (postgresCode(error) === "42701") {
-      throw new CollectionFieldConflictError(`Field already exists: ${field.name}`);
+      throw new CollectionFieldConflictError(
+        `Field already exists: ${field.name}`,
+      );
     }
     if (postgresCode(error) === "23502") {
       throw new CollectionFieldConflictError(

@@ -34,9 +34,14 @@ export async function requestJson<T>(
       "message" in error && typeof error.message === "string"
         ? error.message
         : "Не удалось выполнить действие";
-    const code = "code" in error && typeof error.code === "string" ? error.code : undefined;
+    const code =
+      "code" in error && typeof error.code === "string"
+        ? error.code
+        : undefined;
     const requestId =
-      "requestId" in error && typeof error.requestId === "string" ? error.requestId : undefined;
+      "requestId" in error && typeof error.requestId === "string"
+        ? error.requestId
+        : undefined;
     throw new HttpError(message, response.status, code, requestId);
   }
   if (response.status === 204) return undefined as T;

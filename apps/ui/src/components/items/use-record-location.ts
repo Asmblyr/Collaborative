@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { collectionHref, itemHref, recordIdFromPath } from "@/lib/item-location";
+import {
+  collectionHref,
+  itemHref,
+  recordIdFromPath,
+} from "@/lib/item-location";
 
 export function useRecordLocation(collection: string) {
   const pathname = usePathname();
@@ -18,7 +22,9 @@ export function useRecordLocation(collection: string) {
     router.refresh();
   }, [recordId, router]);
 
-  function recordChanged() { refreshNeeded.current = true; }
+  function recordChanged() {
+    refreshNeeded.current = true;
+  }
 
   function openRecord(id: string) {
     const query = new URLSearchParams(window.location.search);
@@ -26,16 +32,25 @@ export function useRecordLocation(collection: string) {
     const suffix = query.size ? `?${query}` : "";
     // Next integrates native history with usePathname. Keep the current table,
     // selection and scroll mounted while adding a shareable record URL.
-    window.history.pushState({ asmblyrRecordReturn: `${listPath}${suffix}` }, "", `${itemHref(collection, id)}${suffix}`);
+    window.history.pushState(
+      { asmblyrRecordReturn: `${listPath}${suffix}` },
+      "",
+      `${itemHref(collection, id)}${suffix}`,
+    );
   }
 
   function closeRecord() {
     // A browser Back may already have removed the record before dialog cleanup.
-    if (!recordId || recordIdFromPath(window.location.pathname, collection) !== recordId) return;
+    if (
+      !recordId ||
+      recordIdFromPath(window.location.pathname, collection) !== recordId
+    )
+      return;
     const query = new URLSearchParams(window.location.search);
     query.delete("item");
     const listHref = `${listPath}${query.size ? `?${query}` : ""}`;
-    if (window.history.state?.asmblyrRecordReturn === listHref) window.history.back();
+    if (window.history.state?.asmblyrRecordReturn === listHref)
+      window.history.back();
     else window.history.replaceState(null, "", listHref);
   }
 

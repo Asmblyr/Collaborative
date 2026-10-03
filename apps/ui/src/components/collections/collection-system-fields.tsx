@@ -12,18 +12,39 @@ export function CollectionSystemFields({
   updatedAt: boolean;
   state: boolean;
   disabled: boolean;
-  onChange: (field: "createdAt" | "updatedAt" | "state", enabled: boolean) => void;
+  onChange: (
+    field: "createdAt" | "updatedAt" | "state",
+    enabled: boolean,
+  ) => void;
 }) {
   const fields = [
-    { key: "createdAt" as const, checked: createdAt, name: "created_at", label: "Когда создано" },
-    { key: "updatedAt" as const, checked: updatedAt, name: "updated_at", label: "Когда обновлено" },
-    { key: "state" as const, checked: state, name: "status", label: "Состояние" },
+    {
+      key: "createdAt" as const,
+      checked: createdAt,
+      name: "created_at",
+      label: "Когда создано",
+    },
+    {
+      key: "updatedAt" as const,
+      checked: updatedAt,
+      name: "updated_at",
+      label: "Когда обновлено",
+    },
+    {
+      key: "state" as const,
+      checked: state,
+      name: "status",
+      label: "Состояние",
+    },
   ];
   return (
     <div className="space-y-4 rounded-xl border p-4">
       <h3 className="text-sm font-medium">Системные поля</h3>
       {fields.map((field) => (
-        <div key={field.key} className="flex items-center gap-3">
+        <div
+          key={field.key}
+          className="flex items-center gap-3"
+        >
           <Checkbox
             id={`collection-${field.key}`}
             checked={field.checked}
@@ -42,8 +63,9 @@ export function CollectionSystemFields({
         </div>
       ))}
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Даты заполняются автоматически. Состояние новой записи — «Опубликовано». Черновики и архив
-        скрыты из списка по умолчанию. Состояния можно настроить после создания коллекции.
+        Даты заполняются автоматически. Состояние новой записи — «Опубликовано».
+        Черновики и архив скрыты из списка по умолчанию. Состояния можно
+        настроить после создания коллекции.
       </p>
     </div>
   );

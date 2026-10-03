@@ -7,9 +7,12 @@ import type { JsonValue } from "./structured-values.js";
 
 export function parseRepeater(value: unknown): RepeaterSettings {
   const fail = (): never => {
-    throw new CollectionInputError("Invalid repeater: use 1–24 named scalar fields and 0–200 rows");
+    throw new CollectionInputError(
+      "Invalid repeater: use 1–24 named scalar fields and 0–200 rows",
+    );
   };
-  if (!value || typeof value !== "object" || Array.isArray(value)) return fail();
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return fail();
   const input = value as RepeaterSettings;
   if (
     Object.keys(input).some(
@@ -33,7 +36,15 @@ export function parseRepeater(value: unknown): RepeaterSettings {
       Array.isArray(field) ||
       Object.keys(field).some(
         (key) =>
-          !["name", "label", "type", "interface", "required", "width", "options"].includes(key),
+          ![
+            "name",
+            "label",
+            "type",
+            "interface",
+            "required",
+            "width",
+            "options",
+          ].includes(key),
       ) ||
       typeof field.name !== "string" ||
       !/^[a-z][a-z0-9_]{0,62}$/.test(field.name) ||
@@ -42,8 +53,12 @@ export function parseRepeater(value: unknown): RepeaterSettings {
       typeof field.label !== "string" ||
       field.label.length > 120 ||
       field.label.includes("\0") ||
-      !["text", "email", "integer", "decimal", "boolean", "datetime"].includes(field.type) ||
-      !["auto", "textarea", "markdown", "url", "select"].includes(field.interface) ||
+      !["text", "email", "integer", "decimal", "boolean", "datetime"].includes(
+        field.type,
+      ) ||
+      !["auto", "textarea", "markdown", "url", "select"].includes(
+        field.interface,
+      ) ||
       (field.interface !== "auto" && field.type !== "text") ||
       typeof field.required !== "boolean" ||
       !["full", "half"].includes(field.width)
@@ -102,12 +117,17 @@ export function parseRepeaterValue(
       const raw = Object.hasOwn(row, field.name) ? row[field.name] : undefined;
       if (raw === null || raw === undefined) {
         if (field.required)
-          throw new Error(`Row ${index + 1}: ${field.label || field.name} is required`);
+          throw new Error(
+            `Row ${index + 1}: ${field.label || field.name} is required`,
+          );
         continue;
       }
       try {
         const parsed = parseFieldValue(field, raw);
-        if (field.interface === "select" && !field.options?.some((o) => o.value === parsed))
+        if (
+          field.interface === "select" &&
+          !field.options?.some((o) => o.value === parsed)
+        )
           throw new Error("Choose a configured option");
         result[field.name] =
           typeof parsed === "string" || typeof parsed === "number"

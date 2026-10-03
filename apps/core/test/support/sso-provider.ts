@@ -5,7 +5,9 @@ import { ssoFromEnv } from "../../src/auth/sso/config.js";
 
 export async function fakeSsoProvider(
   driver: "openid" | "oauth2" = "openid",
-  clientAuth: "client_secret_basic" | "client_secret_post" = "client_secret_basic",
+  clientAuth:
+    | "client_secret_basic"
+    | "client_secret_post" = "client_secret_basic",
 ) {
   const issuer = "https://identity.example.test";
   const provider = ssoFromEnv({
@@ -24,7 +26,12 @@ export async function fakeSsoProvider(
   })[0];
   const { privateKey, publicKey } = await generateKeyPair("RS256");
   const other = await generateKeyPair("RS256");
-  const jwk = { ...(await exportJWK(publicKey)), kid: "test-key", alg: "RS256", use: "sig" };
+  const jwk = {
+    ...(await exportJWK(publicKey)),
+    kid: "test-key",
+    alg: "RS256",
+    use: "sig",
+  };
   const codes = new Map<
     string,
     { nonce: string; challenge: string; subject: string; fault?: string }
@@ -32,7 +39,11 @@ export async function fakeSsoProvider(
   let profileId = "";
   let exchanges = 0;
 
-  function authorize(url: string, subject = "external-user", fault?: string): string {
+  function authorize(
+    url: string,
+    subject = "external-user",
+    fault?: string,
+  ): string {
     const parameters = new URL(url).searchParams;
     assert.equal(parameters.get("redirect_uri"), provider.callbackUrl);
     assert.equal(parameters.get("code_challenge_method"), "S256");
@@ -43,7 +54,11 @@ export async function fakeSsoProvider(
       subject,
       fault,
     });
-    return new URLSearchParams({ code, state: parameters.get("state")!, iss: issuer }).toString();
+    return new URLSearchParams({
+      code,
+      state: parameters.get("state")!,
+      iss: issuer,
+    }).toString();
   }
 
   const transport: typeof fetch = async (input, init) => {
@@ -62,10 +77,17 @@ export async function fakeSsoProvider(
     }
     if (url.pathname === "/keys") return Response.json({ keys: [jwk] });
     if (url.pathname === "/profile") {
-      assert.equal(new Headers(init?.headers).get("authorization"), "Bearer provider-token");
-      return Response.json({ account: { id: profileId }, email: "same@example.test" });
+      assert.equal(
+        new Headers(init?.headers).get("authorization"),
+        "Bearer provider-token",
+      );
+      return Response.json({
+        account: { id: profileId },
+        email: "same@example.test",
+      });
     }
-    if (url.pathname !== "/token") throw new Error(`Unexpected provider request: ${url.pathname}`);
+    if (url.pathname !== "/token")
+      throw new Error(`Unexpected provider request: ${url.pathname}`);
     exchanges++;
     const body = new URLSearchParams(String(init?.body));
     const authorization = new Headers(init?.headers).get("authorization");
@@ -88,25 +110,38 @@ export async function fakeSsoProvider(
     assert.ok(pending, "single-use authorization code");
     assert.equal(body.get("redirect_uri"), provider.callbackUrl);
     assert.equal(
-      createHash("sha256").update(body.get("code_verifier")!).digest("base64url"),
+      createHash("sha256")
+        .update(body.get("code_verifier")!)
+        .digest("base64url"),
       pending.challenge,
     );
     profileId = pending.subject;
     if (driver === "oauth2")
-      return Response.json({ access_token: "provider-token", token_type: "Bearer" });
+      return Response.json({
+        access_token: "provider-token",
+        token_type: "Bearer",
+      });
     const token = await new SignJWT({
       nonce: pending.fault === "nonce" ? "wrong" : pending.nonce,
       email: "same@example.test",
       email_verified: true,
     })
       .setProtectedHeader({ alg: "RS256", kid: "test-key" })
-      .setIssuer(pending.fault === "issuer" ? "https://wrong.example.test" : issuer)
+      .setIssuer(
+        pending.fault === "issuer" ? "https://wrong.example.test" : issuer,
+      )
       .setAudience(pending.fault === "audience" ? "wrong" : provider.clientId)
       .setSubject(pending.subject)
       .setIssuedAt()
-      .setExpirationTime(pending.fault === "expiry" ? Math.floor(Date.now() / 1000) - 120 : "5m")
+      .setExpirationTime(
+        pending.fault === "expiry" ? Math.floor(Date.now() / 1000) - 120 : "5m",
+      )
       .sign(pending.fault === "signature" ? other.privateKey : privateKey);
-    return Response.json({ access_token: "provider-token", token_type: "Bearer", id_token: token });
+    return Response.json({
+      access_token: "provider-token",
+      token_type: "Bearer",
+      id_token: token,
+    });
   };
   return { provider, transport, authorize, exchanges: () => exchanges };
 }

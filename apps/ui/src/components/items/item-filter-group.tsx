@@ -10,7 +10,11 @@ import {
 import { ItemFilterCondition } from "./item-filter-condition";
 import { ItemFilterFieldPicker } from "./item-filter-field-picker";
 import type { FilterPath } from "./item-filter-model";
-import type { FilterGroup, FilterNode, FilterScope } from "./item-filter-options";
+import type {
+  FilterGroup,
+  FilterNode,
+  FilterScope,
+} from "./item-filter-options";
 
 interface Props {
   group: FilterGroup;
@@ -39,7 +43,9 @@ export function ItemFilterGroup({
   return (
     <section
       className={
-        root ? "space-y-2" : "space-y-2 rounded-r-md border-l-2 border-primary/30 py-1 pl-3"
+        root
+          ? "space-y-2"
+          : "space-y-2 rounded-r-md border-l-2 border-primary/30 py-1 pl-3"
       }
       aria-label={root ? "Фильтр записей" : "Группа условий"}
     >
@@ -48,7 +54,9 @@ export function ItemFilterGroup({
           <span className="pl-1 text-xs text-muted-foreground">Совпадает</span>
           <Select
             value={group.logic}
-            onValueChange={(logic) => onEdit(path, { ...group, logic: logic as "and" | "or" })}
+            onValueChange={(logic) =>
+              onEdit(path, { ...group, logic: logic as "and" | "or" })
+            }
           >
             <SelectTrigger
               aria-label="Логика группы"
@@ -71,7 +79,10 @@ export function ItemFilterGroup({
               aria-label="Удалить группу"
               onClick={() => onRemove(path)}
             >
-              <X aria-hidden="true" className="size-3.5" />
+              <X
+                aria-hidden="true"
+                className="size-3.5"
+              />
             </Button>
           )}
         </div>
@@ -112,16 +123,24 @@ export function ItemFilterGroup({
       </div>
       <ItemFilterFieldPicker
         scopes={scopes}
-        disabled={total >= 20 || scopes.every((scope) => scope.fields.length === 0)}
+        disabled={
+          total >= 20 || scopes.every((scope) => scope.fields.length === 0)
+        }
         onSelect={(condition) => onAdd(path, condition)}
         onAddGroup={
           depth < 3
-            ? () => onAdd(path, { logic: group.logic === "and" ? "or" : "and", children: [] })
+            ? () =>
+                onAdd(path, {
+                  logic: group.logic === "and" ? "or" : "and",
+                  children: [],
+                })
             : undefined
         }
       />
       {root && total >= 20 && (
-        <p className="px-2 text-xs text-muted-foreground">Можно добавить до 20 условий.</p>
+        <p className="px-2 text-xs text-muted-foreground">
+          Можно добавить до 20 условий.
+        </p>
       )}
     </section>
   );

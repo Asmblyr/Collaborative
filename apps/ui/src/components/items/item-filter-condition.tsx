@@ -11,8 +11,15 @@ import {
 import { ItemFilterFieldPicker } from "./item-filter-field-picker";
 import { ItemFilterOperator } from "./item-filter-operator";
 import { changeFilterOperator } from "./item-filter-model";
-import { hasNoValue, type FilterCondition, type FilterScope } from "./item-filter-options";
-import { presenceForCondition, scopeForCondition } from "./item-filter-presence";
+import {
+  hasNoValue,
+  type FilterCondition,
+  type FilterScope,
+} from "./item-filter-options";
+import {
+  presenceForCondition,
+  scopeForCondition,
+} from "./item-filter-presence";
 import { ItemFilterValue } from "./item-filter-value";
 import { relationSelectionScope } from "./item-filter-relation";
 import { ItemFilterRelationOperator } from "./item-filter-relation-operator";
@@ -39,7 +46,9 @@ export function ItemFilterCondition({
     .find((entry) => entry.name === condition.field);
   const selectionScope = relationSelectionScope(scopes, condition);
   const many =
-    !selectionScope && presence === null && (scope.kind === "o2m" || scope.kind === "m2m");
+    !selectionScope &&
+    presence === null &&
+    (scope.kind === "o2m" || scope.kind === "m2m");
 
   return (
     <div
@@ -53,7 +62,10 @@ export function ItemFilterCondition({
           <Select
             value={condition.quantifier ?? "some"}
             onValueChange={(quantifier) =>
-              onChange({ ...condition, quantifier: quantifier as "some" | "none" })
+              onChange({
+                ...condition,
+                quantifier: quantifier as "some" | "none",
+              })
             }
           >
             <SelectTrigger
@@ -115,7 +127,9 @@ export function ItemFilterCondition({
               />
             </>
           ) : (
-            <span className="px-2 text-xs text-destructive">Поле недоступно</span>
+            <span className="px-2 text-xs text-destructive">
+              Поле недоступно
+            </span>
           )}
         </div>
       </div>
@@ -127,7 +141,10 @@ export function ItemFilterCondition({
         className="h-8 w-7 shrink-0 text-muted-foreground/60 hover:text-destructive"
         onClick={onRemove}
       >
-        <X aria-hidden="true" className="size-3.5" />
+        <X
+          aria-hidden="true"
+          className="size-3.5"
+        />
       </Button>
     </div>
   );

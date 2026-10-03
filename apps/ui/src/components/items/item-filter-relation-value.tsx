@@ -2,9 +2,17 @@ import { useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Link2, X } from "lucide-react";
 import { Button } from "@asmblyr/kit/ui/button";
 import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ItemFilterMenu } from "./item-filter-menu";
-import { hasMultipleValues, type FilterCondition, type FilterScope } from "./item-filter-options";
+import {
+  hasMultipleValues,
+  type FilterCondition,
+  type FilterScope,
+} from "./item-filter-options";
 import { useFilterRelationItems } from "./use-filter-relation-items";
 
 export function ItemFilterRelationValue({
@@ -33,12 +41,16 @@ export function ItemFilterRelationValue({
       setOpen(false);
       return;
     }
-    if (selected.includes(id)) onChange(selected.filter((value) => value !== id));
+    if (selected.includes(id))
+      onChange(selected.filter((value) => value !== id));
     else if (selected.length < 20) onChange([...selected, id]);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -47,12 +59,21 @@ export function ItemFilterRelationValue({
           aria-label={"Выбранные записи связи " + scope.id}
           className="h-8 min-w-0 max-w-full justify-start gap-1.5 px-2 font-normal"
         >
-          <Link2 aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
-          <span className={"truncate " + (!selected.length ? "text-muted-foreground" : "")}>
+          <Link2
+            aria-hidden="true"
+            className="size-3.5 shrink-0 text-muted-foreground"
+          />
+          <span
+            className={
+              "truncate " + (!selected.length ? "text-muted-foreground" : "")
+            }
+          >
             {summary[0] ?? (multiple ? "выбрать записи…" : "выбрать запись…")}
           </span>
           {selected.length > 1 && (
-            <span className="shrink-0 text-xs text-muted-foreground">+{selected.length - 1}</span>
+            <span className="shrink-0 text-xs text-muted-foreground">
+              +{selected.length - 1}
+            </span>
           )}
         </Button>
       </PopoverTrigger>
@@ -64,7 +85,9 @@ export function ItemFilterRelationValue({
         <div className="border-b px-3 py-2.5">
           <p className="text-sm font-medium">{scope.collection}</p>
           <p className="text-xs text-muted-foreground">
-            {multiple ? `Выбрано ${selected.length} из 20` : "Выберите одну запись"}
+            {multiple
+              ? `Выбрано ${selected.length} из 20`
+              : "Выберите одну запись"}
           </p>
         </div>
         {multiple && selected.length > 0 && (
@@ -83,7 +106,10 @@ export function ItemFilterRelationValue({
                   aria-label={"Убрать запись " + (items.labels.get(id) ?? id)}
                   onClick={() => toggle(id)}
                 >
-                  <X aria-hidden="true" className="size-3" />
+                  <X
+                    aria-hidden="true"
+                    className="size-3"
+                  />
                 </Button>
               </span>
             ))}
@@ -96,13 +122,24 @@ export function ItemFilterRelationValue({
           placeholder={"Найти запись в " + scope.collection}
         >
           {items.loading ? (
-            <p role="status" className="p-3 text-xs text-muted-foreground">
+            <p
+              role="status"
+              className="p-3 text-xs text-muted-foreground"
+            >
               Загрузка записей…
             </p>
           ) : items.error ? (
-            <div role="alert" className="p-3 text-xs text-destructive">
+            <div
+              role="alert"
+              className="p-3 text-xs text-destructive"
+            >
               {items.error}
-              <Button type="button" variant="ghost" size="sm" onClick={items.retry}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={items.retry}
+              >
                 Повторить
               </Button>
             </div>
@@ -118,7 +155,9 @@ export function ItemFilterRelationValue({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm">{label}</span>
                   {label !== id && (
-                    <span className="block truncate text-[11px] text-muted-foreground">{id}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">
+                      {id}
+                    </span>
                   )}
                 </span>
               );
@@ -147,14 +186,22 @@ export function ItemFilterRelationValue({
                   onClick={() => toggle(id)}
                 >
                   {content}
-                  {checked && <Check aria-hidden="true" className="size-4 shrink-0" />}
+                  {checked && (
+                    <Check
+                      aria-hidden="true"
+                      className="size-4 shrink-0"
+                    />
+                  )}
                 </Button>
               );
             })
           )}
         </ItemFilterMenu>
         {items.labelError && (
-          <p role="status" className="px-3 pb-2 text-xs text-muted-foreground">
+          <p
+            role="status"
+            className="px-3 pb-2 text-xs text-muted-foreground"
+          >
             {items.labelError}
           </p>
         )}
@@ -194,7 +241,11 @@ export function ItemFilterRelationValue({
             >
               Очистить
             </Button>
-            <Button type="button" size="sm" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setOpen(false)}
+            >
               Готово
             </Button>
           </div>

@@ -1,6 +1,9 @@
 import { ArrowDown, ArrowUp, Folder, TextCursorInput } from "lucide-react";
 import { Button } from "@asmblyr/kit/ui/button";
-import type { FormLayout, FormNode } from "@/components/items/presentation-types";
+import type {
+  FormLayout,
+  FormNode,
+} from "@/components/items/presentation-types";
 import type { CollectionField } from "@/components/items/types";
 
 export function FormDesignerTree({
@@ -18,7 +21,13 @@ export function FormDesignerTree({
   onSelect: (id: string) => void;
   onMove: (id: string, offset: number) => void;
 }) {
-  function row(id: string, label: string, index: number, count: number, icon: React.ReactNode) {
+  function row(
+    id: string,
+    label: string,
+    index: number,
+    count: number,
+    icon: React.ReactNode,
+  ) {
     return (
       <div
         className={`group flex min-w-0 items-center gap-0.5 rounded-lg p-1 ${selected === id ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-muted/60"}`}
@@ -65,7 +74,8 @@ export function FormDesignerTree({
           {row(
             node.id,
             node.kind === "field"
-              ? fields.find((f) => f.name === node.field)?.presentation?.label || node.field
+              ? fields.find((f) => f.name === node.field)?.presentation
+                  ?.label || node.field
               : node.label,
             index,
             entries.length,
@@ -81,15 +91,23 @@ export function FormDesignerTree({
     </div>
   );
   return (
-    <nav aria-label="Структура формы" className="space-y-3">
+    <nav
+      aria-label="Структура формы"
+      className="space-y-3"
+    >
       {layout.tabs.map((tab, index) => (
-        <div key={tab.id} className="space-y-1">
+        <div
+          key={tab.id}
+          className="space-y-1"
+        >
           {row(
             tab.id,
             tab.label,
             index,
             layout.tabs.length,
-            <span className="rounded border px-1 text-[10px] text-muted-foreground">TAB</span>,
+            <span className="rounded border px-1 text-[10px] text-muted-foreground">
+              TAB
+            </span>,
           )}
           {nodes(tab.children)}
         </div>

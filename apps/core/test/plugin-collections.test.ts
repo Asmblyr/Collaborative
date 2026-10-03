@@ -19,9 +19,15 @@ test("source and built collection discovery produce identical normalized definit
     built.map((p) => p.collections),
   );
   const comments = built.find((p) => p.namespace === "comments");
-  assert.equal(comments?.collections?.[0].input.name, "plugin_comments_entries");
+  assert.equal(
+    comments?.collections?.[0].input.name,
+    "plugin_comments_entries",
+  );
   assert.equal(comments?.collections?.[0].input.mcp.enabled, false);
-  assert.equal(comments?.collections?.[0].presentation.body.interface, "textarea");
+  assert.equal(
+    comments?.collections?.[0].presentation.body.interface,
+    "textarea",
+  );
 });
 
 test("namespace and declaration names reject reserved prefixes, ambiguity and PostgreSQL truncation", () => {
@@ -36,10 +42,19 @@ test("namespace and declaration names reject reserved prefixes, ambiguity and Po
   ]) {
     assert.throws(() => parsePluginNamespace(value));
   }
-  for (const name of ["asmblyr_users", "plugin_other_entries", "x".repeat(63)]) {
-    assert.throws(() => parsePluginCollection({ ...definition, name }, "comments", name));
+  for (const name of [
+    "asmblyr_users",
+    "plugin_other_entries",
+    "x".repeat(63),
+  ]) {
+    assert.throws(() =>
+      parsePluginCollection({ ...definition, name }, "comments", name),
+    );
   }
-  assert.throws(() => parsePluginCollection(definition, "comments", "different"), /filename/);
+  assert.throws(
+    () => parsePluginCollection(definition, "comments", "different"),
+    /filename/,
+  );
 });
 
 test("runtime parsing enforces declaration shape, API requirements and managed field names", () => {
@@ -48,11 +63,19 @@ test("runtime parsing enforces declaration shape, API requirements and managed f
   assert.equal(parsed.input.fields[0].nullable, true);
   const invalid = [
     { ...definition, fields: { body: { type: "text", required: true } } },
-    { ...definition, fields: { id: { type: "uuid", required: true, nullable: false } } },
+    {
+      ...definition,
+      fields: { id: { type: "uuid", required: true, nullable: false } },
+    },
     {
       ...definition,
       fields: {
-        body: { type: "boolean", required: false, nullable: false, defaultValue: "false" },
+        body: {
+          type: "boolean",
+          required: false,
+          nullable: false,
+          defaultValue: "false",
+        },
       },
     },
     {

@@ -33,17 +33,45 @@ interface ItemsTableProps {
   onMove: (name: string, target: string, after?: boolean) => void;
 }
 
-export function ItemsTable({ collection, catalog, items, recordLabels, columns, page, selected, disabled,
-  onSelect, onSelectPage, onOpen, onSort, onMove }: ItemsTableProps) {
+export function ItemsTable({
+  collection,
+  catalog,
+  items,
+  recordLabels,
+  columns,
+  page,
+  selected,
+  disabled,
+  onSelect,
+  onSelectPage,
+  onOpen,
+  onSort,
+  onMove,
+}: ItemsTableProps) {
   const dragged = useRef<string | null>(null);
-  const [drop, setDrop] = useState<{ name: string; after: boolean } | null>(null);
+  const [drop, setDrop] = useState<{ name: string; after: boolean } | null>(
+    null,
+  );
   const itemKey = (item: Item) => String(item[collection.primaryKey.name]);
-  const selectedOnPage = items.filter((item) => selected.has(itemKey(item))).length;
+  const selectedOnPage = items.filter((item) =>
+    selected.has(itemKey(item)),
+  ).length;
   const labelField = itemLabelField(collection);
   const labels = useTableRelationLabels(catalog, items, columns);
-  const columnWidth = (column: ItemColumn) => column.name === labelField && column.name !== collection.primaryKey.name ? 360
-    : column.name === collection.primaryKey.name ? 148 : column.relation ? 260
-      : column.type === "datetime" ? 220 : column.type === "email" ? 224 : column.type === "boolean" ? 112 : 160;
+  const columnWidth = (column: ItemColumn) =>
+    column.name === labelField && column.name !== collection.primaryKey.name
+      ? 360
+      : column.name === collection.primaryKey.name
+        ? 148
+        : column.relation
+          ? 260
+          : column.type === "datetime"
+            ? 220
+            : column.type === "email"
+              ? 224
+              : column.type === "boolean"
+                ? 112
+                : 160;
 
   function over(event: DragEvent<HTMLTableCellElement>, name: string) {
     if (!dragged.current || dragged.current === name) return;
@@ -62,77 +90,190 @@ export function ItemsTable({ collection, catalog, items, recordLabels, columns, 
     onMove(name, other.name, event.key === "ArrowRight");
   }
 
-  return <div className="min-h-0 flex-1 [&>[data-slot=table-container]]:h-full [&>[data-slot=table-container]]:overflow-auto">
-    <Table aria-label={`Записи коллекции ${collection.name}`} className="table-fixed"
-      style={{ minWidth: 48 + columns.reduce((width, column) => width + columnWidth(column), 0) }}>
-      <colgroup><col style={{ width: 48 }} />{columns.map((column) => <col key={column.name}
-        style={column.name === labelField && column.name !== collection.primaryKey.name ? undefined : { width: columnWidth(column) }} />)}</colgroup>
-      <TableHeader><TableRow className="hover:bg-transparent">
-        <TableHead scope="col" className="sticky top-0 left-0 z-30 bg-card px-4">
-          <Checkbox aria-label="Выбрать все записи на странице"
-            checked={selectedOnPage === items.length ? true : selectedOnPage > 0 ? "indeterminate" : false}
-            disabled={disabled}
-            onCheckedChange={(checked) => onSelectPage(checked === true)} />
-        </TableHead>
-        {columns.map((column) => <TableHead key={column.name} scope="col" draggable data-column={column.name}
-          aria-sort={page.sort === column.name ? page.direction === "asc" ? "ascending" : "descending" : "none"}
-          onDragStart={(event) => {
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", column.name);
-            dragged.current = column.name;
-          }}
-          onDragEnd={() => { dragged.current = null; setDrop(null); }}
-          onDragOver={(event) => over(event, column.name)}
-          onDragLeave={() => setDrop(null)}
-          onDrop={(event) => {
-            event.preventDefault();
-            if (dragged.current) onMove(dragged.current, column.name, drop?.after);
-            dragged.current = null; setDrop(null);
-          }}
-          className={`group sticky top-0 z-20 bg-card px-3 text-xs text-muted-foreground ${drop?.name === column.name
-            ? drop.after ? "border-r-2 border-r-primary" : "border-l-2 border-l-primary" : ""}`}>
-          <div className="flex min-w-0 items-center gap-1">
-            <button type="button" onKeyDown={(event) => keyboardMove(event, column.name)}
-              aria-label={`Переместить столбец ${column.label}. Используйте стрелки влево и вправо.`}
-              className="shrink-0 cursor-grab rounded p-1 text-muted-foreground opacity-40 hover:bg-muted group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing">
-              <GripVertical className="size-3.5" aria-hidden="true" />
-            </button>
-            <button type="button" onClick={() => onSort(column.name)}
-              className="flex min-w-0 items-center gap-1 rounded px-1 py-1 text-left hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-              aria-label={`Сортировать по ${column.label}`} title={column.name}>
-              <span className="truncate">{column.label}</span>
-              {page.sort === column.name && (page.direction === "asc"
-                ? <ArrowUp className="size-3" aria-hidden="true" />
-                : <ArrowDown className="size-3" aria-hidden="true" />)}
-            </button>
-          </div>
-        </TableHead>)}
-      </TableRow></TableHeader>
-      <TableBody>{items.map((item) => {
-        const id = itemKey(item);
-        return <TableRow key={id} tabIndex={disabled ? -1 : 0}
-          data-state={selected.has(id) ? "selected" : undefined}
-          aria-label={`Открыть запись ${recordLabels?.[id] ?? recordLabel(collection, item)} (${id})`}
-          className="cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
-          onClick={() => { if (!disabled) onOpen(item); }}
-          onKeyDown={(event) => {
-            if (disabled || event.target !== event.currentTarget) return;
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              onOpen(item);
-            }
-          }}>
-          <TableCell className={`sticky left-0 z-10 px-4 ${selected.has(id) ? "bg-muted" : "bg-card"}`} onClick={(event) => event.stopPropagation()}>
-            <Checkbox aria-label={`Выбрать запись ${recordLabels?.[id] ?? recordLabel(collection, item)} (${id})`} checked={selected.has(id)}
-              disabled={disabled} onCheckedChange={(checked) => onSelect(id, checked === true)} />
-          </TableCell>
-          {columns.map((column) => <TableCell key={column.name} data-column={column.name} className="overflow-hidden px-4 py-3">
-            <ItemTableValue column={column} value={item[column.name]} primary={column.name === collection.primaryKey.name}
-              emphasized={column.name === labelField} relationLabel={column.relation?.kind === "m2o"
-                ? labels.get(JSON.stringify([column.relation.collection, String(item[column.name])])) : undefined} />
-          </TableCell>)}
-        </TableRow>;
-      })}</TableBody>
-    </Table>
-  </div>;
+  return (
+    <div className="min-h-0 flex-1 [&>[data-slot=table-container]]:h-full [&>[data-slot=table-container]]:overflow-auto">
+      <Table
+        aria-label={`Записи коллекции ${collection.name}`}
+        className="table-fixed"
+        style={{
+          minWidth:
+            48 +
+            columns.reduce((width, column) => width + columnWidth(column), 0),
+        }}
+      >
+        <colgroup>
+          <col style={{ width: 48 }} />
+          {columns.map((column) => (
+            <col
+              key={column.name}
+              style={
+                column.name === labelField &&
+                column.name !== collection.primaryKey.name
+                  ? undefined
+                  : { width: columnWidth(column) }
+              }
+            />
+          ))}
+        </colgroup>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead
+              scope="col"
+              className="sticky top-0 left-0 z-30 bg-card px-4"
+            >
+              <Checkbox
+                aria-label="Выбрать все записи на странице"
+                checked={
+                  selectedOnPage === items.length
+                    ? true
+                    : selectedOnPage > 0
+                      ? "indeterminate"
+                      : false
+                }
+                disabled={disabled}
+                onCheckedChange={(checked) => onSelectPage(checked === true)}
+              />
+            </TableHead>
+            {columns.map((column) => (
+              <TableHead
+                key={column.name}
+                scope="col"
+                draggable
+                data-column={column.name}
+                aria-sort={
+                  page.sort === column.name
+                    ? page.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", column.name);
+                  dragged.current = column.name;
+                }}
+                onDragEnd={() => {
+                  dragged.current = null;
+                  setDrop(null);
+                }}
+                onDragOver={(event) => over(event, column.name)}
+                onDragLeave={() => setDrop(null)}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragged.current)
+                    onMove(dragged.current, column.name, drop?.after);
+                  dragged.current = null;
+                  setDrop(null);
+                }}
+                className={`group sticky top-0 z-20 bg-card px-3 text-xs text-muted-foreground ${
+                  drop?.name === column.name
+                    ? drop.after
+                      ? "border-r-2 border-r-primary"
+                      : "border-l-2 border-l-primary"
+                    : ""
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onKeyDown={(event) => keyboardMove(event, column.name)}
+                    aria-label={`Переместить столбец ${column.label}. Используйте стрелки влево и вправо.`}
+                    className="shrink-0 cursor-grab rounded p-1 text-muted-foreground opacity-40 hover:bg-muted group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
+                  >
+                    <GripVertical
+                      className="size-3.5"
+                      aria-hidden="true"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSort(column.name)}
+                    className="flex min-w-0 items-center gap-1 rounded px-1 py-1 text-left hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                    aria-label={`Сортировать по ${column.label}`}
+                    title={column.name}
+                  >
+                    <span className="truncate">{column.label}</span>
+                    {page.sort === column.name &&
+                      (page.direction === "asc" ? (
+                        <ArrowUp
+                          className="size-3"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <ArrowDown
+                          className="size-3"
+                          aria-hidden="true"
+                        />
+                      ))}
+                  </button>
+                </div>
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => {
+            const id = itemKey(item);
+            return (
+              <TableRow
+                key={id}
+                tabIndex={disabled ? -1 : 0}
+                data-state={selected.has(id) ? "selected" : undefined}
+                aria-label={`Открыть запись ${recordLabels?.[id] ?? recordLabel(collection, item)} (${id})`}
+                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
+                onClick={() => {
+                  if (!disabled) onOpen(item);
+                }}
+                onKeyDown={(event) => {
+                  if (disabled || event.target !== event.currentTarget) return;
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpen(item);
+                  }
+                }}
+              >
+                <TableCell
+                  className={`sticky left-0 z-10 px-4 ${selected.has(id) ? "bg-muted" : "bg-card"}`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Checkbox
+                    aria-label={`Выбрать запись ${recordLabels?.[id] ?? recordLabel(collection, item)} (${id})`}
+                    checked={selected.has(id)}
+                    disabled={disabled}
+                    onCheckedChange={(checked) =>
+                      onSelect(id, checked === true)
+                    }
+                  />
+                </TableCell>
+                {columns.map((column) => (
+                  <TableCell
+                    key={column.name}
+                    data-column={column.name}
+                    className="overflow-hidden px-4 py-3"
+                  >
+                    <ItemTableValue
+                      column={column}
+                      value={item[column.name]}
+                      primary={column.name === collection.primaryKey.name}
+                      emphasized={column.name === labelField}
+                      relationLabel={
+                        column.relation?.kind === "m2o"
+                          ? labels.get(
+                              JSON.stringify([
+                                column.relation.collection,
+                                String(item[column.name]),
+                              ]),
+                            )
+                          : undefined
+                      }
+                    />
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
 }

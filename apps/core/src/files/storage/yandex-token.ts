@@ -7,12 +7,20 @@ const run = promisify(execFile);
 export interface YandexTokenOptions {
   serviceAccountId: string;
   tokenFile?: string;
-  kubernetes?: { kubeconfig: string; namespace: string; serviceAccount: string; audience: string };
+  kubernetes?: {
+    kubeconfig: string;
+    namespace: string;
+    serviceAccount: string;
+    audience: string;
+  };
 }
 
 /** One provider per process, with single-flight exchange and early refresh. Never logs JWT/IAM tokens. */
-export function yandexTokenProvider(options: YandexTokenOptions,
-  exchange: typeof fetch = fetch, now: () => number = Date.now) {
+export function yandexTokenProvider(
+  options: YandexTokenOptions,
+  exchange: typeof fetch = fetch,
+  now: () => number = Date.now,
+) {
   let cached: { token: string; until: number } | undefined;
   let pending: Promise<string> | undefined;
   async function refresh() {
@@ -22,33 +30,69 @@ export function yandexTokenProvider(options: YandexTokenOptions,
         assertion = (await readFile(options.tokenFile, "utf8")).trim();
       } else if (options.kubernetes) {
         const k = options.kubernetes;
-        const result = await run("kubectl", ["--kubeconfig", k.kubeconfig, "--namespace", k.namespace,
-          "create", "token", k.serviceAccount, "--audience", k.audience, "--duration=10m"],
-        { windowsHide: true, timeout: 20000, maxBuffer: 65536 });
+        const result = await run(
+          "kubectl",
+          [
+            "--kubeconfig",
+            k.kubeconfig,
+            "--namespace",
+            k.namespace,
+            "create",
+            "token",
+            k.serviceAccount,
+            "--audience",
+            k.audience,
+            "--duration=10m",
+          ],
+          { windowsHide: true, timeout: 20000, maxBuffer: 65536 },
+        );
         assertion = result.stdout.trim();
       } else throw new StorageError();
       if (!assertion || assertion.length > 32768) throw new StorageError();
       const response = await exchange("https://auth.yandex.cloud/oauth/token", {
-        method: "POST", redirect: "error", signal: AbortSignal.timeout(15000),
+        method: "POST",
+        redirect: "error",
+        signal: AbortSignal.timeout(15000),
         headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+        body: new URLSearchParams({
+          grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
           requested_token_type: "urn:ietf:params:oauth:token-type:access_token",
-          audience: options.serviceAccountId, subject_token: assertion,
-          subject_token_type: "urn:ietf:params:oauth:token-type:id_token" }),
+          audience: options.serviceAccountId,
+          subject_token: assertion,
+          subject_token_type: "urn:ietf:params:oauth:token-type:id_token",
+        }),
       });
-      if (!response.ok) { await response.body?.cancel(); throw new StorageError(); }
-      const result = await response.json() as { access_token?: unknown; expires_in?: unknown };
-      if (typeof result.access_token !== "string" || !result.access_token ||
-        typeof result.expires_in !== "number" || !Number.isFinite(result.expires_in) || result.expires_in <= 60) {
+      if (!response.ok) {
+        await response.body?.cancel();
         throw new StorageError();
       }
-      cached = { token: result.access_token, until: now() + (Math.min(result.expires_in, 600) - 60) * 1000 };
+      const result = (await response.json()) as {
+        access_token?: unknown;
+        expires_in?: unknown;
+      };
+      if (
+        typeof result.access_token !== "string" ||
+        !result.access_token ||
+        typeof result.expires_in !== "number" ||
+        !Number.isFinite(result.expires_in) ||
+        result.expires_in <= 60
+      ) {
+        throw new StorageError();
+      }
+      cached = {
+        token: result.access_token,
+        until: now() + (Math.min(result.expires_in, 600) - 60) * 1000,
+      };
       return cached.token;
-    } catch { throw new StorageError(); }
+    } catch {
+      throw new StorageError();
+    }
   }
   return async () => {
     if (cached && cached.until > now()) return cached.token;
-    pending ??= refresh().finally(() => { pending = undefined; });
+    pending ??= refresh().finally(() => {
+      pending = undefined;
+    });
     return pending;
   };
 }

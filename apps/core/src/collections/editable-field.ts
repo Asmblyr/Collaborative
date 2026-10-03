@@ -15,7 +15,11 @@ interface EditableFieldRow {
   relation_key_type: PrimaryKeyType | null;
 }
 
-export async function readEditableField(database: Knex, collection: string, field: string) {
+export async function readEditableField(
+  database: Knex,
+  collection: string,
+  field: string,
+) {
   const result = await database.raw<{ rows: EditableFieldRow[] }>(
     `
     SELECT c.is_nullable, c.data_type, fm.semantic_type, fm.default_value, fm.presentation,
@@ -32,7 +36,10 @@ export async function readEditableField(database: Knex, collection: string, fiel
   );
   const row = result.rows[0];
   if (!row) throw new CollectionFieldNotFoundError(field);
-  return { ...row, type: fieldTypeFromDatabase(row.data_type, row.semantic_type) };
+  return {
+    ...row,
+    type: fieldTypeFromDatabase(row.data_type, row.semantic_type),
+  };
 }
 
 export type EditableField = Awaited<ReturnType<typeof readEditableField>>;

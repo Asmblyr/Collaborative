@@ -21,7 +21,9 @@ export async function proxyOAuth(request: Request): Promise<Response> {
     headers,
     redirect: "manual",
     cache: "no-store",
-    body: ["GET", "HEAD"].includes(request.method) ? undefined : await request.text(),
+    body: ["GET", "HEAD"].includes(request.method)
+      ? undefined
+      : await request.text(),
     signal: AbortSignal.timeout(15000),
   });
   const outgoing = new Headers({
@@ -33,11 +35,18 @@ export async function proxyOAuth(request: Request): Promise<Response> {
     const value = upstream.headers.get(name);
     if (value) outgoing.set(name, value);
   }
-  for (const cookie of upstream.headers.getSetCookie()) outgoing.append("set-cookie", cookie);
-  return new Response(upstream.body, { status: upstream.status, headers: outgoing });
+  for (const cookie of upstream.headers.getSetCookie())
+    outgoing.append("set-cookie", cookie);
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: outgoing,
+  });
 }
 
-export async function submitOAuthInteraction(request: Request, uid: string): Promise<Response> {
+export async function submitOAuthInteraction(
+  request: Request,
+  uid: string,
+): Promise<Response> {
   if (
     hasForeignOrigin(request) ||
     !request.headers.get("content-type")?.startsWith("application/json")
@@ -55,14 +64,20 @@ export async function submitOAuthInteraction(request: Request, uid: string): Pro
         timeoutMs: 10000,
         headers: { cookie: oauthCookies(jar.toString()) },
       },
-      { accessToken: jar.get(ACCESS_COOKIE)?.value, refreshToken: jar.get(REFRESH_COOKIE)?.value },
+      {
+        accessToken: jar.get(ACCESS_COOKIE)?.value,
+        refreshToken: jar.get(REFRESH_COOKIE)?.value,
+      },
       (pair) => {
         renewed = pair;
       },
     );
     const response = new NextResponse(await upstream.text(), {
       status: upstream.status,
-      headers: { "content-type": "application/json", "cache-control": "no-store" },
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "no-store",
+      },
     });
     if (renewed) setSessionCookies(response, request, renewed);
     return response;

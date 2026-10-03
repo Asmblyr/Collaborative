@@ -35,7 +35,12 @@ function copyHeaders(source: Headers): Headers {
 
 export function pluginRequestHeaders(request: Request): Record<string, string> {
   const headers = copyHeaders(request.headers);
-  for (const name of ["host", "authorization", "content-length", "x-asmblyr-plugin-route"])
+  for (const name of [
+    "host",
+    "authorization",
+    "content-length",
+    "x-asmblyr-plugin-route",
+  ])
     headers.delete(name);
   const cookies = (headers.get("cookie") ?? "")
     .split(";")
@@ -95,5 +100,8 @@ export function pluginResponse(upstream: Response): Response {
   headers.set("cache-control", "no-store, no-transform");
   headers.set("x-accel-buffering", "no");
   const empty = [204, 205, 304].includes(upstream.status);
-  return new Response(empty ? null : upstream.body, { status: upstream.status, headers });
+  return new Response(empty ? null : upstream.body, {
+    status: upstream.status,
+    headers,
+  });
 }

@@ -1,5 +1,9 @@
 import { H3Event } from "h3";
-import type { ActionContext, EndpointDefinition, PluginAction } from "@asmblyr/kit";
+import type {
+  ActionContext,
+  EndpointDefinition,
+  PluginAction,
+} from "@asmblyr/kit";
 
 /** HTTP and MCP invoke the same H3 handler with validated JSON and the same capabilities. */
 export async function runActionHandler(
@@ -23,8 +27,14 @@ export async function runActionHandler(
   context.signal.throwIfAborted();
   // Calculations return data, not redirects, cookies or streaming HTTP responses.
   const status = event.res.status ?? 200;
-  if (output instanceof Response || status !== 200 || [...event.res.headers].length) {
-    throw new Error("Action handlers must return a JSON object without HTTP response mutations");
+  if (
+    output instanceof Response ||
+    status !== 200 ||
+    [...event.res.headers].length
+  ) {
+    throw new Error(
+      "Action handlers must return a JSON object without HTTP response mutations",
+    );
   }
   return { input, output: action.parseOutput(output) };
 }

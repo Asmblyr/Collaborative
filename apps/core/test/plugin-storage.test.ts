@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineCollection, useStorage, type AsmblyrContext } from "@asmblyr/kit";
+import {
+  defineCollection,
+  useStorage,
+  type AsmblyrContext,
+} from "@asmblyr/kit";
 
 const entries = defineCollection({
   name: "entries",
@@ -47,7 +51,13 @@ test("typed storage keeps precision, normalizes dates and delegates only to owne
         return {
           data: [row],
           labels: {},
-          page: { number: 1, size: 30, total: "1", sort: "id", direction: "asc" as const },
+          page: {
+            number: 1,
+            size: 30,
+            total: "1",
+            sort: "id",
+            direction: "asc" as const,
+          },
         };
       },
     },
@@ -59,7 +69,10 @@ test("typed storage keeps precision, normalizes dates and delegates only to owne
   assert.equal(result.created_at, "2026-10-02T06:00:00.123Z");
   assert.equal(result.published, null);
   assert.deepEqual(result.extra, { answer: 42 });
-  assert.ok(row.created_at instanceof Date, "normalization does not mutate Core's row");
+  assert.ok(
+    row.created_at instanceof Date,
+    "normalization does not mutate Core's row",
+  );
   assert.deepEqual((await storage.list()).data, [result]);
   assert.deepEqual(await storage.create({ body: "comment" }), result);
   assert.deepEqual(await storage.update(row.id, { body: "edited" }), result);
@@ -88,5 +101,8 @@ test("typed storage rejects mismatched declarations instead of silently coercing
       },
     },
   } as unknown as AsmblyrContext;
-  await assert.rejects(useStorage(scoped, entries).get("1"), (error) => error === forbidden);
+  await assert.rejects(
+    useStorage(scoped, entries).get("1"),
+    (error) => error === forbidden,
+  );
 });

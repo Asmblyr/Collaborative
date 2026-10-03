@@ -5,11 +5,18 @@ import { useRouter } from "next/navigation";
 import { ArrowUpRight, SquareFunction } from "lucide-react";
 import type { AssistantPluginResult } from "@asmblyr/contracts";
 import { Button } from "@asmblyr/kit/ui/button";
-import { loadPreparedAction, preparedActionHref } from "@/components/plugins/action-client";
+import {
+  loadPreparedAction,
+  preparedActionHref,
+} from "@/components/plugins/action-client";
 import { pluginPageBlocksNavigation } from "@/components/plugins/page-state";
 import { navigateWithEditorGuard } from "@/components/collections/use-editor-navigation-guard";
 
-export function AssistantPluginResultCard({ result }: { result: AssistantPluginResult }) {
+export function AssistantPluginResultCard({
+  result,
+}: {
+  result: AssistantPluginResult;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -17,16 +24,23 @@ export function AssistantPluginResultCard({ result }: { result: AssistantPluginR
   async function open() {
     setError("");
     if (pluginPageBlocksNavigation()) {
-      setError("Сначала завершите расчёт или отмените изменения в текущей форме.");
+      setError(
+        "Сначала завершите расчёт или отмените изменения в текущей форме.",
+      );
       return;
     }
     setPending(true);
     try {
       const draft = await loadPreparedAction(result.namespace, result.draftId);
-      if (pluginPageBlocksNavigation()) throw new Error("В текущей форме появились изменения.");
+      if (pluginPageBlocksNavigation())
+        throw new Error("В текущей форме появились изменения.");
       navigateWithEditorGuard(() => router.push(preparedActionHref(draft)));
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Не удалось открыть форму.");
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Не удалось открыть форму.",
+      );
     } finally {
       setPending(false);
     }
@@ -39,7 +53,8 @@ export function AssistantPluginResultCard({ result }: { result: AssistantPluginR
         {result.title}
       </div>
       <p className="text-xs leading-5 text-muted-foreground">
-        Параметры и результат готовы к просмотру и редактированию. Форма доступна до{" "}
+        Параметры и результат готовы к просмотру и редактированию. Форма
+        доступна до{" "}
         {new Date(result.expiresAt).toLocaleTimeString("ru", {
           hour: "2-digit",
           minute: "2-digit",
@@ -57,7 +72,10 @@ export function AssistantPluginResultCard({ result }: { result: AssistantPluginR
         {pending ? "Открываем…" : "Открыть страницу"}
       </Button>
       {error && (
-        <p role="status" className="text-xs text-muted-foreground">
+        <p
+          role="status"
+          className="text-xs text-muted-foreground"
+        >
           {error}
         </p>
       )}

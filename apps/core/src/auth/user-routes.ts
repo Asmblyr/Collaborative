@@ -56,15 +56,13 @@ export function registerUserRoutes(
         db(),
         request.headers.authorization,
       );
-      return reply
-        .header("Cache-Control", "no-store")
-        .send({
-          data: await createRecoveryLink(
-            db(),
-            actor,
-            parseUserId(request.params.id),
-          ),
-        });
+      return reply.header("Cache-Control", "no-store").send({
+        data: await createRecoveryLink(
+          db(),
+          actor,
+          parseUserId(request.params.id),
+        ),
+      });
     },
   );
   app.get<{ Params: { id: string } }>(

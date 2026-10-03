@@ -8,7 +8,9 @@ export interface OAuthConfig {
   storageKey: string;
 }
 
-export async function oauthFromEnv(env: NodeJS.ProcessEnv): Promise<OAuthConfig | undefined> {
+export async function oauthFromEnv(
+  env: NodeJS.ProcessEnv,
+): Promise<OAuthConfig | undefined> {
   if (!env.OAUTH_ISSUER_URL) return undefined;
   const url = new URL(env.OAUTH_ISSUER_URL);
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
@@ -29,7 +31,9 @@ export async function oauthFromEnv(env: NodeJS.ProcessEnv): Promise<OAuthConfig 
   if (
     !keys.jwks?.keys?.length ||
     !keys.cookieKeys?.length ||
-    !keys.cookieKeys.every((key: unknown) => typeof key === "string" && key.length >= 43) ||
+    !keys.cookieKeys.every(
+      (key: unknown) => typeof key === "string" && key.length >= 43,
+    ) ||
     typeof keys.storageKey !== "string" ||
     Buffer.from(keys.storageKey, "base64url").length !== 32
   ) {

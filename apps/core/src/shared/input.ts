@@ -2,7 +2,10 @@ export class InputError extends Error {
   readonly statusCode = 400;
 }
 
-export function objectInput(value: unknown, allowedKeys: string[]): Record<string, unknown> {
+export function objectInput(
+  value: unknown,
+  allowedKeys: string[],
+): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new InputError("Invalid input");
   }
@@ -12,7 +15,11 @@ export function objectInput(value: unknown, allowedKeys: string[]): Record<strin
   return value as Record<string, unknown>;
 }
 
-export function textInput(value: unknown, maxLength: number, allowEmpty = false): string {
+export function textInput(
+  value: unknown,
+  maxLength: number,
+  allowEmpty = false,
+): string {
   if (typeof value !== "string") {
     throw new InputError(`Expected text up to ${maxLength} characters`);
   }

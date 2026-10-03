@@ -27,16 +27,26 @@ export async function createCollectionStorage(
   await transaction.schema.withSchema("public").createTable(name, (table) => {
     addPrimaryKeyColumn(table, primaryKey, transaction);
     if (timestamps.createdAt) {
-      table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(transaction.fn.now());
+      table
+        .timestamp("created_at", { useTz: true })
+        .notNullable()
+        .defaultTo(transaction.fn.now());
     }
     if (timestamps.updatedAt) {
-      table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(transaction.fn.now());
+      table
+        .timestamp("updated_at", { useTz: true })
+        .notNullable()
+        .defaultTo(transaction.fn.now());
     }
     for (const field of fields) {
       addFieldColumn(table, field);
     }
   });
-  const sortOrder = await nextSortOrder(transaction, folderId, parentCollection);
+  const sortOrder = await nextSortOrder(
+    transaction,
+    folderId,
+    parentCollection,
+  );
   const [row] = await transaction("asmblyr_collections")
     .withSchema("public")
     .insert({

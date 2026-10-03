@@ -34,7 +34,10 @@ interface RequestRow {
 
 const pageSize = 25;
 
-export async function readAssistantTelemetry(database: Knex, query: TelemetryQuery) {
+export async function readAssistantTelemetry(
+  database: Knex,
+  query: TelemetryQuery,
+) {
   const since = new Date(query.until.getTime() - query.days * 86_400_000);
   return database.transaction(
     async (trx) => {
@@ -53,7 +56,10 @@ export async function readAssistantTelemetry(database: Knex, query: TelemetryQue
         .orderBy("r.id", "desc")
         .limit(pageSize + 1);
       if (query.before)
-        list.whereRaw("(r.started_at, r.id) < (?, ?::uuid)", [query.before.time, query.before.id]);
+        list.whereRaw("(r.started_at, r.id) < (?, ?::uuid)", [
+          query.before.time,
+          query.before.id,
+        ]);
       const rows = (await list.timeout(5000, { cancel: true })) as RequestRow[];
       const aggregate = (await base()
         .select(
@@ -71,13 +77,18 @@ export async function readAssistantTelemetry(database: Knex, query: TelemetryQue
         .first()
         .timeout(5000, { cancel: true })) as Record<string, string | null>;
       const count = (key: string) => Number(aggregate[key] ?? 0);
-      const tokens = (key: string) => (aggregate[key] === null ? null : Number(aggregate[key]));
+      const tokens = (key: string) =>
+        aggregate[key] === null ? null : Number(aggregate[key]);
       const items = rows.slice(0, pageSize).map((row) => ({
         id: row.id,
         turnId: row.turn_id ?? row.id,
         callIndex: row.call_index,
         turnSummary: row.turn_summary,
-        user: { id: row.user_id, displayName: row.display_name, email: row.email },
+        user: {
+          id: row.user_id,
+          displayName: row.display_name,
+          email: row.email,
+        },
         startedAt: row.started_at.toISOString(),
         finishedAt: row.finished_at?.toISOString() ?? null,
         durationMs: row.duration_ms,
@@ -104,8 +115,15 @@ export async function readAssistantTelemetry(database: Knex, query: TelemetryQue
       const last = rows[pageSize - 1];
       return {
         items,
-        nextCursor: rows.length > pageSize ? telemetryCursor(last.started_at, last.id) : null,
-        period: { days: query.days, from: since.toISOString(), until: query.until.toISOString() },
+        nextCursor:
+          rows.length > pageSize
+            ? telemetryCursor(last.started_at, last.id)
+            : null,
+        period: {
+          days: query.days,
+          from: since.toISOString(),
+          until: query.until.toISOString(),
+        },
         summary: {
           requests: count("requests"),
           succeeded: count("succeeded"),

@@ -20,7 +20,10 @@ export type MoveCollection = (
   before?: string | null,
 ) => void;
 
-function edge(event: RowEvent, allowInside = false): "before" | "after" | "inside" {
+function edge(
+  event: RowEvent,
+  allowInside = false,
+): "before" | "after" | "inside" {
   const bounds = event.currentTarget.getBoundingClientRect();
   const position = (event.clientY - bounds.top) / bounds.height;
   if (allowInside && position >= 0.25 && position <= 0.75) return "inside";
@@ -51,7 +54,12 @@ export function useCollectionDrag({
   };
 
   function rowDestination(event: RowEvent, collection: Collection) {
-    if (!canDrop() || !dragged || dragged === collection.name || !collection.access.structure)
+    if (
+      !canDrop() ||
+      !dragged ||
+      dragged === collection.name ||
+      !collection.access.structure
+    )
       return null;
     const position = edge(event, true);
     const location =
@@ -64,7 +72,9 @@ export function useCollectionDrag({
     )
       return null;
     const siblings = collections.filter(
-      (c) => c.name !== dragged && locationValue(collectionLocation(c)) === locationValue(location),
+      (c) =>
+        c.name !== dragged &&
+        locationValue(collectionLocation(c)) === locationValue(location),
     );
     const index = siblings.findIndex((c) => c.name === collection.name);
     return {
@@ -121,7 +131,11 @@ export function useCollectionDrag({
     }
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-    setDropTarget({ kind: "row", name: collection.name, edge: destination.edge });
+    setDropTarget({
+      kind: "row",
+      name: collection.name,
+      edge: destination.edge,
+    });
   }
 
   function dropOnRow(event: RowEvent, collection: Collection) {

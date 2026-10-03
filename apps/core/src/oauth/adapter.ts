@@ -2,7 +2,11 @@ import type { Knex } from "knex";
 import { errors, type AdapterPayload } from "oidc-provider";
 import { digest, type OAuthCipher } from "./crypto.js";
 import type { OAuthApplications } from "./applications.js";
-import { boundGrantHash, findGrantBinding, requireGrantBinding } from "./grant-bindings.js";
+import {
+  boundGrantHash,
+  findGrantBinding,
+  requireGrantBinding,
+} from "./grant-bindings.js";
 import { securityEvent } from "../auth/security-events.js";
 
 interface StateRow {
@@ -13,11 +17,19 @@ interface StateRow {
   consumed_at: Date | null;
 }
 
-export function oauthAdapter(db: Knex, cipher: OAuthCipher, apps: OAuthApplications) {
+export function oauthAdapter(
+  db: Knex,
+  cipher: OAuthCipher,
+  apps: OAuthApplications,
+) {
   return class DatabaseAdapter {
     constructor(private readonly model: string) {}
 
-    async upsert(id: string, payload: AdapterPayload, expiresIn = 600): Promise<void> {
+    async upsert(
+      id: string,
+      payload: AdapterPayload,
+      expiresIn = 600,
+    ): Promise<void> {
       const idHash = digest(id);
       const values = {
         model: this.model,
@@ -57,12 +69,19 @@ export function oauthAdapter(db: Knex, cipher: OAuthCipher, apps: OAuthApplicati
         .where("expires_at", ">", db.fn.now());
     }
 
-    private async decode(row: StateRow | undefined): Promise<AdapterPayload | undefined> {
+    private async decode(
+      row: StateRow | undefined,
+    ): Promise<AdapterPayload | undefined> {
       if (!row) return undefined;
-      const payload = cipher.open<AdapterPayload>(row.payload, `${this.model}:${row.id_hash}`);
+      const payload = cipher.open<AdapterPayload>(
+        row.payload,
+        `${this.model}:${row.id_hash}`,
+      );
       const grantHash = boundGrantHash(this.model, row.id_hash, payload);
-      if (grantHash && !(await findGrantBinding(db, grantHash))) return undefined;
-      if (row.consumed_at) payload.consumed = Math.floor(row.consumed_at.getTime() / 1000);
+      if (grantHash && !(await findGrantBinding(db, grantHash)))
+        return undefined;
+      if (row.consumed_at)
+        payload.consumed = Math.floor(row.consumed_at.getTime() / 1000);
       return payload;
     }
 
@@ -92,7 +111,8 @@ export function oauthAdapter(db: Knex, cipher: OAuthCipher, apps: OAuthApplicati
         .where({ id_hash: digest(id) })
         .whereNull("consumed_at")
         .update({ consumed_at: db.fn.now() });
-      if (!updated) throw new errors.InvalidGrant("Code already consumed or expired");
+      if (!updated)
+        throw new errors.InvalidGrant("Code already consumed or expired");
     }
 
     async destroy(id: string): Promise<void> {

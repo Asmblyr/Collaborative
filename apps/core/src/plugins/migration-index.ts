@@ -16,7 +16,9 @@ export interface PendingMigration {
   url: URL;
 }
 
-export async function sourceMigrations(root: string): Promise<PendingMigration[]> {
+export async function sourceMigrations(
+  root: string,
+): Promise<PendingMigration[]> {
   const directory = path.join(root, "server/migrations");
   return (await scanMigrationFiles(directory)).map((file) => ({
     name: file.slice(0, -3),
@@ -30,7 +32,9 @@ export async function builtMigrations(index: URL): Promise<PendingMigration[]> {
   const entries: PendingMigration[] = [];
   const names = new Set<string>();
   for (const file of files) {
-    const match = typeof file === "string" && /^\.\/server\/migrations\/([^/]+)\.js$/.exec(file);
+    const match =
+      typeof file === "string" &&
+      /^\.\/server\/migrations\/([^/]+)\.js$/.exec(file);
     if (!match || !migrationNamePattern.test(match[1]) || names.has(match[1]))
       throw new Error("Invalid or duplicate compiled migration path");
     names.add(match[1]);
@@ -68,10 +72,13 @@ export function parseMigration(value: unknown, name: string): PluginMigration {
   )
     throw new Error(`Invalid migration ${name}`);
   for (const operation of value.operations) {
-    if (!isRecord(operation)) throw new Error(`Invalid migration operation in ${name}`);
+    if (!isRecord(operation))
+      throw new Error(`Invalid migration operation in ${name}`);
     let keys: string[] = [];
-    if (operation.type === "addField") keys = ["type", "collection", "name", "field"];
-    if (operation.type === "addIndex") keys = ["type", "collection", "name", "fields"];
+    if (operation.type === "addField")
+      keys = ["type", "collection", "name", "field"];
+    if (operation.type === "addIndex")
+      keys = ["type", "collection", "name", "fields"];
     if (
       !keys.length ||
       Object.keys(operation).some((key) => !keys.includes(key)) ||
@@ -90,11 +97,19 @@ export function parseMigration(value: unknown, name: string): PluginMigration {
     )
       throw new Error(`Invalid index fields in ${name}`);
   }
-  const checksum = createHash("sha256").update(canonicalJson(value)).digest("hex");
-  return { name, checksum, operations: value.operations as MigrationDefinition["operations"] };
+  const checksum = createHash("sha256")
+    .update(canonicalJson(value))
+    .digest("hex");
+  return {
+    name,
+    checksum,
+    operations: value.operations as MigrationDefinition["operations"],
+  };
 }
 
-export async function importMigrations(entries: PendingMigration[]): Promise<PluginMigration[]> {
+export async function importMigrations(
+  entries: PendingMigration[],
+): Promise<PluginMigration[]> {
   const migrations: PluginMigration[] = [];
   for (const entry of entries) {
     const module: { default?: unknown } = await import(entry.url.href);

@@ -14,7 +14,9 @@ function json(value: object) {
 test("internal MCP discovers only permitted exposed collections, checks reads and has no HTTP endpoint", async (t) => {
   const fixture = await mcpFixture(t);
   const { app, db, names, suffix, access, reload, permissions } = fixture;
-  const client = await connectInternalMcp(createToolSession(db, access, reload));
+  const client = await connectInternalMcp(
+    createToolSession(db, access, reload),
+  );
   try {
     assert.deepEqual(
       client.definitions.map((tool) => tool.name),
@@ -34,7 +36,9 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
     const query = { q: suffix, page: 1, limit: 1 };
     const first = json(await client.call("list_collections", query));
     assert.equal(first.hasMore, true);
-    const second = json(await client.call("list_collections", { ...query, page: 2 }));
+    const second = json(
+      await client.call("list_collections", { ...query, page: 2 }),
+    );
     assert.equal(second.hasMore, false);
     const listed = [...first.collections, ...second.collections];
     assert.deepEqual(
@@ -45,21 +49,33 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
       listed.find((collection) => collection.name === names.people).displayName,
       "Directory",
     );
-    assert.ok(!/secret|asmblyr_|hidden-post-value/.test(JSON.stringify(listed)));
+    assert.ok(
+      !/secret|asmblyr_|hidden-post-value/.test(JSON.stringify(listed)),
+    );
     assert.equal(
-      json(await client.call("list_collections", { ...query, q: "%" })).collections.length,
+      json(await client.call("list_collections", { ...query, q: "%" }))
+        .collections.length,
       0,
     );
 
-    const read = { collection: names.posts, id: "1", fields: ["title", "author_id"] };
+    const read = {
+      collection: names.posts,
+      id: "1",
+      fields: ["title", "author_id"],
+    };
     assert.ok("error" in (await client.call("read_item", read)));
-    const schema = json(await client.call("describe_collection", { collection: names.posts }));
-    assert.deepEqual(schema.fields.find((field) => field.name === "author_id").relation, {
-      kind: "m2o",
-      collection: names.people,
-      displayName: "Directory",
-      primaryKey: { name: "code", type: "text" },
-    });
+    const schema = json(
+      await client.call("describe_collection", { collection: names.posts }),
+    );
+    assert.deepEqual(
+      schema.fields.find((field) => field.name === "author_id").relation,
+      {
+        kind: "m2o",
+        collection: names.people,
+        displayName: "Directory",
+        primaryKey: { name: "code", type: "text" },
+      },
+    );
     assert.ok(!JSON.stringify(schema).includes("secret"));
     const row = json(await client.call("read_item", read));
     assert.equal(row.item.values.title, "Alpha");
@@ -86,8 +102,16 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
     ])
       assert.ok("error" in (await client.call("read_item", args)));
     assert.ok("error" in (await client.call("delete_item", read)));
-    assert.ok("error" in (await client.call("list_collections", { ...query, limit: 21 })));
-    assert.ok("error" in (await client.call("describe_collection", { collection: names.denied })));
+    assert.ok(
+      "error" in
+        (await client.call("list_collections", { ...query, limit: 21 })),
+    );
+    assert.ok(
+      "error" in
+        (await client.call("describe_collection", {
+          collection: names.denied,
+        })),
+    );
 
     await db("asmblyr_permissions")
       .where({ id: permissions.get(names.posts) })
@@ -96,7 +120,9 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
     await db("asmblyr_permissions")
       .where({ id: permissions.get(names.people) })
       .delete();
-    const afterRevoke = json(await client.call("list_collections", { ...query, limit: 20 }));
+    const afterRevoke = json(
+      await client.call("list_collections", { ...query, limit: 20 }),
+    );
     assert.deepEqual(
       afterRevoke.collections.map((collection) => collection.name),
       [names.posts],
@@ -109,13 +135,20 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
           fields: ["title"],
         })),
     );
-    await db("asmblyr_collections").where({ name: names.posts }).update({ mcp_enabled: false });
+    await db("asmblyr_collections")
+      .where({ name: names.posts })
+      .update({ mcp_enabled: false });
     assert.ok(
       "error" in
-        (await client.call("count_items", { collection: names.posts, q: null, filter: null })),
+        (await client.call("count_items", {
+          collection: names.posts,
+          q: null,
+          filter: null,
+        })),
     );
     assert.equal(
-      json(await client.call("list_collections", { ...query, limit: 20 })).collections.length,
+      json(await client.call("list_collections", { ...query, limit: 20 }))
+        .collections.length,
       0,
     );
   } finally {
@@ -149,12 +182,23 @@ test("assistant inherits only the current table query; another collection uses i
     await tools.execute("describe_collection", { collection: null });
     await tools.execute("describe_collection", { collection: names.people });
     assert.equal(
-      json(await tools.execute("count_items", { collection: null, q: null, filter: null })).count,
+      json(
+        await tools.execute("count_items", {
+          collection: null,
+          q: null,
+          filter: null,
+        }),
+      ).count,
       "1",
     );
     assert.equal(
-      json(await tools.execute("count_items", { collection: names.people, q: null, filter: null }))
-        .count,
+      json(
+        await tools.execute("count_items", {
+          collection: names.people,
+          q: null,
+          filter: null,
+        }),
+      ).count,
       "1",
     );
     const people = json(
@@ -177,17 +221,29 @@ test("assistant inherits only the current table query; another collection uses i
       children: [{ field: "title", op: "eq", value: "Ada" }],
     });
     assert.ok(
-      "filter" in (await tools.execute("validate_filter", { collection: names.people, filter })),
+      "filter" in
+        (await tools.execute("validate_filter", {
+          collection: names.people,
+          filter,
+        })),
     );
     assert.equal(tools.proposals.length, 0);
     assert.ok(
-      "error" in (await tools.execute("propose_filter", { collection: names.people, filter })),
+      "error" in
+        (await tools.execute("propose_filter", {
+          collection: names.people,
+          filter,
+        })),
     );
     const cancelled = new AbortController();
     cancelled.abort();
     assert.ok(
       "error" in
-        (await tools.execute("list_collections", { q: null, page: 1, limit: 5 }, cancelled.signal)),
+        (await tools.execute(
+          "list_collections",
+          { q: null, page: 1, limit: 5 },
+          cancelled.signal,
+        )),
     );
   } finally {
     await tools.close?.();
@@ -197,25 +253,49 @@ test("assistant inherits only the current table query; another collection uses i
 test("MCP binds identity on the server and rejects a revoked session during the same turn", async (t) => {
   const { db, access, reload, suffix } = await mcpFixture(t);
   let current = access;
-  const swapped = await connectInternalMcp(createToolSession(db, access, async () => current));
+  const swapped = await connectInternalMcp(
+    createToolSession(db, access, async () => current),
+  );
   try {
-    current = { ...access, principal: { ...access.principal, id: randomUUID(), superuser: true } };
+    current = {
+      ...access,
+      principal: { ...access.principal, id: randomUUID(), superuser: true },
+    };
     assert.ok(
-      "error" in (await swapped.call("list_collections", { q: suffix, page: 1, limit: 20 })),
+      "error" in
+        (await swapped.call("list_collections", {
+          q: suffix,
+          page: 1,
+          limit: 20,
+        })),
     );
   } finally {
     await swapped.close();
   }
-  const client = await connectInternalMcp(createToolSession(db, access, reload));
+  const client = await connectInternalMcp(
+    createToolSession(db, access, reload),
+  );
   try {
     await db("asmblyr_auth_sessions")
       .where({ user_id: access.principal.id })
       .update({ revoked_at: db.fn.now() });
     assert.ok(
-      "error" in (await client.call("list_collections", { q: suffix, page: 1, limit: 20 })),
+      "error" in
+        (await client.call("list_collections", {
+          q: suffix,
+          page: 1,
+          limit: 20,
+        })),
     );
   } finally {
     await client.close();
   }
-  assert.ok("error" in (await client.call("list_collections", { q: suffix, page: 1, limit: 20 })));
+  assert.ok(
+    "error" in
+      (await client.call("list_collections", {
+        q: suffix,
+        page: 1,
+        limit: 20,
+      })),
+  );
 });

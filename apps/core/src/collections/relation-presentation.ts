@@ -44,7 +44,9 @@ export function parseRelationPresentation(body: unknown): RelationPresentation {
     columns.some((v) => !name(v)) ||
     new Set(columns).size !== columns.length
   ) {
-    throw new CollectionInputError("Invalid relation display settings (up to 12 distinct columns)");
+    throw new CollectionInputError(
+      "Invalid relation display settings (up to 12 distinct columns)",
+    );
   }
   return {
     layout,
@@ -81,8 +83,12 @@ export async function validateRelationPresentation(
   }
   if (
     value.labelField &&
-    ["json", "files", "file", "boolean"].includes(fields.get(value.labelField)?.type ?? "")
+    ["json", "files", "file", "boolean"].includes(
+      fields.get(value.labelField)?.type ?? "",
+    )
   ) {
-    throw new CollectionInputError("Choose a text, number, date or key field for the record label");
+    throw new CollectionInputError(
+      "Choose a text, number, date or key field for the record label",
+    );
   }
 }

@@ -3,7 +3,11 @@ import { CalendarDays, Plus, X } from "lucide-react";
 import { Button } from "@asmblyr/kit/ui/button";
 import { Input } from "@asmblyr/kit/ui/input";
 import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -22,12 +26,18 @@ function localDatetimeValue(value: string): string {
   if (!value || !/(?:Z|[+-]\d\d:\d\d)$/.test(value)) return value;
   const date = new Date(value);
   if (Number.isNaN(date.valueOf())) return value;
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 19);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 19);
 }
 
 function formattedValue(value: string, field: FilterField): string {
-  if (field.options) return field.options.find((option) => option.value === value)?.label ?? value;
-  if (field.type === "boolean") return value === "true" ? "Да" : value === "false" ? "Нет" : value;
+  if (field.options)
+    return (
+      field.options.find((option) => option.value === value)?.label ?? value
+    );
+  if (field.type === "boolean")
+    return value === "true" ? "Да" : value === "false" ? "Нет" : value;
   if (field.type === "datetime" && value) {
     const date = new Date(value);
     if (!Number.isNaN(date.valueOf()))
@@ -59,18 +69,26 @@ function ValueInput({
 }) {
   if (field.options?.length) {
     return (
-      <Select value={value} onValueChange={onChange}>
+      <Select
+        value={value}
+        onValueChange={onChange}
+      >
         <SelectTrigger
           aria-label={label}
           className={
-            inline ? "h-8 w-auto max-w-64 border-0 bg-transparent px-2 shadow-none" : "w-full"
+            inline
+              ? "h-8 w-auto max-w-64 border-0 bg-transparent px-2 shadow-none"
+              : "w-full"
           }
         >
           <SelectValue placeholder="выберите…" />
         </SelectTrigger>
         <SelectContent>
           {field.options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem
+              key={option.value}
+              value={option.value}
+            >
               {option.label}
             </SelectItem>
           ))}
@@ -80,11 +98,16 @@ function ValueInput({
   }
   if (field.type === "boolean") {
     return (
-      <Select value={value} onValueChange={onChange}>
+      <Select
+        value={value}
+        onValueChange={onChange}
+      >
         <SelectTrigger
           aria-label={label}
           className={
-            inline ? "h-8 border-0 bg-transparent px-2 shadow-none dark:bg-transparent" : "w-full"
+            inline
+              ? "h-8 border-0 bg-transparent px-2 shadow-none dark:bg-transparent"
+              : "w-full"
           }
         >
           <SelectValue placeholder="выберите…" />
@@ -101,11 +124,17 @@ function ValueInput({
       autoFocus={autoFocus}
       aria-label={label}
       type={
-        field.type === "datetime" ? "datetime-local" : field.type === "integer" ? "number" : "text"
+        field.type === "datetime"
+          ? "datetime-local"
+          : field.type === "integer"
+            ? "number"
+            : "text"
       }
       step={field.type === "datetime" ? 1 : undefined}
       maxLength={255}
-      placeholder={field.type === "key" && field.keyType === "uuid" ? "UUID…" : "значение…"}
+      placeholder={
+        field.type === "key" && field.keyType === "uuid" ? "UUID…" : "значение…"
+      }
       className={
         inline
           ? "h-8 w-24 min-w-20 flex-1 rounded-md border-transparent bg-transparent px-2 shadow-none hover:bg-background/60 focus-visible:bg-background focus-visible:ring-2 dark:bg-transparent"
@@ -158,16 +187,24 @@ export function ItemFilterValue({
       ? populated
           .slice(0, 2)
           .map((value) => formattedValue(value, field))
-          .join(", ") + (populated.length > 2 ? " +" + (populated.length - 2) : "")
+          .join(", ") +
+        (populated.length > 2 ? " +" + (populated.length - 2) : "")
       : formattedValue(scalar, field);
   const updateAt = (index: number, value: string) => {
-    const next = range ? [values[0] ?? "", values[1] ?? ""] : values.length ? [...values] : [""];
+    const next = range
+      ? [values[0] ?? "", values[1] ?? ""]
+      : values.length
+        ? [...values]
+        : [""];
     next[index] = value;
     onChange(next);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -180,15 +217,26 @@ export function ItemFilterValue({
           }
         >
           {field.type === "datetime" && (
-            <CalendarDays aria-hidden="true" className="size-3.5 text-muted-foreground" />
+            <CalendarDays
+              aria-hidden="true"
+              className="size-3.5 text-muted-foreground"
+            />
           )}
           <span className="truncate">
             {summary ||
-              (range ? "задать диапазон…" : multiple ? "выбрать значения…" : "выбрать дату…")}
+              (range
+                ? "задать диапазон…"
+                : multiple
+                  ? "выбрать значения…"
+                  : "выбрать дату…")}
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={5} className="w-[min(22rem,calc(100vw-2rem))] p-3">
+      <PopoverContent
+        align="start"
+        sideOffset={5}
+        className="w-[min(22rem,calc(100vw-2rem))] p-3"
+      >
         <div className="mb-3">
           <p className="text-sm font-medium">{field.label}</p>
           {multiple && !range && (
@@ -221,7 +269,10 @@ export function ItemFilterValue({
         ) : range ? (
           <div className="space-y-3">
             {["От", "До"].map((bound, index) => (
-              <label key={bound} className="block space-y-1.5 text-xs text-muted-foreground">
+              <label
+                key={bound}
+                className="block space-y-1.5 text-xs text-muted-foreground"
+              >
                 <span>{bound}</span>
                 <ValueInput
                   field={field}
@@ -236,7 +287,10 @@ export function ItemFilterValue({
         ) : multiple ? (
           <div className="max-h-64 space-y-2 overflow-y-auto">
             {(values.length ? values : [""]).map((value, index) => (
-              <div key={index} className="flex items-center gap-1.5">
+              <div
+                key={index}
+                className="flex items-center gap-1.5"
+              >
                 <ValueInput
                   field={field}
                   value={value}
@@ -250,9 +304,14 @@ export function ItemFilterValue({
                   size="icon-sm"
                   aria-label={"Удалить значение " + (index + 1)}
                   disabled={values.length === 0}
-                  onClick={() => onChange(values.filter((_, position) => position !== index))}
+                  onClick={() =>
+                    onChange(values.filter((_, position) => position !== index))
+                  }
                 >
-                  <X aria-hidden="true" className="size-3.5" />
+                  <X
+                    aria-hidden="true"
+                    className="size-3.5"
+                  />
                 </Button>
               </div>
             ))}
@@ -267,10 +326,20 @@ export function ItemFilterValue({
             </Button>
           </div>
         ) : (
-          <ValueInput field={field} value={scalar} onChange={onChange} label={label} autoFocus />
+          <ValueInput
+            field={field}
+            value={scalar}
+            onChange={onChange}
+            label={label}
+            autoFocus
+          />
         )}
         <div className="mt-3 flex justify-end border-t pt-3">
-          <Button type="button" size="sm" onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setOpen(false)}
+          >
             Готово
           </Button>
         </div>

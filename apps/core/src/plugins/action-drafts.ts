@@ -28,9 +28,14 @@ export class ActionDrafts {
     value: Omit<PluginPreparedAction, "draftId" | "expiresAt" | "href">,
   ): PluginPreparedAction {
     this.prune();
-    const ownCount = [...this.drafts.values()].filter((draft) => draft.owner === owner).length;
+    const ownCount = [...this.drafts.values()].filter(
+      (draft) => draft.owner === owner,
+    ).length;
     if (ownCount >= 32 || this.drafts.size >= 256) {
-      throw new ItemError("Слишком много подготовленных форм. Повторите позже.", 429);
+      throw new ItemError(
+        "Слишком много подготовленных форм. Повторите позже.",
+        429,
+      );
     }
     const expires = this.now() + this.ttlMs;
     const draftId = randomUUID();
@@ -47,8 +52,15 @@ export class ActionDrafts {
   get(owner: string, namespace: string, id: string): PluginPreparedAction {
     this.prune();
     const draft = this.drafts.get(id);
-    if (!draft || draft.owner !== owner || draft.value.namespace !== namespace) {
-      throw new ItemError("Подготовленная форма недоступна или срок её хранения истёк.", 404);
+    if (
+      !draft ||
+      draft.owner !== owner ||
+      draft.value.namespace !== namespace
+    ) {
+      throw new ItemError(
+        "Подготовленная форма недоступна или срок её хранения истёк.",
+        404,
+      );
     }
     return structuredClone(draft.value);
   }

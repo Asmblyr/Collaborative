@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { asmblyr } from "@/lib/asmblyr";
 import { itemLabel, templateLabel } from "./item-label";
-import { tableRelationRequests, type TableRelationRequest } from "./table-relation-requests";
+import {
+  tableRelationRequests,
+  type TableRelationRequest,
+} from "./table-relation-requests";
 import type { Collection, Item } from "./types";
 import type { ItemColumn } from "./use-item-columns";
 import { useDraftPreviews } from "./record-draft-context";
@@ -14,16 +17,21 @@ export function useTableRelationLabels(
   columns: ItemColumn[],
 ) {
   const previews = useDraftPreviews();
-  const request = JSON.stringify(tableRelationRequests(catalog, items, columns));
-  const [result, setResult] = useState<{ request: string; labels: Map<string, string> } | null>(
-    null,
+  const request = JSON.stringify(
+    tableRelationRequests(catalog, items, columns),
   );
+  const [result, setResult] = useState<{
+    request: string;
+    labels: Map<string, string>;
+  } | null>(null);
 
   useEffect(() => {
-    const targets = (JSON.parse(request) as TableRelationRequest[]).map((target) => ({
-      ...target,
-      ids: target.ids.filter((id) => !id.startsWith("draft:")),
-    }));
+    const targets = (JSON.parse(request) as TableRelationRequest[]).map(
+      (target) => ({
+        ...target,
+        ids: target.ids.filter((id) => !id.startsWith("draft:")),
+      }),
+    );
     if (!targets.length) return;
     const controller = new AbortController();
     const jobs = targets.flatMap((target) =>
@@ -60,7 +68,8 @@ export function useTableRelationLabels(
         }
       }),
     ).then((batches) => {
-      if (!controller.signal.aborted) setResult({ request, labels: new Map(batches.flat()) });
+      if (!controller.signal.aborted)
+        setResult({ request, labels: new Map(batches.flat()) });
     });
     return () => controller.abort();
   }, [request, items]);

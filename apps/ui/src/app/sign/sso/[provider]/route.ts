@@ -49,11 +49,20 @@ export async function POST(
         renewed,
       );
     }
-    const { authorizationUrl } = (await upstream.json()) as { authorizationUrl: string };
+    const { authorizationUrl } = (await upstream.json()) as {
+      authorizationUrl: string;
+    };
     const response = ssoRedirect(request, authorizationUrl, provider, renewed);
-    const options = { ...cookieOptions(request, 600), path: `/sign/sso/${provider}` };
+    const options = {
+      ...cookieOptions(request, 600),
+      path: `/sign/sso/${provider}`,
+    };
     response.cookies.set(ssoCookie(provider), browserToken, options);
-    response.cookies.set(ssoIntentCookie(provider), link ? "link" : "login", options);
+    response.cookies.set(
+      ssoIntentCookie(provider),
+      link ? "link" : "login",
+      options,
+    );
     return response;
   } catch {
     return ssoRedirect(

@@ -4,12 +4,18 @@ import { applyModelTags } from "./model-tags.js";
 type Schema = Record<string, unknown>;
 
 /** JSON-compatible types only. Unsupported types fail the build instead of weakening validation. */
-export function modelTypeSchema(checker: ts.TypeChecker, root: ts.Type, location: ts.Node): Schema {
+export function modelTypeSchema(
+  checker: ts.TypeChecker,
+  root: ts.Type,
+  location: ts.Node,
+): Schema {
   const visiting = new Set<ts.Type>();
   let nodes = 0;
   function visit(type: ts.Type, depth: number): Schema {
-    if (++nodes > 1000 || depth > 20) throw new Error("Model type is too complex");
-    if (visiting.has(type)) throw new Error("Recursive model types are not supported");
+    if (++nodes > 1000 || depth > 20)
+      throw new Error("Model type is too complex");
+    if (visiting.has(type))
+      throw new Error("Recursive model types are not supported");
     const flags = type.flags;
     if (flags & ts.TypeFlags.StringLiteral)
       return { type: "string", const: (type as ts.StringLiteralType).value };
@@ -32,7 +38,9 @@ export function modelTypeSchema(checker: ts.TypeChecker, root: ts.Type, location
       throw new Error(`Unsupported model type: ${checker.typeToString(type)}`);
     }
     if (type.symbol?.declarations?.some(ts.isClassDeclaration)) {
-      throw new Error(`Model types must describe JSON, not class ${checker.typeToString(type)}`);
+      throw new Error(
+        `Model types must describe JSON, not class ${checker.typeToString(type)}`,
+      );
     }
     visiting.add(type);
     try {
@@ -42,7 +50,9 @@ export function modelTypeSchema(checker: ts.TypeChecker, root: ts.Type, location
         return { type: "array", items: visit(item, depth + 1) };
       }
       if (checker.getIndexInfosOfType(type).length) {
-        throw new Error("Model object keys must be explicit; index signatures are not supported");
+        throw new Error(
+          "Model object keys must be explicit; index signatures are not supported",
+        );
       }
       const properties: Record<string, Schema> = {};
       const required: string[] = [];
@@ -59,15 +69,25 @@ export function modelTypeSchema(checker: ts.TypeChecker, root: ts.Type, location
           property,
           property.valueDeclaration ?? location,
         );
-        properties[property.name] = applyModelTags(visit(fieldType, depth + 1), property, checker);
+        properties[property.name] = applyModelTags(
+          visit(fieldType, depth + 1),
+          property,
+          checker,
+        );
         required.push(property.name);
       }
-      return { type: "object", properties, required, additionalProperties: false };
+      return {
+        type: "object",
+        properties,
+        required,
+        additionalProperties: false,
+      };
     } finally {
       visiting.delete(type);
     }
   }
   const result = visit(root, 0);
-  if (result.type !== "object") throw new Error("Model inputs and outputs must be JSON objects");
+  if (result.type !== "object")
+    throw new Error("Model inputs and outputs must be JSON objects");
   return result;
 }

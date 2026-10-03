@@ -1,9 +1,16 @@
 import type { PluginPreparedAction } from "@asmblyr/contracts";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, { ...init, cache: "no-store", credentials: "same-origin" });
+  const response = await fetch(path, {
+    ...init,
+    cache: "no-store",
+    credentials: "same-origin",
+  });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.message ?? "Не удалось выполнить действие расширения.");
+  if (!response.ok)
+    throw new Error(
+      body.message ?? "Не удалось выполнить действие расширения.",
+    );
   return body.data as T;
 }
 

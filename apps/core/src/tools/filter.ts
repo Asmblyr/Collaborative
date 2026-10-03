@@ -13,7 +13,14 @@ export function validateToolFilter(
   if (typeof value !== "string" || value.length > 8192) {
     throw new ItemError("Invalid filter", 400);
   }
-  const filter = parseItemFilters(value, name, data.schema, data.allowed, data.catalog, access);
+  const filter = parseItemFilters(
+    value,
+    name,
+    data.schema,
+    data.allowed,
+    data.catalog,
+    access,
+  );
   return {
     collection: name,
     displayName: data.schema.settings.displayName || name,

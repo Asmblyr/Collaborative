@@ -1,5 +1,10 @@
 import type { Knex } from "knex";
-import type { CollectionMode, PrimaryKey, PrimaryKeyType, Timestamps } from "./types.js";
+import type {
+  CollectionMode,
+  PrimaryKey,
+  PrimaryKeyType,
+  Timestamps,
+} from "./types.js";
 import type { FormLayout } from "./form-layout.js";
 import type { CollectionState } from "@asmblyr/contracts";
 import { CollectionNotFoundError } from "./validation.js";
@@ -36,17 +41,25 @@ interface SettingsRow {
   state?: CollectionState | null;
 }
 
-export function settingsFromRow(row: Omit<SettingsRow, "name" | "id">): CollectionSettings {
+export function settingsFromRow(
+  row: Omit<SettingsRow, "name" | "id">,
+): CollectionSettings {
   return {
     mode: row.mode,
     displayName: row.display_name ?? null,
     hidden: row.hidden ?? false,
-    mcp: { enabled: row.mcp_enabled ?? true, description: row.mcp_description ?? null },
+    mcp: {
+      enabled: row.mcp_enabled ?? true,
+      description: row.mcp_description ?? null,
+    },
     displayField: row.display_field ?? null,
     displayTemplate: row.display_template ?? null,
     formLayout: row.form_layout ?? null,
     primaryKey: { name: row.primary_key_name, type: row.primary_key_type },
-    timestamps: { createdAt: row.created_at_enabled, updatedAt: row.updated_at_enabled },
+    timestamps: {
+      createdAt: row.created_at_enabled,
+      updatedAt: row.updated_at_enabled,
+    },
     state: row.state ?? null,
   };
 }
@@ -77,7 +90,10 @@ export async function findCollectionSettings(
   return row ? { ...settingsFromRow(row), internalId: row.id } : null;
 }
 
-export function isManagedColumn(settings: CollectionSettings, name: string): boolean {
+export function isManagedColumn(
+  settings: CollectionSettings,
+  name: string,
+): boolean {
   return (
     name === settings.primaryKey.name ||
     name === settings.state?.field ||
@@ -91,11 +107,13 @@ export async function lockedCollectionSettings(
   name: string,
   mode: "ACCESS SHARE" | "ACCESS EXCLUSIVE" = "ACCESS EXCLUSIVE",
 ): Promise<CollectionSettings & { internalId: string }> {
-  if (!(await findCollectionSettings(transaction, name))) throw new CollectionNotFoundError(name);
+  if (!(await findCollectionSettings(transaction, name)))
+    throw new CollectionNotFoundError(name);
   try {
     await transaction.raw(`LOCK TABLE ?? IN ${mode} MODE`, [`public.${name}`]);
   } catch (error) {
-    if (postgresCode(error) === "42P01") throw new CollectionNotFoundError(name);
+    if (postgresCode(error) === "42P01")
+      throw new CollectionNotFoundError(name);
     throw error;
   }
   // Enabling a managed field can have committed while this request waited.

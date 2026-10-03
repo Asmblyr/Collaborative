@@ -11,7 +11,11 @@ import { authorizeTestApp } from "./authorized-app.js";
 
 export async function mcpFixture(t: TestContext, assistant?: AssistantService) {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false, assistant });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+    assistant,
+  });
   await authorizeTestApp(app, db);
   const suffix = randomUUID().replaceAll("-", "").slice(0, 10);
   const names = {
@@ -41,10 +45,16 @@ export async function mcpFixture(t: TestContext, assistant?: AssistantService) {
       url: "/collections",
       payload: {
         name,
-        primaryKey: { name: isPeople ? "code" : "id", type: isPeople ? "text" : "serial" },
+        primaryKey: {
+          name: isPeople ? "code" : "id",
+          type: isPeople ? "text" : "serial",
+        },
         hidden: isPeople,
         displayName: isPeople ? "Directory" : null,
-        mcp: { enabled: name !== names.disabled, description: `Purpose of ${name}` },
+        mcp: {
+          enabled: name !== names.disabled,
+          description: `Purpose of ${name}`,
+        },
         fields: [
           { name: "title", type: "text" },
           { name: "secret", type: "text" },
@@ -59,7 +69,11 @@ export async function mcpFixture(t: TestContext, assistant?: AssistantService) {
     payload: { name: "author_id", targetCollection: names.people },
   });
   assert.equal(relation.statusCode, 201, relation.body);
-  await db(names.people).insert({ code: "author-a", title: "Ada", secret: "hidden-person-value" });
+  await db(names.people).insert({
+    code: "author-a",
+    title: "Ada",
+    secret: "hidden-person-value",
+  });
   await db(names.posts).insert([
     { title: "Alpha", author_id: "author-a", secret: "hidden-post-value" },
     { title: "Beta", secret: "hidden-post-value" },
@@ -88,16 +102,36 @@ export async function mcpFixture(t: TestContext, assistant?: AssistantService) {
     const id = response.json().data.id;
     permissions.set(name, id);
     assert.equal(
-      (await app.inject({ method: "PUT", url: `/policies/${policyId}/permissions/${id}` }))
-        .statusCode,
+      (
+        await app.inject({
+          method: "PUT",
+          url: `/policies/${policyId}/permissions/${id}`,
+        })
+      ).statusCode,
       204,
     );
   }
   assert.equal(
-    (await app.inject({ method: "PUT", url: `/policies/${policyId}/users/${userId}` })).statusCode,
+    (
+      await app.inject({
+        method: "PUT",
+        url: `/policies/${policyId}/users/${userId}`,
+      })
+    ).statusCode,
     204,
   );
-  const headers = { authorization: `Bearer ${(await issueUserTokens(db, userId)).accessToken}` };
+  const headers = {
+    authorization: `Bearer ${(await issueUserTokens(db, userId)).accessToken}`,
+  };
   const reload = () => loadAccess(db, headers.authorization);
-  return { app, db, names, suffix, headers, permissions, reload, access: await reload() };
+  return {
+    app,
+    db,
+    names,
+    suffix,
+    headers,
+    permissions,
+    reload,
+    access: await reload(),
+  };
 }

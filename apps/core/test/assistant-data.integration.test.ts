@@ -45,7 +45,10 @@ function json(value: object) {
 
 test("assistant data tools share query semantics, enforce projections and relation grants, bound previews and refresh access", async () => {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+  });
   await authorizeTestApp(app, db);
   const suffix = randomUUID().replaceAll("-", "").slice(0, 10);
   const posts = `test_ai_data_${suffix}`,
@@ -79,7 +82,11 @@ test("assistant data tools share query semantics, enforce projections and relati
     const related = await app.inject({
       method: "POST",
       url: `/collections/${posts}/relations`,
-      payload: { name: "author_id", targetCollection: authors, reverseField: "posts" },
+      payload: {
+        name: "author_id",
+        targetCollection: authors,
+        reverseField: "posts",
+      },
     });
     assert.equal(related.statusCode, 201, related.body);
     assert.equal(
@@ -121,12 +128,23 @@ test("assistant data tools share query semantics, enforce projections and relati
     const result = json(await tools.execute("search_items", search));
     assert.equal(result.items.length, 5);
     assert.equal(result.hasMore, true);
-    assert.deepEqual(result.items[0], { values: { id: "1", title: "Alpha" }, truncatedFields: [] });
+    assert.deepEqual(result.items[0], {
+      values: { id: "1", title: "Alpha" },
+      truncatedFields: [],
+    });
     assert.ok(!JSON.stringify(result).includes("hidden-source"));
-    const next = json(await tools.execute("search_items", { ...search, page: 2 }));
+    const next = json(
+      await tools.execute("search_items", { ...search, page: 2 }),
+    );
     assert.equal(next.items[0].values.id, "6");
-    assert.equal(json(await tools.execute("search_items", { ...search, page: 5 })).hasMore, false);
-    assert.equal(json(await tools.execute("count_items", { q: null, filter: null })).count, "23");
+    assert.equal(
+      json(await tools.execute("search_items", { ...search, page: 5 })).hasMore,
+      false,
+    );
+    assert.equal(
+      json(await tools.execute("count_items", { q: null, filter: null })).count,
+      "23",
+    );
 
     for (const [q, filter, expected] of [
       ["Alpha", "", "3"],
@@ -146,7 +164,8 @@ test("assistant data tools share query semantics, enforce projections and relati
       assert.equal(counted.count, expected);
       assert.equal(counted.count, api.page.total);
       assert.equal(
-        json(await tools.execute("search_items", { ...search, q, filter })).items.length,
+        json(await tools.execute("search_items", { ...search, q, filter }))
+          .items.length,
         Number(expected),
       );
     }
@@ -157,28 +176,42 @@ test("assistant data tools share query semantics, enforce projections and relati
       reload,
     ))!;
     await scoped.execute("describe_collection", {});
-    assert.equal(json(await scoped.execute("count_items", { q: null, filter: null })).count, "3");
-    assert.equal(json(await scoped.execute("count_items", { q: "", filter: "" })).count, "23");
     assert.equal(
-      json(await scoped.execute("read_item", { id: "23", fields: ["title"] })).item.values.title,
+      json(await scoped.execute("count_items", { q: null, filter: null }))
+        .count,
+      "3",
+    );
+    assert.equal(
+      json(await scoped.execute("count_items", { q: "", filter: "" })).count,
+      "23",
+    );
+    assert.equal(
+      json(await scoped.execute("read_item", { id: "23", fields: ["title"] }))
+        .item.values.title,
       "Beta",
     );
 
     const read = json(
-      await tools.execute("read_item", { id: "1", fields: ["title", "body", "metadata"] }),
+      await tools.execute("read_item", {
+        id: "1",
+        fields: ["title", "body", "metadata"],
+      }),
     );
     assert.equal(read.item.values.body.length, 2000);
     assert.deepEqual(read.item.truncatedFields, ["body", "metadata"]);
     assert.equal(
-      json(await tools.execute("read_item", { id: "2", fields: ["body"] })).item.values.body,
+      json(await tools.execute("read_item", { id: "2", fields: ["body"] })).item
+        .values.body,
       null,
     );
     assert.equal(
-      json(await tools.execute("read_item", { id: "99999", fields: ["title"] })).found,
+      json(await tools.execute("read_item", { id: "99999", fields: ["title"] }))
+        .found,
       false,
     );
     assert.equal(
-      json(await tools.execute("search_items", { ...search, limit: 20 })).items.length,
+      json(await tools.execute("search_items", { ...search, limit: 20 })).items
+        .length,
       20,
     );
 
@@ -199,11 +232,22 @@ test("assistant data tools share query semantics, enforce projections and relati
       const error = await tools.execute("search_items", args);
       assert.ok("error" in error, JSON.stringify(args));
       assert.ok(
-        !/hidden-source|hidden-target|select |secret|postgres/i.test(JSON.stringify(error)),
+        !/hidden-source|hidden-target|select |secret|postgres/i.test(
+          JSON.stringify(error),
+        ),
       );
     }
-    assert.ok("error" in (await tools.execute("read_item", { id: "1", fields: ["secret"] })));
-    assert.ok("error" in (await tools.execute("read_item", { id: "1 OR 1=1", fields: ["title"] })));
+    assert.ok(
+      "error" in
+        (await tools.execute("read_item", { id: "1", fields: ["secret"] })),
+    );
+    assert.ok(
+      "error" in
+        (await tools.execute("read_item", {
+          id: "1 OR 1=1",
+          fields: ["title"],
+        })),
+    );
     assert.ok(
       "error" in
         (await tools.execute("count_items", {
@@ -220,7 +264,9 @@ test("assistant data tools share query semantics, enforce projections and relati
     db.on("query", capture);
     await tools.execute("count_items", { q: "", filter: "" });
     db.off("query", capture);
-    const reads = queries.filter((sql) => sql.includes(`from "public"."${posts}"`));
+    const reads = queries.filter((sql) =>
+      sql.includes(`from "public"."${posts}"`),
+    );
     assert.equal(reads.length, 1);
     assert.match(reads[0], /count\(\*\)/);
 
@@ -232,31 +278,56 @@ test("assistant data tools share query semantics, enforce projections and relati
           filter: condition("author_id.title", "Ada"),
         })),
     );
-    assert.equal(json(await tools.execute("count_items", { q: "Ada", filter: "" })).count, "0");
+    assert.equal(
+      json(await tools.execute("count_items", { q: "Ada", filter: "" })).count,
+      "0",
+    );
     access.grants.set(`${posts}:read`, ["title"]);
-    assert.ok("error" in (await tools.execute("read_item", { id: "1", fields: ["body"] })));
+    assert.ok(
+      "error" in
+        (await tools.execute("read_item", { id: "1", fields: ["body"] })),
+    );
     const cancelled = new AbortController();
     cancelled.abort();
     assert.ok(
-      "error" in (await tools.execute("count_items", { q: "", filter: "" }, cancelled.signal)),
+      "error" in
+        (await tools.execute(
+          "count_items",
+          { q: "", filter: "" },
+          cancelled.signal,
+        )),
     );
 
     // Bound lock waits too, then ensure transaction-local timeout did not poison the pool.
     const lock = await db.transaction();
     try {
-      await lock.raw("LOCK TABLE ?? IN ACCESS EXCLUSIVE MODE", [`public.${posts}`]);
-      assert.ok("error" in (await tools.execute("count_items", { q: "", filter: "" })));
+      await lock.raw("LOCK TABLE ?? IN ACCESS EXCLUSIVE MODE", [
+        `public.${posts}`,
+      ]);
+      assert.ok(
+        "error" in (await tools.execute("count_items", { q: "", filter: "" })),
+      );
     } finally {
       await lock.rollback();
     }
-    assert.equal(json(await tools.execute("count_items", { q: "", filter: "" })).count, "23");
+    assert.equal(
+      json(await tools.execute("count_items", { q: "", filter: "" })).count,
+      "23",
+    );
     access.grants.delete(`${posts}:read`);
-    for (const tool of ["describe_collection", "search_items", "read_item", "count_items"]) {
+    for (const tool of [
+      "describe_collection",
+      "search_items",
+      "read_item",
+      "count_items",
+    ]) {
       assert.ok(
         "error" in
           (await tools.execute(
             tool,
-            tool === "search_items" ? search : { id: "1", fields: ["title"], q: "", filter: "" },
+            tool === "search_items"
+              ? search
+              : { id: "1", fields: ["title"], q: "", filter: "" },
           )),
       );
     }
@@ -272,7 +343,10 @@ test("assistant data tools share query semantics, enforce projections and relati
 
 test("assistant preserves text/UUID/bigint keys and refuses a recreated collection", async () => {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+  });
   await authorizeTestApp(app, db);
   const name = `test_ai_keys_${randomUUID().replaceAll("-", "").slice(0, 10)}`;
   const access: Access = {
@@ -295,25 +369,41 @@ test("assistant preserves text/UUID/bigint keys and refuses a recreated collecti
         fields: [{ name: "title", type: "text" }],
       };
       assert.equal(
-        (await app.inject({ method: "POST", url: "/collections", payload })).statusCode,
+        (await app.inject({ method: "POST", url: "/collections", payload }))
+          .statusCode,
         201,
       );
       await db(name).insert({ id, title: "Key fixture" });
-      const tools = (await createContextTools(db, access, page(name), async () => access))!;
+      const tools = (await createContextTools(
+        db,
+        access,
+        page(name),
+        async () => access,
+      ))!;
       await tools.execute("describe_collection", {});
       assert.equal(
-        json(await tools.execute("read_item", { id, fields: ["title"] })).item.values.id,
+        json(await tools.execute("read_item", { id, fields: ["title"] })).item
+          .values.id,
         id,
       );
-      assert.equal(json(await tools.execute("search_items", search)).items[0].values.id, id);
+      assert.equal(
+        json(await tools.execute("search_items", search)).items[0].values.id,
+        id,
+      );
       await remove();
       assert.equal(
-        (await app.inject({ method: "POST", url: "/collections", payload })).statusCode,
+        (await app.inject({ method: "POST", url: "/collections", payload }))
+          .statusCode,
         201,
       );
       await db(name).insert({ id, title: "New collection must not leak" });
-      assert.ok("error" in (await tools.execute("read_item", { id, fields: ["title"] })));
-      assert.ok("error" in (await tools.execute("count_items", { q: "", filter: "" })));
+      assert.ok(
+        "error" in
+          (await tools.execute("read_item", { id, fields: ["title"] })),
+      );
+      assert.ok(
+        "error" in (await tools.execute("count_items", { q: "", filter: "" })),
+      );
       await remove();
     }
   } finally {

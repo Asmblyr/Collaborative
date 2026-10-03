@@ -5,10 +5,18 @@ import { cn } from "cn";
 import { Tabs as TabsPrimitive } from "radix-ui";
 
 function Tabs(props: React.ComponentProps<typeof TabsPrimitive.Root>) {
-  return <TabsPrimitive.Root data-slot="tabs" {...props} />;
+  return (
+    <TabsPrimitive.Root
+      data-slot="tabs"
+      {...props}
+    />
+  );
 }
 
-function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
+function TabsList({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -21,7 +29,10 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
   );
 }
 
-function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+function TabsTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
@@ -34,11 +45,17 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
   );
 }
 
-function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
+function TabsContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      className={cn("outline-none focus-visible:ring-3 focus-visible:ring-ring/50", className)}
+      className={cn(
+        "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        className,
+      )}
       {...props}
     />
   );

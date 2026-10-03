@@ -5,7 +5,9 @@ export async function GET(
   { params }: { params: Promise<{ name: string; field: string }> },
 ) {
   const { name, field } = await params;
-  return proxyCollectionDeletion(request,
-    `/collections/${encodeURIComponent(name)}/fields/${encodeURIComponent(field)}/impact`, "GET",
+  return proxyCollectionDeletion(
+    request,
+    `/collections/${encodeURIComponent(name)}/fields/${encodeURIComponent(field)}/impact`,
+    "GET",
   );
 }

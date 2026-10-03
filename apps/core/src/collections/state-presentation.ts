@@ -15,7 +15,11 @@ export function statePresentation(
     options: state.statuses.map(({ value, label }) => ({ value, label })),
     display: {
       kind: "status",
-      statuses: state.statuses.map(({ value, label, color }) => ({ value, label, color })),
+      statuses: state.statuses.map(({ value, label, color }) => ({
+        value,
+        label,
+        color,
+      })),
     },
   };
 }

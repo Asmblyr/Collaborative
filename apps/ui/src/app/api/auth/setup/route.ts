@@ -14,7 +14,10 @@ export async function POST(request: Request) {
     });
     return new Response(await response.text(), {
       status: response.status,
-      headers: { "content-type": "application/json", "cache-control": "no-store" },
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "no-store",
+      },
     });
   } catch {
     return Response.json({ message: "Core API недоступен" }, { status: 503 });

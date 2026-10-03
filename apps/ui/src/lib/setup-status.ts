@@ -11,7 +11,7 @@ export async function loadSetupStatus(): Promise<SetupStatus | null> {
       signal: AbortSignal.timeout(3000),
     });
     if (!response.ok) return null;
-    return await response.json() as SetupStatus;
+    return (await response.json()) as SetupStatus;
   } catch {
     return null;
   }

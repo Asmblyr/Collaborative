@@ -21,11 +21,17 @@ declare module "h3" {
   }
 }
 
-export function defineModelAnnotation(annotation: ModelAnnotation): ModelAnnotation {
+export function defineModelAnnotation(
+  annotation: ModelAnnotation,
+): ModelAnnotation {
   if (!annotation.title.trim() || !annotation.description.trim()) {
     throw new Error("Model title and description are required");
   }
-  if (![AccessGate.authenticated, AccessGate.superuser].includes(annotation.middleware)) {
+  if (
+    ![AccessGate.authenticated, AccessGate.superuser].includes(
+      annotation.middleware,
+    )
+  ) {
     throw new Error("Model annotations require an explicit AccessGate");
   }
   return Object.freeze({ ...annotation });
@@ -45,9 +51,13 @@ export function defineModelContext<Input extends object>(
 }
 
 /** Used by the host loader for source and built packages. Not a second route registration. */
-export function bindModelDefinition(handler: EventHandler, definition: ModelDefinition): void {
+export function bindModelDefinition(
+  handler: EventHandler,
+  definition: ModelDefinition,
+): void {
   const annotation = handler.meta?.asmblyrModel;
-  if (!annotation) throw new Error("Generated model has no matching annotated handler");
+  if (!annotation)
+    throw new Error("Generated model has no matching annotated handler");
   const input = modelValidator<object>(definition.inputSchema);
   const output = modelValidator<object>(definition.outputSchema);
   if (!(input instanceof z.ZodObject) || !(output instanceof z.ZodObject)) {

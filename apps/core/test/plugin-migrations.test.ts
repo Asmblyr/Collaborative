@@ -11,16 +11,38 @@ test("source and compiled plans have identical checksums; JSON object key order 
   assert.deepEqual(source[0].migrations, built[0].migrations);
   const name = "20261002000000_index";
   const first = parseMigration(
-    { operations: [{ type: "addIndex", collection: "entries", name: "by_id", fields: ["id"] }] },
+    {
+      operations: [
+        {
+          type: "addIndex",
+          collection: "entries",
+          name: "by_id",
+          fields: ["id"],
+        },
+      ],
+    },
     name,
   );
   const second = parseMigration(
-    { operations: [{ fields: ["id"], name: "by_id", collection: "entries", type: "addIndex" }] },
+    {
+      operations: [
+        {
+          fields: ["id"],
+          name: "by_id",
+          collection: "entries",
+          type: "addIndex",
+        },
+      ],
+    },
     name,
   );
   assert.equal(first.checksum, second.checksum);
   assert.throws(
-    () => parseMigration({ operations: [{ type: "sql", sql: "DROP TABLE anything" }] }, name),
+    () =>
+      parseMigration(
+        { operations: [{ type: "sql", sql: "DROP TABLE anything" }] },
+        name,
+      ),
     /Invalid/,
   );
   assert.throws(
@@ -28,7 +50,12 @@ test("source and compiled plans have identical checksums; JSON object key order 
       parseMigration(
         {
           operations: [
-            { type: "addIndex", collection: "entries", name: "bad", fields: ["id", "id"] },
+            {
+              type: "addIndex",
+              collection: "entries",
+              name: "bad",
+              fields: ["id", "id"],
+            },
           ],
         },
         name,

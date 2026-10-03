@@ -21,9 +21,13 @@ export function describeRequestError(
   }
 
   const clientCode =
-    "code" in failure && typeof failure.code === "string" ? failure.code : "INVALID_REQUEST";
+    "code" in failure && typeof failure.code === "string"
+      ? failure.code
+      : "INVALID_REQUEST";
   const code = isClientError ? clientCode : "INTERNAL_ERROR";
-  const message = isClientError ? failure.message : "An internal error occurred";
+  const message = isClientError
+    ? failure.message
+    : "An internal error occurred";
   return { status, body: { code, message, requestId: request.id } };
 }
 

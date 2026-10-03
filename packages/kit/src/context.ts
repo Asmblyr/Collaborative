@@ -11,6 +11,8 @@ declare module "h3" {
 export function useAsmblyr(event: H3Event): AsmblyrContext {
   const context = event.context.asmblyr;
   if (!context)
-    throw new Error("Asmblyr context is unavailable outside an authenticated plugin request");
+    throw new Error(
+      "Asmblyr context is unavailable outside an authenticated plugin request",
+    );
   return context;
 }

@@ -69,7 +69,11 @@ function parsePositiveInteger(value: unknown, maximum: number): number {
 }
 
 // Explicit null inherits the page setting. Empty text clears search/filter.
-function parseInheritedText(value: unknown, fallback: string, maxLength: number): string {
+function parseInheritedText(
+  value: unknown,
+  fallback: string,
+  maxLength: number,
+): string {
   const resolved = value === null ? fallback : value;
   if (typeof resolved !== "string" || resolved.length > maxLength) {
     return invalidArguments();
@@ -77,14 +81,20 @@ function parseInheritedText(value: unknown, fallback: string, maxLength: number)
   return resolved;
 }
 
-function parseFilterQuery(body: Record<string, unknown>, table: QueryDefaults): FilterQuery {
+function parseFilterQuery(
+  body: Record<string, unknown>,
+  table: QueryDefaults,
+): FilterQuery {
   const q = parseInheritedText(body.q, table.q, 100);
   const filter = parseInheritedText(body.filter, table.filter, 8192);
   const terms = parseTermIds(body.terms);
   return { q, filter: filter || undefined, ...(terms.length ? { terms } : {}) };
 }
 
-function parseSearchQuery(body: Record<string, unknown>, table: QueryDefaults): SearchQuery {
+function parseSearchQuery(
+  body: Record<string, unknown>,
+  table: QueryDefaults,
+): SearchQuery {
   const page = parsePositiveInteger(body.page, 50);
   const limit = parsePositiveInteger(body.limit, 20);
   const sort = parseInheritedText(body.sort, table.sort, 63);
@@ -109,7 +119,8 @@ export function parseDataToolInput(
   table: QueryDefaults,
 ): DataToolInput {
   const requiredKeys = argumentNames[tool];
-  const allowedKeys = tool === "read_item" ? requiredKeys : [...requiredKeys, "terms"];
+  const allowedKeys =
+    tool === "read_item" ? requiredKeys : [...requiredKeys, "terms"];
   const body = objectInput(args, allowedKeys);
 
   if (requiredKeys.some((key) => !Object.hasOwn(body, key))) {

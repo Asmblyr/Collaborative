@@ -14,24 +14,44 @@ function physicalField(schema: Schema, name: string): boolean {
 }
 
 /** Omitted projection preserves the existing /items response. */
-export function selectedColumns(schema: Schema, allowed: string[], requested?: unknown): string[] {
+export function selectedColumns(
+  schema: Schema,
+  allowed: string[],
+  requested?: unknown,
+): string[] {
   const primaryKey = schema.settings.primaryKey.name;
   if (requested === undefined) {
     if (allowed.includes("*")) return ["*"];
-    return [...new Set([primaryKey, ...allowed.filter((name) => physicalField(schema, name))])];
+    return [
+      ...new Set([
+        primaryKey,
+        ...allowed.filter((name) => physicalField(schema, name)),
+      ]),
+    ];
   }
 
   let fields = requested;
   if (typeof requested === "string") {
     fields = requested === "" ? [] : requested.split(",");
   }
-  if (!Array.isArray(fields) || fields.some((field) => typeof field !== "string")) {
-    throw new ItemError("Fields must be an array of field names or a comma-separated string", 400);
+  if (
+    !Array.isArray(fields) ||
+    fields.some((field) => typeof field !== "string")
+  ) {
+    throw new ItemError(
+      "Fields must be an array of field names or a comma-separated string",
+      400,
+    );
   }
   const columns = new Set([primaryKey]);
   for (const field of fields) {
-    if (!physicalField(schema, field)) throw new ItemError(`Invalid read field: ${field}`, 400);
-    if (field !== primaryKey && !allowed.includes("*") && !allowed.includes(field)) {
+    if (!physicalField(schema, field))
+      throw new ItemError(`Invalid read field: ${field}`, 400);
+    if (
+      field !== primaryKey &&
+      !allowed.includes("*") &&
+      !allowed.includes(field)
+    ) {
       throw new AccessDeniedError();
     }
     columns.add(field);

@@ -7,7 +7,9 @@ export interface ModelDefinition {
   outputSchema: Record<string, unknown>;
 }
 
-export function modelValidator<Value = unknown>(schema: Record<string, unknown>): z.ZodType<Value> {
+export function modelValidator<Value = unknown>(
+  schema: Record<string, unknown>,
+): z.ZodType<Value> {
   return z.fromJSONSchema(schema) as z.ZodType<Value>;
 }
 

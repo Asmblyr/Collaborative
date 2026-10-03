@@ -1,7 +1,11 @@
 import type { Knex } from "knex";
 import { collectionSchema } from "../items/schema-repository.js";
 import { listCollections } from "../collections/catalog-repository.js";
-import { requireGrant, requireHuman, type Access } from "../permissions/access.js";
+import {
+  requireGrant,
+  requireHuman,
+  type Access,
+} from "../permissions/access.js";
 import { objectInput } from "../shared/input.js";
 import { ItemError } from "../items/validation.js";
 import { parseItemListQuery } from "../items/list-query.js";
@@ -10,15 +14,31 @@ import { plainFilter, storedFilterInput } from "../items/filter-wire.js";
 export async function viewContext(db: Knex, name: string, access: Access) {
   requireHuman(access);
   const allowed = requireGrant(access, name, "read");
-  const [schema, catalog] = await Promise.all([collectionSchema(db, name), listCollections(db)]);
-  const readable = (field: string) => allowed.includes("*") || allowed.includes(field);
+  const [schema, catalog] = await Promise.all([
+    collectionSchema(db, name),
+    listCollections(db),
+  ]);
+  const readable = (field: string) =>
+    allowed.includes("*") || allowed.includes(field);
   const names = [
     schema.settings.primaryKey.name,
     ...[...schema.fields.keys()].filter(readable),
-    ...(schema.settings.timestamps.createdAt && readable("created_at") ? ["created_at"] : []),
-    ...(schema.settings.timestamps.updatedAt && readable("updated_at") ? ["updated_at"] : []),
+    ...(schema.settings.timestamps.createdAt && readable("created_at")
+      ? ["created_at"]
+      : []),
+    ...(schema.settings.timestamps.updatedAt && readable("updated_at")
+      ? ["updated_at"]
+      : []),
   ];
-  return { schema, catalog, allowed, names, id: schema.settings.internalId, name, access };
+  return {
+    schema,
+    catalog,
+    allowed,
+    names,
+    id: schema.settings.internalId,
+    name,
+    access,
+  };
 }
 
 export function validateView(
@@ -26,7 +46,13 @@ export function validateView(
   ctx: Awaited<ReturnType<typeof viewContext>>,
   reconcile = false,
 ) {
-  const body = objectInput(value, ["columns", "sort", "pageSize", "filter", "q"]);
+  const body = objectInput(value, [
+    "columns",
+    "sort",
+    "pageSize",
+    "filter",
+    "q",
+  ]);
   const columns = objectInput(body.columns, ["order", "hidden"]);
   const sort = objectInput(body.sort, ["field", "direction"]);
   const lists: Record<string, string[]> = {};
@@ -35,11 +61,15 @@ export function validateView(
     if (
       !Array.isArray(list) ||
       list.length > 500 ||
-      list.some((v) => typeof v !== "string" || (!reconcile && !ctx.names.includes(v)))
+      list.some(
+        (v) => typeof v !== "string" || (!reconcile && !ctx.names.includes(v)),
+      )
     ) {
       throw new ItemError("Invalid or inaccessible table columns", 400);
     }
-    lists[key] = [...new Set((list as string[]).filter((v) => ctx.names.includes(v)))];
+    lists[key] = [
+      ...new Set((list as string[]).filter((v) => ctx.names.includes(v))),
+    ];
   }
   if (![10, 25, 50, 100].includes(body.pageSize as number))
     throw new ItemError("Invalid page size", 400);
@@ -56,7 +86,9 @@ export function validateView(
       filter:
         body.filter == null
           ? undefined
-          : JSON.stringify(reconcile ? storedFilterInput(body.filter) : body.filter),
+          : JSON.stringify(
+              reconcile ? storedFilterInput(body.filter) : body.filter,
+            ),
     },
     ctx.name,
     ctx.schema,

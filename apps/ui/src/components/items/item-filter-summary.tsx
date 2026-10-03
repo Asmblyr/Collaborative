@@ -22,10 +22,13 @@ export function ItemFilterSummary({
 }) {
   if (!q && !filter) return null;
   const group = readFilter(filter);
-  const nodes = group.logic === "or" && group.children.length ? [group] : group.children;
+  const nodes =
+    group.logic === "or" && group.children.length ? [group] : group.children;
   const fields = filterFields(collection, catalog);
   const labels = new Map(fields.map((field) => [field.name, field.label]));
-  const choices = new Map(fields.map((field) => [field.name, field.options ?? []]));
+  const choices = new Map(
+    fields.map((field) => [field.name, field.options ?? []]),
+  );
   return (
     <div
       aria-label="Применённые условия"
@@ -40,9 +43,15 @@ export function ItemFilterSummary({
           aria-label={`Убрать поиск: ${q}`}
           onClick={() => onChange(filter, "")}
         >
-          <Search aria-hidden="true" className="size-3" />
+          <Search
+            aria-hidden="true"
+            className="size-3"
+          />
           <span className="truncate">{q}</span>
-          <X aria-hidden="true" className="size-3" />
+          <X
+            aria-hidden="true"
+            className="size-3"
+          />
         </Button>
       )}
       {q && group.children.length > 0 && (
@@ -51,7 +60,10 @@ export function ItemFilterSummary({
       {nodes.map((node, index) => {
         const label = describeFilter(node, labels, choices);
         return (
-          <span key={index} className="flex max-w-full items-center gap-2">
+          <span
+            key={index}
+            className="flex max-w-full items-center gap-2"
+          >
             {index > 0 && (
               <span className="text-[10px] font-medium text-muted-foreground">
                 {group.logic === "and" ? "И" : "ИЛИ"}
@@ -73,7 +85,10 @@ export function ItemFilterSummary({
               }}
             >
               <span className="truncate">{label}</span>
-              <X aria-hidden="true" className="size-3 shrink-0" />
+              <X
+                aria-hidden="true"
+                className="size-3 shrink-0"
+              />
             </Button>
           </span>
         );

@@ -38,7 +38,8 @@ export async function proxyCore(
   const withBody =
     method === "POST" ||
     method === "PATCH" ||
-    (method === "PUT" && request.headers.get("content-type")?.startsWith("application/json"));
+    (method === "PUT" &&
+      request.headers.get("content-type")?.startsWith("application/json"));
   let renewed: TokenPair | undefined;
   let response: NextResponse;
   try {
@@ -58,7 +59,10 @@ export async function proxyCore(
           ...(pluginOnly ? pluginRequestHeaders(request) : {}),
         },
       },
-      { accessToken: jar.get(ACCESS_COOKIE)?.value, refreshToken: jar.get(REFRESH_COOKIE)?.value },
+      {
+        accessToken: jar.get(ACCESS_COOKIE)?.value,
+        refreshToken: jar.get(REFRESH_COOKIE)?.value,
+      },
       (pair) => {
         renewed = pair;
       },
@@ -71,9 +75,13 @@ export async function proxyCore(
       });
     } else {
       const streaming =
-        stream && upstream.headers.get("content-type")?.startsWith("application/x-ndjson");
+        stream &&
+        upstream.headers
+          .get("content-type")
+          ?.startsWith("application/x-ndjson");
       let responseBody: BodyInit | null = null;
-      if (upstream.status !== 204) responseBody = streaming ? upstream.body : await upstream.text();
+      if (upstream.status !== 204)
+        responseBody = streaming ? upstream.body : await upstream.text();
       response = new NextResponse(responseBody, {
         status: upstream.status,
         headers:
@@ -99,7 +107,10 @@ export async function proxyCore(
       status = 401;
       message = "Требуется вход";
     }
-    response = NextResponse.json({ message }, { status, headers: { "cache-control": "no-store" } });
+    response = NextResponse.json(
+      { message },
+      { status, headers: { "cache-control": "no-store" } },
+    );
     if (expired) {
       response.cookies.delete(ACCESS_COOKIE);
       response.cookies.delete(REFRESH_COOKIE);

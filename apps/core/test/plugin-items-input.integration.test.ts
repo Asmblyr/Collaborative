@@ -35,25 +35,68 @@ test("kit validates runtime inputs and cannot accept identity or privilege overr
     { filter: [] },
     { filter: null },
     { filter: { field: "title", op: "eq", value: "Bravo" } },
-    { filter: { logic: "and", children: [{ field: "title", op: "sql", value: "true" }] } },
-    { filter: { logic: "and", children: [{ field: "title", op: "eq", value: 1 }] } },
+    {
+      filter: {
+        logic: "and",
+        children: [{ field: "title", op: "sql", value: "true" }],
+      },
+    },
+    {
+      filter: {
+        logic: "and",
+        children: [{ field: "title", op: "eq", value: 1 }],
+      },
+    },
     { filter: { logic: "and", children: [], extra: "x" } },
     { filter: { logic: "and", children: [], oversized: "x".repeat(8193) } },
   ]) {
-    const error = await call("POST", "/reader/list", { collection, options }, 400, memberToken);
+    const error = await call(
+      "POST",
+      "/reader/list",
+      { collection, options },
+      400,
+      memberToken,
+    );
     assert.ok(error.requestId);
     assert.ok(error.message);
   }
-  for (const options of [{ actor: admin }, { superuser: true }, { limit: 10 }, null]) {
-    await call("POST", "/reader/get", { collection, id: 1, options }, 400, memberToken);
+  for (const options of [
+    { actor: admin },
+    { superuser: true },
+    { limit: 10 },
+    null,
+  ]) {
+    await call(
+      "POST",
+      "/reader/get",
+      { collection, id: 1, options },
+      400,
+      memberToken,
+    );
   }
-  for (const name of [null, {}, "public.asmblyr_users", "wrong-name", "UPPER"]) {
+  for (const name of [
+    null,
+    {},
+    "public.asmblyr_users",
+    "wrong-name",
+    "UPPER",
+  ]) {
     await call("POST", "/reader/list", { collection: name }, 400, memberToken);
   }
-  for (const name of ["asmblyr_users", "asmblyr_auth_sessions", "test_missing_sdk"]) {
+  for (const name of [
+    "asmblyr_users",
+    "asmblyr_auth_sessions",
+    "test_missing_sdk",
+  ]) {
     await call("POST", "/reader/list", { collection: name }, 403, memberToken);
     await call("POST", "/reader/list", { collection: name }, 404, adminToken);
-    await call("POST", "/reader/get", { collection: name, id: 1 }, 404, adminToken);
+    await call(
+      "POST",
+      "/reader/get",
+      { collection: name, id: 1 },
+      404,
+      adminToken,
+    );
   }
   for (const id of [
     null,
@@ -104,7 +147,11 @@ test("kit preserves custom primary keys, bigint precision and system timestamps"
       200,
       memberToken,
     );
-    assert.deepEqual(result.data, { key: id, title: "Example", created_at: createdAt });
+    assert.deepEqual(result.data, {
+      key: id,
+      title: "Example",
+      created_at: createdAt,
+    });
     assert.deepEqual(
       result,
       await call(

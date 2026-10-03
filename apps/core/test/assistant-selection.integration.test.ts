@@ -6,7 +6,8 @@ import { createContextTools } from "../src/assistant/context-tools.js";
 import { mcpFixture } from "./support/assistant-mcp-fixture.js";
 
 test("selection cards preserve real query results across collections and recheck access on opening", async (t) => {
-  const { db, app, access, reload, names, headers, permissions, suffix } = await mcpFixture(t);
+  const { db, app, access, reload, names, headers, permissions, suffix } =
+    await mcpFixture(t);
   const term = await app.inject({
     method: "POST",
     url: "/settings/terms",
@@ -18,7 +19,10 @@ test("selection cards preserve real query results across collections and recheck
     },
   });
   assert.equal(term.statusCode, 201, term.body);
-  const filter = { logic: "and", children: [{ field: "title", op: "eq", value: "Alpha" }] };
+  const filter = {
+    logic: "and",
+    children: [{ field: "title", op: "eq", value: "Alpha" }],
+  };
   const binding = await app.inject({
     method: "PUT",
     url: `/collections/${names.posts}/terms/${term.json().data.id}`,
@@ -32,7 +36,10 @@ test("selection cards preserve real query results across collections and recheck
     reload,
   ))!;
   t.after(() => tools.close!());
-  assert.ok("error" in (await tools.execute("present_selection", { resultId: randomUUID() })));
+  assert.ok(
+    "error" in
+      (await tools.execute("present_selection", { resultId: randomUUID() })),
+  );
   await tools.execute("describe_collection", { collection: names.posts });
   const counted = JSON.parse(
     JSON.stringify(
@@ -55,25 +62,64 @@ test("selection cards preserve real query results across collections and recheck
   assert.equal(card.q, "Al");
   assert.ok(!JSON.stringify(card).includes("hidden-post-value"));
   const { collection, collectionId, q, sort, direction } = card;
-  const payload = { collection, collectionId, q, sort, direction, filter: card.filter };
+  const payload = {
+    collection,
+    collectionId,
+    q,
+    sort,
+    direction,
+    filter: card.filter,
+  };
   const validate = (body: object) =>
-    app.inject({ method: "POST", url: "/assistant/selection/validate", headers, payload: body });
+    app.inject({
+      method: "POST",
+      url: "/assistant/selection/validate",
+      headers,
+      payload: body,
+    });
   const checked = await validate(payload);
   assert.equal(checked.statusCode, 200, checked.body);
   assert.deepEqual(checked.json().data.filter, card.filter);
-  const params = new URLSearchParams({ q, filter: JSON.stringify(card.filter), sort, direction });
-  const items = await app.inject({ method: "GET", url: `/items/${collection}?${params}`, headers });
+  const params = new URLSearchParams({
+    q,
+    filter: JSON.stringify(card.filter),
+    sort,
+    direction,
+  });
+  const items = await app.inject({
+    method: "GET",
+    url: `/items/${collection}?${params}`,
+    headers,
+  });
   assert.equal(items.statusCode, 200, items.body);
   assert.equal(items.json().page.total, card.count);
-  assert.equal((await validate({ ...payload, collectionId: randomUUID() })).statusCode, 409);
-  assert.equal((await validate({ ...payload, sort: "secret" })).statusCode, 403);
-  assert.equal((await validate({ ...payload, collection: names.disabled })).statusCode, 403);
-  await db("asmblyr_collections").where({ name: collection }).update({ mcp_enabled: false });
+  assert.equal(
+    (await validate({ ...payload, collectionId: randomUUID() })).statusCode,
+    409,
+  );
+  assert.equal(
+    (await validate({ ...payload, sort: "secret" })).statusCode,
+    403,
+  );
+  assert.equal(
+    (await validate({ ...payload, collection: names.disabled })).statusCode,
+    403,
+  );
+  await db("asmblyr_collections")
+    .where({ name: collection })
+    .update({ mcp_enabled: false });
   assert.equal((await validate(payload)).statusCode, 403);
-  await db("asmblyr_collections").where({ name: collection }).update({ mcp_enabled: true });
+  await db("asmblyr_collections")
+    .where({ name: collection })
+    .update({ mcp_enabled: true });
   await db("asmblyr_permissions")
     .where({ id: permissions.get(collection) })
     .update({ fields: ["id"] });
   assert.equal((await validate(payload)).statusCode, 403);
-  assert.ok("error" in (await tools.execute("present_selection", { resultId: counted.resultId })));
+  assert.ok(
+    "error" in
+      (await tools.execute("present_selection", {
+        resultId: counted.resultId,
+      })),
+  );
 });

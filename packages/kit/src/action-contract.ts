@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export { z } from "zod";
 
-export interface ActionContract<Input extends z.ZodObject, Output extends z.ZodObject> {
+export interface ActionContract<
+  Input extends z.ZodObject,
+  Output extends z.ZodObject,
+> {
   id: string;
   title: string;
   description: string;
@@ -13,12 +16,15 @@ export interface ActionContract<Input extends z.ZodObject, Output extends z.ZodO
 }
 
 /** @deprecated Model handlers now generate schemas from TypeScript during plugin build. */
-export function defineActionContract<Input extends z.ZodObject, Output extends z.ZodObject>(
-  contract: ActionContract<Input, Output>,
-): ActionContract<Input, Output> {
+export function defineActionContract<
+  Input extends z.ZodObject,
+  Output extends z.ZodObject,
+>(contract: ActionContract<Input, Output>): ActionContract<Input, Output> {
   const id = /^[a-z][a-z0-9-]{0,31}$/;
   if (!id.test(contract.id) || (contract.page && !id.test(contract.page))) {
-    throw new Error("Action and page ids must be URL-safe, up to 32 characters");
+    throw new Error(
+      "Action and page ids must be URL-safe, up to 32 characters",
+    );
   }
   if (!contract.title.trim() || !contract.description.trim()) {
     throw new Error("Action title and description are required");
@@ -46,7 +52,10 @@ export function actionInputSchema(schema: z.ZodObject): ActionInputSchema {
     if (node.type === "object") {
       const keys = Object.keys((node.properties ?? {}) as object);
       const required = node.required as string[] | undefined;
-      if (node.additionalProperties !== false || keys.some((key) => !required?.includes(key))) {
+      if (
+        node.additionalProperties !== false ||
+        keys.some((key) => !required?.includes(key))
+      ) {
         throw new Error(
           "Action inputs must use strict objects and required keys; use nullable for optional values",
         );

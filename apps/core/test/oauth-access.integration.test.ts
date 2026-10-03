@@ -21,7 +21,9 @@ async function configure(f: Fixture, access: Record<string, unknown>) {
 async function codeFor(flow: Awaited<ReturnType<Fixture["flow"]>>) {
   const response = await flow.consent();
   assert.equal(response.statusCode, 303, response.body);
-  const code = new URL(String(response.headers.location)).searchParams.get("code");
+  const code = new URL(String(response.headers.location)).searchParams.get(
+    "code",
+  );
   assert.ok(code, String(response.headers.location));
   return code;
 }
@@ -40,7 +42,10 @@ test("All-user apps admit unassigned active users and recheck disabled accounts 
 
     const beforeBlock = await f.flow(f.application.id, undefined, f.otherAuth);
     const pendingCode = await codeFor(beforeBlock);
-    await f.db("public.asmblyr_users").where({ id: f.users[1] }).update({ status: "disabled" });
+    await f
+      .db("public.asmblyr_users")
+      .where({ id: f.users[1] })
+      .update({ status: "disabled" });
     assert.equal(
       (await f.exchange(pendingCode, beforeBlock.verifier)).json().error,
       "invalid_grant",
@@ -56,7 +61,11 @@ test("All-user apps admit unassigned active users and recheck disabled accounts 
 test("Domain access uses exact local email domains, with optional explicit-user exceptions", async () => {
   const f = await oauthFixture();
   try {
-    const settings = { accessMode: "domains", emailDomains: ["@EXAMPLE.test"], userIds: [] };
+    const settings = {
+      accessMode: "domains",
+      emailDomains: ["@EXAMPLE.test"],
+      userIds: [],
+    };
     const updated = await configure(f, settings);
     assert.deepEqual(updated.emailDomains, ["example.test"]);
     const flow = await f.flow(f.application.id, undefined, f.otherAuth);
@@ -65,17 +74,26 @@ test("Domain access uses exact local email domains, with optional explicit-user 
       .db("public.asmblyr_users")
       .where({ id: f.users[1] })
       .update({ email: "outside@other.test" });
-    assert.match(String((await flow.consent()).headers.location), /error=access_denied/);
+    assert.match(
+      String((await flow.consent()).headers.location),
+      /error=access_denied/,
+    );
 
     for (const email of [
       "user@badexample.test",
       "user@team.example.test",
       "user@example.test.attacker.test",
     ]) {
-      await f.db("public.asmblyr_users").where({ id: f.users[1] }).update({ email });
+      await f
+        .db("public.asmblyr_users")
+        .where({ id: f.users[1] })
+        .update({ email });
       const denied = await f.flow(f.application.id, undefined, f.otherAuth);
       assert.equal(denied.details.json().data.allowed, false, email);
-      assert.match(String((await denied.consent()).headers.location), /error=access_denied/);
+      assert.match(
+        String((await denied.consent()).headers.location),
+        /error=access_denied/,
+      );
     }
     await configure(f, { ...settings, userIds: [f.users[1]] });
     const exception = await f.flow(f.application.id, undefined, f.otherAuth);
@@ -84,7 +102,9 @@ test("Domain access uses exact local email domains, with optional explicit-user 
     assert.equal((await f.exchange(code, exception.verifier)).statusCode, 200);
 
     const listed = await f.app.inject({ url: "/oauth-apps", headers: f.auth });
-    const saved = listed.json().data.find((entry: { id: string }) => entry.id === f.application.id);
+    const saved = listed
+      .json()
+      .data.find((entry: { id: string }) => entry.id === f.application.id);
     assert.equal(saved.accessMode, "domains");
     assert.deepEqual(saved.emailDomains, ["example.test"]);
     assert.deepEqual(saved.userIds, [f.users[1]]);
@@ -112,12 +132,18 @@ test("Domain eligibility is rechecked at code exchange and UserInfo; changing mo
     const response = await f.exchange(await codeFor(flow), flow.verifier);
     assert.equal(response.statusCode, 200, response.body);
     const headers = { authorization: `Bearer ${response.json().access_token}` };
-    assert.equal((await f.app.inject({ url: "/oauth/me", headers })).statusCode, 200);
+    assert.equal(
+      (await f.app.inject({ url: "/oauth/me", headers })).statusCode,
+      200,
+    );
     await f
       .db("public.asmblyr_users")
       .where({ id: f.users[0] })
       .update({ email: "owner@outside.test" });
-    assert.equal((await f.app.inject({ url: "/oauth/me", headers })).statusCode, 401);
+    assert.equal(
+      (await f.app.inject({ url: "/oauth/me", headers })).statusCode,
+      401,
+    );
 
     await f
       .db("public.asmblyr_users")
@@ -129,12 +155,23 @@ test("Domain eligibility is rechecked at code exchange and UserInfo; changing mo
       .db("public.asmblyr_users")
       .where({ id: f.users[0] })
       .update({ email: "owner@outside.test" });
-    assert.equal((await f.exchange(code, pending.verifier)).json().error, "invalid_grant");
+    assert.equal(
+      (await f.exchange(code, pending.verifier)).json().error,
+      "invalid_grant",
+    );
 
     await configure(f, { accessMode: "all", audience: "", scopes: [] });
-    const beforeRestriction = await f.flow(f.application.id, "openid profile email");
+    const beforeRestriction = await f.flow(
+      f.application.id,
+      "openid profile email",
+    );
     const oldCode = await codeFor(beforeRestriction);
-    await configure(f, { accessMode: "selected", userIds: [], audience: "", scopes: [] });
+    await configure(f, {
+      accessMode: "selected",
+      userIds: [],
+      audience: "",
+      scopes: [],
+    });
     assert.equal(
       (await f.exchange(oldCode, beforeRestriction.verifier)).json().error,
       "invalid_grant",
@@ -156,10 +193,14 @@ test("Access migration preserves existing memberships and refuses to drop config
     await f.db.transaction(async (trx) => {
       await migration.down(trx);
       await migration.up(trx);
-      const app = await trx("public.asmblyr_oauth_apps").where({ id: f.application.id }).first();
+      const app = await trx("public.asmblyr_oauth_apps")
+        .where({ id: f.application.id })
+        .first();
       assert.equal(app.access_mode, "selected");
       assert.deepEqual(app.email_domains, []);
-      const users = await trx("public.asmblyr_oauth_app_users").where({ app_id: f.application.id });
+      const users = await trx("public.asmblyr_oauth_app_users").where({
+        app_id: f.application.id,
+      });
       assert.deepEqual(
         users.map((entry) => entry.user_id),
         [f.users[0]],

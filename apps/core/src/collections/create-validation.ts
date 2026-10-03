@@ -41,26 +41,36 @@ export function parseCreateCollection(value: unknown): CreateCollectionInput {
         ].includes(key),
     )
   ) {
-    throw new CollectionInputError("Expected collection settings and optional fields");
+    throw new CollectionInputError(
+      "Expected collection settings and optional fields",
+    );
   }
   const name = parseMutableCollectionName(input.name);
   if (
     input.workspaceId !== undefined &&
     input.workspaceId !== null &&
     (typeof input.workspaceId !== "string" ||
-      !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(input.workspaceId))
+      !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(
+        input.workspaceId,
+      ))
   ) {
     throw new CollectionInputError("Invalid workspace identifier");
   }
   const mode = input.mode ?? "multiple";
   if (mode !== "multiple" && mode !== "single") {
-    throw new CollectionInputError("Collection mode must be multiple or single");
+    throw new CollectionInputError(
+      "Collection mode must be multiple or single",
+    );
   }
   const key =
-    input.primaryKey === undefined ? { name: "id", type: "uuid" } : object(input.primaryKey);
+    input.primaryKey === undefined
+      ? { name: "id", type: "uuid" }
+      : object(input.primaryKey);
   if (
     !key ||
-    Object.keys(key).some((keyName) => keyName !== "name" && keyName !== "type") ||
+    Object.keys(key).some(
+      (keyName) => keyName !== "name" && keyName !== "type",
+    ) ||
     !validName(key.name) ||
     !["uuid", "serial", "bigserial", "text"].includes(key.type as string)
   ) {
@@ -75,10 +85,14 @@ export function parseCreateCollection(value: unknown): CreateCollectionInput {
     Object.keys(timestampInput).some(
       (keyName) => keyName !== "createdAt" && keyName !== "updatedAt",
     ) ||
-    (timestampInput.createdAt !== undefined && typeof timestampInput.createdAt !== "boolean") ||
-    (timestampInput.updatedAt !== undefined && typeof timestampInput.updatedAt !== "boolean")
+    (timestampInput.createdAt !== undefined &&
+      typeof timestampInput.createdAt !== "boolean") ||
+    (timestampInput.updatedAt !== undefined &&
+      typeof timestampInput.updatedAt !== "boolean")
   ) {
-    throw new CollectionInputError("Timestamps must use createdAt and updatedAt boolean flags");
+    throw new CollectionInputError(
+      "Timestamps must use createdAt and updatedAt boolean flags",
+    );
   }
   const timestamps = {
     createdAt: timestampInput.createdAt === true,
@@ -91,11 +105,15 @@ export function parseCreateCollection(value: unknown): CreateCollectionInput {
     (key.name === "created_at" && timestamps.createdAt) ||
     (key.name === "updated_at" && timestamps.updatedAt)
   ) {
-    throw new CollectionInputError("Primary key name conflicts with a managed timestamp");
+    throw new CollectionInputError(
+      "Primary key name conflicts with a managed timestamp",
+    );
   }
   const inputFields = input.fields ?? [];
   if (!Array.isArray(inputFields) || inputFields.length > 32) {
-    throw new CollectionInputError("A collection accepts up to 32 custom fields");
+    throw new CollectionInputError(
+      "A collection accepts up to 32 custom fields",
+    );
   }
 
   const names = new Set<string>([key.name as string]);
@@ -105,7 +123,9 @@ export function parseCreateCollection(value: unknown): CreateCollectionInput {
   const fields: CollectionField[] = inputFields.map((value: unknown) => {
     const field = parseField(value);
     if (names.has(field.name)) {
-      throw new CollectionInputError(`Field name is already used: ${field.name}`);
+      throw new CollectionInputError(
+        `Field name is already used: ${field.name}`,
+      );
     }
     names.add(field.name);
     return field;

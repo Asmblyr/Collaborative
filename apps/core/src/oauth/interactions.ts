@@ -17,10 +17,14 @@ export function registerOAuthInteractions(
     const user = await authenticateAccess(db, request.headers.authorization);
     const details = await provider.interactionDetails(request.raw, reply.raw);
     if (details.uid !== request.params.uid)
-      throw Object.assign(new Error("Invalid interaction"), { statusCode: 400 });
+      throw Object.assign(new Error("Invalid interaction"), {
+        statusCode: 400,
+      });
     const client = await apps.row(String(details.params.client_id));
     if (!client?.enabled)
-      throw Object.assign(new Error("Application unavailable"), { statusCode: 404 });
+      throw Object.assign(new Error("Application unavailable"), {
+        statusCode: 404,
+      });
     return reply.header("Cache-Control", "no-store").send({
       data: {
         uid: details.uid,
@@ -49,16 +53,23 @@ export function registerOAuthInteractions(
       input.userId !== user.id ||
       (input.reuse !== undefined && typeof input.reuse !== "boolean")
     ) {
-      throw Object.assign(new Error("Account changed; reload the authorization page"), {
-        statusCode: 400,
-      });
+      throw Object.assign(
+        new Error("Account changed; reload the authorization page"),
+        {
+          statusCode: 400,
+        },
+      );
     }
     const details = await provider.interactionDetails(request.raw, reply.raw);
     if (details.uid !== request.params.uid)
-      throw Object.assign(new Error("Invalid interaction"), { statusCode: 400 });
+      throw Object.assign(new Error("Invalid interaction"), {
+        statusCode: 400,
+      });
     const clientId = String(details.params.client_id);
     const allowed = await apps.allowed(clientId, user.id);
-    let result: Parameters<Provider["interactionResult"]>[2] = { error: "access_denied" };
+    let result: Parameters<Provider["interactionResult"]>[2] = {
+      error: "access_denied",
+    };
     if (input.approve && allowed) {
       const request = consentRequest(details.params);
       const authorization = await consents.authorize(
@@ -83,9 +94,16 @@ export function registerOAuthInteractions(
         consent: { grantId: await grant.save() },
       };
     }
-    const redirectTo = await provider.interactionResult(request.raw, reply.raw, result, {
-      mergeWithLastSubmission: false,
-    });
-    return reply.header("Cache-Control", "no-store").send({ data: { redirectTo } });
+    const redirectTo = await provider.interactionResult(
+      request.raw,
+      reply.raw,
+      result,
+      {
+        mergeWithLastSubmission: false,
+      },
+    );
+    return reply
+      .header("Cache-Control", "no-store")
+      .send({ data: { redirectTo } });
   });
 }

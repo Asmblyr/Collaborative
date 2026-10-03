@@ -1,9 +1,23 @@
 import type { Knex } from "knex";
 import type { CollectionField, FieldType, PrimaryKey } from "./types.js";
 
-export const fieldTypes = ["text", "integer", "boolean", "datetime", "email", "decimal", "json", "uuid", "file", "files"] as const satisfies readonly FieldType[];
+export const fieldTypes = [
+  "text",
+  "integer",
+  "boolean",
+  "datetime",
+  "email",
+  "decimal",
+  "json",
+  "uuid",
+  "file",
+  "files",
+] as const satisfies readonly FieldType[];
 
-export function fieldTypeFromDatabase(dataType: string, semanticType?: string | null): FieldType | null {
+export function fieldTypeFromDatabase(
+  dataType: string,
+  semanticType?: string | null,
+): FieldType | null {
   if (semanticType === "email") return dataType === "text" ? "email" : null;
   if (semanticType === "file") return dataType === "uuid" ? "file" : null;
   if (semanticType === "files") return dataType === "jsonb" ? "files" : null;
@@ -13,7 +27,10 @@ export function fieldTypeFromDatabase(dataType: string, semanticType?: string | 
   return fieldTypes.find((type) => type === dataType) ?? null;
 }
 
-export function addFieldColumn(table: Knex.TableBuilder, field: CollectionField): void {
+export function addFieldColumn(
+  table: Knex.TableBuilder,
+  field: CollectionField,
+): void {
   let column: Knex.ColumnBuilder;
   switch (field.type) {
     case "text":
@@ -44,7 +61,11 @@ export function addFieldColumn(table: Knex.TableBuilder, field: CollectionField)
       break;
     case "file":
       column = table.uuid(field.name);
-      table.foreign(field.name).references("id").inTable("public.asmblyr_files").onDelete("RESTRICT");
+      table
+        .foreign(field.name)
+        .references("id")
+        .inTable("public.asmblyr_files")
+        .onDelete("RESTRICT");
       table.index(field.name);
       break;
     default: {
@@ -52,15 +73,26 @@ export function addFieldColumn(table: Knex.TableBuilder, field: CollectionField)
       throw new Error(`Unsupported field type: ${unsupported}`);
     }
   }
-  if (field.defaultValue !== undefined) column.defaultTo(field.type === "json" || typeof field.defaultValue === "object"
-    ? JSON.stringify(field.defaultValue) : field.defaultValue);
+  if (field.defaultValue !== undefined)
+    column.defaultTo(
+      field.type === "json" || typeof field.defaultValue === "object"
+        ? JSON.stringify(field.defaultValue)
+        : field.defaultValue,
+    );
   if (!field.nullable) column.notNullable();
 }
 
-export function addPrimaryKeyColumn(table: Knex.TableBuilder, key: PrimaryKey, database: Knex): void {
+export function addPrimaryKeyColumn(
+  table: Knex.TableBuilder,
+  key: PrimaryKey,
+  database: Knex,
+): void {
   switch (key.type) {
     case "uuid":
-      table.uuid(key.name).primary().defaultTo(database.raw("gen_random_uuid()"));
+      table
+        .uuid(key.name)
+        .primary()
+        .defaultTo(database.raw("gen_random_uuid()"));
       break;
     case "serial":
       table.increments(key.name);

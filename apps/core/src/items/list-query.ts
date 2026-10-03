@@ -26,13 +26,18 @@ interface ParsedItemListQuery {
   filters: FilterGroup;
 }
 
-function positiveInteger(value: unknown, fallback: number, label: string): number {
+function positiveInteger(
+  value: unknown,
+  fallback: number,
+  label: string,
+): number {
   if (value === undefined) return fallback;
   if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) {
     throw new ItemError(`Invalid ${label}`, 400);
   }
   const number = Number(value);
-  if (!Number.isSafeInteger(number)) throw new ItemError(`Invalid ${label}`, 400);
+  if (!Number.isSafeInteger(number))
+    throw new ItemError(`Invalid ${label}`, 400);
   return number;
 }
 
@@ -61,7 +66,11 @@ export function parseItemListQuery(
     )
   )
     throw new ItemError("Invalid sort field", 400);
-  if (sort !== settings.primaryKey.name && !allowed.includes("*") && !allowed.includes(sort)) {
+  if (
+    sort !== settings.primaryKey.name &&
+    !allowed.includes("*") &&
+    !allowed.includes(sort)
+  ) {
     throw new AccessDeniedError();
   }
   const direction = query.direction === undefined ? "asc" : query.direction;
@@ -75,6 +84,13 @@ export function parseItemListQuery(
     direction,
     offset: (page - 1) * limit,
     q: parseSearchQuery(query.q),
-    filters: parseItemFilters(query.filter, name, schema, allowed, catalog, access),
+    filters: parseItemFilters(
+      query.filter,
+      name,
+      schema,
+      allowed,
+      catalog,
+      access,
+    ),
   };
 }

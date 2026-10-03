@@ -8,11 +8,23 @@ export async function GET(
   const { collection } = await params;
   const query = new URL(request.url).searchParams;
   const allowed = new URLSearchParams();
-  for (const key of ["fields", "q", "limit", "page", "sort", "direction", "filter"]) {
+  for (const key of [
+    "fields",
+    "q",
+    "limit",
+    "page",
+    "sort",
+    "direction",
+    "filter",
+  ]) {
     const value = query.get(key);
     if (value !== null) allowed.set(key, value);
   }
-  return proxyCore(request, `/items/${encodeURIComponent(collection)}?${allowed}`, "GET");
+  return proxyCore(
+    request,
+    `/items/${encodeURIComponent(collection)}?${allowed}`,
+    "GET",
+  );
 }
 
 export async function POST(

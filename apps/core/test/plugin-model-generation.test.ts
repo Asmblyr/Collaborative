@@ -4,7 +4,11 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { modelValidator } from "@asmblyr/kit/model";
-import { sourceEndpoints, builtEndpoints, importEndpoints } from "../src/plugins/route-index.js";
+import {
+  sourceEndpoints,
+  builtEndpoints,
+  importEndpoints,
+} from "../src/plugins/route-index.js";
 import { modelPluginFixture } from "./support/model-plugin-fixture.js";
 
 const handler = `
@@ -41,7 +45,11 @@ test("model builder resolves imported aliases, infers results and shares strict 
     currency: { type: "string", const: "RUB" },
   });
   const validator = modelValidator(model.inputSchema);
-  const valid = { seats: 2, label: null, nested: { tags: ["a"], enabled: true } };
+  const valid = {
+    seats: 2,
+    label: null,
+    nested: { tags: ["a"], enabled: true },
+  };
   assert.deepEqual(validator.parse(valid), valid);
   for (const invalid of [
     { ...valid, seats: 0 },
@@ -66,20 +74,32 @@ test("model builder resolves imported aliases, infers results and shares strict 
   assert.deepEqual(action.parseInput(valid), valid);
 
   // Development regenerates schemas from current TS, including shared type edits.
-  await fixture.write("shared/input.ts", input.replace("@maximum 5", "@maximum 10"));
+  await fixture.write(
+    "shared/input.ts",
+    input.replace("@maximum 5", "@maximum 10"),
+  );
   const changed = await sourceEndpoints(fixture.root);
   assert.equal(
-    modelValidator(changed[0].model!.inputSchema).safeParse({ ...valid, seats: 8 }).success,
+    modelValidator(changed[0].model!.inputSchema).safeParse({
+      ...valid,
+      seats: 8,
+    }).success,
     true,
   );
   const generated = JSON.parse(
-    await readFile(path.join(fixture.root, ".asmblyr/models/example/calculate.post.json"), "utf8"),
+    await readFile(
+      path.join(fixture.root, ".asmblyr/models/example/calculate.post.json"),
+      "utf8",
+    ),
   );
   assert.deepEqual(generated, changed[0].model);
 
   // Type errors do not replace the last working production output.
   const previous = await readFile(index, "utf8");
-  await fixture.write("shared/input.ts", "export interface Input { value: any }");
+  await fixture.write(
+    "shared/input.ts",
+    "export interface Input { value: any }",
+  );
   await assert.rejects(fixture.build(), /Unsupported model type/);
   assert.equal(await readFile(index, "utf8"), previous);
   await rm(path.join(fixture.root, "server/api/example/calculate.post.ts"));
@@ -98,7 +118,10 @@ test("unsupported types, constraints and non-POST model routes fail closed", asy
     ["/** @minimum 0 */ value: string", /requires a number/],
     ["/** @minimun 0 */ value: number", /Unsupported model annotation/],
   ] as const) {
-    await fixture.write("shared/input.ts", `export interface Input {\n${body}\n}`);
+    await fixture.write(
+      "shared/input.ts",
+      `export interface Input {\n${body}\n}`,
+    );
     await assert.rejects(sourceEndpoints(fixture.root), expected, body);
   }
   await fixture.write("shared/input.ts", input);

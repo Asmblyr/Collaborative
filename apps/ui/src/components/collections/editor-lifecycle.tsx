@@ -1,13 +1,24 @@
 "use client";
 
-import { createContext, useContext, useId, useLayoutEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useId,
+  useLayoutEffect,
+  useState,
+} from "react";
 
 export interface EditorState {
   dirty: boolean;
   busy: boolean;
 }
-export type RegisterEditorState = (id: string, state: EditorState | null) => void;
-export const EditorLifecycleContext = createContext<RegisterEditorState | null>(null);
+export type RegisterEditorState = (
+  id: string,
+  state: EditorState | null,
+) => void;
+export const EditorLifecycleContext = createContext<RegisterEditorState | null>(
+  null,
+);
 
 export function useEditorState(dirty: boolean, busy: boolean): void {
   const register = useContext(EditorLifecycleContext);

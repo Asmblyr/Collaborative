@@ -11,8 +11,17 @@ export function useColumnVisibilityMotion() {
 
   function change(name: string, show: boolean, commit: () => void) {
     cancel.current();
-    if (!root.current || !layer.current) { commit(); return; }
-    cancel.current = animateColumnVisibility(root.current, layer.current, name, show, commit);
+    if (!root.current || !layer.current) {
+      commit();
+      return;
+    }
+    cancel.current = animateColumnVisibility(
+      root.current,
+      layer.current,
+      name,
+      show,
+      commit,
+    );
   }
 
   return { root, layer, change };

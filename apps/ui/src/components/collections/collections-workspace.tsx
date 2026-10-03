@@ -27,7 +27,9 @@ type Selection =
   | { kind: "delete-field"; collection: string; field: string }
   | { kind: "delete-collection"; collection: string };
 
-function isRelationChoice(choice: FieldChoice): choice is "m2o" | "o2m" | "m2m" {
+function isRelationChoice(
+  choice: FieldChoice,
+): choice is "m2o" | "o2m" | "m2m" {
   return choice === "m2o" || choice === "o2m" || choice === "m2m";
 }
 
@@ -45,17 +47,23 @@ export function CollectionsWorkspace({
   const router = useRouter();
   const workspace = useWorkspace();
   const visible = collections.filter(
-    (c) => (superuser || !c.hidden) && (!workspace || workspace.includes(c.name)),
+    (c) =>
+      (superuser || !c.hidden) && (!workspace || workspace.includes(c.name)),
   );
   const visibleFolders =
     workspace?.active || !superuser
       ? folders.filter((f) => visible.some((c) => c.folderId === f.id))
       : folders;
   const [selection, setSelection] = useState<Selection | null>(null);
-  const [settingsState, setSettingsState] = useState({ dirty: false, busy: false });
+  const [settingsState, setSettingsState] = useState({
+    dirty: false,
+    busy: false,
+  });
   const [moveError, setMoveError] = useState("");
   const collection =
-    selection?.kind === "field" || selection?.kind === "display" || selection?.kind === "form"
+    selection?.kind === "field" ||
+    selection?.kind === "display" ||
+    selection?.kind === "form"
       ? collections.find((entry) => entry.name === selection.collection)
       : undefined;
   const field =
@@ -93,11 +101,14 @@ export function CollectionsWorkspace({
   ) {
     setMoveError("");
     try {
-      const response = await fetch(`/api/collections/${encodeURIComponent(name)}/navigation`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...location, before }),
-      });
+      const response = await fetch(
+        `/api/collections/${encodeURIComponent(name)}/navigation`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...location, before }),
+        },
+      );
       if (!response.ok) {
         const result = (await response.json()) as { message?: string };
         setMoveError(result.message ?? "Не удалось переместить коллекцию");
@@ -112,11 +123,14 @@ export function CollectionsWorkspace({
   async function reorderFolder(id: string, before: string | null) {
     setMoveError("");
     try {
-      const response = await fetch(`/api/folders/${encodeURIComponent(id)}/order`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ before }),
-      });
+      const response = await fetch(
+        `/api/folders/${encodeURIComponent(id)}/order`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ before }),
+        },
+      );
       if (!response.ok) {
         const result = (await response.json()) as { message?: string };
         setMoveError(result.message ?? "Не удалось переместить папку");
@@ -129,7 +143,10 @@ export function CollectionsWorkspace({
   }
 
   return (
-    <section className="space-y-4" aria-label="Редактор коллекций">
+    <section
+      className="space-y-4"
+      aria-label="Редактор коллекций"
+    >
       <PageHeader
         title="Коллекции"
         description={`Коллекций: ${visible.length} · ${workspace?.active?.name || (superuser ? "Структура и поля ваших данных" : "Доступные вам данные")}`}
@@ -155,7 +172,10 @@ export function CollectionsWorkspace({
         )}
       </PageHeader>
       {moveError && (
-        <p role="status" className="text-sm text-destructive">
+        <p
+          role="status"
+          className="text-sm text-destructive"
+        >
           {moveError}
         </p>
       )}
@@ -174,13 +194,21 @@ export function CollectionsWorkspace({
           folders={visibleFolders}
           superuser={superuser}
           onEditFolder={(folder) => setSelection({ kind: "folder", folder })}
-          onCreateInFolder={(folderId) => setSelection({ kind: "collection", folderId })}
+          onCreateInFolder={(folderId) =>
+            setSelection({ kind: "collection", folderId })
+          }
           onMoveCollection={moveCollection}
           onReorderFolder={reorderFolder}
           onForm={(collection) => setSelection({ kind: "form", collection })}
-          onDisplay={(collection) => setSelection({ kind: "display", collection })}
-          onAddField={(collection) => setSelection({ kind: "field", collection })}
-          onEditField={(collection, field) => setSelection({ kind: "field", collection, field })}
+          onDisplay={(collection) =>
+            setSelection({ kind: "display", collection })
+          }
+          onAddField={(collection) =>
+            setSelection({ kind: "field", collection })
+          }
+          onEditField={(collection, field) =>
+            setSelection({ kind: "field", collection, field })
+          }
           onDeleteField={(collection, field) =>
             setSelection({ kind: "delete-field", collection, field })
           }
@@ -198,7 +226,9 @@ export function CollectionsWorkspace({
         size={
           selection?.kind === "form"
             ? "wide"
-            : selection?.kind === "field" && selection.choice && isRelationChoice(selection.choice)
+            : selection?.kind === "field" &&
+                selection.choice &&
+                isRelationChoice(selection.choice)
               ? selection.choice === "m2m"
                 ? "junction"
                 : "relation"
@@ -217,7 +247,11 @@ export function CollectionsWorkspace({
             ? `${selection.collection}:${selection.field ?? selection.choice ?? "picker"}`
             : selection?.kind
         }
-        eyebrow={selection && "collection" in selection ? selection.collection : "Структура данных"}
+        eyebrow={
+          selection && "collection" in selection
+            ? selection.collection
+            : "Структура данных"
+        }
         onClose={close}
       >
         {(portalContainer, closeDialog, requestClose, requestLeave) =>
@@ -263,10 +297,17 @@ export function CollectionsWorkspace({
               onSaved={closeDialog}
               onCancel={requestClose}
             />
-          ) : selection?.kind === "field" && collection && !selection.field && !selection.choice ? (
+          ) : selection?.kind === "field" &&
+            collection &&
+            !selection.field &&
+            !selection.choice ? (
             <FieldTypePicker
               onSelect={(choice) =>
-                setSelection({ kind: "field", collection: collection.name, choice })
+                setSelection({
+                  kind: "field",
+                  collection: collection.name,
+                  choice,
+                })
               }
             />
           ) : selection?.kind === "field" && collection && selection.choice ? (
@@ -280,7 +321,12 @@ export function CollectionsWorkspace({
                 onSaved={closeDialog}
                 onCancel={requestClose}
                 onBack={() =>
-                  requestLeave(() => setSelection({ kind: "field", collection: collection.name }))
+                  requestLeave(() =>
+                    setSelection({
+                      kind: "field",
+                      collection: collection.name,
+                    }),
+                  )
                 }
               />
             ) : (
@@ -293,17 +339,25 @@ export function CollectionsWorkspace({
                 onSaved={closeDialog}
                 onCancel={requestClose}
                 onBack={() =>
-                  requestLeave(() => setSelection({ kind: "field", collection: collection.name }))
+                  requestLeave(() =>
+                    setSelection({
+                      kind: "field",
+                      collection: collection.name,
+                    }),
+                  )
                 }
               />
             )
-          ) : selection?.kind === "delete-field" || selection?.kind === "delete-collection" ? (
+          ) : selection?.kind === "delete-field" ||
+            selection?.kind === "delete-collection" ? (
             <DeleteStructureForm
               key={`${selection.kind}:${selection.collection}:${
                 selection.kind === "delete-field" ? selection.field : ""
               }`}
               collection={selection.collection}
-              field={selection.kind === "delete-field" ? selection.field : undefined}
+              field={
+                selection.kind === "delete-field" ? selection.field : undefined
+              }
               onDeleted={closeDialog}
               onCancel={requestClose}
             />

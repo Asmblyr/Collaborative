@@ -26,7 +26,11 @@ export function PluginNavigation({
       <SidebarMenu>
         {pages.map((page) => (
           <SidebarMenuItem key={page.href}>
-            <SidebarMenuButton asChild isActive={pathname === page.href} tooltip={page.title}>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === page.href}
+              tooltip={page.title}
+            >
               <Link
                 href={page.href}
                 onClick={onNavigate}

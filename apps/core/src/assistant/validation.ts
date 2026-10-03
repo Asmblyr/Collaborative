@@ -1,7 +1,10 @@
 import { AuthInputError } from "../auth/validation.js";
 import { objectInput } from "../shared/input.js";
 import type { AssistantConfig, ReasoningEffort } from "./config.js";
-import { parseAssistantContext, type AssistantContext } from "./context-input.js";
+import {
+  parseAssistantContext,
+  type AssistantContext,
+} from "./context-input.js";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -19,7 +22,10 @@ export const assistantLimits = {
   maxConversationChars: 32000,
 };
 
-export function parseAssistantInput(value: unknown, config: AssistantConfig): AssistantInput {
+export function parseAssistantInput(
+  value: unknown,
+  config: AssistantConfig,
+): AssistantInput {
   const body = objectInput(value, ["messages", "settings", "context"]);
   if (
     !Array.isArray(body.messages) ||
@@ -46,13 +52,18 @@ export function parseAssistantInput(value: unknown, config: AssistantConfig): As
     total += message.content.length;
     return { role: expectedRole, content: message.content.trim() };
   });
-  if (messages.at(-1)?.role !== "user" || total > assistantLimits.maxConversationChars) {
+  if (
+    messages.at(-1)?.role !== "user" ||
+    total > assistantLimits.maxConversationChars
+  ) {
     throw new AuthInputError(
       "Conversation must end with a user message and fit within 32000 characters",
     );
   }
   const settings =
-    body.settings === undefined ? {} : objectInput(body.settings, ["reasoningEffort", "thinking"]);
+    body.settings === undefined
+      ? {}
+      : objectInput(body.settings, ["reasoningEffort", "thinking"]);
   const reasoningEffort = settings.reasoningEffort ?? config.defaultEffort;
   if (
     reasoningEffort !== null &&
@@ -71,6 +82,8 @@ export function parseAssistantInput(value: unknown, config: AssistantConfig): As
     messages,
     reasoningEffort: reasoningEffort as ReasoningEffort | null,
     thinking,
-    ...(body.context === undefined ? {} : { context: parseAssistantContext(body.context) }),
+    ...(body.context === undefined
+      ? {}
+      : { context: parseAssistantContext(body.context) }),
   };
 }

@@ -1,3 +1,5 @@
 import { proxyCore } from "@/lib/core-proxy";
 
-export function POST(request: Request) { return proxyCore(request, "/assistant/filter/validate", "POST"); }
+export function POST(request: Request) {
+  return proxyCore(request, "/assistant/filter/validate", "POST");
+}

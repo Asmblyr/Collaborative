@@ -1,13 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseApplicationAccess, matchesEmailDomain } from "../src/oauth/access.js";
+import {
+  parseApplicationAccess,
+  matchesEmailDomain,
+} from "../src/oauth/access.js";
 
 test("Application access retains old restrictions and rejects incomplete or unknown modes", () => {
-  assert.deepEqual(parseApplicationAccess({}), { accessMode: "selected", emailDomains: [] });
-  assert.deepEqual(parseApplicationAccess({ accessMode: "all", emailDomains: ["example.com"] }), {
-    accessMode: "all",
+  assert.deepEqual(parseApplicationAccess({}), {
+    accessMode: "selected",
     emailDomains: [],
   });
+  assert.deepEqual(
+    parseApplicationAccess({
+      accessMode: "all",
+      emailDomains: ["example.com"],
+    }),
+    {
+      accessMode: "all",
+      emailDomains: [],
+    },
+  );
   for (const input of [
     { accessMode: null },
     { accessMode: "everyone" },
@@ -69,7 +81,11 @@ test("Email domains normalize case, optional @ and international domains; no suf
     "example.com\\evil.com",
   ])
     assert.throws(
-      () => parseApplicationAccess({ accessMode: "domains", emailDomains: [domain] }),
+      () =>
+        parseApplicationAccess({
+          accessMode: "domains",
+          emailDomains: [domain],
+        }),
       domain,
     );
 });

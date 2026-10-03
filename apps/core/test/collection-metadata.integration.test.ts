@@ -7,7 +7,10 @@ import knex from "knex";
 import { createApp } from "../src/app.js";
 import { authorizeTestApp } from "./support/authorized-app.js";
 import { issueUserTokens } from "../src/auth/tokens.js";
-import { createContextTools, validateFilterProposal } from "../src/assistant/context-tools.js";
+import {
+  createContextTools,
+  validateFilterProposal,
+} from "../src/assistant/context-tools.js";
 import { executeDataTool } from "../src/tools/data-tools.js";
 import { findCollectionSettings } from "../src/collections/settings-repository.js";
 import type { Access } from "../src/permissions/access.js";
@@ -15,7 +18,10 @@ import type { AssistantContext } from "../src/assistant/context-input.js";
 
 test("collection metadata persists atomically; MCP limits discovery, reads and relation queries independently of API grants", async () => {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+  });
   const admin = await authorizeTestApp(app, db);
   const suffix = randomUUID().replaceAll("-", "").slice(0, 10);
   const posts = `test_mcp_posts_${suffix}`,
@@ -42,9 +48,18 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
     },
   };
   const toolsFor = (collection = posts) =>
-    createContextTools(db, access, { ...context, collection }, async () => access);
+    createContextTools(
+      db,
+      access,
+      { ...context, collection },
+      async () => access,
+    );
   const settings = (name: string, payload: object) =>
-    app.inject({ method: "PATCH", url: `/collections/${name}/settings`, payload });
+    app.inject({
+      method: "PATCH",
+      url: `/collections/${name}/settings`,
+      payload,
+    });
   const condition = (field: string) => ({
     logic: "and",
     children: [{ field, op: "eq", value: "Needle" }],
@@ -68,7 +83,10 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
         },
       });
       assert.equal(created.statusCode, 201, created.body);
-      assert.equal(created.json().data.displayName, name === posts ? "Публикации" : null);
+      assert.equal(
+        created.json().data.displayName,
+        name === posts ? "Публикации" : null,
+      );
       assert.deepEqual(created.json().data.mcp, {
         enabled: true,
         description: name === posts ? "Published content" : null,
@@ -110,9 +128,14 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
     assert.equal(described.displayName, "Публикации");
     assert.equal(asJson(tools.context).displayName, "Публикации");
     assert.equal(described.description, "Published content");
-    assert.ok(described.filterPaths.some((f: { path: string }) => f.path === "authors.title"));
+    assert.ok(
+      described.filterPaths.some(
+        (f: { path: string }) => f.path === "authors.title",
+      ),
+    );
     assert.equal(
-      asJson(await tools.execute("count_items", { q: "Needle", filter: "" })).count,
+      asJson(await tools.execute("count_items", { q: "Needle", filter: "" }))
+        .count,
       "1",
     );
 
@@ -125,13 +148,22 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
     assert.equal(renamed.statusCode, 200, renamed.body);
     assert.equal(renamed.json().data.name, posts);
     assert.equal(renamed.json().data.displayName, "Материалы");
-    assert.equal((await findCollectionSettings(db, posts))?.mcp?.description, "Editorial data");
-    const counted = asJson(await tools.execute("count_items", { q: "", filter: "" }));
+    assert.equal(
+      (await findCollectionSettings(db, posts))?.mcp?.description,
+      "Editorial data",
+    );
+    const counted = asJson(
+      await tools.execute("count_items", { q: "", filter: "" }),
+    );
     assert.equal(counted.displayName, "Материалы");
     assert.equal(counted.collection, posts);
-    const read = asJson(await tools.execute("read_item", { id: "1", fields: ["title"] }));
+    const read = asJson(
+      await tools.execute("read_item", { id: "1", fields: ["title"] }),
+    );
     assert.equal(read.displayName, "Материалы");
-    await tools.execute("propose_filter", { filter: JSON.stringify(condition("title")) });
+    await tools.execute("propose_filter", {
+      filter: JSON.stringify(condition("title")),
+    });
     assert.equal(tools.proposals[0].collectionDisplayName, "Материалы");
     assert.equal(tools.proposals[0].collection, posts);
     for (const payload of [
@@ -148,11 +180,26 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
       const bad = await settings(posts, payload);
       assert.equal(bad.statusCode, 400, bad.body);
     }
-    assert.equal((await findCollectionSettings(db, posts))?.displayName, "Материалы");
-    assert.equal((await settings("asmblyr_users", { displayName: "Users" })).statusCode, 403);
-    assert.equal((await settings(`absent_${suffix}`, { displayName: "Missing" })).statusCode, 404);
-    const catalog = (await app.inject({ method: "GET", url: "/collections" })).json().data;
-    assert.equal(catalog.find((c: { name: string }) => c.name === posts).displayName, "Материалы");
+    assert.equal(
+      (await findCollectionSettings(db, posts))?.displayName,
+      "Материалы",
+    );
+    assert.equal(
+      (await settings("asmblyr_users", { displayName: "Users" })).statusCode,
+      403,
+    );
+    assert.equal(
+      (await settings(`absent_${suffix}`, { displayName: "Missing" }))
+        .statusCode,
+      404,
+    );
+    const catalog = (
+      await app.inject({ method: "GET", url: "/collections" })
+    ).json().data;
+    assert.equal(
+      catalog.find((c: { name: string }) => c.name === posts).displayName,
+      "Материалы",
+    );
     const found = await app.inject({
       method: "GET",
       url: `/search?q=${encodeURIComponent("Материалы")}`,
@@ -179,7 +226,10 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
     );
 
     // A disabled junction must prevent traversing an otherwise enabled target.
-    assert.equal((await settings(links, { mcp: { enabled: false } })).statusCode, 200);
+    assert.equal(
+      (await settings(links, { mcp: { enabled: false } })).statusCode,
+      200,
+    );
     let fresh = (await toolsFor())!;
     let schema = JSON.stringify(await fresh.execute("describe_collection", {}));
     assert.ok(!schema.includes("authors.title"));
@@ -193,29 +243,40 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
     );
     await settings(links, { mcp: { enabled: true } });
     // Disable the target: no one-hop schema, filters, search or proposals.
-    await settings(people, { mcp: { enabled: false, description: "Hidden collection" } });
+    await settings(people, {
+      mcp: { enabled: false, description: "Hidden collection" },
+    });
     fresh = (await toolsFor())!;
     schema = JSON.stringify(await fresh.execute("describe_collection", {}));
     assert.ok(!schema.includes("author_id.title"));
     assert.ok(!schema.includes("authors.title"));
     assert.equal(
-      asJson(await fresh.execute("count_items", { q: "Needle", filter: "" })).count,
+      asJson(await fresh.execute("count_items", { q: "Needle", filter: "" }))
+        .count,
       "0",
     );
     for (const path of ["author_id.title", "authors.title"]) {
       assert.ok(
         "error" in
-          (await fresh.execute("count_items", { q: "", filter: JSON.stringify(condition(path)) })),
+          (await fresh.execute("count_items", {
+            q: "",
+            filter: JSON.stringify(condition(path)),
+          })),
       );
       assert.ok(
         "error" in
-          (await fresh.execute("propose_filter", { filter: JSON.stringify(condition(path)) })),
+          (await fresh.execute("propose_filter", {
+            filter: JSON.stringify(condition(path)),
+          })),
       );
     }
     const disabled = (await toolsFor(people))!;
     assert.equal(disabled.definitions.length, 0);
     assert.ok(!JSON.stringify(disabled.context).includes(people));
-    assert.ok("error" in (await disabled.execute("read_item", { id: "1", fields: ["title"] })));
+    assert.ok(
+      "error" in
+        (await disabled.execute("read_item", { id: "1", fields: ["title"] })),
+    );
     // Current collection disabled after tools were issued: even superuser is blocked.
     const id = (await findCollectionSettings(db, posts))!.internalId;
     await settings(posts, { mcp: { enabled: false } });
@@ -227,17 +288,26 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
       assert.ok("error" in (await tools.execute(tool, args)));
     }
     await assert.rejects(
-      executeDataTool(db, access, posts, id, "read_item", { id: "1", fields: ["title"] }),
+      executeDataTool(db, access, posts, id, "read_item", {
+        id: "1",
+        fields: ["title"],
+      }),
       { statusCode: 403 },
     );
     await assert.rejects(
-      validateFilterProposal(db, access, { context, collectionId: id, filter: condition("title") }),
+      validateFilterProposal(db, access, {
+        context,
+        collectionId: id,
+        filter: condition("title"),
+      }),
       { statusCode: 403 },
     );
     await settings(people, { mcp: { enabled: true } });
     const reverse = (await toolsFor(people))!;
     assert.ok(
-      !JSON.stringify(await reverse.execute("describe_collection", {})).includes("posts.title"),
+      !JSON.stringify(
+        await reverse.execute("describe_collection", {}),
+      ).includes("posts.title"),
     );
     assert.ok(
       "error" in
@@ -246,15 +316,22 @@ test("collection metadata persists atomically; MCP limits discovery, reads and r
           filter: JSON.stringify(condition("posts.title")),
         })),
     );
-    const normalApi = await app.inject({ method: "GET", url: `/items/${posts}/1` });
+    const normalApi = await app.inject({
+      method: "GET",
+      url: `/items/${posts}/1`,
+    });
     assert.equal(normalApi.statusCode, 200, normalApi.body);
     assert.equal(normalApi.json().data.title, "Alpha");
-    await settings(posts, { displayName: "  ", mcp: { enabled: true, description: "" } });
+    await settings(posts, {
+      displayName: "  ",
+      mcp: { enabled: true, description: "" },
+    });
     assert.equal((await findCollectionSettings(db, posts))?.displayName, null);
     fresh = (await toolsFor())!;
     await fresh.execute("describe_collection", {});
     assert.equal(
-      asJson(await fresh.execute("read_item", { id: "1", fields: ["title"] })).item.values.title,
+      asJson(await fresh.execute("read_item", { id: "1", fields: ["title"] }))
+        .item.values.title,
       "Alpha",
     );
   } finally {

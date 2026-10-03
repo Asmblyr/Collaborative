@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { setTimeout } from "node:timers/promises";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
-import { createAssistantProvider, AssistantProviderError } from "../src/assistant/provider.js";
+import {
+  createAssistantProvider,
+  AssistantProviderError,
+} from "../src/assistant/provider.js";
 import { AssistantService } from "../src/assistant/service.js";
 import { AssistantTurnMetrics } from "../src/assistant/telemetry/turn-metrics.js";
 import { responseMetadata } from "../src/assistant/telemetry/usage.js";
@@ -27,7 +30,10 @@ test("incomplete tool calls never execute and retain reported usage", async () =
               {
                 id: "call",
                 type: "function",
-                function: { name: "describe_collection", arguments: '{"collection":' },
+                function: {
+                  name: "describe_collection",
+                  arguments: '{"collection":',
+                },
               },
             ],
           },
@@ -38,15 +44,22 @@ test("incomplete tool calls never execute and retain reported usage", async () =
   );
   const service = new AssistantService(config, provider);
   await assert.rejects(
-    service.respond("user", body, undefined, undefined, undefined, async () => ({
-      context: {},
-      definitions: [],
-      proposals: [],
-      execute: async () => {
-        executed++;
-        return {};
-      },
-    })),
+    service.respond(
+      "user",
+      body,
+      undefined,
+      undefined,
+      undefined,
+      async () => ({
+        context: {},
+        definitions: [],
+        proposals: [],
+        execute: async () => {
+          executed++;
+          return {};
+        },
+      }),
+    ),
     (error) => {
       assert.ok(error instanceof AssistantProviderError);
       assert.equal(error.code, "assistant_tool_truncated");
@@ -61,39 +74,49 @@ test("incomplete tool calls never execute and retain reported usage", async () =
 
 test("the whole-turn timeout still stops tool continuations without another model call", async () => {
   let calls = 0;
-  const provider = createAssistantProvider({ ...config, timeoutMs: 30 }, async () => {
-    calls++;
-    return Response.json({
-      choices: [
-        {
-          finish_reason: "tool_calls",
-          message: {
-            content: null,
-            tool_calls: [
-              {
-                id: "call",
-                type: "function",
-                function: { name: "describe_collection", arguments: "{}" },
-              },
-            ],
+  const provider = createAssistantProvider(
+    { ...config, timeoutMs: 30 },
+    async () => {
+      calls++;
+      return Response.json({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call",
+                  type: "function",
+                  function: { name: "describe_collection", arguments: "{}" },
+                },
+              ],
+            },
           },
-        },
-      ],
-      usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 },
-    });
-  });
+        ],
+        usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 },
+      });
+    },
+  );
   const service = new AssistantService(config, provider);
   await assert.rejects(
-    service.respond("user", body, undefined, undefined, undefined, async () => ({
-      context: {},
-      definitions: [],
-      proposals: [],
-      execute: async (_name, _args, signal) => {
-        await setTimeout(60);
-        assert.equal(signal?.aborted, true);
-        return {};
-      },
-    })),
+    service.respond(
+      "user",
+      body,
+      undefined,
+      undefined,
+      undefined,
+      async () => ({
+        context: {},
+        definitions: [],
+        proposals: [],
+        execute: async (_name, _args, signal) => {
+          await setTimeout(60);
+          assert.equal(signal?.aborted, true);
+          return {};
+        },
+      }),
+    ),
     (error) => {
       assert.ok(error instanceof AssistantProviderError);
       assert.equal(error.code, "assistant_timeout");
@@ -112,7 +135,10 @@ test("usage aggregates known failure metadata, missing counters and genuine zero
     content: "ok",
     truncated: false,
     metadata: responseMetadata(
-      { model: "actual", usage: { input_tokens: 0, output_tokens: 2, total_tokens: 2 } },
+      {
+        model: "actual",
+        usage: { input_tokens: 0, output_tokens: 2, total_tokens: 2 },
+      },
       "responses",
     ),
   }));
@@ -122,7 +148,10 @@ test("usage aggregates known failure metadata, missing counters and genuine zero
         502,
         "assistant_empty_response",
         "safe",
-        responseMetadata({ model: "actual", usage: { input_tokens: 10 } }, "responses"),
+        responseMetadata(
+          { model: "actual", usage: { input_tokens: 10 } },
+          "responses",
+        ),
       );
     }),
   );

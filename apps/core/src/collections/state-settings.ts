@@ -4,7 +4,10 @@ import { lockedCollectionSettings } from "./settings-repository.js";
 import { readEditableField } from "./editable-field.js";
 import { statePresentation } from "./state-presentation.js";
 import { assertNoAlias } from "./field-name.js";
-import { CollectionInputError, CollectionFieldConflictError } from "./validation.js";
+import {
+  CollectionInputError,
+  CollectionFieldConflictError,
+} from "./validation.js";
 
 // Called inside the collection metadata transaction. Lock user data before
 // metadata, matching item writes and other schema operations.
@@ -16,14 +19,20 @@ export async function saveCollectionState(
   const settings = await lockedCollectionSettings(transaction, name);
   if (!state) {
     if (settings.state)
-      throw new CollectionInputError("System state cannot be removed once enabled");
+      throw new CollectionInputError(
+        "System state cannot be removed once enabled",
+      );
     return;
   }
   if (settings.primaryKey.name === state.field)
     throw new CollectionInputError("State conflicts with the primary key");
   await assertNoAlias(transaction, name, state.field);
-  const exists = await transaction.schema.withSchema("public").hasColumn(name, state.field);
-  const current = exists ? await readEditableField(transaction, name, state.field) : null;
+  const exists = await transaction.schema
+    .withSchema("public")
+    .hasColumn(name, state.field);
+  const current = exists
+    ? await readEditableField(transaction, name, state.field)
+    : null;
   if (current) {
     if (current.type !== "text" || current.relation_key_type) {
       throw new CollectionInputError(
@@ -48,10 +57,10 @@ export async function saveCollectionState(
       "SELECT quote_literal(?::text) AS value",
       [state.defaultValue],
     );
-    await transaction.raw(`ALTER TABLE ?? ALTER COLUMN ?? SET DEFAULT ${literal.rows[0].value}`, [
-      `public.${name}`,
-      state.field,
-    ]);
+    await transaction.raw(
+      `ALTER TABLE ?? ALTER COLUMN ?? SET DEFAULT ${literal.rows[0].value}`,
+      [`public.${name}`, state.field],
+    );
   } else {
     await transaction.schema.withSchema("public").alterTable(name, (table) => {
       table.text(state.field).notNullable().defaultTo(state.defaultValue);
@@ -60,11 +69,18 @@ export async function saveCollectionState(
   const metadata = {
     required: true,
     default_value: JSON.stringify(state.defaultValue),
-    presentation: JSON.stringify(statePresentation(state, current?.presentation ?? undefined)),
+    presentation: JSON.stringify(
+      statePresentation(state, current?.presentation ?? undefined),
+    ),
   };
   await transaction("asmblyr_field_metadata")
     .withSchema("public")
-    .insert({ collection_name: name, field_name: state.field, searchable: false, ...metadata })
+    .insert({
+      collection_name: name,
+      field_name: state.field,
+      searchable: false,
+      ...metadata,
+    })
     .onConflict(["collection_name", "field_name"])
     .merge(metadata);
   await transaction("asmblyr_collections")

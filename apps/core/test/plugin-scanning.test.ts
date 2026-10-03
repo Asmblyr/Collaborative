@@ -31,12 +31,15 @@ test("file routing maps index, methods and nested parameters", async (t) => {
     "comments/types.d.ts",
   ]);
   const routes = await scanApiRoutes(root);
-  assert.deepEqual(routes.map(({ method, path }) => `${method} ${path}`).sort(), [
-    "DELETE /comments/:id",
-    "GET /comments",
-    "GET /comments/:id/replies",
-    "POST /comments",
-  ]);
+  assert.deepEqual(
+    routes.map(({ method, path }) => `${method} ${path}`).sort(),
+    [
+      "DELETE /comments/:id",
+      "GET /comments",
+      "GET /comments/:id/replies",
+      "POST /comments",
+    ],
+  );
 });
 
 test("a file without a method handles all five supported verbs", async (t) => {
@@ -90,7 +93,10 @@ test("collection scanning includes declarations only and rejects nested or ambig
   assert.deepEqual(await scanCollectionFiles(root), ["entries.ts"]);
   assert.deepEqual(await scanCollectionFiles(path.join(root, "absent")), []);
   await writeFile(path.join(root, "Invalid.ts"), "export default {};");
-  await assert.rejects(scanCollectionFiles(root), /Invalid collection filename/);
+  await assert.rejects(
+    scanCollectionFiles(root),
+    /Invalid collection filename/,
+  );
   await rm(path.join(root, "Invalid.ts"));
   await mkdir(path.join(root, "nested"));
   await assert.rejects(scanCollectionFiles(root), /directly/);

@@ -3,6 +3,8 @@ export function oauthCookies(value: string): string {
   return value
     .split(";")
     .map((entry) => entry.trim())
-    .filter((entry) => /^asmblyr_oidc_(session|interaction|resume)(\.sig)?=/.test(entry))
+    .filter((entry) =>
+      /^asmblyr_oidc_(session|interaction|resume)(\.sig)?=/.test(entry),
+    )
     .join("; ");
 }

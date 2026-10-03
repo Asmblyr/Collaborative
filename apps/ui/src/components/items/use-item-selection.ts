@@ -54,7 +54,10 @@ export function useItemSelection({
         await asmblyr.items.delete(collection.name, id);
         removed += 1;
       } catch (error) {
-        failure = error instanceof ApiError ? error.message : "Не удалось связаться с сервером";
+        failure =
+          error instanceof ApiError
+            ? error.message
+            : "Не удалось связаться с сервером";
         break;
       }
     }
@@ -62,17 +65,25 @@ export function useItemSelection({
     setConfirmDelete(false);
     setSelected(new Set(ids.slice(removed)));
     setMessage(
-      failure ? `Удалено: ${removed} из ${ids.length}. ${failure}` : `Удалено записей: ${removed}`,
+      failure
+        ? `Удалено: ${removed} из ${ids.length}. ${failure}`
+        : `Удалено записей: ${removed}`,
     );
     if (removed > 0) {
       const remaining = BigInt(page.total) - BigInt(removed);
-      if (page.number > 1 && BigInt(page.number - 1) * BigInt(page.size) >= remaining) {
+      if (
+        page.number > 1 &&
+        BigInt(page.number - 1) * BigInt(page.size) >= remaining
+      ) {
         onNavigate({ number: page.number - 1 });
       } else router.refresh();
     }
   }
 
-  async function saveBulk(values: Record<string, ItemValue>, close: () => void) {
+  async function saveBulk(
+    values: Record<string, ItemValue>,
+    close: () => void,
+  ) {
     setPending(true);
     try {
       const result = await apiRequest<{ changed: number }>(endpoint, "PATCH", {

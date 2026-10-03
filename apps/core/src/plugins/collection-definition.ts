@@ -16,7 +16,10 @@ function assertKeys(
   keys: string[],
   label: string,
 ): asserts value is Record<string, unknown> {
-  if (!isRecord(value) || Object.keys(value).some((key) => !keys.includes(key))) {
+  if (
+    !isRecord(value) ||
+    Object.keys(value).some((key) => !keys.includes(key))
+  ) {
     throw new Error(`Invalid plugin ${label}`);
   }
 }
@@ -42,11 +45,23 @@ export function parsePluginCollection(
   const fields = Object.entries(value.fields).map(([name, raw]) => {
     assertKeys(
       raw,
-      ["type", "required", "nullable", "defaultValue", "searchable", "presentation"],
+      [
+        "type",
+        "required",
+        "nullable",
+        "defaultValue",
+        "searchable",
+        "presentation",
+      ],
       `field ${name}`,
     );
-    if (typeof raw.required !== "boolean" || typeof raw.nullable !== "boolean") {
-      throw new Error(`Field ${name} requires explicit required and nullable booleans`);
+    if (
+      typeof raw.required !== "boolean" ||
+      typeof raw.nullable !== "boolean"
+    ) {
+      throw new Error(
+        `Field ${name} requires explicit required and nullable booleans`,
+      );
     }
     const { presentation: settings, ...field } = raw;
     if (settings !== undefined) {
@@ -68,11 +83,17 @@ export function parsePluginCollection(
   const name = `plugin_${namespace}_${localName}`;
   for (const field of input.fields) {
     if (field.defaultValue !== undefined && presentation[field.name]) {
-      parsePresentedValue(field.defaultValue, presentation[field.name], field.required);
+      parsePresentedValue(
+        field.defaultValue,
+        presentation[field.name],
+        field.required,
+      );
     }
   }
   if (name.length > 63)
-    throw new Error(`Plugin collection name exceeds PostgreSQL's 63-character limit: ${name}`);
+    throw new Error(
+      `Plugin collection name exceeds PostgreSQL's 63-character limit: ${name}`,
+    );
   input.name = name;
   return { localName, input, presentation };
 }

@@ -19,7 +19,8 @@ export interface ToolDefinition {
 const collection = {
   type: "string",
   maxLength: 63,
-  description: "Technical collection name from list_collections or page context.",
+  description:
+    "Technical collection name from list_collections or page context.",
 };
 const scope = {
   terms: {
@@ -32,7 +33,8 @@ const scope = {
   q: {
     type: ["string", "null"],
     maxLength: 100,
-    description: "Text search. Empty string clears search; null uses the caller's query defaults.",
+    description:
+      "Text search. Empty string clears search; null uses the caller's query defaults.",
   },
   filter: {
     type: ["string", "null"],
@@ -101,7 +103,8 @@ export const toolDefinitions: ToolDefinition[] = [
       sort: {
         type: ["string", "null"],
         maxLength: 63,
-        description: "Readable physical field; null uses the caller's default sort.",
+        description:
+          "Readable physical field; null uses the caller's default sort.",
       },
       direction: { type: ["string", "null"], enum: ["asc", "desc", null] },
     },

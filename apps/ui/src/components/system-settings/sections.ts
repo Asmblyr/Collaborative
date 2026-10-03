@@ -6,7 +6,13 @@ export const settingsCatalog: readonly {
   description: string;
   group: "Команда" | "Возможности" | "Интеграции";
 }[] = [
-  { id: "files", title: "Файлы", description: "Просмотр общей библиотеки. Управление разрешает загрузку, переименование и удаление свободных файлов.", group: "Возможности" },
+  {
+    id: "files",
+    title: "Файлы",
+    description:
+      "Просмотр общей библиотеки. Управление разрешает загрузку, переименование и удаление свободных файлов.",
+    group: "Возможности",
+  },
   {
     id: "users",
     title: "Пользователи",
@@ -55,7 +61,9 @@ export const settingsCatalog: readonly {
 ];
 
 export function settingsHref(section: SettingsSection): string {
-  if (section === "files") { return "/files"; }
+  if (section === "files") {
+    return "/files";
+  }
   return `/system-settings/${section}`;
 }
 

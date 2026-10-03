@@ -20,7 +20,8 @@ export async function toolReadContext(
   await trx.raw("LOCK TABLE ?? IN ACCESS SHARE MODE", [`public.${name}`]);
   const schema = await collectionSchema(trx, name);
   requireMcpCollection(schema.settings);
-  if (schema.settings.internalId !== collectionId) throw new ItemError("Collection changed", 409);
+  if (schema.settings.internalId !== collectionId)
+    throw new ItemError("Collection changed", 409);
   signal?.throwIfAborted();
   return { schema, allowed };
 }

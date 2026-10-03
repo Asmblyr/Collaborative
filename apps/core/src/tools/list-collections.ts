@@ -34,7 +34,11 @@ function parseCatalogQuery(args: unknown): CatalogQuery {
   return { q: q.trim(), page: body.page, limit: body.limit };
 }
 
-export async function discoverCollections(db: Knex, access: Access, args: unknown) {
+export async function discoverCollections(
+  db: Knex,
+  access: Access,
+  args: unknown,
+) {
   const input = parseCatalogQuery(args);
   const query = db("asmblyr_collections")
     .withSchema("public")
@@ -53,9 +57,10 @@ export async function discoverCollections(db: Knex, access: Access, args: unknow
   }
   if (input.q) {
     // strpos treats %, _ and backslashes literally, without wildcard expansion.
-    query.whereRaw("strpos(lower(name || ' ' || coalesce(display_name, '')), lower(?)) > 0", [
-      input.q,
-    ]);
+    query.whereRaw(
+      "strpos(lower(name || ' ' || coalesce(display_name, '')), lower(?)) > 0",
+      [input.q],
+    );
   }
   const rows = await query
     .orderBy("name")

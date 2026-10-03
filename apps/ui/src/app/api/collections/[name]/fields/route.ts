@@ -5,5 +5,9 @@ export async function POST(
   { params }: { params: Promise<{ name: string }> },
 ) {
   const { name } = await params;
-  return proxyCore(request, `/collections/${encodeURIComponent(name)}/fields`, "POST");
+  return proxyCore(
+    request,
+    `/collections/${encodeURIComponent(name)}/fields`,
+    "POST",
+  );
 }

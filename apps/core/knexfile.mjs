@@ -6,7 +6,9 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 config({ path: path.join(directory, ".env") });
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required. Copy apps/core/.env.example to apps/core/.env.");
+  throw new Error(
+    "DATABASE_URL is required. Copy apps/core/.env.example to apps/core/.env.",
+  );
 }
 
 export default {

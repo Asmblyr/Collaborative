@@ -27,17 +27,25 @@ test("OAuth application input rejects wildcard callbacks, unsafe URLs and config
     assert.throws(() => parseApplication({ ...input, redirectUris: [uri] }));
   }
   assert.throws(() => parseApplication({ ...input, claims: ["superuser"] }));
-  assert.throws(() => parseApplication({ ...input, audience: "app", scopes: ["openid"] }));
+  assert.throws(() =>
+    parseApplication({ ...input, audience: "app", scopes: ["openid"] }),
+  );
   assert.throws(() => parseApplication({ ...input, scopes: ["admin"] }));
 });
 
 test("OAuth encrypted payload is bound to its record; profile images are optional HTTPS URLs", () => {
   const cipher = new OAuthCipher(randomBytes(32).toString("base64url"));
   const sealed = cipher.seal({ secret: "example-secret" }, "first-record");
-  assert.deepEqual(cipher.open(sealed, "first-record"), { secret: "example-secret" });
+  assert.deepEqual(cipher.open(sealed, "first-record"), {
+    secret: "example-secret",
+  });
   assert.throws(() => cipher.open(sealed, "other-record"));
-  assert.deepEqual(parseProfile({ displayName: " User " }), { display_name: "User" });
-  assert.throws(() => parseProfile({ displayName: "User", pictureUrl: "data:image/png,abc" }));
+  assert.deepEqual(parseProfile({ displayName: " User " }), {
+    display_name: "User",
+  });
+  assert.throws(() =>
+    parseProfile({ displayName: "User", pictureUrl: "data:image/png,abc" }),
+  );
   assert.deepEqual(parseProfile({ displayName: "User", pictureUrl: "" }), {
     display_name: "User",
     picture_url: null,

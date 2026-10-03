@@ -8,26 +8,35 @@ interface RelationEffect {
 }
 
 /** Block deletion when its configured FK effects can reach a non-MCP collection. */
-function blockedDeletes(relations: RelationEffect[], enabled: Set<string>): Set<string> {
+function blockedDeletes(
+  relations: RelationEffect[],
+  enabled: Set<string>,
+): Set<string> {
   const blocked = new Set<string>();
   const cascadeParents = new Map<string, Set<string>>();
   for (const relation of relations) {
-    if (!enabled.has(relation.source_collection)) blocked.add(relation.target_collection);
+    if (!enabled.has(relation.source_collection))
+      blocked.add(relation.target_collection);
     if (relation.on_delete === "cascade") {
-      const parents = cascadeParents.get(relation.source_collection) ?? new Set<string>();
+      const parents =
+        cascadeParents.get(relation.source_collection) ?? new Set<string>();
       parents.add(relation.target_collection);
       cascadeParents.set(relation.source_collection, parents);
     }
   }
   // Set iteration visits newly added parents, and terminates even on cyclic relations.
   for (const collection of blocked) {
-    for (const parent of cascadeParents.get(collection) ?? []) blocked.add(parent);
+    for (const parent of cascadeParents.get(collection) ?? [])
+      blocked.add(parent);
   }
   return blocked;
 }
 
 /** Intersect all data operations with MCP exposure, also for superusers and related paths. */
-export async function mcpActionAccess(database: Knex, access: Access): Promise<Access> {
+export async function mcpActionAccess(
+  database: Knex,
+  access: Access,
+): Promise<Access> {
   const [rows, relations] = await Promise.all([
     database<{ name: string }>("asmblyr_collections")
       .withSchema("public")

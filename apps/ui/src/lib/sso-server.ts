@@ -12,7 +12,8 @@ import { setSessionCookies } from "./session-cookies";
 import type { LoginProvider } from "./sso";
 
 export const ssoCookie = (provider: string) => `asmblyr_sso_${provider}`;
-export const ssoIntentCookie = (provider: string) => `asmblyr_sso_intent_${provider}`;
+export const ssoIntentCookie = (provider: string) =>
+  `asmblyr_sso_intent_${provider}`;
 
 export async function loadLoginProviders(): Promise<LoginProvider[]> {
   try {
@@ -69,7 +70,10 @@ export function ssoRedirect(
   const response = NextResponse.redirect(new URL(path, request.url), 303);
   response.headers.set("Cache-Control", "no-store");
   response.headers.set("Referrer-Policy", "no-referrer");
-  const options = { ...cookieOptions(request, 0), path: `/sign/sso/${provider}` };
+  const options = {
+    ...cookieOptions(request, 0),
+    path: `/sign/sso/${provider}`,
+  };
   response.cookies.set(ssoCookie(provider), "", options);
   response.cookies.set(ssoIntentCookie(provider), "", options);
   if (renewed) setSessionCookies(response, request, renewed);

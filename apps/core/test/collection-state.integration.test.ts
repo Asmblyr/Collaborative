@@ -13,7 +13,10 @@ import { loadAccess } from "../src/permissions/access.js";
 
 test("system state: defaults, protected structure, editable choices, adoption, permissions and MCP", async () => {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+  });
   const admin = await authorizeTestApp(app, db);
   const suffix = randomUUID().replaceAll("-", "").slice(0, 10);
   const name = `test_state_${suffix}`,
@@ -22,12 +25,22 @@ test("system state: defaults, protected structure, editable choices, adoption, p
   const userId = randomUUID();
   let policyId: string | undefined;
   const state = defaultCollectionState();
-  const create = (payload: object) => app.inject({ method: "POST", url: "/collections", payload });
+  const create = (payload: object) =>
+    app.inject({ method: "POST", url: "/collections", payload });
   const settings = (collection: string, payload: object) =>
-    app.inject({ method: "PATCH", url: `/collections/${collection}/settings`, payload });
-  const post = (payload: object) => app.inject({ method: "POST", url: `/items/${name}`, payload });
+    app.inject({
+      method: "PATCH",
+      url: `/collections/${collection}/settings`,
+      payload,
+    });
+  const post = (payload: object) =>
+    app.inject({ method: "POST", url: `/items/${name}`, payload });
   try {
-    const created = await create({ name, state, fields: [{ name: "title", type: "text" }] });
+    const created = await create({
+      name,
+      state,
+      fields: [{ name: "title", type: "text" }],
+    });
     assert.equal(created.statusCode, 201, created.body);
     assert.deepEqual(created.json().data.state, state);
     const status = created
@@ -40,17 +53,24 @@ test("system state: defaults, protected structure, editable choices, adoption, p
     assert.equal(published.statusCode, 201, published.body);
     assert.equal(published.json().data.status, "published");
     for (const value of ["draft", "archived"])
-      assert.equal((await post({ title: value, status: value })).statusCode, 201);
+      assert.equal(
+        (await post({ title: value, status: value })).statusCode,
+        201,
+      );
     for (const value of [null, "unknown", "", 1])
       assert.equal((await post({ status: value })).statusCode, 400);
-    const inserted = await db(name).insert({ title: "Direct database insert" }).returning("status");
+    const inserted = await db(name)
+      .insert({ title: "Direct database insert" })
+      .returning("status");
     assert.equal(inserted[0].status, "published");
     // Visibility is an explicit filter, not a permission rule.
     const all = await app.inject({ method: "GET", url: `/items/${name}` });
     assert.equal(all.json().page.total, "4");
     const filter = JSON.stringify({
       logic: "and",
-      children: [{ field: "status", op: "notIn", value: ["draft", "archived"] }],
+      children: [
+        { field: "status", op: "notIn", value: ["draft", "archived"] },
+      ],
     });
     const visible = await app.inject({
       method: "GET",
@@ -71,7 +91,8 @@ test("system state: defaults, protected structure, editable choices, adoption, p
       200,
     );
     assert.equal(
-      (await app.inject({ method: "GET", url: `/items/${name}/${id}` })).json().data.status,
+      (await app.inject({ method: "GET", url: `/items/${name}/${id}` })).json()
+        .data.status,
       "draft",
     );
     for (const request of [
@@ -99,11 +120,13 @@ test("system state: defaults, protected structure, editable choices, adoption, p
       statuses: state.statuses.filter((option) => option.value !== "draft"),
     };
     assert.equal(
-      (await settings(name, { state: removed, displayName: "Must roll back" })).statusCode,
+      (await settings(name, { state: removed, displayName: "Must roll back" }))
+        .statusCode,
       409,
     );
     assert.equal(
-      (await db("asmblyr_collections").where({ name }).first("display_name")).display_name,
+      (await db("asmblyr_collections").where({ name }).first("display_name"))
+        .display_name,
       null,
     );
     const configured = {
@@ -115,16 +138,28 @@ test("system state: defaults, protected structure, editable choices, adoption, p
             ? { ...option, label: "В работе", color: "blue" as const }
             : option,
         ),
-        { value: "review", label: "На проверке", color: "violet" as const, hidden: true },
+        {
+          value: "review",
+          label: "На проверке",
+          color: "violet" as const,
+          hidden: true,
+        },
       ],
     };
     assert.equal((await settings(name, { state: configured })).statusCode, 200);
-    assert.equal((await post({ title: "Review" })).json().data.status, "review");
     assert.equal(
-      (await db(name).insert({ title: "Direct review" }).returning("status"))[0].status,
+      (await post({ title: "Review" })).json().data.status,
       "review",
     );
-    assert.equal((await db(name).where({ id }).first("status")).status, "draft");
+    assert.equal(
+      (await db(name).insert({ title: "Direct review" }).returning("status"))[0]
+        .status,
+      "review",
+    );
+    assert.equal(
+      (await db(name).where({ id }).first("status")).status,
+      "draft",
+    );
     for (const bad of [
       { ...state, defaultValue: "missing" },
       { ...state, field: "title" },
@@ -134,13 +169,23 @@ test("system state: defaults, protected structure, editable choices, adoption, p
       assert.equal((await settings(name, { state: bad })).statusCode, 400);
 
     assert.equal(
-      (await create({ name: imported, fields: [{ name: "status", type: "text" }] })).statusCode,
+      (
+        await create({
+          name: imported,
+          fields: [{ name: "status", type: "text" }],
+        })
+      ).statusCode,
       201,
     );
-    await db(imported).insert([{ status: "published" }, { status: null }, { status: "legacy" }]);
+    await db(imported).insert([
+      { status: "published" },
+      { status: null },
+      { status: "legacy" },
+    ]);
     assert.equal((await settings(imported, { state })).statusCode, 409);
     assert.equal(
-      (await db("asmblyr_collections").where({ name: imported }).first("state")).state,
+      (await db("asmblyr_collections").where({ name: imported }).first("state"))
+        .state,
       null,
     );
     const withLegacy = {
@@ -168,7 +213,11 @@ test("system state: defaults, protected structure, editable choices, adoption, p
       superuser: false,
     });
     policyId = (
-      await app.inject({ method: "POST", url: "/policies", payload: { name: `State ${suffix}` } })
+      await app.inject({
+        method: "POST",
+        url: "/policies",
+        payload: { name: `State ${suffix}` },
+      })
     ).json().data.id;
     for (const action of ["read", "create", "update"]) {
       const grant = await app.inject({
@@ -182,12 +231,25 @@ test("system state: defaults, protected structure, editable choices, adoption, p
         url: `/policies/${policyId}/permissions/${grant.json().data.id}`,
       });
     }
-    await app.inject({ method: "PUT", url: `/policies/${policyId}/users/${userId}` });
-    const headers = { authorization: `Bearer ${(await issueUserTokens(db, userId)).accessToken}` };
-    const catalog = (await app.inject({ method: "GET", url: "/collections", headers })).json().data;
-    const restricted = catalog.find((entry: { name: string }) => entry.name === name);
+    await app.inject({
+      method: "PUT",
+      url: `/policies/${policyId}/users/${userId}`,
+    });
+    const headers = {
+      authorization: `Bearer ${(await issueUserTokens(db, userId)).accessToken}`,
+    };
+    const catalog = (
+      await app.inject({ method: "GET", url: "/collections", headers })
+    ).json().data;
+    const restricted = catalog.find(
+      (entry: { name: string }) => entry.name === name,
+    );
     assert.equal(restricted.state, null);
-    assert.ok(!restricted.fields.some((field: { name: string }) => field.name === "status"));
+    assert.ok(
+      !restricted.fields.some(
+        (field: { name: string }) => field.name === "status",
+      ),
+    );
     assert.equal(
       (
         await app.inject({
@@ -229,7 +291,8 @@ test("system state: defaults, protected structure, editable choices, adoption, p
     assert.equal(own.statusCode, 201, own.body);
     assert.equal(own.json().data.status, undefined);
     assert.equal(
-      (await db(name).where({ title: "Limited creator" }).first("status")).status,
+      (await db(name).where({ title: "Limited creator" }).first("status"))
+        .status,
       "review",
     );
 
@@ -252,15 +315,29 @@ test("system state: defaults, protected structure, editable choices, adoption, p
       principal: { id: admin.id, kind: "user" as const, superuser: true },
       grants: new Map(),
     };
-    const tools = (await createContextTools(db, adminAccess, context, async () => adminAccess))!;
-    const described = JSON.parse(JSON.stringify(await tools.execute("describe_collection", {})));
+    const tools = (await createContextTools(
+      db,
+      adminAccess,
+      context,
+      async () => adminAccess,
+    ))!;
+    const described = JSON.parse(
+      JSON.stringify(await tools.execute("describe_collection", {})),
+    );
     assert.deepEqual(described.state, configured);
     assert.equal(
-      described.fields.find((field: { name: string }) => field.name === "status").options[1].label,
+      described.fields.find(
+        (field: { name: string }) => field.name === "status",
+      ).options[1].label,
       "В работе",
     );
     const access = await loadAccess(db, headers.authorization);
-    const limitedTools = (await createContextTools(db, access, context, async () => access))!;
+    const limitedTools = (await createContextTools(
+      db,
+      access,
+      context,
+      async () => access,
+    ))!;
     const limited = JSON.parse(
       JSON.stringify(await limitedTools.execute("describe_collection", {})),
     );

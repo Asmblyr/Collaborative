@@ -15,7 +15,10 @@ export function toolCollectionName(value: unknown): string {
 export async function collectionData(db: Knex, access: Access, name: string) {
   toolCollectionName(name);
   const allowed = requireGrant(access, name, "read");
-  const [schema, catalog] = await Promise.all([collectionSchema(db, name), listCollections(db)]);
+  const [schema, catalog] = await Promise.all([
+    collectionSchema(db, name),
+    listCollections(db),
+  ]);
   requireMcpCollection(schema.settings);
   return { allowed, schema, catalog: mcpCatalog(catalog) };
 }

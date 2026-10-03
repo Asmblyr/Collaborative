@@ -1,5 +1,9 @@
 import type { Knex } from "knex";
-import { AccessDeniedError, requireHuman, type Access } from "../permissions/access.js";
+import {
+  AccessDeniedError,
+  requireHuman,
+  type Access,
+} from "../permissions/access.js";
 import { ItemError } from "../items/validation.js";
 import { objectInput } from "../shared/input.js";
 import { collectionData, toolCollectionName } from "./collection-data.js";
@@ -38,17 +42,26 @@ export function createToolSession(
     return current;
   }
 
-  async function execute(name: string, args: unknown, signal?: AbortSignal): Promise<object> {
+  async function execute(
+    name: string,
+    args: unknown,
+    signal?: AbortSignal,
+  ): Promise<object> {
     const currentAccess = await authorize(signal);
     const definition = toolDefinitions.find((tool) => tool.name === name);
     if (!definition) throw new ItemError("Tool unavailable", 400);
     const body = { ...objectInput(args, definition.parameters.required) };
     // Older internal clients predate terms. The advertised strict schema still
     // requires an explicit null when the model does not select any terms.
-    if (Object.hasOwn(definition.parameters.properties, "terms") && !Object.hasOwn(body, "terms")) {
+    if (
+      Object.hasOwn(definition.parameters.properties, "terms") &&
+      !Object.hasOwn(body, "terms")
+    ) {
       body.terms = null;
     }
-    if (definition.parameters.required.some((key) => !Object.hasOwn(body, key))) {
+    if (
+      definition.parameters.required.some((key) => !Object.hasOwn(body, key))
+    ) {
       throw new ItemError("Missing tool arguments", 400);
     }
     if (name === "list_collections") {
@@ -65,15 +78,31 @@ export function createToolSession(
       if (!described.has(collection) || !id)
         throw new ItemError("Call describe_collection first", 400);
       if (name === "aggregate_items")
-        return executeAggregateTool(db, currentAccess, collection, id, parameters, signal);
-      return executeDataTool(db, currentAccess, collection, id, name, parameters, signal);
+        return executeAggregateTool(
+          db,
+          currentAccess,
+          collection,
+          id,
+          parameters,
+          signal,
+        );
+      return executeDataTool(
+        db,
+        currentAccess,
+        collection,
+        id,
+        name,
+        parameters,
+        signal,
+      );
     }
 
     const data = await collectionData(db, currentAccess, collection);
     signal?.throwIfAborted();
     const id = data.schema.settings.internalId;
     const expectedId = identities.get(collection);
-    if (expectedId && expectedId !== id) throw new ItemError("Collection changed", 409);
+    if (expectedId && expectedId !== id)
+      throw new ItemError("Collection changed", 409);
     if (name === "describe_collection") {
       identities.set(collection, id);
       described.add(collection);
@@ -82,7 +111,8 @@ export function createToolSession(
         ...(await describeTerms(db, collection, data, currentAccess)),
       };
     }
-    if (!described.has(collection)) throw new ItemError("Call describe_collection first", 400);
+    if (!described.has(collection))
+      throw new ItemError("Call describe_collection first", 400);
     return validateToolFilter(collection, body.filter, data, currentAccess);
   }
 

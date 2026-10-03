@@ -6,7 +6,10 @@ import { OAuthApplications } from "./applications.js";
 import { oauthAdapter } from "./adapter.js";
 
 export function createOAuthProvider(db: Knex, config: OAuthConfig) {
-  const applications = new OAuthApplications(db, new OAuthCipher(config.storageKey));
+  const applications = new OAuthApplications(
+    db,
+    new OAuthCipher(config.storageKey),
+  );
   const policy = interactionPolicy.base();
   policy
     .get("login")!
@@ -45,14 +48,21 @@ export function createOAuthProvider(db: Knex, config: OAuthConfig) {
         defaultResource: async (ctx, client) => {
           const app = await applications.row(client.clientId);
           if (!app?.audience) return undefined;
-          if (ctx.oidc.params?.audience && ctx.oidc.params.audience !== app.audience)
+          if (
+            ctx.oidc.params?.audience &&
+            ctx.oidc.params.audience !== app.audience
+          )
             throw new errors.InvalidTarget();
           return `urn:asmblyr:application:${app.id}`;
         },
         useGrantedResource: () => true,
         getResourceServerInfo: async (ctx, resource, client) => {
           const app = await applications.row(client.clientId);
-          if (!app?.enabled || !app.audience || resource !== `urn:asmblyr:application:${app.id}`)
+          if (
+            !app?.enabled ||
+            !app.audience ||
+            resource !== `urn:asmblyr:application:${app.id}`
+          )
             throw new errors.InvalidTarget();
           const scopes = ["openid", "profile", "email", ...app.scopes];
           const requested = String(ctx.oidc.params?.scope ?? "")
@@ -84,15 +94,19 @@ export function createOAuthProvider(db: Knex, config: OAuthConfig) {
       )
         throw new errors.AccessDenied();
       const account = ctx.oidc.account;
-      return account ? account.claims("access_token", "openid profile email", {}, []) : undefined;
+      return account
+        ? account.claims("access_token", "openid profile email", {}, [])
+        : undefined;
     },
     interactions: {
       policy,
-      url: (_ctx, interaction) => `${config.issuer}/interaction/${interaction.uid}`,
+      url: (_ctx, interaction) =>
+        `${config.issuer}/interaction/${interaction.uid}`,
     },
     findAccount: async (ctx, id) => {
       const clientId = ctx.oidc.client?.clientId;
-      if (!clientId || !(await applications.allowed(clientId, id))) return undefined;
+      if (!clientId || !(await applications.allowed(clientId, id)))
+        return undefined;
       const user = await db("public.asmblyr_users")
         .where({ id, status: "active" })
         .first("id", "email", "display_name", "picture_url");

@@ -22,12 +22,18 @@ function date(value: unknown): Date {
 
 export function parseTelemetryQuery(value: unknown): TelemetryQuery {
   const input = objectInput(value, ["days", "until", "cursor", "userId"]);
-  if (input.days !== undefined && !["1", "7", "30", "90"].includes(input.days as string))
+  if (
+    input.days !== undefined &&
+    !["1", "7", "30", "90"].includes(input.days as string)
+  )
     throw new AuthInputError("Expected days: 1, 7, 30 or 90");
   const until = input.until === undefined ? new Date() : date(input.until);
   if (until.getTime() > Date.now() + 60_000)
     throw new AuthInputError("Telemetry period cannot be in the future");
-  if (input.userId !== undefined && (typeof input.userId !== "string" || !uuid.test(input.userId)))
+  if (
+    input.userId !== undefined &&
+    (typeof input.userId !== "string" || !uuid.test(input.userId))
+  )
     throw new AuthInputError("Invalid user ID");
   let before: TelemetryQuery["before"];
   if (input.cursor !== undefined) {
@@ -37,7 +43,9 @@ export function parseTelemetryQuery(value: unknown): TelemetryQuery {
       !/^[A-Za-z0-9_-]+$/.test(input.cursor)
     )
       throw new AuthInputError("Invalid telemetry cursor");
-    const [time, id, extra] = Buffer.from(input.cursor, "base64url").toString("utf8").split("|");
+    const [time, id, extra] = Buffer.from(input.cursor, "base64url")
+      .toString("utf8")
+      .split("|");
     if (!id || !uuid.test(id) || extra !== undefined)
       throw new AuthInputError("Invalid telemetry cursor");
     before = { time: date(time), id };

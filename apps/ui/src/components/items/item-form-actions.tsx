@@ -23,7 +23,12 @@ export function ItemFormActions({
   return (
     <div className="flex items-center justify-between gap-3">
       {onCancel && (
-        <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={pending}
+        >
           Отмена
         </Button>
       )}
@@ -52,8 +57,13 @@ export function ItemFormActions({
           )
         }
       >
-        <Icon aria-hidden="true" className={pending ? "animate-spin" : undefined} />
-        {pending ? "Сохраняем…" : (label ?? (creating ? "Создать запись" : "Сохранить"))}
+        <Icon
+          aria-hidden="true"
+          className={pending ? "animate-spin" : undefined}
+        />
+        {pending
+          ? "Сохраняем…"
+          : (label ?? (creating ? "Создать запись" : "Сохранить"))}
       </Button>
     </div>
   );

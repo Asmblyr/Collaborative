@@ -39,7 +39,9 @@ export class AssistantTurnMetrics {
     }
   }
 
-  async recordModel<T extends AssistantAnswer>(generate: () => Promise<T>): Promise<T> {
+  async recordModel<T extends AssistantAnswer>(
+    generate: () => Promise<T>,
+  ): Promise<T> {
     this.modelCalls++;
     try {
       const answer = await generate();
@@ -55,7 +57,10 @@ export class AssistantTurnMetrics {
     this.toolCalls++;
     try {
       const result = await execute();
-      if ("error" in result || ("isError" in result && result.isError === true)) {
+      if (
+        "error" in result ||
+        ("isError" in result && result.isError === true)
+      ) {
         this.toolErrors++;
       }
       return result;

@@ -30,7 +30,9 @@ export function FolderForm({
     setMessage("");
     try {
       const response = await fetch(
-        folder ? `/api/folders/${encodeURIComponent(folder.id)}` : "/api/folders",
+        folder
+          ? `/api/folders/${encodeURIComponent(folder.id)}`
+          : "/api/folders",
         {
           method: folder ? "PATCH" : "POST",
           headers: { "content-type": "application/json" },
@@ -54,15 +56,20 @@ export function FolderForm({
   async function remove() {
     if (
       !folder ||
-      !window.confirm(`Удалить папку «${folder.name}»? Коллекции останутся без папки.`)
+      !window.confirm(
+        `Удалить папку «${folder.name}»? Коллекции останутся без папки.`,
+      )
     )
       return;
     setPending(true);
     setMessage("");
     try {
-      const response = await fetch(`/api/folders/${encodeURIComponent(folder.id)}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/folders/${encodeURIComponent(folder.id)}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!response.ok) {
         const result = (await response.json()) as { message?: string };
         setMessage(result.message ?? "Не удалось удалить папку");
@@ -78,7 +85,10 @@ export function FolderForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form
+      onSubmit={submit}
+      className="space-y-6"
+    >
       <div className="space-y-2">
         <Label htmlFor="folder-name">Название папки</Label>
         <Input
@@ -93,19 +103,31 @@ export function FolderForm({
       </div>
       {folder && (
         <p className="text-sm text-muted-foreground">
-          Папка упорядочивает коллекции в интерфейсе. Права доступа задаются для самих коллекций.
+          Папка упорядочивает коллекции в интерфейсе. Права доступа задаются для
+          самих коллекций.
         </p>
       )}
       {message && (
-        <p role="status" className="text-sm text-destructive">
+        <p
+          role="status"
+          className="text-sm text-destructive"
+        >
           {message}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" disabled={pending}>
+        <Button
+          type="submit"
+          disabled={pending}
+        >
           {folder ? "Сохранить" : "Создать папку"}
         </Button>
-        <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={pending}
+          onClick={onCancel}
+        >
           Отмена
         </Button>
         {folder && (

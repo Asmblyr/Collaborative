@@ -13,14 +13,25 @@ function fieldNames(collection: Collection): string[] {
   ];
 }
 
-export function describeCollection(name: string, data: CollectionData, access: Access) {
+export function describeCollection(
+  name: string,
+  data: CollectionData,
+  access: Access,
+) {
   const source = data.catalog.find((collection) => collection.name === name)!;
   const paths: object[] = [];
   let omitted = false;
 
   function addPath(path: string): void {
     try {
-      const field = resolveFilterField(path, name, data.schema, data.allowed, data.catalog, access);
+      const field = resolveFilterField(
+        path,
+        name,
+        data.schema,
+        data.allowed,
+        data.catalog,
+        access,
+      );
       if (paths.length >= 200) {
         omitted = true;
         return;
@@ -30,7 +41,12 @@ export function describeCollection(name: string, data: CollectionData, access: A
         type: field.type,
         nullable: field.nullable,
         ...(!path.includes(".")
-          ? { aggregation: { groupable: true, operations: aggregateOperationsFor(field.type) } }
+          ? {
+              aggregation: {
+                groupable: true,
+                operations: aggregateOperationsFor(field.type),
+              },
+            }
           : {}),
         ...(field.keyType ? { keyType: field.keyType } : {}),
         ...(field.relation ? { relation: field.relation.kind } : {}),
@@ -51,29 +67,35 @@ export function describeCollection(name: string, data: CollectionData, access: A
       (collection) => collection.name === field.relation?.collection,
     );
     if (target) {
-      fieldNames(target).forEach((targetField) => addPath(`${field.name}.${targetField}`));
+      fieldNames(target).forEach((targetField) =>
+        addPath(`${field.name}.${targetField}`),
+      );
     }
   }
 
-  const canRead = (field: string) => data.allowed.includes("*") || data.allowed.includes(field);
+  const canRead = (field: string) =>
+    data.allowed.includes("*") || data.allowed.includes(field);
   const readable = source.fields.filter((field) => canRead(field.name));
   return {
     collection: name,
     displayName: source.displayName ?? name,
     description: source.mcp?.description ?? null,
     primaryKey: source.primaryKey,
-    ...(source.state && canRead(source.state.field) ? { state: source.state } : {}),
+    ...(source.state && canRead(source.state.field)
+      ? { state: source.state }
+      : {}),
     fields: readable.slice(0, 100).map((field) => {
       const relation = field.relation;
-      const readableTarget = relation && grantFor(access, relation.collection, "read");
+      const readableTarget =
+        relation && grantFor(access, relation.collection, "read");
       const reference =
         relation?.kind === "m2o" && readableTarget
           ? {
               kind: relation.kind,
               collection: relation.collection,
               displayName:
-                data.catalog.find((entry) => entry.name === relation.collection)?.displayName ||
-                relation.collection,
+                data.catalog.find((entry) => entry.name === relation.collection)
+                  ?.displayName || relation.collection,
               primaryKey: relation.primaryKey,
             }
           : undefined;
@@ -82,15 +104,20 @@ export function describeCollection(name: string, data: CollectionData, access: A
         type: field.type,
         nullable: field.nullable,
         required: field.required,
-        ...(field.presentation?.label ? { label: field.presentation.label } : {}),
-        ...(field.presentation?.options ? { options: field.presentation.options } : {}),
+        ...(field.presentation?.label
+          ? { label: field.presentation.label }
+          : {}),
+        ...(field.presentation?.options
+          ? { options: field.presentation.options }
+          : {}),
         readableValue: data.schema.fields.has(field.name),
         ...(reference ? { relation: reference } : {}),
       };
     }),
     filterPaths: paths,
     timestamps: fieldNames(source).filter(
-      (field) => (field === "created_at" || field === "updated_at") && canRead(field),
+      (field) =>
+        (field === "created_at" || field === "updated_at") && canRead(field),
     ),
     partial: omitted || readable.length > 100,
   };

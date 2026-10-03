@@ -17,8 +17,16 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     if (!(error instanceof SessionExpiredError)) {
-      return new NextResponse("Core API временно недоступен. Обновите страницу, чтобы повторить вход.",
-        { status: 503, headers: { "cache-control": "no-store", "content-type": "text/plain; charset=utf-8" } });
+      return new NextResponse(
+        "Core API временно недоступен. Обновите страницу, чтобы повторить вход.",
+        {
+          status: 503,
+          headers: {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+          },
+        },
+      );
     }
     const response = NextResponse.redirect(login);
     response.headers.set("Cache-Control", "no-store");

@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, ChevronRight, Folder, GripVertical } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronRight,
+  Folder,
+  GripVertical,
+} from "lucide-react";
 import { Button } from "@asmblyr/kit/ui/button";
 import {
   Table,
@@ -49,7 +55,9 @@ export function CollectionsTable({
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<string[]>([]);
-  const [collapsedCollections, setCollapsedCollections] = useState<string[]>([]);
+  const [collapsedCollections, setCollapsedCollections] = useState<string[]>(
+    [],
+  );
   const drag = useCollectionDrag({
     collections: catalog,
     folders,
@@ -70,15 +78,28 @@ export function CollectionsTable({
   const tree = collectionTree(collections);
   const rootCollections = tree.filter(
     ({ collection }) =>
-      !collection.folderId || !folders.some((folder) => folder.id === collection.folderId),
+      !collection.folderId ||
+      !folders.some((folder) => folder.id === collection.folderId),
   );
   function treeRows(
     nodes: CollectionNode<Collection>[],
     depth: number,
-  ): { kind: "collection"; collection: Collection; depth: number; childCount: number }[] {
+  ): {
+    kind: "collection";
+    collection: Collection;
+    depth: number;
+    childCount: number;
+  }[] {
     return nodes.flatMap(({ collection, children }) => [
-      { kind: "collection" as const, collection, depth, childCount: children.length },
-      ...(!collapsedCollections.includes(collection.name) ? treeRows(children, depth + 1) : []),
+      {
+        kind: "collection" as const,
+        collection,
+        depth,
+        childCount: children.length,
+      },
+      ...(!collapsedCollections.includes(collection.name)
+        ? treeRows(children, depth + 1)
+        : []),
     ]);
   }
   const rows = [
@@ -97,7 +118,10 @@ export function CollectionsTable({
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
-      <Table aria-label="Коллекции" className="min-w-[54rem]">
+      <Table
+        aria-label="Коллекции"
+        className="min-w-[54rem]"
+      >
         <TableHeader>
           <TableRow className="bg-muted/40 hover:bg-muted/40">
             <TableHead className="w-[30%] pl-4">Коллекция</TableHead>
@@ -111,7 +135,9 @@ export function CollectionsTable({
           {rows.map((row) => {
             if (row.kind === "folder") {
               const { folder } = row;
-              const folderIndex = folders.findIndex((entry) => entry.id === folder.id);
+              const folderIndex = folders.findIndex(
+                (entry) => entry.id === folder.id,
+              );
               const collapsed = collapsedFolders.includes(folder.id);
               const count = collections.filter(
                 (collection) => collection.folderId === folder.id,
@@ -140,7 +166,9 @@ export function CollectionsTable({
                   }${superuser ? "cursor-grab active:cursor-grabbing " : ""}${
                     draggedFolder === folder.id ? "opacity-50 " : ""
                   }${before ? "[&>td]:border-t-2 [&>td]:border-primary bg-primary/5 " : ""}${
-                    after ? "[&>td]:border-b-2 [&>td]:border-primary bg-primary/5" : ""
+                    after
+                      ? "[&>td]:border-b-2 [&>td]:border-primary bg-primary/5"
+                      : ""
                   }`}
                   onDragStart={(event) => {
                     if (!superuser) return;
@@ -157,7 +185,10 @@ export function CollectionsTable({
                     setDropTarget(null);
                   }}
                 >
-                  <TableCell colSpan={5} className="px-3 py-2">
+                  <TableCell
+                    colSpan={5}
+                    className="px-3 py-2"
+                  >
                     <div className="flex items-center gap-2">
                       {superuser && (
                         <GripVertical
@@ -174,7 +205,9 @@ export function CollectionsTable({
                         onClick={() =>
                           setCollapsedFolders(
                             collapsed
-                              ? collapsedFolders.filter((id) => id !== folder.id)
+                              ? collapsedFolders.filter(
+                                  (id) => id !== folder.id,
+                                )
                               : [...collapsedFolders, folder.id],
                           )
                         }
@@ -183,11 +216,20 @@ export function CollectionsTable({
                           className={collapsed ? "size-4" : "size-4 rotate-90"}
                           aria-hidden="true"
                         />
-                        <Folder className="size-4" aria-hidden="true" />
+                        <Folder
+                          className="size-4"
+                          aria-hidden="true"
+                        />
                         <span className="truncate">{folder.name}</span>
-                        <span className="text-muted-foreground tabular-nums">{count}</span>
+                        <span className="text-muted-foreground tabular-nums">
+                          {count}
+                        </span>
                       </Button>
-                      {canDrop() && <span className="text-xs text-primary">В конец папки</span>}
+                      {canDrop() && (
+                        <span className="text-xs text-primary">
+                          В конец папки
+                        </span>
+                      )}
                       {(before || after) && (
                         <span className="text-xs text-primary">
                           {before ? "Перед папкой" : "После папки"}
@@ -201,7 +243,12 @@ export function CollectionsTable({
                             variant="ghost"
                             disabled={folderIndex === 0}
                             aria-label={`Поднять папку ${folder.name}`}
-                            onClick={() => onReorderFolder(folder.id, folders[folderIndex - 1].id)}
+                            onClick={() =>
+                              onReorderFolder(
+                                folder.id,
+                                folders[folderIndex - 1].id,
+                              )
+                            }
                           >
                             <ArrowUp aria-hidden="true" />
                           </Button>
@@ -212,7 +259,10 @@ export function CollectionsTable({
                             disabled={folderIndex === folders.length - 1}
                             aria-label={`Опустить папку ${folder.name}`}
                             onClick={() =>
-                              onReorderFolder(folder.id, folders[folderIndex + 2]?.id ?? null)
+                              onReorderFolder(
+                                folder.id,
+                                folders[folderIndex + 2]?.id ?? null,
+                              )
                             }
                           >
                             <ArrowDown aria-hidden="true" />
@@ -253,20 +303,27 @@ export function CollectionsTable({
                   onDragLeave={() => setDropTarget(null)}
                   onDrop={(event) => dropOnFolder(event, null)}
                 >
-                  <TableCell colSpan={5} className="px-5 py-3 text-sm font-medium">
+                  <TableCell
+                    colSpan={5}
+                    className="px-5 py-3 text-sm font-medium"
+                  >
                     В корне{" "}
                     <span className="ml-2 text-muted-foreground tabular-nums">
                       {rootCollections.length}
                     </span>
                     {canDrop() && (
-                      <span className="ml-3 text-xs font-normal text-primary">В конец списка</span>
+                      <span className="ml-3 text-xs font-normal text-primary">
+                        В конец списка
+                      </span>
                     )}
                   </TableCell>
                 </TableRow>
               );
             }
             const { collection, depth, childCount } = row;
-            const childrenCollapsed = collapsedCollections.includes(collection.name);
+            const childrenCollapsed = collapsedCollections.includes(
+              collection.name,
+            );
             const isExpanded = expanded === collection.name;
             return (
               <CollectionTableRow
@@ -279,11 +336,15 @@ export function CollectionsTable({
                 superuser={superuser}
                 isExpanded={isExpanded}
                 childrenCollapsed={childrenCollapsed}
-                onToggleExpanded={() => setExpanded(isExpanded ? null : collection.name)}
+                onToggleExpanded={() =>
+                  setExpanded(isExpanded ? null : collection.name)
+                }
                 onToggleChildren={() =>
                   setCollapsedCollections(
                     childrenCollapsed
-                      ? collapsedCollections.filter((name) => name !== collection.name)
+                      ? collapsedCollections.filter(
+                          (name) => name !== collection.name,
+                        )
                       : [...collapsedCollections, collection.name],
                   )
                 }

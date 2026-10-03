@@ -32,7 +32,9 @@ const project = (
   workspaceId: row.workspace_id,
   isDefault: row.is_default,
   editable:
-    row.scope === "personal" ? row.user_id === access.principal.id : access.principal.superuser,
+    row.scope === "personal"
+      ? row.user_id === access.principal.id
+      : access.principal.superuser,
   definition,
   available: definition !== null,
   createdAt: row.created_at,
@@ -61,7 +63,9 @@ export async function defaultTableView(db: Knex, name: string, access: Access) {
   return (
     ["personal", "workspace", "collection"]
       .map((scope) =>
-        views.find((view) => view.scope === scope && view.isDefault && view.available),
+        views.find(
+          (view) => view.scope === scope && view.isDefault && view.available,
+        ),
       )
       .find(Boolean) ?? null
   );
@@ -74,7 +78,13 @@ export async function saveTableView(
   value: unknown,
   id?: string,
 ) {
-  const body = objectInput(value, ["name", "definition", "scope", "workspaceId", "isDefault"]);
+  const body = objectInput(value, [
+    "name",
+    "definition",
+    "scope",
+    "workspaceId",
+    "isDefault",
+  ]);
   const name = textInput(body.name, 60);
   if (body.isDefault !== undefined && typeof body.isDefault !== "boolean")
     throw new ItemError("Invalid default flag", 400);
@@ -97,7 +107,8 @@ export async function saveTableView(
       if (current) assertViewManager(current, access);
       const owner = await parseViewOwner(trx, body, ctx.id, access, current);
       const isDefault = body.isDefault ?? current?.is_default ?? false;
-      if (isDefault) await table(trx).where(owner).update({ is_default: false });
+      if (isDefault)
+        await table(trx).where(owner).update({ is_default: false });
       let row: ViewRow;
       const values = {
         name,
@@ -106,11 +117,20 @@ export async function saveTableView(
         updated_at: trx.fn.now(),
       };
       if (current) {
-        [row] = await table(trx).where({ id: current.id }).update(values).returning("*");
+        [row] = await table(trx)
+          .where({ id: current.id })
+          .update(values)
+          .returning("*");
       } else {
-        const count = await table(trx).where(owner).count<{ total: string }>("* as total").first();
+        const count = await table(trx)
+          .where(owner)
+          .count<{ total: string }>("* as total")
+          .first();
         if (Number(count?.total) >= 30)
-          throw new ItemError("You can save up to 30 views per scope and collection", 409);
+          throw new ItemError(
+            "You can save up to 30 views per scope and collection",
+            409,
+          );
         [row] = await table(trx)
           .insert({ ...owner, ...values, created_by: access.principal.id })
           .returning("*");
@@ -118,13 +138,23 @@ export async function saveTableView(
       return project(row, definition, access);
     });
   } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "23505")
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "23505"
+    )
       throw new ItemError("A view with this name already exists", 409);
     throw error;
   }
 }
 
-export async function deleteTableView(db: Knex, name: string, access: Access, id: string) {
+export async function deleteTableView(
+  db: Knex,
+  name: string,
+  access: Access,
+  id: string,
+) {
   const ctx = await viewContext(db, name, access);
   await db.transaction(async (trx) => {
     const row = await table(trx)

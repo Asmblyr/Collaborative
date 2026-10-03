@@ -143,9 +143,15 @@ test("filter actions stay bound to the original page/workspace and refuse open e
     assert.equal(canApplyProposal(changed, proposal), false);
   }
   assert.notEqual(contextScope(context), contextScope(null));
-  assert.notEqual(contextScope(context), contextScope({ ...context, collection: "users" }));
+  assert.notEqual(
+    contextScope(context),
+    contextScope({ ...context, collection: "users" }),
+  );
   assert.equal(
     contextScope(context),
-    contextScope({ ...context, table: { ...context.table!, selectedCount: 3 } }),
+    contextScope({
+      ...context,
+      table: { ...context.table!, selectedCount: 3 },
+    }),
   );
 });

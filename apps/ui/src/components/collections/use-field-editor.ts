@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api-request";
 import type { CollectionField } from "@/components/items/types";
 import type { DataFieldType } from "./field-type-picker";
-import { defaultInput, defaultPayload, InvalidDefaultError } from "./field-default-value";
+import {
+  defaultInput,
+  defaultPayload,
+  InvalidDefaultError,
+} from "./field-default-value";
 import { defaultPresentation } from "./field-presentation-defaults";
 import { useEditorDraft } from "./editor-lifecycle";
 
@@ -24,13 +28,17 @@ export function useFieldEditor({
   const [name, setName] = useState(field?.name ?? "");
   const [required, setRequired] = useState(field?.required ?? false);
   const [nullable, setNullable] = useState(field?.nullable ?? true);
-  const [hasDefault, setHasDefault] = useState(field?.defaultValue !== undefined);
+  const [hasDefault, setHasDefault] = useState(
+    field?.defaultValue !== undefined,
+  );
   const [defaultValue, setDefaultValue] = useState(
     defaultInput(field?.defaultValue, field?.type ?? "text"),
   );
   const [searchable, setSearchable] = useState(field?.searchable ?? true);
   const [indexed, setIndexed] = useState(field?.searchIndexed ?? false);
-  const [relationSearchable, setRelationSearchable] = useState(field?.searchable ?? false);
+  const [relationSearchable, setRelationSearchable] = useState(
+    field?.searchable ?? false,
+  );
   const [presentation, setPresentation] = useState(
     field?.presentation ?? {
       ...defaultPresentation,
@@ -53,17 +61,23 @@ export function useFieldEditor({
     field &&
     field.type !== "relation" &&
     (hasDefault !== (field.defaultValue !== undefined) ||
-      (hasDefault && defaultValue !== defaultInput(field.defaultValue, field.type)));
+      (hasDefault &&
+        defaultValue !== defaultInput(field.defaultValue, field.type)));
   const basicChanged =
     field?.type !== "alias" &&
-    (!field || required !== field.required || nullable !== field.nullable || defaultChanged);
+    (!field ||
+      required !== field.required ||
+      nullable !== field.nullable ||
+      defaultChanged);
   const searchChanged =
     textField &&
-    (searchable !== (field?.searchable ?? true) || indexed !== (field?.searchIndexed ?? false));
+    (searchable !== (field?.searchable ?? true) ||
+      indexed !== (field?.searchIndexed ?? false));
   const relationSearchChanged =
     relationField && relationSearchable !== (field?.searchable ?? false);
   const presentationChanged =
-    JSON.stringify(presentation) !== JSON.stringify(field?.presentation ?? defaultPresentation);
+    JSON.stringify(presentation) !==
+    JSON.stringify(field?.presentation ?? defaultPresentation);
   useEditorDraft(
     {
       name,
@@ -79,14 +93,21 @@ export function useFieldEditor({
     pending,
   );
   const changed =
-    created || basicChanged || searchChanged || relationSearchChanged || presentationChanged;
+    created ||
+    basicChanged ||
+    searchChanged ||
+    relationSearchChanged ||
+    presentationChanged;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
     setMessage("");
     try {
-      if (presentation.interface === "select" || presentation.interface === "multiselect") {
+      if (
+        presentation.interface === "select" ||
+        presentation.interface === "multiselect"
+      ) {
         const options = presentation.options ?? [];
         if (
           !options.length ||
@@ -114,11 +135,16 @@ export function useFieldEditor({
           );
         }
         const values =
-          presentation.interface === "multiselect" && Array.isArray(defaultSetting)
+          presentation.interface === "multiselect" &&
+          Array.isArray(defaultSetting)
             ? defaultSetting
             : [defaultSetting];
-        if (values.some((v) => !presentation.options?.some((o) => o.value === v)))
-          throw new InvalidDefaultError("Default должен содержать только настроенные варианты");
+        if (
+          values.some((v) => !presentation.options?.some((o) => o.value === v))
+        )
+          throw new InvalidDefaultError(
+            "Default должен содержать только настроенные варианты",
+          );
       }
       const fieldName = field?.name ?? name;
       const path = `/api/collections/${encodeURIComponent(collection)}/fields/${encodeURIComponent(fieldName)}`;
@@ -127,7 +153,9 @@ export function useFieldEditor({
           ? {
               required,
               nullable,
-              ...(defaultChanged || created ? { defaultValue: defaultSetting } : {}),
+              ...(defaultChanged || created
+                ? { defaultValue: defaultSetting }
+                : {}),
             }
           : {
               name,
@@ -137,12 +165,16 @@ export function useFieldEditor({
               ...(textField ? { searchable } : {}),
               ...(hasDefault ? { defaultValue: defaultSetting } : {}),
             };
-      await apiRequest(`${path}/configuration`, field || created ? "PUT" : "POST", {
-        ...(basicChanged ? { field: definition } : {}),
-        presentation,
-        ...(textField ? { searchable } : {}),
-        ...(relationField ? { relationSearchable } : {}),
-      });
+      await apiRequest(
+        `${path}/configuration`,
+        field || created ? "PUT" : "POST",
+        {
+          ...(basicChanged ? { field: definition } : {}),
+          presentation,
+          ...(textField ? { searchable } : {}),
+          ...(relationField ? { relationSearchable } : {}),
+        },
+      );
       if (!field) setCreated(true);
       if (textField && indexed !== (field?.searchIndexed ?? false)) {
         try {
@@ -158,7 +190,11 @@ export function useFieldEditor({
       onSaved();
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось связаться с сервером");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Не удалось связаться с сервером",
+      );
     } finally {
       setPending(false);
     }

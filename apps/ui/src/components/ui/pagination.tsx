@@ -1,5 +1,9 @@
 import * as React from "react";
-import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MoreHorizontalIcon,
+} from "lucide-react";
 import { cn } from "cn";
 import { buttonVariants } from "@asmblyr/kit/ui/button";
 
@@ -15,7 +19,10 @@ function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   );
 }
 
-function PaginationContent({ className, ...props }: React.ComponentProps<"ul">) {
+function PaginationContent({
+  className,
+  ...props
+}: React.ComponentProps<"ul">) {
   return (
     <ul
       data-slot="pagination-content"
@@ -26,7 +33,12 @@ function PaginationContent({ className, ...props }: React.ComponentProps<"ul">) 
 }
 
 function PaginationItem(props: React.ComponentProps<"li">) {
-  return <li data-slot="pagination-item" {...props} />;
+  return (
+    <li
+      data-slot="pagination-item"
+      {...props}
+    />
+  );
 }
 
 type PaginationLinkProps = React.ComponentProps<"a"> & {
@@ -34,13 +46,21 @@ type PaginationLinkProps = React.ComponentProps<"a"> & {
   size?: "default" | "icon-sm";
 };
 
-function PaginationLink({ className, isActive, size = "icon-sm", ...props }: PaginationLinkProps) {
+function PaginationLink({
+  className,
+  isActive,
+  size = "icon-sm",
+  ...props
+}: PaginationLinkProps) {
   return (
     <a
       aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
       data-active={isActive}
-      className={cn(buttonVariants({ variant: isActive ? "outline" : "ghost", size }), className)}
+      className={cn(
+        buttonVariants({ variant: isActive ? "outline" : "ghost", size }),
+        className,
+      )}
       {...props}
     />
   );
@@ -74,7 +94,10 @@ function PaginationNext({ className, ...props }: PaginationLinkProps) {
   );
 }
 
-function PaginationEllipsis({ className, ...props }: React.ComponentProps<"span">) {
+function PaginationEllipsis({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
   return (
     <span
       aria-hidden="true"

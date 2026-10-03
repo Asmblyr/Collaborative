@@ -4,7 +4,9 @@ import { InputError, objectInput, textInput } from "../shared/input.js";
 export function parseTermId(value: unknown): string {
   if (
     typeof value !== "string" ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value,
+    )
   ) {
     throw new InputError("Invalid term ID");
   }
@@ -13,14 +15,20 @@ export function parseTermId(value: unknown): string {
 
 export function parseTermIds(value: unknown): string[] {
   if (value === undefined || value === null) return [];
-  if (!Array.isArray(value) || value.length > 5) throw new InputError("Use up to 5 terms");
+  if (!Array.isArray(value) || value.length > 5)
+    throw new InputError("Use up to 5 terms");
   const ids = value.map(parseTermId);
   if (new Set(ids).size !== ids.length) throw new InputError("Duplicate terms");
   return ids;
 }
 
 export function parseTermInput(value: unknown): TermInput {
-  const body = objectInput(value, ["name", "description", "aliases", "enabled"]);
+  const body = objectInput(value, [
+    "name",
+    "description",
+    "aliases",
+    "enabled",
+  ]);
   const name = textInput(body.name, 80);
   if (
     typeof body.description !== "string" ||

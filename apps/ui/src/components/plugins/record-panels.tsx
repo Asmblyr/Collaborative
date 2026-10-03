@@ -31,7 +31,11 @@ export function useRecordPanels(record: RecordPanelProps["record"]) {
   );
   const reportState = useCallback((key: string, state: PanelState) => {
     setStates((current) => {
-      if (current[key]?.dirty === state.dirty && current[key]?.busy === state.busy) return current;
+      if (
+        current[key]?.dirty === state.dirty &&
+        current[key]?.busy === state.busy
+      )
+        return current;
       return { ...current, [key]: state };
     });
   }, []);
@@ -41,16 +45,28 @@ export function useRecordPanels(record: RecordPanelProps["record"]) {
     visited,
     visit(key: string) {
       if (key.startsWith("plugin:"))
-        setVisited((current) => (current.includes(key) ? current : [...current, key]));
+        setVisited((current) =>
+          current.includes(key) ? current : [...current, key],
+        );
     },
     dirty: Object.values(states).some((state) => state.dirty),
     busy: Object.values(states).some((state) => state.busy),
   };
 }
 
-export function RecordPanelTabs({ panels, disabled }: { panels: Panel[]; disabled: boolean }) {
+export function RecordPanelTabs({
+  panels,
+  disabled,
+}: {
+  panels: Panel[];
+  disabled: boolean;
+}) {
   return panels.map((panel) => (
-    <TabsTrigger key={panel.key} value={panel.key} disabled={disabled}>
+    <TabsTrigger
+      key={panel.key}
+      value={panel.key}
+      disabled={disabled}
+    >
       {panel.title}
     </TabsTrigger>
   ));
@@ -65,7 +81,10 @@ function PanelContent({
   record: RecordPanelProps["record"];
   reportState(key: string, state: PanelState): void;
 }) {
-  const request = useMemo(() => pluginRequest(panel.namespace), [panel.namespace]);
+  const request = useMemo(
+    () => pluginRequest(panel.namespace),
+    [panel.namespace],
+  );
   const onStateChange = useCallback(
     (state: PanelState) => reportState(panel.key, state),
     [panel.key, reportState],
@@ -76,8 +95,14 @@ function PanelContent({
   );
   const View = panel.component;
   return (
-    <PluginUiHost onFailure={() => onStateChange({ dirty: false, busy: false })}>
-      <View record={record} request={request} onStateChange={onStateChange} />
+    <PluginUiHost
+      onFailure={() => onStateChange({ dirty: false, busy: false })}
+    >
+      <View
+        record={record}
+        request={request}
+        onStateChange={onStateChange}
+      />
     </PluginUiHost>
   );
 }
@@ -99,8 +124,17 @@ export function RecordPanelContents({
   return panels
     .filter((panel) => visited.includes(panel.key) || section === panel.key)
     .map((panel) => (
-      <TabsContent key={panel.key} value={panel.key} forceMount hidden={section !== panel.key}>
-        <PanelContent panel={panel} record={record} reportState={reportState} />
+      <TabsContent
+        key={panel.key}
+        value={panel.key}
+        forceMount
+        hidden={section !== panel.key}
+      >
+        <PanelContent
+          panel={panel}
+          record={record}
+          reportState={reportState}
+        />
       </TabsContent>
     ));
 }

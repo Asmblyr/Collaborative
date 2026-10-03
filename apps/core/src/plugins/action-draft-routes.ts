@@ -9,7 +9,10 @@ export function registerPluginDraftRoutes(
   actions: PluginActions,
 ) {
   async function access(authorization?: string) {
-    if (!db) throw Object.assign(new Error("Database is not configured"), { statusCode: 503 });
+    if (!db)
+      throw Object.assign(new Error("Database is not configured"), {
+        statusCode: 503,
+      });
     return loadAccess(db, authorization);
   }
   app.get<{ Params: { namespace: string; id: string } }>(

@@ -6,7 +6,16 @@ import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 test("kit relation filters, search and labels honor source and target grants", async (t) => {
   const fixture = await pluginItemsFixture();
   t.after(fixture.close);
-  const { app, db, call, collection, memberToken, adminToken, grant, permissionId } = fixture;
+  const {
+    app,
+    db,
+    call,
+    collection,
+    memberToken,
+    adminToken,
+    grant,
+    permissionId,
+  } = fixture;
   const authors = `${collection}_authors`;
   await call(
     "POST",
@@ -31,7 +40,12 @@ test("kit relation filters, search and labels honor source and target grants", a
     },
     201,
   );
-  await call("POST", `/items/${authors}`, { name: "Ada", secret: "hidden-author" }, 201);
+  await call(
+    "POST",
+    `/items/${authors}`,
+    { name: "Ada", secret: "hidden-author" },
+    201,
+  );
   await db(collection).where({ id: 1 }).update({ author_id: 1 });
   const search = await app.inject({
     method: "PUT",
@@ -40,7 +54,10 @@ test("kit relation filters, search and labels honor source and target grants", a
     headers: { authorization: `Bearer ${adminToken}` },
   });
   assert.equal(search.statusCode, 200, search.body);
-  const filter = { logic: "and", children: [{ field: "author_id.name", op: "eq", value: "Ada" }] };
+  const filter = {
+    logic: "and",
+    children: [{ field: "author_id.name", op: "eq", value: "Ada" }],
+  };
   const read = (options: object, status = 200) =>
     call("POST", "/reader/list", { collection, options }, status, memberToken);
 
@@ -64,13 +81,17 @@ test("kit relation filters, search and labels honor source and target grants", a
       memberToken,
     ),
   );
-  assert.deepEqual((await read({ q: "Ada", fields: ["id"] })).data, [{ id: 1 }]);
+  assert.deepEqual((await read({ q: "Ada", fields: ["id"] })).data, [
+    { id: 1 },
+  ]);
   assert.equal((await read({ q: "hidden-author" })).page.total, "0");
   await read(
     {
       filter: {
         logic: "and",
-        children: [{ field: "author_id.secret", op: "eq", value: "hidden-author" }],
+        children: [
+          { field: "author_id.secret", op: "eq", value: "hidden-author" },
+        ],
       },
     },
     403,
@@ -78,18 +99,29 @@ test("kit relation filters, search and labels honor source and target grants", a
   await read({ fields: ["author_id.name"] }, 400);
 
   // Labels may read other permitted fields, but never a private target display field.
-  await call("PUT", `/collections/${collection}/display`, { displayField: null });
+  await call("PUT", `/collections/${collection}/display`, {
+    displayField: null,
+  });
   await db(collection).where({ id: 1 }).update({ title: null });
-  await call("PUT", `/collections/${authors}/display`, { displayField: "name" });
+  await call("PUT", `/collections/${authors}/display`, {
+    displayField: "name",
+  });
   assert.equal((await read({ fields: ["id"], filter })).labels["1"], "Ada");
-  await call("PUT", `/collections/${authors}/display`, { displayField: "secret" });
-  assert.doesNotMatch(JSON.stringify(await read({ fields: ["id"] })), /hidden-author/);
+  await call("PUT", `/collections/${authors}/display`, {
+    displayField: "secret",
+  });
+  assert.doesNotMatch(
+    JSON.stringify(await read({ fields: ["id"] })),
+    /hidden-author/,
+  );
   await db(collection).where({ id: 1 }).update({ title: "Bravo" });
 
   // Reverse filters also require permission to the target's foreign key.
   const reverse = {
     logic: "and",
-    children: [{ field: "posts.title", op: "eq", value: "Bravo", quantifier: "some" }],
+    children: [
+      { field: "posts.title", op: "eq", value: "Bravo", quantifier: "some" },
+    ],
   };
   const reverseResult = await call(
     "POST",

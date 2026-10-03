@@ -27,11 +27,15 @@ function isModelCall(
   if (!ts.isCallExpression(expression)) return false;
   let symbol = checker.getSymbolAtLocation(expression.expression);
   if (!symbol) return false;
-  if (symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+  if (symbol.flags & ts.SymbolFlags.Alias)
+    symbol = checker.getAliasedSymbol(symbol);
   return (
     symbol.name === "defineModelContext" &&
     !!symbol.declarations?.some((declaration) =>
-      declaration.getSourceFile().fileName.replaceAll("\\", "/").endsWith("/model-context.d.ts"),
+      declaration
+        .getSourceFile()
+        .fileName.replaceAll("\\", "/")
+        .endsWith("/model-context.d.ts"),
     )
   );
 }
@@ -44,25 +48,40 @@ export function generateModelDefinitions(
   const checker = program.getTypeChecker();
   const models = new Map<string, ModelDefinition>();
   for (const route of routes) {
-    const source = program.getSourceFile(path.join(root, "server/api", route.file));
+    const source = program.getSourceFile(
+      path.join(root, "server/api", route.file),
+    );
     const expression = source && defaultExpression(source);
     if (!expression || !isModelCall(expression, checker)) continue;
     if (route.method !== "POST" || route.path.includes(":")) {
-      throw new Error(`${route.file}: model handlers require a static .post.ts route`);
+      throw new Error(
+        `${route.file}: model handlers require a static .post.ts route`,
+      );
     }
-    if (expression.typeArguments?.length !== 1 || expression.arguments.length !== 2) {
-      throw new Error(`${route.file}: use defineModelContext<Input>(handler, annotation)`);
+    if (
+      expression.typeArguments?.length !== 1 ||
+      expression.arguments.length !== 2
+    ) {
+      throw new Error(
+        `${route.file}: use defineModelContext<Input>(handler, annotation)`,
+      );
     }
     const inputType = checker.getTypeFromTypeNode(expression.typeArguments[0]!);
     const handlerType = checker.getTypeAtLocation(expression.arguments[0]!);
     const signature = handlerType.getCallSignatures()[0];
-    if (!signature) throw new Error(`${route.file}: model handler must be callable`);
-    const outputType = checker.getAwaitedType(checker.getReturnTypeOfSignature(signature));
-    if (!outputType) throw new Error(`${route.file}: cannot infer model result`);
+    if (!signature)
+      throw new Error(`${route.file}: model handler must be callable`);
+    const outputType = checker.getAwaitedType(
+      checker.getReturnTypeOfSignature(signature),
+    );
+    if (!outputType)
+      throw new Error(`${route.file}: cannot infer model result`);
     try {
       const id = route.path.split("/").slice(2).join("-") || "index";
       if (!/^[a-z][a-z0-9-]{0,31}$/.test(id))
-        throw new Error("Model route needs an action ID of at most 32 characters");
+        throw new Error(
+          "Model route needs an action ID of at most 32 characters",
+        );
       models.set(route.file, {
         id,
         inputSchema: modelTypeSchema(checker, inputType, expression),
@@ -83,12 +102,18 @@ export async function writeModelDefinitions(
   models: ReadonlyMap<string, ModelDefinition>,
 ): Promise<void> {
   for (const [route, model] of models) {
-    const destination = path.join(root, ".asmblyr/models", `${route.slice(0, -3)}.json`);
+    const destination = path.join(
+      root,
+      ".asmblyr/models",
+      `${route.slice(0, -3)}.json`,
+    );
     const content = `${JSON.stringify(model, null, 2)}\n`;
-    const previous = await readFile(destination, "utf8").catch((error: NodeJS.ErrnoException) => {
-      if (error.code === "ENOENT") return null;
-      throw error;
-    });
+    const previous = await readFile(destination, "utf8").catch(
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return null;
+        throw error;
+      },
+    );
     if (previous === content) continue;
     await mkdir(path.dirname(destination), { recursive: true });
     await writeFile(destination, content);
@@ -105,7 +130,8 @@ export async function sourceModelDefinitions(
   const config = ts.readConfigFile(configPath, ts.sys.readFile);
   if (config.error) throw new Error(`Cannot read plugin tsconfig in ${root}`);
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
-  if (parsed.errors.length) throw new Error(formatModelDiagnostics(parsed.errors));
+  if (parsed.errors.length)
+    throw new Error(formatModelDiagnostics(parsed.errors));
   const program = ts.createProgram(parsed.fileNames, parsed.options);
   const models = generateModelDefinitions(program, root, routes);
   if (!models.size) return models;

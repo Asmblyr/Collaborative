@@ -66,7 +66,11 @@ export function DeleteStructureForm({
         setImpact(body.data);
       } catch (error) {
         if (!controller.signal.aborted) {
-          setMessage(error instanceof Error ? error.message : "Не удалось проверить данные");
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "Не удалось проверить данные",
+          );
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -101,7 +105,10 @@ export function DeleteStructureForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form
+      onSubmit={submit}
+      className="space-y-6"
+    >
       <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
         <p className="font-medium">Удаление без восстановления</p>
         <p className="text-muted-foreground">
@@ -114,7 +121,9 @@ export function DeleteStructureForm({
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Проверяем затрагиваемые данные…</p>
+        <p className="text-sm text-muted-foreground">
+          Проверяем затрагиваемые данные…
+        </p>
       ) : impact ? (
         <div className="space-y-1 rounded-xl border p-4 text-sm">
           <p>
@@ -122,19 +131,28 @@ export function DeleteStructureForm({
           </p>
           {field && !impact.virtual && (
             <p>
-              Значение поля есть у <strong>{impact.populatedCount}</strong> записей.
+              Значение поля есть у <strong>{impact.populatedCount}</strong>{" "}
+              записей.
             </p>
           )}
-          <p className="text-xs text-muted-foreground">Числа получены на момент проверки.</p>
+          <p className="text-xs text-muted-foreground">
+            Числа получены на момент проверки.
+          </p>
         </div>
       ) : (
-        <Button type="button" variant="outline" onClick={() => setRetry((current) => current + 1)}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setRetry((current) => current + 1)}
+        >
           Повторить проверку
         </Button>
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="delete-confirmation">Для подтверждения введите {target}</Label>
+        <Label htmlFor="delete-confirmation">
+          Для подтверждения введите {target}
+        </Label>
         <Input
           id="delete-confirmation"
           value={confirmation}
@@ -147,7 +165,10 @@ export function DeleteStructureForm({
       </div>
 
       {message && (
-        <p role="status" className="text-sm text-destructive">
+        <p
+          role="status"
+          className="text-sm text-destructive"
+        >
           {message}
         </p>
       )}
@@ -159,7 +180,12 @@ export function DeleteStructureForm({
         >
           {pending ? "Удаляем…" : field ? "Удалить поле" : "Удалить коллекцию"}
         </Button>
-        <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={pending}
+          onClick={onCancel}
+        >
           Отмена
         </Button>
       </div>

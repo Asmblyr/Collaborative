@@ -42,7 +42,10 @@ export function useTableViews({
       await apiRequest(
         `/api/users/me/table-preferences/${encodeURIComponent(collection.name)}`,
         "PATCH",
-        { pageSize: page.size, sort: { field: page.sort, direction: page.direction } },
+        {
+          pageSize: page.size,
+          sort: { field: page.sort, direction: page.direction },
+        },
       );
       setMessage("Текущий вид сохранён в вашем профиле");
     } catch {

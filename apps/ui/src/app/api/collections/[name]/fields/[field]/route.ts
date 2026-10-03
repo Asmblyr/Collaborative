@@ -6,8 +6,11 @@ export async function PATCH(
   { params }: { params: Promise<{ name: string; field: string }> },
 ) {
   const { name, field } = await params;
-  return proxyCore(request,
-    `/collections/${encodeURIComponent(name)}/fields/${encodeURIComponent(field)}`, "PATCH");
+  return proxyCore(
+    request,
+    `/collections/${encodeURIComponent(name)}/fields/${encodeURIComponent(field)}`,
+    "PATCH",
+  );
 }
 
 export async function DELETE(
@@ -15,7 +18,9 @@ export async function DELETE(
   { params }: { params: Promise<{ name: string; field: string }> },
 ) {
   const { name, field } = await params;
-  return proxyCollectionDeletion(request,
-    `/collections/${encodeURIComponent(name)}/fields/${encodeURIComponent(field)}`, "DELETE",
+  return proxyCollectionDeletion(
+    request,
+    `/collections/${encodeURIComponent(name)}/fields/${encodeURIComponent(field)}`,
+    "DELETE",
   );
 }

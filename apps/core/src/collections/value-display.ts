@@ -6,9 +6,11 @@ export function parseValueDisplay(value: unknown, type: string): ValueDisplay {
   const fail = (): never => {
     throw new CollectionInputError("Invalid or incompatible value display");
   };
-  if (!value || typeof value !== "object" || Array.isArray(value)) return fail();
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return fail();
   const input = value as ValueDisplay;
-  const only = (keys: string[]) => Object.keys(input).every((k) => keys.includes(k));
+  const only = (keys: string[]) =>
+    Object.keys(input).every((k) => keys.includes(k));
   if (
     input.kind === "status" &&
     ["text", "integer", "boolean"].includes(type) &&
@@ -22,7 +24,9 @@ export function parseValueDisplay(value: unknown, type: string): ValueDisplay {
         (s) =>
           !s ||
           typeof s !== "object" ||
-          Object.keys(s).some((k) => !["value", "label", "color"].includes(k)) ||
+          Object.keys(s).some(
+            (k) => !["value", "label", "color"].includes(k),
+          ) ||
           typeof s.value !== "string" ||
           !s.value.trim() ||
           s.value.length > 120 ||
@@ -31,7 +35,9 @@ export function parseValueDisplay(value: unknown, type: string): ValueDisplay {
           !s.label.trim() ||
           s.label.length > 120 ||
           s.label.includes("\0") ||
-          !["gray", "blue", "green", "amber", "red", "violet"].includes(s.color),
+          !["gray", "blue", "green", "amber", "red", "violet"].includes(
+            s.color,
+          ),
       ) ||
       new Set(input.statuses.map((s) => s.value)).size !== input.statuses.length
     )
@@ -58,7 +64,11 @@ export function parseValueDisplay(value: unknown, type: string): ValueDisplay {
       return fail();
     return input;
   }
-  if (input.kind === "date" && type === "datetime" && only(["kind", "format", "timeZone"])) {
+  if (
+    input.kind === "date" &&
+    type === "datetime" &&
+    only(["kind", "format", "timeZone"])
+  ) {
     if (
       !["date", "datetime", "time"].includes(input.format) ||
       typeof input.timeZone !== "string" ||

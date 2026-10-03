@@ -7,7 +7,9 @@ import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 const nextConfig: NextConfig = {
   // Authorization codes must not enter the development access log.
   logging: {
-    incomingRequests: { ignore: [/^\/sign\/sso\/[a-z0-9_]+\/callback(?:\?|$)/, /^\/oauth\//] },
+    incomingRequests: {
+      ignore: [/^\/sign\/sso\/[a-z0-9_]+\/callback(?:\?|$)/, /^\/oauth\//],
+    },
   },
   async headers() {
     return [

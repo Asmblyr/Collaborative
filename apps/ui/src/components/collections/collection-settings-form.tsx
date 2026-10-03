@@ -48,7 +48,8 @@ export function CollectionSettingsForm({
   );
   const dirty = JSON.stringify(values) !== JSON.stringify(initial);
   let saveHint = dirty ? "Есть несохранённые изменения" : "Настройки сохранены";
-  if (termsState.dirty) saveHint = "Сначала сохраните условия терминов на вкладке MCP";
+  if (termsState.dirty)
+    saveHint = "Сначала сохраните условия терминов на вкладке MCP";
   function change(patch: Partial<typeof values>) {
     const next = { ...values, ...patch };
     setValues(next);
@@ -100,16 +101,33 @@ export function CollectionSettingsForm({
   }
   return (
     <div className="space-y-6">
-      <form onSubmit={save} noValidate className="space-y-6">
-        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+      <form
+        onSubmit={save}
+        noValidate
+        className="space-y-6"
+      >
+        <Tabs
+          value={tab}
+          onValueChange={setTab}
+          className="space-y-6"
+        >
           <TabsList className="w-full">
-            <TabsTrigger value="display" className="flex-1">
+            <TabsTrigger
+              value="display"
+              className="flex-1"
+            >
               Отображение
             </TabsTrigger>
-            <TabsTrigger value="state" className="flex-1">
+            <TabsTrigger
+              value="state"
+              className="flex-1"
+            >
               Состояние
             </TabsTrigger>
-            <TabsTrigger value="mcp" className="flex-1">
+            <TabsTrigger
+              value="mcp"
+              className="flex-1"
+            >
               MCP
             </TabsTrigger>
           </TabsList>
@@ -141,7 +159,11 @@ export function CollectionSettingsForm({
               />
             </div>
           </TabsContent>
-          <TabsContent value="mcp" forceMount className="data-[state=inactive]:hidden">
+          <TabsContent
+            value="mcp"
+            forceMount
+            className="data-[state=inactive]:hidden"
+          >
             <CollectionMcpFields
               enabled={values.enabled}
               description={values.description}
@@ -150,7 +172,11 @@ export function CollectionSettingsForm({
               onDescriptionChange={(description) => change({ description })}
             />
           </TabsContent>
-          <TabsContent value="state" forceMount className="data-[state=inactive]:hidden">
+          <TabsContent
+            value="state"
+            forceMount
+            className="data-[state=inactive]:hidden"
+          >
             <CollectionStateFields
               collection={collection}
               value={values.state}
@@ -161,12 +187,18 @@ export function CollectionSettingsForm({
           </TabsContent>
         </Tabs>
         {error && (
-          <p role="alert" className="text-sm text-destructive">
+          <p
+            role="alert"
+            className="text-sm text-destructive"
+          >
             {error}
           </p>
         )}
         <div className="flex items-center gap-3 border-t pt-4">
-          <Button type="submit" disabled={pending || !dirty || termsState.dirty || termsState.busy}>
+          <Button
+            type="submit"
+            disabled={pending || !dirty || termsState.dirty || termsState.busy}
+          >
             {pending ? "Сохранение…" : "Сохранить настройки"}
           </Button>
           <span className="text-xs text-muted-foreground">{saveHint}</span>

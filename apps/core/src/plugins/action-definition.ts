@@ -16,8 +16,12 @@ const actionSchema = z.strictObject({
     required: z.array(z.string()),
     additionalProperties: z.literal(false),
   }),
-  parseInput: z.custom<PluginAction["parseInput"]>((value) => typeof value === "function"),
-  parseOutput: z.custom<PluginAction["parseOutput"]>((value) => typeof value === "function"),
+  parseInput: z.custom<PluginAction["parseInput"]>(
+    (value) => typeof value === "function",
+  ),
+  parseOutput: z.custom<PluginAction["parseOutput"]>(
+    (value) => typeof value === "function",
+  ),
 });
 
 export function parseEndpointAction(
@@ -27,9 +31,12 @@ export function parseEndpointAction(
   const value = endpoint.handler.meta?.asmblyr;
   if (value === undefined) return;
   const parsed = actionSchema.safeParse(value);
-  if (!parsed.success) throw new Error(`Plugin ${plugin}: invalid action definition`);
+  if (!parsed.success)
+    throw new Error(`Plugin ${plugin}: invalid action definition`);
   if (endpoint.method !== "POST" || endpoint.path.includes(":")) {
-    throw new Error(`Plugin ${plugin}: calculations require a static .post.ts route`);
+    throw new Error(
+      `Plugin ${plugin}: calculations require a static .post.ts route`,
+    );
   }
   return parsed.data;
 }

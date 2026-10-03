@@ -6,6 +6,8 @@ export async function proxyItemMutation(
   method: "POST" | "PATCH" | "DELETE",
   id?: string,
 ): Promise<Response> {
-  const path = `/items/${encodeURIComponent(collection)}` + (id ? `/${encodeURIComponent(id)}` : "");
+  const path =
+    `/items/${encodeURIComponent(collection)}` +
+    (id ? `/${encodeURIComponent(id)}` : "");
   return proxyCore(request, path, method);
 }

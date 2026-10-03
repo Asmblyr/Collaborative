@@ -1,8 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Fastify from "fastify";
-import { defineHandler, definePlugin, useAsmblyr, type EndpointDefinition } from "@asmblyr/kit";
-import { getRouterParam, HTTPError, mockEvent, readValidatedBody, setCookie } from "h3";
+import {
+  defineHandler,
+  definePlugin,
+  useAsmblyr,
+  type EndpointDefinition,
+} from "@asmblyr/kit";
+import {
+  getRouterParam,
+  HTTPError,
+  mockEvent,
+  readValidatedBody,
+  setCookie,
+} from "h3";
 import { registerErrorHandler } from "../src/http/error-handler.js";
 import { registerPluginRoutes } from "../src/plugins/routes.js";
 import { pluginContext } from "./support/plugin-context.js";
@@ -15,7 +26,8 @@ function host(endpoints: EndpointDefinition[]) {
     app,
     [{ name: "example", definition: definePlugin({}), endpoints }],
     async (authorization) => {
-      if (!authorization) throw new HTTPError({ status: 401, message: "Sign in" });
+      if (!authorization)
+        throw new HTTPError({ status: 401, message: "Sign in" });
       return pluginContext({ id: authorization, kind: "service" });
     },
   );
@@ -71,7 +83,10 @@ test("H3 validates POST, runs handler middleware and keeps Core JSON parsing unc
   });
   assert.equal(success.statusCode, 201, success.body);
   assert.equal(success.headers["x-middleware"], "ran");
-  assert.deepEqual(success.json(), { text: "ok", actor: { id: "service-1", kind: "service" } });
+  assert.deepEqual(success.json(), {
+    text: "ok",
+    actor: { id: "service-1", kind: "service" },
+  });
   for (const payload of ['{"text":123}', "{broken"]) {
     const invalid = await app.inject({
       method: "POST",
@@ -101,7 +116,10 @@ test("body limits apply before invoking the handler; multipart bytes reach H3 in
         const form = await event.req.formData();
         const file = form.get("file");
         assert.ok(file && typeof file !== "string");
-        return { name: file.name, bytes: [...new Uint8Array(await file.arrayBuffer())] };
+        return {
+          name: file.name,
+          bytes: [...new Uint8Array(await file.arrayBuffer())],
+        };
       },
     },
   ]);
@@ -116,15 +134,24 @@ test("body limits apply before invoking the handler; multipart bytes reach H3 in
   assert.equal(calls, 0);
   const form = new FormData();
   form.set("file", new Blob([new Uint8Array([0, 255, 128, 1])]), "sample.bin");
-  const request = new Request("http://localhost/", { method: "POST", body: form });
+  const request = new Request("http://localhost/", {
+    method: "POST",
+    body: form,
+  });
   const response = await app.inject({
     method: "POST",
     url: "/example/upload",
-    headers: { ...headers, "content-type": request.headers.get("content-type")! },
+    headers: {
+      ...headers,
+      "content-type": request.headers.get("content-type")!,
+    },
     payload: Buffer.from(await request.arrayBuffer()),
   });
   assert.equal(response.statusCode, 200, response.body);
-  assert.deepEqual(response.json(), { name: "sample.bin", bytes: [0, 255, 128, 1] });
+  assert.deepEqual(response.json(), {
+    name: "sample.bin",
+    bytes: [0, 255, 128, 1],
+  });
 });
 
 test("H3 preserves status, cookies, redirects, binary and empty responses", async (t) => {
@@ -135,7 +162,10 @@ test("H3 preserves status, cookies, redirects, binary and empty responses", asyn
       handler: (event) => {
         setCookie(event, "first", "one", { httpOnly: true });
         setCookie(event, "second", "two", { httpOnly: true });
-        return new Response(null, { status: 302, headers: { location: "/api/example/done" } });
+        return new Response(null, {
+          status: 302,
+          headers: { location: "/api/example/done" },
+        });
       },
     },
     {
@@ -155,14 +185,22 @@ test("H3 preserves status, cookies, redirects, binary and empty responses", asyn
       method: "GET",
       path: "/example/limited",
       handler: () => {
-        throw new HTTPError({ status: 429, message: "Slow down", headers: { "retry-after": "5" } });
+        throw new HTTPError({
+          status: 429,
+          message: "Slow down",
+          headers: { "retry-after": "5" },
+        });
       },
     },
     {
       method: "GET",
       path: "/example/error",
       handler: () => {
-        throw new HTTPError({ status: 500, message: "secret", data: { secret: true } });
+        throw new HTTPError({
+          status: 500,
+          message: "secret",
+          data: { secret: true },
+        });
       },
     },
     {
@@ -183,7 +221,11 @@ test("H3 preserves status, cookies, redirects, binary and empty responses", asyn
   const binary = await app.inject({ url: "/example/binary", headers });
   assert.deepEqual([...binary.rawPayload], [0, 255, 128]);
   assert.equal(binary.headers["content-type"], "application/octet-stream");
-  const empty = await app.inject({ method: "DELETE", url: "/example/empty", headers });
+  const empty = await app.inject({
+    method: "DELETE",
+    url: "/example/empty",
+    headers,
+  });
   assert.equal(empty.statusCode, 204);
   assert.equal(empty.body, "");
   const limited = await app.inject({ url: "/example/limited", headers });
@@ -219,7 +261,10 @@ test("request identities stay separate and H3 params are decoded once on demand"
     ),
   );
   responses.forEach((response, index) =>
-    assert.deepEqual(response.json(), { actor: ["one", "two"][index], id: "%2e" }),
+    assert.deepEqual(response.json(), {
+      actor: ["one", "two"][index],
+      id: "%2e",
+    }),
   );
   assert.throws(() => useAsmblyr(mockEvent("/")), /context is unavailable/);
 });
@@ -250,7 +295,9 @@ test(
               );
             },
           });
-          return new Response(body, { headers: { "content-type": "text/event-stream" } });
+          return new Response(body, {
+            headers: { "content-type": "text/event-stream" },
+          });
         },
       },
     ]);
@@ -262,10 +309,17 @@ test(
     const controller = new AbortController();
     const response = await fetch(`${address}/example/stream`, {
       headers,
-      signal: AbortSignal.any([controller.signal, t.signal, AbortSignal.timeout(3000)]),
+      signal: AbortSignal.any([
+        controller.signal,
+        t.signal,
+        AbortSignal.timeout(3000),
+      ]),
     });
     const reader = response.body!.getReader();
-    assert.equal(new TextDecoder().decode((await reader.read()).value), "first\n");
+    assert.equal(
+      new TextDecoder().decode((await reader.read()).value),
+      "first\n",
+    );
     await reader.cancel();
     controller.abort();
     await disconnected;

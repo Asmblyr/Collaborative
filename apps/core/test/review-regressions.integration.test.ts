@@ -7,7 +7,10 @@ import { authorizeTestApp } from "./support/authorized-app.js";
 
 test("relation filters cannot shadow legal source names, including self relations", async () => {
   const database = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+  });
   await authorizeTestApp(app, database);
   try {
     for (const name of ["related", "bridge"]) {
@@ -30,7 +33,9 @@ test("relation filters cannot shadow legal source names, including self relation
         },
       });
       assert.equal(relation.statusCode, 201, relation.body);
-      const [parent] = await database(name).insert({ name: "Ada" }).returning("id");
+      const [parent] = await database(name)
+        .insert({ name: "Ada" })
+        .returning("id");
       await database(name).insert({ name: "Child", owner: parent.id });
       const filter = encodeURIComponent(
         JSON.stringify([{ field: "owner.name", op: "eq", value: "Ada" }]),
@@ -53,18 +58,28 @@ test("relation filters cannot shadow legal source names, including self relation
       },
     });
     assert.equal(many.statusCode, 201, many.body);
-    const source = await database("bridge").where({ name: "Child" }).first("id");
+    const source = await database("bridge")
+      .where({ name: "Child" })
+      .first("id");
     const target = await database("related").where({ name: "Ada" }).first("id");
-    await database("test_alias_edges").insert({ source_id: source.id, target_id: target.id });
+    await database("test_alias_edges").insert({
+      source_id: source.id,
+      target_id: target.id,
+    });
     const filter = encodeURIComponent(
-      JSON.stringify([{ field: "people.name", op: "eq", value: "Ada", quantifier: "some" }]),
+      JSON.stringify([
+        { field: "people.name", op: "eq", value: "Ada", quantifier: "some" },
+      ]),
     );
     const response = await app.inject(`/items/bridge?filter=${filter}`);
     assert.equal(response.statusCode, 200, response.body);
     assert.equal(response.json().data.length, 1);
     assert.equal(response.json().data[0].name, "Child");
   } finally {
-    await app.inject({ method: "DELETE", url: "/collections/test_alias_edges" });
+    await app.inject({
+      method: "DELETE",
+      url: "/collections/test_alias_edges",
+    });
     for (const name of ["related", "bridge"])
       await app.inject({ method: "DELETE", url: `/collections/${name}` });
     await app.close();
@@ -74,8 +89,13 @@ test("relation filters cannot shadow legal source names, including self relation
 
 test("readiness requires all shipped migrations and detects collection metadata drift", async () => {
   const database = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const app = createApp({ databaseUrl: process.env.DATABASE_URL, logger: false });
-  const migration = await database("asmblyr_migrations").orderBy("id", "desc").first();
+  const app = createApp({
+    databaseUrl: process.env.DATABASE_URL,
+    logger: false,
+  });
+  const migration = await database("asmblyr_migrations")
+    .orderBy("id", "desc")
+    .first();
   try {
     assert.equal((await app.inject("/ready")).statusCode, 200);
     await database("asmblyr_migrations")

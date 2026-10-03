@@ -12,7 +12,10 @@ import { defaultStateFilter } from "@/components/items/default-state-filter";
 function LoadError({ message }: { message: string }) {
   return (
     <div className="space-y-4">
-      <Link href="/" className="text-sm text-muted-foreground underline">
+      <Link
+        href="/"
+        className="text-sm text-muted-foreground underline"
+      >
         ← К коллекциям
       </Link>
       <p role="alert">{message}</p>
@@ -58,8 +61,16 @@ export default async function CollectionItemsPage({
         signal: AbortSignal.timeout(3000),
       } as const;
       const [response, viewResponse] = await Promise.all([
-        fetch(coreAddress(`/users/me/table-preferences/${encodeURIComponent(name)}`), options),
-        fetch(coreAddress(`/table-views/${encodeURIComponent(name)}/default`), options),
+        fetch(
+          coreAddress(
+            `/users/me/table-preferences/${encodeURIComponent(name)}`,
+          ),
+          options,
+        ),
+        fetch(
+          coreAddress(`/table-views/${encodeURIComponent(name)}/default`),
+          options,
+        ),
       ]);
       if (response.ok) preferences = (await response.json()).data;
       if (viewResponse.ok) defaultView = (await viewResponse.json()).data;
@@ -69,11 +80,22 @@ export default async function CollectionItemsPage({
   }
   let items: ItemList = {
     data: [],
-    page: { number: 1, size: 25, total: "0", sort: collection.primaryKey.name, direction: "asc" },
+    page: {
+      number: 1,
+      size: 25,
+      total: "0",
+      sort: collection.primaryKey.name,
+      direction: "asc",
+    },
   };
-  const initialVisit = !["page", "limit", "sort", "direction", "q", "filter"].some(
-    (key) => typeof requested[key] === "string",
-  );
+  const initialVisit = ![
+    "page",
+    "limit",
+    "sort",
+    "direction",
+    "q",
+    "filter",
+  ].some((key) => typeof requested[key] === "string");
   const defaults = initialVisit ? defaultView?.definition : null;
   const layoutDefaults = defaultView?.definition;
   if (preferences && layoutDefaults)
@@ -91,14 +113,19 @@ export default async function CollectionItemsPage({
       if (typeof value === "string") query.set(key, value);
     query.set("limit", String(preferences?.pageSize ?? defaults.pageSize));
     query.set("sort", preferences?.sort.field ?? defaults.sort.field);
-    query.set("direction", preferences?.sort.direction ?? defaults.sort.direction);
+    query.set(
+      "direction",
+      preferences?.sort.direction ?? defaults.sort.direction,
+    );
     if (defaults.q) query.set("q", defaults.q);
     query.set("filter", defaults.filter ? JSON.stringify(defaults.filter) : "");
     redirect(`${path}?${query}`);
   }
   const q = typeof requested.q === "string" ? requested.q : "";
   const filter =
-    typeof requested.filter === "string" ? requested.filter : defaultStateFilter(collection);
+    typeof requested.filter === "string"
+      ? requested.filter
+      : defaultStateFilter(collection);
   if (collection.access.read) {
     let itemsResponse: Response;
     try {
@@ -115,15 +142,19 @@ export default async function CollectionItemsPage({
         const value = requested[key];
         if (typeof value === "string") query.set(key, value);
       }
-      itemsResponse = await fetch(coreAddress(`/items/${encodeURIComponent(name)}?${query}`), {
-        headers: { authorization: `Bearer ${token}` },
-        cache: "no-store",
-        signal: AbortSignal.timeout(3000),
-      });
+      itemsResponse = await fetch(
+        coreAddress(`/items/${encodeURIComponent(name)}?${query}`),
+        {
+          headers: { authorization: `Bearer ${token}` },
+          cache: "no-store",
+          signal: AbortSignal.timeout(3000),
+        },
+      );
     } catch {
       return <LoadError message="Не удалось загрузить записи" />;
     }
-    if (!itemsResponse.ok) return <LoadError message="Не удалось загрузить записи" />;
+    if (!itemsResponse.ok)
+      return <LoadError message="Не удалось загрузить записи" />;
     items = (await itemsResponse.json()) as ItemList;
   }
 

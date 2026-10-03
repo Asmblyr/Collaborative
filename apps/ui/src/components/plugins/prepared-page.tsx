@@ -1,11 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+} from "react";
 import type { PluginPageProps } from "@asmblyr/kit/ui";
 import type { PluginPreparedAction } from "@asmblyr/contracts";
 import { Button } from "@asmblyr/kit/ui/button";
 import { loadPreparedAction } from "./action-client";
-import { clearPluginPageState, reportPluginPageState, type PluginPageState } from "./page-state";
+import {
+  clearPluginPageState,
+  reportPluginPageState,
+  type PluginPageState,
+} from "./page-state";
 
 export function PreparedPluginPage({
   namespace,
@@ -55,7 +65,9 @@ export function PreparedPluginPage({
       .catch((failure: unknown) => {
         if (controller.signal.aborted) return;
         setError(
-          failure instanceof Error ? failure.message : "Не удалось открыть подготовленную форму.",
+          failure instanceof Error
+            ? failure.message
+            : "Не удалось открыть подготовленную форму.",
         );
         setResolved(draftId);
       });
@@ -76,14 +88,23 @@ export function PreparedPluginPage({
   return (
     <div className="space-y-4">
       {waiting && (
-        <p role="status" className="text-sm text-muted-foreground">
+        <p
+          role="status"
+          className="text-sm text-muted-foreground"
+        >
           Открываем подготовленную форму…
         </p>
       )}
       {error && (
-        <div role="alert" className="space-y-3 rounded-xl border p-4">
+        <div
+          role="alert"
+          className="space-y-3 rounded-xl border p-4"
+        >
           <p className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
+          <Button
+            variant="outline"
+            onClick={() => setRetry((value) => value + 1)}
+          >
             Повторить
           </Button>
         </div>
@@ -91,7 +112,8 @@ export function PreparedPluginPage({
       {candidate && (
         <div className="space-y-3 rounded-xl border p-4">
           <p className="text-sm">
-            Есть новый подготовленный расчёт. Открыть его вместо ваших текущих значений?
+            Есть новый подготовленный расчёт. Открыть его вместо ваших текущих
+            значений?
           </p>
           <div className="flex gap-2">
             <Button
@@ -104,7 +126,10 @@ export function PreparedPluginPage({
             >
               Открыть новый расчёт
             </Button>
-            <Button variant="outline" onClick={() => setCandidate(undefined)}>
+            <Button
+              variant="outline"
+              onClick={() => setCandidate(undefined)}
+            >
               Оставить текущий
             </Button>
           </div>

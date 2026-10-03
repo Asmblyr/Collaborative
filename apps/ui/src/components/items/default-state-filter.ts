@@ -7,13 +7,20 @@ export function defaultStateFilter(collection: Collection): string {
   const state = collection.state;
   if (!state || collection.mode === "single") return "";
   const canRead =
-    collection.access.read?.includes("*") || collection.access.read?.includes(state.field);
+    collection.access.read?.includes("*") ||
+    collection.access.read?.includes(state.field);
   if (!canRead) return "";
-  const hidden = state.statuses.filter((status) => status.hidden).map((status) => status.value);
+  const hidden = state.statuses
+    .filter((status) => status.hidden)
+    .map((status) => status.value);
   if (!hidden.length) return "";
-  const children: FilterNode[] = [{ field: state.field, op: "notIn", value: hidden }];
+  const children: FilterNode[] = [
+    { field: state.field, op: "notIn", value: hidden },
+  ];
   // Imported records may have unknown state. Keep them discoverable.
-  const nullable = collection.fields.find((field) => field.name === state.field)?.nullable;
+  const nullable = collection.fields.find(
+    (field) => field.name === state.field,
+  )?.nullable;
   if (nullable) children.push({ field: state.field, op: "isNull" });
   const filter: FilterGroup = { logic: nullable ? "or" : "and", children };
   return JSON.stringify(filter);

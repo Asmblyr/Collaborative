@@ -4,7 +4,10 @@ import type { AssistantStreamEvent } from "@asmblyr/contracts";
 
 /** Process-local, like AssistantService concurrency. Cancel requests must reach this Core. */
 export class AssistantRequests {
-  private readonly pending = new Map<string, { userId: string; controller: AbortController }>();
+  private readonly pending = new Map<
+    string,
+    { userId: string; controller: AbortController }
+  >();
 
   add(userId: string, controller: AbortController) {
     const id = randomUUID();
@@ -24,7 +27,10 @@ export class AssistantRequests {
   }
 }
 
-export function openResponseStream(reply: FastifyReply, controller: AbortController) {
+export function openResponseStream(
+  reply: FastifyReply,
+  controller: AbortController,
+) {
   reply.hijack();
   for (const [name, value] of Object.entries(reply.getHeaders())) {
     if (value !== undefined) reply.raw.setHeader(name, value);

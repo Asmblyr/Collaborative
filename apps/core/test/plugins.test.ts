@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Fastify from "fastify";
-import { definePlugin, EndpointError, useAsmblyr, type EndpointHandler } from "@asmblyr/kit";
+import {
+  definePlugin,
+  EndpointError,
+  useAsmblyr,
+  type EndpointHandler,
+} from "@asmblyr/kit";
 import { getQuery, getRouterParam, readBody } from "h3";
 import { registerErrorHandler } from "../src/http/error-handler.js";
 import { registerPluginBoundary } from "../src/plugins/routing.js";
@@ -15,7 +20,11 @@ function plugin(
   handler: EndpointHandler = () => ({ data: "ok" }),
   name = "comments",
 ): LoadedPlugin {
-  return { name, definition: definePlugin({}), endpoints: [{ method: "GET", path, handler }] };
+  return {
+    name,
+    definition: definePlugin({}),
+    endpoints: [{ method: "GET", path, handler }],
+  };
 }
 
 function host() {
@@ -43,12 +52,22 @@ test("plugin handlers require authentication and receive only the public request
         assert.equal("database" in context, false);
         assert.equal("headers" in context, false);
         assert.equal(event.req.headers.has("authorization"), false);
-        return { data: { id: getRouterParam(event, "id"), query: getQuery(event).search } };
+        return {
+          data: {
+            id: getRouterParam(event, "id"),
+            query: getQuery(event).search,
+          },
+        };
       }),
     ],
     async (authorization) => {
-      if (authorization !== "Bearer valid") throw new EndpointError(401, "UNAUTHORIZED", "Sign in");
-      const actor = { id: "user-1", kind: "user" as const, secret: "must not reach the plugin" };
+      if (authorization !== "Bearer valid")
+        throw new EndpointError(401, "UNAUTHORIZED", "Sign in");
+      const actor = {
+        id: "user-1",
+        kind: "user" as const,
+        secret: "must not reach the plugin",
+      };
       return pluginContext(actor);
     },
   );
@@ -83,24 +102,36 @@ test("the UI fallback only reaches plugin endpoints", async (t) => {
     }),
   );
   const headers = { "x-asmblyr-plugin-route": "1" };
-  assert.equal((await app.inject({ url: "/comments/status", headers })).statusCode, 200);
+  assert.equal(
+    (await app.inject({ url: "/comments/status", headers })).statusCode,
+    200,
+  );
   assert.equal((await app.inject({ url: "/health", headers })).statusCode, 404);
-  assert.equal((await app.inject({ url: "/missing", headers })).statusCode, 404);
+  assert.equal(
+    (await app.inject({ url: "/missing", headers })).statusCode,
+    404,
+  );
   assert.equal((await app.inject({ url: "/health" })).statusCode, 200);
 });
 
 test("string handler results follow H3 text semantics", async (t) => {
   const app = host();
   t.after(() => app.close());
-  registerPluginRoutes(app, [plugin("/comments/text", () => "hello")], async () =>
-    pluginContext({
-      id: "user-1",
-      kind: "user",
-    }),
+  registerPluginRoutes(
+    app,
+    [plugin("/comments/text", () => "hello")],
+    async () =>
+      pluginContext({
+        id: "user-1",
+        kind: "user",
+      }),
   );
   const response = await app.inject("/comments/text");
   assert.equal(response.statusCode, 200);
-  assert.doesNotMatch(String(response.headers["content-type"] ?? ""), /application\/json/);
+  assert.doesNotMatch(
+    String(response.headers["content-type"] ?? ""),
+    /application\/json/,
+  );
   assert.equal(response.body, "hello");
 });
 
@@ -198,13 +229,17 @@ test("duplicate routes and package names fail at registration", async (t) => {
     const app = host();
     t.after(() => app.close());
     const entry = plugin("/comments/status");
-    if (!duplicateName) entry.endpoints = [entry.endpoints[0], entry.endpoints[0]];
+    if (!duplicateName)
+      entry.endpoints = [entry.endpoints[0], entry.endpoints[0]];
     const register = () =>
-      registerPluginRoutes(app, duplicateName ? [entry, entry] : [entry], async () =>
-        pluginContext({
-          id: "1",
-          kind: "user",
-        }),
+      registerPluginRoutes(
+        app,
+        duplicateName ? [entry, entry] : [entry],
+        async () =>
+          pluginContext({
+            id: "1",
+            kind: "user",
+          }),
       );
     if (duplicateName) assert.throws(register, /Duplicate plugin/);
     else {
@@ -215,7 +250,10 @@ test("duplicate routes and package names fail at registration", async (t) => {
 });
 
 test("the real app uses its database authentication and keeps health available", async (t) => {
-  const app = createApp({ logger: false, plugins: [plugin("/comments/status")] });
+  const app = createApp({
+    logger: false,
+    plugins: [plugin("/comments/status")],
+  });
   t.after(() => app.close());
   assert.equal((await app.inject("/health")).statusCode, 200);
   assert.equal((await app.inject("/comments/status")).statusCode, 503);

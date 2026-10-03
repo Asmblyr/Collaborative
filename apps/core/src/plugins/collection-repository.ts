@@ -18,7 +18,10 @@ export async function assertInstalledNamespaces(
       "package_name",
       plugins.map((plugin) => plugin.name),
     )
-    .select<{ namespace: string; package_name: string }[]>("namespace", "package_name");
+    .select<{ namespace: string; package_name: string }[]>(
+      "namespace",
+      "package_name",
+    );
   for (const owner of owners) {
     const plugin = plugins.find((entry) => entry.name === owner.package_name);
     if (plugin?.namespace !== owner.namespace) {
@@ -38,7 +41,9 @@ export async function claimNamespace(
     .withSchema("public")
     .where({ namespace })
     .orWhere({ package_name: packageName })
-    .select<{ namespace: string; package_name: string }[]>("namespace", "package_name");
+    .select<
+      { namespace: string; package_name: string }[]
+    >("namespace", "package_name");
   if (owners.length) {
     if (
       owners.length !== 1 ||
@@ -63,7 +68,12 @@ export async function installedCollections(
   return transaction<InstalledCollection>("asmblyr_plugin_collections")
     .withSchema("public")
     .where("plugin_namespace", namespace)
-    .select("collection_name", "local_name", "definition", "definition_version");
+    .select(
+      "collection_name",
+      "local_name",
+      "definition",
+      "definition_version",
+    );
 }
 
 /** Includes views, indexes and sequences: none may be silently adopted as plugin storage. */

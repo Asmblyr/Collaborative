@@ -24,7 +24,9 @@ export function captureAggregateSelections(result: object): {
 } {
   const selections: AssistantSelection[] = [];
   const source = result as Record<string, unknown>;
-  const conditions = source.conditions as { q?: string; filter?: unknown } | undefined;
+  const conditions = source.conditions as
+    | { q?: string; filter?: unknown }
+    | undefined;
   if (!Array.isArray(source.groups) || !conditions || !group(conditions.filter))
     return { result, selections };
   const base = conditions.filter;
@@ -41,7 +43,10 @@ export function captureAggregateSelections(result: object): {
       if (value !== null && (typeof value !== "string" || value.length > 255))
         return { ...raw, resultId: null };
     }
-    const filter = aggregateGroupFilter(base, raw.values as Record<string, string | null>);
+    const filter = aggregateGroupFilter(
+      base,
+      raw.values as Record<string, string | null>,
+    );
     const selection = captureSelection("count_items", {
       ...source,
       conditions: { ...conditions, filter },

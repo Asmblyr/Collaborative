@@ -1,8 +1,14 @@
 import { randomUUID } from "node:crypto";
 import type { Knex } from "knex";
-import type { AssistantSelection, AssistantSelectionQuery } from "@asmblyr/contracts";
+import type {
+  AssistantSelection,
+  AssistantSelectionQuery,
+} from "@asmblyr/contracts";
 import type { Access } from "../permissions/access.js";
-import { collectionData, toolCollectionName } from "../tools/collection-data.js";
+import {
+  collectionData,
+  toolCollectionName,
+} from "../tools/collection-data.js";
 import { objectInput } from "../shared/input.js";
 import { parseId } from "../policies/validation.js";
 import { ItemError } from "../items/validation.js";
@@ -10,7 +16,10 @@ import { parseItemListQuery } from "../items/list-query.js";
 import { plainFilter } from "../items/filter-wire.js";
 
 /** Only successful server tool results can become selectable cards. */
-export function captureSelection(tool: string, result: object): AssistantSelection | null {
+export function captureSelection(
+  tool: string,
+  result: object,
+): AssistantSelection | null {
   if (tool !== "search_items" && tool !== "count_items") return null;
   const value = result as Record<string, unknown>;
   const conditions = value.conditions as Record<string, unknown> | undefined;
@@ -59,7 +68,11 @@ export async function validateSelection(
   if (data.schema.settings.internalId !== parseId(body.collectionId)) {
     throw new ItemError("Коллекция изменилась. Запросите новую подборку.", 409);
   }
-  if (!body.filter || typeof body.filter !== "object" || Array.isArray(body.filter)) {
+  if (
+    !body.filter ||
+    typeof body.filter !== "object" ||
+    Array.isArray(body.filter)
+  ) {
     throw new ItemError("Filter group required", 400);
   }
   const query = parseItemListQuery(

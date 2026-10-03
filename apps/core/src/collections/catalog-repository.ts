@@ -103,24 +103,37 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
         name: row.column_name,
         type: row.relation_target
           ? "relation"
-          : (fieldTypeFromDatabase(row.data_type, row.semantic_type) ?? row.data_type),
+          : (fieldTypeFromDatabase(row.data_type, row.semantic_type) ??
+            row.data_type),
         required: row.required ?? false,
         nullable: row.is_nullable === "YES",
         ...(row.presentation && Object.keys(row.presentation).length
           ? { presentation: row.presentation }
           : {}),
-        ...(row.default_value === null ? {} : { defaultValue: row.default_value }),
+        ...(row.default_value === null
+          ? {}
+          : { defaultValue: row.default_value }),
         ...(!row.relation_target &&
-        ["text", "email"].includes(fieldTypeFromDatabase(row.data_type, row.semantic_type) ?? "")
-          ? { searchable: row.searchable ?? true, searchIndexed: row.search_indexed }
+        ["text", "email"].includes(
+          fieldTypeFromDatabase(row.data_type, row.semantic_type) ?? "",
+        )
+          ? {
+              searchable: row.searchable ?? true,
+              searchIndexed: row.search_indexed,
+            }
           : {}),
-        ...(row.relation_target && row.relation_key_name && row.relation_key_type
+        ...(row.relation_target &&
+        row.relation_key_name &&
+        row.relation_key_type
           ? {
               searchable: row.relation_searchable ?? false,
               relation: {
                 kind: "m2o",
                 collection: row.relation_target,
-                primaryKey: { name: row.relation_key_name, type: row.relation_key_type },
+                primaryKey: {
+                  name: row.relation_key_name,
+                  type: row.relation_key_type,
+                },
                 onDelete: row.on_delete ?? "restrict",
               },
             }
@@ -149,7 +162,9 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
       required: false,
       nullable: true,
       searchable: alias.searchable,
-      ...(Object.keys(alias.presentation).length ? { presentation: alias.presentation } : {}),
+      ...(Object.keys(alias.presentation).length
+        ? { presentation: alias.presentation }
+        : {}),
       relation: {
         kind: alias.kind,
         collection: alias.related_collection,

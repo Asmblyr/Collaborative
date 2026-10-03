@@ -8,37 +8,140 @@ import { ItemFieldInput } from "./item-field-input";
 import { payloadValue } from "./item-input-values";
 import type { Collection, ItemValue } from "./types";
 
-export function ItemBulkDialog({ collection, catalog, count, pending, onClose, onSave }: {
-  collection: Collection; catalog: Collection[]; count: number; pending: boolean; onClose: () => void;
-  onSave: (values: Record<string, ItemValue>, close: () => void) => Promise<void>;
+export function ItemBulkDialog({
+  collection,
+  catalog,
+  count,
+  pending,
+  onClose,
+  onSave,
+}: {
+  collection: Collection;
+  catalog: Collection[];
+  count: number;
+  pending: boolean;
+  onClose: () => void;
+  onSave: (
+    values: Record<string, ItemValue>,
+    close: () => void,
+  ) => Promise<void>;
 }) {
-  const formId = useId(), [enabled, setEnabled] = useState<Set<string>>(() => new Set());
+  const formId = useId(),
+    [enabled, setEnabled] = useState<Set<string>>(() => new Set());
   const [initialCount] = useState(count);
-  const [values, setValues] = useState<Record<string, string>>({}), [error, setError] = useState("");
+  const [values, setValues] = useState<Record<string, string>>({}),
+    [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
-  const fields = collection.fields.filter((f) => f.type !== "alias" &&
-    (collection.access.update?.includes("*") || collection.access.update?.includes(f.name)));
+  const fields = collection.fields.filter(
+    (f) =>
+      f.type !== "alias" &&
+      (collection.access.update?.includes("*") ||
+        collection.access.update?.includes(f.name)),
+  );
   async function submit(event: FormEvent, close: () => void) {
     event.preventDefault();
     if (uploading) return;
     setError("");
-    try { await onSave(Object.fromEntries(fields.filter((f) => enabled.has(f.name)).map((f) => [f.name, payloadValue(f, values[f.name] ?? "")])), close); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Не удалось изменить записи"); }
+    try {
+      await onSave(
+        Object.fromEntries(
+          fields
+            .filter((f) => enabled.has(f.name))
+            .map((f) => [f.name, payloadValue(f, values[f.name] ?? "")]),
+        ),
+        close,
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Не удалось изменить записи",
+      );
+    }
   }
-  return <EditorDialog open busy={pending || uploading} title="Изменить выбранные записи" eyebrow={collection.displayName || collection.name} onClose={onClose}
-    footer={(close) => <div className="flex gap-2"><Button type="submit" form={formId} disabled={pending || uploading || !enabled.size}>
-      {pending ? "Сохраняем…" : `Применить к ${initialCount} записям`}</Button><Button variant="ghost" disabled={pending || uploading} onClick={close}>Отмена</Button></div>}>
-    {(container, close) => <form id={formId} onSubmit={(event) => void submit(event, close)} className="space-y-5">
-      <p className="text-sm text-muted-foreground">Отметьте поля, которые нужно заменить во всех выбранных записях. Остальные значения сохранятся.</p>
-      {fields.map((field) => <section key={field.name} className="space-y-3 rounded-xl border p-4">
-        <label className="flex items-center gap-3 text-sm font-medium"><Checkbox disabled={pending || uploading} checked={enabled.has(field.name)}
-          onCheckedChange={(checked) => setEnabled((current) => { const next = new Set(current); if (checked) next.add(field.name); else next.delete(field.name); return next; })} />
-          {field.presentation?.label || field.name}</label>
-        {enabled.has(field.name) && <ItemFieldInput id={`${formId}-${field.name}`} field={field} catalog={catalog} value={values[field.name] ?? ""}
-          onChange={(value) => setValues((current) => ({ ...current, [field.name]: value }))} container={container}
-          disabled={pending || uploading} onBusy={setUploading} />}
-      </section>)}
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    </form>}
-  </EditorDialog>;
+  return (
+    <EditorDialog
+      open
+      busy={pending || uploading}
+      title="Изменить выбранные записи"
+      eyebrow={collection.displayName || collection.name}
+      onClose={onClose}
+      footer={(close) => (
+        <div className="flex gap-2">
+          <Button
+            type="submit"
+            form={formId}
+            disabled={pending || uploading || !enabled.size}
+          >
+            {pending ? "Сохраняем…" : `Применить к ${initialCount} записям`}
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={pending || uploading}
+            onClick={close}
+          >
+            Отмена
+          </Button>
+        </div>
+      )}
+    >
+      {(container, close) => (
+        <form
+          id={formId}
+          onSubmit={(event) => void submit(event, close)}
+          className="space-y-5"
+        >
+          <p className="text-sm text-muted-foreground">
+            Отметьте поля, которые нужно заменить во всех выбранных записях.
+            Остальные значения сохранятся.
+          </p>
+          {fields.map((field) => (
+            <section
+              key={field.name}
+              className="space-y-3 rounded-xl border p-4"
+            >
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <Checkbox
+                  disabled={pending || uploading}
+                  checked={enabled.has(field.name)}
+                  onCheckedChange={(checked) =>
+                    setEnabled((current) => {
+                      const next = new Set(current);
+                      if (checked) next.add(field.name);
+                      else next.delete(field.name);
+                      return next;
+                    })
+                  }
+                />
+                {field.presentation?.label || field.name}
+              </label>
+              {enabled.has(field.name) && (
+                <ItemFieldInput
+                  id={`${formId}-${field.name}`}
+                  field={field}
+                  catalog={catalog}
+                  value={values[field.name] ?? ""}
+                  onChange={(value) =>
+                    setValues((current) => ({
+                      ...current,
+                      [field.name]: value,
+                    }))
+                  }
+                  container={container}
+                  disabled={pending || uploading}
+                  onBusy={setUploading}
+                />
+              )}
+            </section>
+          ))}
+          {error && (
+            <p
+              role="alert"
+              className="text-sm text-destructive"
+            >
+              {error}
+            </p>
+          )}
+        </form>
+      )}
+    </EditorDialog>
+  );
 }

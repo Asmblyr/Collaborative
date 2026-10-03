@@ -1,4 +1,7 @@
-import type { AssistantPluginResult, PluginPreparedAction } from "@asmblyr/contracts";
+import type {
+  AssistantPluginResult,
+  PluginPreparedAction,
+} from "@asmblyr/contracts";
 import type { PluginActions } from "../plugins/actions.js";
 import type { Access } from "../permissions/access.js";
 import { ItemError } from "../items/validation.js";
@@ -19,7 +22,10 @@ export class PluginResults {
     access: Access,
     args: Record<string, unknown>,
   ): object {
-    const draft = typeof args.resultId === "string" ? this.prepared.get(args.resultId) : undefined;
+    const draft =
+      typeof args.resultId === "string"
+        ? this.prepared.get(args.resultId)
+        : undefined;
     if (!actions || !draft) throw new ItemError("Unknown action result", 400);
     const checked = actions.prepared(access, draft.namespace, draft.draftId);
     const card = {
@@ -28,7 +34,9 @@ export class PluginResults {
       title: checked.title,
       expiresAt: checked.expiresAt,
     };
-    const index = this.cards.findIndex((entry) => entry.draftId === card.draftId);
+    const index = this.cards.findIndex(
+      (entry) => entry.draftId === card.draftId,
+    );
     if (index < 0) this.cards.push(card);
     else this.cards[index] = card;
     return { presented: true, requiresUserClick: true };

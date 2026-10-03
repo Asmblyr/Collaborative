@@ -1,7 +1,10 @@
 import { parseFieldValue } from "../collections/field-values.js";
 import type { Collection } from "../collections/types.js";
 import type { Access } from "../permissions/access.js";
-import { resolveFilterField, type ResolvedFilterField } from "./filter-fields.js";
+import {
+  resolveFilterField,
+  type ResolvedFilterField,
+} from "./filter-fields.js";
 import type { collectionSchema } from "./schema-repository.js";
 import { ItemError, parseItemId } from "./validation.js";
 import type { ItemFilterOperator } from "@asmblyr/contracts";
@@ -31,7 +34,12 @@ const valueFree = new Set<FilterOperator>([
   "exists",
   "notExists",
 ]);
-const multiple = new Set<FilterOperator>(["in", "notIn", "between", "notBetween"]);
+const multiple = new Set<FilterOperator>([
+  "in",
+  "notIn",
+  "between",
+  "notBetween",
+]);
 const textOperators = new Set<FilterOperator>([
   "contains",
   "notContains",
@@ -48,7 +56,14 @@ const textOperators = new Set<FilterOperator>([
   "isEmpty",
   "notEmpty",
 ]);
-const rangeOperators = new Set<FilterOperator>(["gt", "gte", "lt", "lte", "between", "notBetween"]);
+const rangeOperators = new Set<FilterOperator>([
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "between",
+  "notBetween",
+]);
 const allOperators = new Set<FilterOperator>([
   "eq",
   "neq",
@@ -90,11 +105,19 @@ function parsedScalar(
       ) as number;
     }
     if (resolved.type === "boolean") {
-      if (value !== "true" && value !== "false") throw new Error("Invalid boolean");
+      if (value !== "true" && value !== "false")
+        throw new Error("Invalid boolean");
       return value === "true";
     }
-    const parsed = parseFieldValue({ name: field, type: resolved.type, required: false }, value);
-    if (typeof parsed === "string" || typeof parsed === "number" || typeof parsed === "boolean")
+    const parsed = parseFieldValue(
+      { name: field, type: resolved.type, required: false },
+      value,
+    );
+    if (
+      typeof parsed === "string" ||
+      typeof parsed === "number" ||
+      typeof parsed === "boolean"
+    )
       return parsed;
     throw new Error("Expected scalar filter operand");
   } catch {
@@ -115,22 +138,38 @@ function parseCondition(
     typeof field !== "string" ||
     typeof op !== "string" ||
     !allOperators.has(op as FilterOperator) ||
-    Object.keys(input).some((key) => !["field", "op", "value", "quantifier"].includes(key))
+    Object.keys(input).some(
+      (key) => !["field", "op", "value", "quantifier"].includes(key),
+    )
   ) {
     throw new ItemError("Invalid filter condition", 400);
   }
   const operator = op as FilterOperator;
-  const resolved = resolveFilterField(field, sourceName, schema, allowed, catalog, access);
+  const resolved = resolveFilterField(
+    field,
+    sourceName,
+    schema,
+    allowed,
+    catalog,
+    access,
+  );
   if (
     (operator === "exists" || operator === "notExists") &&
     (!resolved.relation || resolved.column !== resolved.relation.targetKey)
   ) {
     throw new ItemError("Relation existence requires a related field", 400);
   }
-  if (textOperators.has(operator) && resolved.type !== "text" && resolved.type !== "email") {
+  if (
+    textOperators.has(operator) &&
+    resolved.type !== "text" &&
+    resolved.type !== "email"
+  ) {
     throw new ItemError("Invalid filter operator", 400);
   }
-  if (rangeOperators.has(operator) && !["integer", "decimal", "datetime"].includes(resolved.type)) {
+  if (
+    rangeOperators.has(operator) &&
+    !["integer", "decimal", "datetime"].includes(resolved.type)
+  ) {
     throw new ItemError("Invalid filter operator", 400);
   }
   if (
@@ -162,8 +201,10 @@ function parseCondition(
   if (multiple.has(operator)) {
     if (
       !Array.isArray(value) ||
-      value.length < (operator.includes("Between") || operator === "between" ? 2 : 1) ||
-      value.length > (operator.includes("Between") || operator === "between" ? 2 : 20)
+      value.length <
+        (operator.includes("Between") || operator === "between" ? 2 : 1) ||
+      value.length >
+        (operator.includes("Between") || operator === "between" ? 2 : 20)
     ) {
       throw new ItemError(`Invalid filter value: ${field}`, 400);
     }
@@ -175,7 +216,10 @@ function parseCondition(
       ...(quantifier ? { quantifier: quantifier as "some" | "none" } : {}),
     };
   }
-  if (textOperators.has(operator) && (typeof value !== "string" || !value.trim())) {
+  if (
+    textOperators.has(operator) &&
+    (typeof value !== "string" || !value.trim())
+  ) {
     throw new ItemError(`Invalid filter value: ${field}`, 400);
   }
   return {
@@ -196,7 +240,8 @@ export function parseItemFilters(
   access?: Access,
 ): FilterGroup {
   if (raw === undefined) return { logic: "and", children: [] };
-  if (typeof raw !== "string" || raw.length > 8192) throw new ItemError("Invalid filter", 400);
+  if (typeof raw !== "string" || raw.length > 8192)
+    throw new ItemError("Invalid filter", 400);
   let input: unknown;
   try {
     input = JSON.parse(raw);
@@ -222,7 +267,9 @@ export function parseItemFilters(
         (object.logic !== "and" && object.logic !== "or") ||
         !Array.isArray(object.children) ||
         object.children.length > 20 ||
-        Object.keys(object).some((key) => key !== "logic" && key !== "children") ||
+        Object.keys(object).some(
+          (key) => key !== "logic" && key !== "children",
+        ) ||
         (depth > 1 && object.children.length === 0)
       ) {
         throw new ItemError("Invalid filter group", 400);

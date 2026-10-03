@@ -41,7 +41,9 @@ export function TermFilterEditor({
           value,
         );
         onChange(addFilterNode(value, path, node));
-        setFocusPath("logic" in node ? null : [...path, parent.children.length].join("."));
+        setFocusPath(
+          "logic" in node ? null : [...path, parent.children.length].join("."),
+        );
       }}
       onRemove={(path) => {
         onChange(removeFilterNode(value, path));
