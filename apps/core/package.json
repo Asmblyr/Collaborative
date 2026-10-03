@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --include \"../../plugins/**/*.ts\" --include \"../../plugins/*/package.json\" --include \"../../package.json\" --exclude \"../../plugins/*/dist/**\" src/server.ts --plugin-sources",
+    "dev": "tsx watch --include \"../../packages/plugin-*/**/*.ts\" --include \"../../packages/plugin-*/package.json\" --include \"../../examples/plugins/**/*.ts\" --include \"../../examples/plugins/*/package.json\" --include \"../../package.json\" --exclude \"../../packages/plugin-*/dist/**\" --exclude \"../../examples/plugins/*/dist/**\" src/server.ts --plugin-sources",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "db:migrate": "knex --knexfile knexfile.mjs migrate:latest",

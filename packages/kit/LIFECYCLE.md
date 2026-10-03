@@ -116,11 +116,11 @@ React — peer dependency. Для UI используйте `.ts`/`.tsx` в от
 и `rewriteRelativeImportExtensions: true` в tsconfig: TypeScript заменяет их на
 `.js` при сборке. Добавьте `ui/**/*` и `shared/**/*` в include.
 
-Первый полный пример — `plugins/comments`. Серверные пакеты нельзя импортировать в UI.
+Первый полный пример — `packages/plugin-comments`. Серверные пакеты нельзя импортировать в UI.
 
 ## Отдельные страницы
 
-Второй пример — `plugins/overview`. Браузерный entry может экспортировать
+Второй пример — `examples/plugins/overview`. Браузерный entry может экспортировать
 страницы, вкладки записи или оба вида расширений:
 
 ```ts
@@ -157,7 +157,7 @@ namespace HTTP-клиент, что у вкладок. `Button` и `Textarea` д
 
 ## Действия и ассистент
 
-Первый пример — `plugins/calculator`. TypeScript-интерфейсы описывают поля и результат.
+Первый пример — `examples/plugins/calculator`. TypeScript-интерфейсы описывают поля и результат.
 H3 handler в `server/api/calculator/calculate.post.ts` обёрнут в
 `defineModelContext<CalculationInput>(defineHandler(...), annotate)`.
 `defineModelAnnotation` описывает назначение и `middleware: AccessGate.authenticated`.
@@ -172,7 +172,7 @@ HTTP и MCP вызывают один handler с одним ограниченн
 storage в model handler нет. `readOnly: true` запрещает все методы записи items.
 Форма использует `useAction<Input, Output>(generatedModel, props, options)`;
 схемы браузера и сервера получены из одних типов, серверный handler в UI не попадает.
-Подробности и текущие ограничения — [действия плагинов](../../docs/design/plugin-actions.md).
+Подробности и текущие ограничения — [действия плагинов](../../docs/development/plugin-actions.md).
 
 ## Возможности, hooks и настройки
 

@@ -21,7 +21,7 @@ export default defineUiPlugin({
 });
 ```
 
-Рабочий пример: [plugins/color](./plugin-color.md). Серверный
+Рабочий пример: [examples/plugins/color](./plugin-color.md). Серверный
 `plugin.ts` остаётся `definePlugin({})`; таблицы и HTTP endpoints этому плагину
 не нужны. Включение пакета, сборка, source/built discovery и общие компоненты
 работают так же, как у страниц и вкладок.

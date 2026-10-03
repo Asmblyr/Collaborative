@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "type": "module",
+  "asmblyr": {
+    "plugins": [
+      "@asmblyr/plugin-comments",
+      "@asmblyr/plugin-overview",
+      "@asmblyr/plugin-calculator",
+      "@asmblyr/plugin-color"
+    ],
+    "pluginPermissions": {
+      "@asmblyr/plugin-comments": [
+        "identity.profile",
+        "items.read",
+        "collections.manage",
+        "storage.own",
+        "hooks.items",
+        "hooks.collections",
+        "settings"
+      ],
+      "@asmblyr/plugin-overview": [
+        "identity.profile"
+      ],
+      "@asmblyr/plugin-calculator": [],
+      "@asmblyr/plugin-color": []
+    }
+  }
+}

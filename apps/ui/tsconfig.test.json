@@ -7,7 +7,9 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "test/**/*.ts",
-    "../../plugins/**/*.ts",
-    "../../plugins/**/*.tsx"
+    "../../packages/plugin-comments/**/*.ts",
+    "../../packages/plugin-comments/**/*.tsx",
+    "../../examples/plugins/**/*.ts",
+    "../../examples/plugins/**/*.tsx"
   ]
 }

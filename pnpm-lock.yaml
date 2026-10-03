@@ -11,19 +11,19 @@ importers:
 
   .:
     dependencies:
-      '@asmblyr/plugin-calculator':
-        specifier: workspace:*
-        version: link:plugins/calculator
-      '@asmblyr/plugin-color':
-        specifier: workspace:*
-        version: link:plugins/color
       '@asmblyr/plugin-comments':
         specifier: workspace:*
-        version: link:plugins/comments
+        version: link:packages/plugin-comments
+    devDependencies:
+      '@asmblyr/plugin-calculator':
+        specifier: workspace:*
+        version: link:examples/plugins/calculator
+      '@asmblyr/plugin-color':
+        specifier: workspace:*
+        version: link:examples/plugins/color
       '@asmblyr/plugin-overview':
         specifier: workspace:*
-        version: link:plugins/overview
-    devDependencies:
+        version: link:examples/plugins/overview
       prettier:
         specifier: 3.6.2
         version: 3.6.2
@@ -219,6 +219,60 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  examples/plugins/calculator:
+    dependencies:
+      '@asmblyr/kit':
+        specifier: workspace:*
+        version: link:../../../packages/kit
+      h3:
+        specifier: 2.0.1-rc.32
+        version: 2.0.1-rc.32
+      react:
+        specifier: ^19
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  examples/plugins/color:
+    dependencies:
+      '@asmblyr/kit':
+        specifier: workspace:*
+        version: link:../../../packages/kit
+      react:
+        specifier: ^19
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  examples/plugins/overview:
+    dependencies:
+      '@asmblyr/kit':
+        specifier: workspace:*
+        version: link:../../../packages/kit
+      h3:
+        specifier: 2.0.1-rc.32
+        version: 2.0.1-rc.32
+      react:
+        specifier: ^19
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/contracts: {}
 
   packages/kit:
@@ -261,85 +315,31 @@ importers:
         specifier: ^19
         version: 19.3.0
 
+  packages/plugin-comments:
+    dependencies:
+      '@asmblyr/kit':
+        specifier: workspace:*
+        version: link:../kit
+      h3:
+        specifier: 2.0.1-rc.32
+        version: 2.0.1-rc.32
+      react:
+        specifier: ^19
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/sdk:
     dependencies:
       '@asmblyr/contracts':
         specifier: workspace:*
         version: link:../contracts
     devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  plugins/calculator:
-    dependencies:
-      '@asmblyr/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
-      h3:
-        specifier: 2.0.1-rc.32
-        version: 2.0.1-rc.32
-      react:
-        specifier: ^19
-        version: 19.2.8
-    devDependencies:
-      '@types/react':
-        specifier: ^19
-        version: 19.3.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  plugins/color:
-    dependencies:
-      '@asmblyr/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
-      react:
-        specifier: ^19
-        version: 19.2.8
-    devDependencies:
-      '@types/react':
-        specifier: ^19
-        version: 19.3.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  plugins/comments:
-    dependencies:
-      '@asmblyr/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
-      h3:
-        specifier: 2.0.1-rc.32
-        version: 2.0.1-rc.32
-      react:
-        specifier: ^19
-        version: 19.2.8
-    devDependencies:
-      '@types/react':
-        specifier: ^19
-        version: 19.3.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  plugins/overview:
-    dependencies:
-      '@asmblyr/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
-      h3:
-        specifier: 2.0.1-rc.32
-        version: 2.0.1-rc.32
-      react:
-        specifier: ^19
-        version: 19.2.8
-    devDependencies:
-      '@types/react':
-        specifier: ^19
-        version: 19.3.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

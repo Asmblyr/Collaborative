@@ -22,7 +22,13 @@ test(
     function restart() {
       execFileSync(
         "docker",
-        ["compose", "-f", "infra/oauth-lavinmq/compose.yaml", "restart", "lavinmq"],
+        [
+          "compose",
+          "-f",
+          "examples/oauth-lavinmq/compose.yaml",
+          "restart",
+          "lavinmq",
+        ],
         { cwd: root, stdio: "pipe", windowsHide: true },
       );
     }
@@ -44,8 +50,12 @@ test(
       assert.equal(url.origin, "http://localhost:3002");
       const start = await f.app.inject({ url: url.pathname + url.search });
       assert.equal(start.statusCode, 303, start.body);
-      const cookies = start.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
-      const uid = new URL(String(start.headers.location)).pathname.split("/").at(-1)!;
+      const cookies = start.cookies
+        .map((cookie) => `${cookie.name}=${cookie.value}`)
+        .join("; ");
+      const uid = new URL(String(start.headers.location)).pathname
+        .split("/")
+        .at(-1)!;
       const consent = await f.app.inject({
         method: "POST",
         url: `/oauth-interactions/${uid}`,
@@ -70,7 +80,9 @@ test(
         .map((cookie) => cookie.split(";")[0])
         .join("; ");
       assert.match(sessionCookies, /oauth_token=/);
-      const whoami = await fetch(`${broker}/api/whoami`, { headers: { cookie: sessionCookies } });
+      const whoami = await fetch(`${broker}/api/whoami`, {
+        headers: { cookie: sessionCookies },
+      });
       assert.equal(whoami.status, 200);
       const identity = await whoami.json();
       assert.equal(identity.name, `${f.users[0]}@example.test`);
@@ -80,7 +92,9 @@ test(
         headers: { cookie: sessionCookies },
       });
       assert.equal(overview.status, 200);
-      const users = await fetch(`${broker}/api/users`, { headers: { cookie: sessionCookies } });
+      const users = await fetch(`${broker}/api/users`, {
+        headers: { cookie: sessionCookies },
+      });
       assert.ok([401, 403].includes(users.status));
     } finally {
       await writeFile(configPath, original);

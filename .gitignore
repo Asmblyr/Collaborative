@@ -42,14 +42,16 @@ coverage/
 playwright-report/
 test-results/
 
-# Generated cloud deployment state
-/infra/files/resources.json
-/infra/files/bucket-policy.json
-
-# Screenshots of local installations and their data
-/docs/design/screenshots/
-/docs/reviews/assets/
-/docs/reviews/*.png
+# Private planning, installation-specific tooling and local evidence
+/infra/
+/plugins/
+/docs/design/
+/docs/research/
+/docs/reviews/
+/docs/ideas/
+/docs/archive.md
+/design-qa.md
+/docs/security/*-20??-??-??.md
 
 # Generated documentation
 docs/.vitepress/cache/

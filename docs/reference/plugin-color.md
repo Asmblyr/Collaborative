@@ -1,4 +1,4 @@
-<!-- Generated from plugins/color/README.md; edit the source. -->
+<!-- Generated from examples/plugins/color/README.md; edit the source. -->
 
 # Цвет
 
@@ -18,8 +18,7 @@
 `color:picker`; editor, display, settings и чтение options находятся рядом
 в отдельных небольших файлах. Импортов из Core или UI нет.
 
-Сборка: `pnpm --filter @asmblyr/plugin-color build`. Пакет уже включён в
-корневом `asmblyr.plugins`. После изменения состава пакетов перезапустите
+Сборка: `pnpm --filter @asmblyr/plugin-color build`. Пакет не включён по умолчанию; подключение описано в [руководстве примеров](https://github.com/Asmblyr/Collaborative/blob/main/examples/plugins/README.md). После изменения состава пакетов перезапустите
 Core и UI. При отключении плагина поле остаётся доступно как обычный текст.
 
 Настройка палитры не ограничивает HTTP API: формат и палитра являются UI.

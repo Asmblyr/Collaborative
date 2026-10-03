@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import knex from "knex";
-import { defineAction, defineHandler, definePlugin, useActionContext } from "@asmblyr/kit";
+import {
+  defineAction,
+  defineHandler,
+  definePlugin,
+  useActionContext,
+} from "@asmblyr/kit";
 import { readValidatedBody } from "h3";
 import { defineActionContract, z } from "@asmblyr/kit/actions";
 import type { PluginPreparedAction } from "@asmblyr/contracts";
@@ -17,7 +22,13 @@ import { runActionHandler } from "../src/plugins/action-handler.js";
 import { pluginContext } from "./support/plugin-context.js";
 
 const viewer = (id = "user-1", superuser = false): Access => ({
-  principal: { id, kind: "user", superuser, email: `${id}@example.test`, sessionId: "session-1" },
+  principal: {
+    id,
+    kind: "user",
+    superuser,
+    email: `${id}@example.test`,
+    sessionId: "session-1",
+  },
   grants: new Map(),
 });
 const context = async (access: Access) => {
@@ -30,16 +41,26 @@ const input = { users: 150, monthlyPrice: 990, months: 12, discount: 10 };
 
 test("calculator source and build share schemas, money arithmetic and strict input validation", async () => {
   for (const sourcePlugins of [false, true]) {
-    const plugins = await loadPlugins(new URL("../../../package.json", import.meta.url), {
-      sourcePlugins,
-    });
+    const plugins = await loadPlugins(
+      new URL("../../../examples/plugins/package.json", import.meta.url),
+      {
+        sourcePlugins,
+      },
+    );
     const actions = new PluginActions(plugins, context);
-    const calculator = plugins.find((plugin) => plugin.namespace === "calculator")!;
+    const calculator = plugins.find(
+      (plugin) => plugin.namespace === "calculator",
+    )!;
     assert.deepEqual(calculator.definition, {});
     assert.equal(calculator.endpoints.length, 1);
     assert.equal(calculator.endpoints[0].method, "POST");
     assert.equal(calculator.endpoints[0].path, "/calculator/calculate");
-    const result = await actions.execute(viewer(), "calculator", "calculate", input);
+    const result = await actions.execute(
+      viewer(),
+      "calculator",
+      "calculate",
+      input,
+    );
     assert.deepEqual(result.output, {
       subtotalKopecks: 178_200_000,
       discountKopecks: 17_820_000,
@@ -54,16 +75,24 @@ test("calculator source and build share schemas, money arithmetic and strict inp
       { ...input, actor: "admin" },
       { ...input, monthlyPrice: "990" },
     ]) {
-      await assert.rejects(actions.execute(viewer(), "calculator", "calculate", invalid), {
-        statusCode: 400,
-      });
+      await assert.rejects(
+        actions.execute(viewer(), "calculator", "calculate", invalid),
+        {
+          statusCode: 400,
+        },
+      );
     }
-    const rounding = await actions.execute(viewer(), "calculator", "calculate", {
-      users: 1,
-      months: 1,
-      monthlyPrice: 0.01,
-      discount: 50,
-    });
+    const rounding = await actions.execute(
+      viewer(),
+      "calculator",
+      "calculate",
+      {
+        users: 1,
+        months: 1,
+        monthlyPrice: 0.01,
+        discount: 50,
+      },
+    );
     assert.deepEqual(rounding.output, {
       subtotalKopecks: 1,
       discountKopecks: 1,
@@ -83,10 +112,17 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
     output: z.strictObject({ value: z.number().int() }),
   });
   const handler = defineHandler({
-    meta: { asmblyr: defineAction({ contract, access: "superuser", mcp: true }) },
+    meta: {
+      asmblyr: defineAction({ contract, access: "superuser", mcp: true }),
+    },
     async handler(event) {
       const ctx = useActionContext(event);
-      assert.deepEqual(Object.keys(ctx).sort(), ["actor", "items", "signal", "superuser"]);
+      assert.deepEqual(Object.keys(ctx).sort(), [
+        "actor",
+        "items",
+        "signal",
+        "superuser",
+      ]);
       assert.equal(ctx.actor.id, "user-1");
       assert.equal(event.context.asmblyr, undefined);
       assert.equal(event.req.headers.has("authorization"), false);
@@ -116,7 +152,9 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
     await mcp.close();
     await db.destroy();
   });
-  const advertised = mcp.definitions.find((entry) => entry.name === "plugin_example__echo")!;
+  const advertised = mcp.definitions.find(
+    (entry) => entry.name === "plugin_example__echo",
+  )!;
   assert.ok(advertised);
   assert.deepEqual(advertised.parameters.required, ["value"]);
   assert.equal(advertised.parameters.additionalProperties, false);
@@ -124,25 +162,44 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
     prepared: PluginPreparedAction;
   };
   const draft = result.prepared;
-  assert.deepEqual(actions.prepared(access, "example", draft.draftId).input, { value: 3 });
-  assert.throws(() => actions.prepared(viewer("another", true), "example", draft.draftId), {
+  assert.deepEqual(actions.prepared(access, "example", draft.draftId).input, {
+    value: 3,
+  });
+  assert.throws(
+    () => actions.prepared(viewer("another", true), "example", draft.draftId),
+    {
+      statusCode: 404,
+    },
+  );
+  assert.throws(() => actions.prepared(access, "other", draft.draftId), {
     statusCode: 404,
   });
-  assert.throws(() => actions.prepared(access, "other", draft.draftId), { statusCode: 404 });
   const presentation = new PluginResults();
-  assert.throws(() => presentation.present(actions, access, { resultId: draft.draftId }), {
-    statusCode: 400,
-  });
+  assert.throws(
+    () => presentation.present(actions, access, { resultId: draft.draftId }),
+    {
+      statusCode: 400,
+    },
+  );
   presentation.capture(result);
-  assert.deepEqual(presentation.present(actions, access, { resultId: draft.draftId }), {
-    presented: true,
-    requiresUserClick: true,
-  });
+  assert.deepEqual(
+    presentation.present(actions, access, { resultId: draft.draftId }),
+    {
+      presented: true,
+      requiresUserClick: true,
+    },
+  );
   // A stale model response cannot re-enable automatic navigation.
-  assert.deepEqual(presentation.present(actions, access, { resultId: draft.draftId, open: true }), {
-    presented: true,
-    requiresUserClick: true,
-  });
+  assert.deepEqual(
+    presentation.present(actions, access, {
+      resultId: draft.draftId,
+      open: true,
+    }),
+    {
+      presented: true,
+      requiresUserClick: true,
+    },
+  );
   assert.equal(presentation.cards.length, 1);
   assert.deepEqual(presentation.cards[0], {
     draftId: draft.draftId,
@@ -152,7 +209,9 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
   });
   access = viewer();
   assert.ok("error" in (await mcp.call(advertised.name, { value: 4 })));
-  assert.throws(() => actions.prepared(access, "example", draft.draftId), { statusCode: 403 });
+  assert.throws(() => actions.prepared(access, "example", draft.draftId), {
+    statusCode: 403,
+  });
   access = viewer("another", true);
   assert.ok("error" in (await mcp.call(advertised.name, { value: 4 })));
 });
@@ -170,11 +229,15 @@ test("prepared forms expire, do not share mutable references, and have bounded o
   };
   const draft = drafts.create("owner", value);
   value.input.amount = 5;
-  assert.deepEqual(drafts.get("owner", "test", draft.draftId).input, { amount: 1 });
+  assert.deepEqual(drafts.get("owner", "test", draft.draftId).input, {
+    amount: 1,
+  });
   for (let index = 1; index < 32; index++) drafts.create("owner", value);
   assert.throws(() => drafts.create("owner", value), { statusCode: 429 });
   now += 50;
-  assert.throws(() => drafts.get("owner", "test", draft.draftId), { statusCode: 404 });
+  assert.throws(() => drafts.get("owner", "test", draft.draftId), {
+    statusCode: 404,
+  });
   assert.ok(drafts.create("owner", value));
 });
 
@@ -230,7 +293,10 @@ test("actions reject incompatible schemas and invalid handler output", async () 
 });
 test("cancellation stops waiting for an uncooperative plugin", async () => {
   const controller = new AbortController();
-  const pending = runActionWithSignal(controller.signal, () => new Promise<never>(() => {}));
+  const pending = runActionWithSignal(
+    controller.signal,
+    () => new Promise<never>(() => {}),
+  );
   controller.abort();
   await assert.rejects(pending, { name: "AbortError" });
 });

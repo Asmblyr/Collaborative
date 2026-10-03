@@ -18,7 +18,7 @@ export default defineHook("items.delete", async (event, context) => {
 });
 ```
 
-Пример очистки с пагинацией: `plugins/comments/server/services/cleanup.ts`.
+Пример очистки с пагинацией: `packages/plugin-comments/server/services/cleanup.ts`.
 Не создавайте реестр hooks в `plugin.ts`.
 
 | Событие              | Данные                                 |

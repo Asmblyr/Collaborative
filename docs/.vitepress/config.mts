@@ -4,13 +4,7 @@ export default defineConfig({
   lang: "ru-RU",
   title: "Asmblyr",
   description: "Возможности, архитектура и контракты Asmblyr Collaborative",
-  srcExclude: [
-    "design/**",
-    "ideas/**",
-    "research/**",
-    "reviews/**",
-    "public/**",
-  ],
+  srcExclude: ["public/**"],
   lastUpdated: true,
   themeConfig: {
     outline: { label: "На этой странице" },
@@ -35,7 +29,7 @@ export default defineConfig({
     nav: [
       { text: "Продукт", link: "/guide/features" },
       { text: "API и SDK", link: "/reference/http" },
-      { text: "Безопасность", link: "/security/audit-2026-10-03" },
+      { text: "Безопасность", link: "/security/overview" },
     ],
     sidebar: [
       {
@@ -69,7 +63,7 @@ export default defineConfig({
             link: "/development/documentation",
           },
           { text: "Эксплуатация", link: "/development/operations" },
-          { text: "Проверка первой беты", link: "/security/beta-2026-10-03" },
+          { text: "Действия расширений", link: "/development/plugin-actions" },
         ],
       },
       {
@@ -84,15 +78,10 @@ export default defineConfig({
         ],
       },
       {
-        text: "Аудит",
+        text: "Безопасность",
         items: [
           { text: "Границы доступа", link: "/security/access-matrix" },
-          { text: "Аудит 03.10.2026", link: "/security/audit-2026-10-03" },
-          {
-            text: "Назначение готовых политик",
-            link: "/security/policy-delegation-2026-10-03",
-          },
-          { text: "Архив исследований и решений", link: "/archive" },
+          { text: "Обзор", link: "/security/overview" },
         ],
       },
     ],

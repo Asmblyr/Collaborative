@@ -2,7 +2,7 @@ import { access, readFile, realpath } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { parsePluginNamespace } from "@asmblyr/kit/node";
+import { isLocalPluginPackage, parsePluginNamespace } from "@asmblyr/kit/node";
 import type { PluginCapability } from "@asmblyr/kit";
 import {
   approvedCapabilities,
@@ -100,10 +100,7 @@ export async function loadPlugins(
   const project = JSON.parse(await readFile(projectPackage, "utf8"));
   const names = configuredPlugins(project);
   const resolve = createRequire(projectPackage).resolve;
-  const localDirectory = path.join(
-    path.dirname(fileURLToPath(projectPackage)),
-    "plugins",
-  );
+  const projectDirectory = path.dirname(fileURLToPath(projectPackage));
   const entries: {
     name: string;
     namespace?: string;
@@ -136,11 +133,7 @@ export async function loadPlugins(
         namespaces.add(namespace);
       }
       const packageRoot = path.dirname(manifestPath);
-      const relative = path.relative(localDirectory, packageRoot);
-      const isLocal =
-        relative !== "" &&
-        !relative.startsWith("..") &&
-        !path.isAbsolute(relative);
+      const isLocal = isLocalPluginPackage(projectDirectory, packageRoot);
       const useSource = sourcePlugins && isLocal;
       const url = pathToFileURL(
         useSource ? path.join(packageRoot, "plugin.ts") : resolve(name),

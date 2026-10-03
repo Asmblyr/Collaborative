@@ -1,21 +1,29 @@
 # Asmblyr Collaborative
 
-Админка и HTTP API для работы с PostgreSQL: коллекции, записи, связи, права, файлы, интеграции и расширения.
+Открытая платформа для работы с данными в PostgreSQL. Админка объединяет структуру
+коллекций, редакторы записей, права команды, файлы и интеграции.
+Проект находится в ранней бете; одна команда использует отдельную установку.
 
-Документация описывает код репозитория на **3 октября 2026**. Текущие возможности отделены от планов; исторические исследования сохранены в [архиве](./archive.md).
+## Начать
 
-- [Карта возможностей и ограничений](./guide/features.md)
-- [Локальный запуск](./guide/getting-started.md)
-- [Доступ и безопасность](./security/access-matrix.md)
-- [Результаты аудита](./security/audit-2026-10-03.md)
-- [Готовность первой беты и проверка установки](./security/beta-2026-10-03.md)
-- [Подготовка открытого репозитория](./security/publication-2026-10-03.md)
-- [Проверка доступа просмотра настроек](./security/settings-readonly-2026-10-03.md)
-- [Проверка ограниченного назначения политик](./security/policy-delegation-2026-10-03.md)
-- [HTTP API](./reference/http.md), [SDK](./reference/sdk-guide.md), [Kit для расширений](./reference/kit-guide.md)
+- [Возможности и ограничения](./guide/features.md)
+- [Первый запуск](./guide/getting-started.md)
+- [Docker-установка](https://github.com/Asmblyr/Collaborative/blob/main/deploy/README.md)
+- [HTTP API](./reference/http.md)
+- [TypeScript SDK](./reference/sdk-guide.md)
 
-## Как читать статусы
+## Работа с продуктом
 
-**Реализовано** — есть работающий путь в коде. **Ограничено** — перечислены границы реализации. **Не реализовано** — идея или будущая работа. Наличие дизайна или картинки не означает готовую функцию.
+Руководства по [данным](./features/data.md), [правам](./features/access.md),
+[пользователям](./features/identity.md), [файлам](./features/files.md),
+[настройкам](./features/settings.md), [пространствам](./features/workspaces.md),
+[интеграциям](./features/integrations.md), [ассистенту](./features/assistant.md)
+и [расширениям](./features/plugins.md) описывают текущие контракты и их границы.
 
-Аудит охватывает исходники, локальную проверку интерфейса и автоматические тесты. Он не заменяет проверку production-инфраструктуры.
+## Разработка и эксплуатация
+
+- [Архитектура](./development/architecture.md)
+- [Сопровождение документации](./development/documentation.md)
+- [Эксплуатация и восстановление](./development/operations.md)
+- [Границы безопасности](./security/overview.md)
+- [Участие в проекте](https://github.com/Asmblyr/Collaborative/blob/main/CONTRIBUTING.md)

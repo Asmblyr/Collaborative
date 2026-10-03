@@ -1,4 +1,7 @@
 node_modules
+.pnpm-store
+.turbo
+*.tsbuildinfo
 .next
 dist
 .asmblyr
@@ -15,3 +18,19 @@ docs/reference/*-guide.md
 docs/reference/kit-*.md
 docs/reference/plugin-color.md
 docs/archive.md
+/infra/
+/plugins/
+work
+outputs
+backups
+docs/design
+docs/research
+docs/reviews
+docs/ideas
+*.env
+*.env.*
+.env
+.env.*
+# Versioned migrations retain their original source.
+apps/core/migrations/*.cjs
+packages/plugin-comments/server/migrations/*.ts

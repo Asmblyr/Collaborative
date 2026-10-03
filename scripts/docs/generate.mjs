@@ -119,7 +119,7 @@ const guides = {
   "kit-lifecycle": "packages/kit/LIFECYCLE.md",
   "kit-capabilities": "packages/kit/CAPABILITIES.md",
   "kit-ui": "packages/kit/UI.md",
-  "plugin-color": "plugins/color/README.md",
+  "plugin-color": "examples/plugins/color/README.md",
 };
 for (const [name, source] of Object.entries(guides)) {
   let content = await readFile(path.join(root, source), "utf8");
@@ -131,42 +131,22 @@ for (const [name, source] of Object.entries(guides)) {
     .replace(/\((?:\.\/)?UI\.md\)/g, "(./kit-ui.md)")
     .replaceAll("../sdk/README.md", "./sdk-guide.md")
     .replaceAll(
-      "../../docs/design/plugin-actions.md",
-      "/history/design/plugin-actions.md.txt",
+      "../../docs/development/plugin-actions.md",
+      "../development/plugin-actions.md",
     )
-    .replaceAll("../../plugins/color/README.md", "./plugin-color.md")
-    .replaceAll("../../packages/kit/FIELDS.md", "./kit-fields.md");
+    .replaceAll("../../examples/plugins/color/README.md", "./plugin-color.md")
+    .replaceAll("../../../packages/kit/FIELDS.md", "./kit-fields.md");
+  if (name === "plugin-color") {
+    content = content.replaceAll(
+      "(../README.md)",
+      "(https://github.com/Asmblyr/Collaborative/blob/main/examples/plugins/README.md)",
+    );
+  }
   await output(
     `docs/reference/${name}.md`,
     `<!-- Generated from ${source}; edit the source. -->\n\n${content.replaceAll("\r\n", "\n")}`,
   );
 }
-const history = [];
-for (const directory of ["design", "ideas", "research", "reviews"]) {
-  const { readdir } = await import("node:fs/promises");
-  const files = (await readdir(path.join(root, "docs", directory)))
-    .filter((name) => name.endsWith(".md"))
-    .sort();
-  history.push(
-    `## ${directory}\n\n${files.map((name) => `- [${name}](/history/${directory}/${name}.txt)`).join("\n")}`,
-  );
-  if (!check) {
-    await mkdir(path.join(root, "docs/public/history", directory), {
-      recursive: true,
-    });
-    for (const name of files) {
-      await cp(
-        path.join(root, "docs", directory, name),
-        path.join(root, "docs/public/history", directory, `${name}.txt`),
-      );
-    }
-  }
-}
-await output(
-  "docs/archive.md",
-  `# Архив решений и исследований\n\nИсторические материалы сохранены по прежним путям. Это снимки на дату написания: планы и старые ограничения в них не описывают текущий продукт. Для текущего поведения используйте функциональные страницы и последний аудит. Ссылки ниже открывают исходный Markdown.\n\n${history.join("\n\n")}\n`,
-);
-
 if (!check) {
   const swagger = path.dirname(require.resolve("swagger-ui-dist/package.json"));
   await mkdir(path.join(root, "docs/public/api"), { recursive: true });

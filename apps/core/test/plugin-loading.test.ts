@@ -20,6 +20,10 @@ test("loads a built local workspace plugin through its package exports", async (
     (plugin) => plugin.name === "@asmblyr/plugin-comments",
   );
   assert.ok(comments);
+  assert.deepEqual(
+    plugins.map((plugin) => plugin.name),
+    ["@asmblyr/plugin-comments"],
+  );
   assert.deepEqual(comments.definition, {});
   assert.ok(
     comments.endpoints.some(
@@ -143,40 +147,46 @@ test("compiled collection indexes reject traversal and duplicates", async (t) =>
   }
 });
 
-test("development discovers source routes in an enabled local package without dist", async (t) => {
-  const { directory, project } = await fixture(t, ["local-plugin"]);
-  const local = path.join(directory, "plugins/local");
-  await mkdir(path.join(local, "server/api/comments"), { recursive: true });
-  await writeFile(
-    path.join(local, "package.json"),
-    JSON.stringify({
-      name: "local-plugin",
-      type: "module",
-      asmblyr: { manifest: { version: 1 } },
-      exports: {
-        ".": "./dist/plugin.js",
-        "./package.json": "./package.json",
-        "./routes": "./dist/routes.json",
-      },
-    }),
-  );
-  await writeFile(path.join(local, "plugin.ts"), "export default {};");
-  await writeFile(
-    path.join(local, "server/api/comments/status.get.ts"),
-    "export default () => ({ data: 'source' });",
-  );
-  await mkdir(path.join(directory, "node_modules"));
-  await symlink(
-    local,
-    path.join(directory, "node_modules/local-plugin"),
-    "junction",
-  );
+for (const location of [
+  "plugins/local",
+  "packages/local",
+  "examples/plugins/local",
+]) {
+  test(`development discovers source routes in ${location} without dist`, async (t) => {
+    const { directory, project } = await fixture(t, ["local-plugin"]);
+    const local = path.join(directory, location);
+    await mkdir(path.join(local, "server/api/comments"), { recursive: true });
+    await writeFile(
+      path.join(local, "package.json"),
+      JSON.stringify({
+        name: "local-plugin",
+        type: "module",
+        asmblyr: { manifest: { version: 1 } },
+        exports: {
+          ".": "./dist/plugin.js",
+          "./package.json": "./package.json",
+          "./routes": "./dist/routes.json",
+        },
+      }),
+    );
+    await writeFile(path.join(local, "plugin.ts"), "export default {};");
+    await writeFile(
+      path.join(local, "server/api/comments/status.get.ts"),
+      "export default () => ({ data: 'source' });",
+    );
+    await mkdir(path.join(directory, "node_modules"));
+    await symlink(
+      local,
+      path.join(directory, "node_modules/local-plugin"),
+      "junction",
+    );
 
-  const [plugin] = await loadPlugins(project, { sourcePlugins: true });
-  assert.deepEqual(plugin.definition, {});
-  assert.equal(plugin.endpoints[0].path, "/comments/status");
-  await assert.rejects(loadPlugins(project), /Cannot load plugin/);
-});
+    const [plugin] = await loadPlugins(project, { sourcePlugins: true });
+    assert.deepEqual(plugin.definition, {});
+    assert.equal(plugin.endpoints[0].path, "/comments/status");
+    await assert.rejects(loadPlugins(project), /Cannot load plugin/);
+  });
+}
 
 test("compiled route indexes cannot reference outside server/api", async (t) => {
   const { directory, project } = await fixture(t, ["example-plugin"]);

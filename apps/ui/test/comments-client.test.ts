@@ -1,15 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { RecordPanelProps } from "@asmblyr/kit/ui";
-import { createCommentsClient } from "../../../plugins/comments/ui/api/comments.js";
+import { createCommentsClient } from "../../../packages/plugin-comments/ui/api/comments.js";
 
 test("comments client encodes record addresses and exposes separate typed operations", async () => {
   const calls: { path: string; init?: RequestInit }[] = [];
-  const request: RecordPanelProps["request"] = async <T>(path: string, init?: RequestInit) => {
+  const request: RecordPanelProps["request"] = async <T>(
+    path: string,
+    init?: RequestInit,
+  ) => {
     calls.push({ path, init });
     return { data: { id: "comment" } } as T;
   };
-  const api = createCommentsClient(request, { collection: "articles", item: "key/with space" });
+  const api = createCommentsClient(request, {
+    collection: "articles",
+    item: "key/with space",
+  });
   const signal = new AbortController().signal;
   await api.list(2, signal);
   await api.create("hello");

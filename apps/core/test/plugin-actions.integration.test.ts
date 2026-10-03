@@ -12,34 +12,49 @@ import type { PluginPreparedAction } from "@asmblyr/contracts";
 
 test("HTTP and assistant/internal MCP use one calculation; drafts recheck session and owner", async (t) => {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
-  const plugins = (await loadPlugins(new URL("../../../package.json", import.meta.url))).filter(
-    (entry) => entry.namespace === "calculator",
-  );
+  const plugins = (
+    await loadPlugins(
+      new URL("../../../examples/plugins/package.json", import.meta.url),
+    )
+  ).filter((entry) => entry.namespace === "calculator");
   assert.equal(plugins.length, 1);
   const input = { users: 150, monthlyPrice: 990, months: 12, discount: 10 };
   const config = assistantConfigFromEnv({
     OPENAI_API_KEY: "test",
     OPENAI_API_MODEL: "test-model",
   })!;
-  const assistant = new AssistantService(config, async (_input, signal, _instructions, run) => {
-    assert.ok(run?.tools?.definitions.some((tool) => tool.name === "plugin_calculator__calculate"));
-    const presentation = run!.tools!.definitions.find(
-      (tool) => tool.name === "present_plugin_result",
-    )!;
-    assert.deepEqual(presentation.parameters.properties, { resultId: { type: "string" } });
-    assert.deepEqual(presentation.parameters.required, ["resultId"]);
-    const result = (await run!.tools!.execute("plugin_calculator__calculate", input, signal)) as {
-      prepared: PluginPreparedAction;
-    };
-    assert.ok(result.prepared.draftId);
-    const presented = await run!.tools!.execute(
-      "present_plugin_result",
-      { resultId: result.prepared.draftId },
-      signal,
-    );
-    assert.deepEqual(presented, { presented: true, requiresUserClick: true });
-    return { content: "Расчёт готов.", truncated: false };
-  });
+  const assistant = new AssistantService(
+    config,
+    async (_input, signal, _instructions, run) => {
+      assert.ok(
+        run?.tools?.definitions.some(
+          (tool) => tool.name === "plugin_calculator__calculate",
+        ),
+      );
+      const presentation = run!.tools!.definitions.find(
+        (tool) => tool.name === "present_plugin_result",
+      )!;
+      assert.deepEqual(presentation.parameters.properties, {
+        resultId: { type: "string" },
+      });
+      assert.deepEqual(presentation.parameters.required, ["resultId"]);
+      const result = (await run!.tools!.execute(
+        "plugin_calculator__calculate",
+        input,
+        signal,
+      )) as {
+        prepared: PluginPreparedAction;
+      };
+      assert.ok(result.prepared.draftId);
+      const presented = await run!.tools!.execute(
+        "present_plugin_result",
+        { resultId: result.prepared.draftId },
+        signal,
+      );
+      assert.deepEqual(presented, { presented: true, requiresUserClick: true });
+      return { content: "Расчёт готов.", truncated: false };
+    },
+  );
   const app = createApp({
     databaseUrl: process.env.DATABASE_URL,
     logger: false,
@@ -60,10 +75,16 @@ test("HTTP and assistant/internal MCP use one calculation; drafts recheck sessio
   const headers = { authorization: `Bearer ${tokens[0].accessToken}` };
   const actionUrl = "/calculator/calculate";
   assert.equal(
-    (await app.inject({ method: "POST", url: actionUrl, payload: input })).statusCode,
+    (await app.inject({ method: "POST", url: actionUrl, payload: input }))
+      .statusCode,
     401,
   );
-  const direct = await app.inject({ method: "POST", url: actionUrl, headers, payload: input });
+  const direct = await app.inject({
+    method: "POST",
+    url: actionUrl,
+    headers,
+    payload: input,
+  });
   assert.equal(direct.statusCode, 200, direct.body);
   assert.equal(direct.json().data.output.totalKopecks, 160_380_000);
   assert.equal(
@@ -99,7 +120,10 @@ test("HTTP and assistant/internal MCP use one calculation; drafts recheck sessio
     ).statusCode,
     404,
   );
-  assert.equal((await app.inject({ method: "GET", url: actionUrl, headers })).statusCode, 404);
+  assert.equal(
+    (await app.inject({ method: "GET", url: actionUrl, headers })).statusCode,
+    404,
+  );
   assert.equal(
     (
       await app.inject({
@@ -156,7 +180,15 @@ test("HTTP and assistant/internal MCP use one calculation; drafts recheck sessio
     headers: { authorization: `Bearer ${tokens[1].accessToken}` },
   });
   assert.equal(foreign.statusCode, 404);
-  await db("asmblyr_users").where({ id: users[0] }).update({ status: "disabled" });
-  assert.equal((await app.inject({ method: "GET", url: draftUrl, headers })).statusCode, 401);
-  assert.equal((await app.inject({ method: "GET", url: "/mcp", headers })).statusCode, 404);
+  await db("asmblyr_users")
+    .where({ id: users[0] })
+    .update({ status: "disabled" });
+  assert.equal(
+    (await app.inject({ method: "GET", url: draftUrl, headers })).statusCode,
+    401,
+  );
+  assert.equal(
+    (await app.inject({ method: "GET", url: "/mcp", headers })).statusCode,
+    404,
+  );
 });

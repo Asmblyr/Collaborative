@@ -6,7 +6,22 @@ import { defineUiPlugin } from "@asmblyr/kit/ui";
 import { PluginRegistryProvider } from "../src/components/plugins/registry";
 import { ItemFieldInput } from "../src/components/items/item-field-input";
 import { ContentValue } from "../src/components/items/content-value";
-import { readColorOptions } from "../../../plugins/color/ui/color-options";
+import { readColorOptions } from "../../../examples/plugins/color/ui/color-options";
+import colorPlugin from "../../../examples/plugins/color/ui/index";
+import { uiPlugins } from "../src/generated/plugin-ui";
+
+const installedPlugins = [...uiPlugins];
+test.before(() => {
+  // This example is a test fixture; production enables only configured packages.
+  uiPlugins.push({
+    packageName: "@asmblyr/plugin-color",
+    namespace: "color",
+    definition: colorPlugin,
+  });
+});
+test.after(() => {
+  uiPlugins.splice(0, uiPlugins.length, ...installedPlugins);
+});
 
 const field = {
   name: "color",
