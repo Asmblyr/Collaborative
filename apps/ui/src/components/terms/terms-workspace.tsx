@@ -1,13 +1,13 @@
 "use client";
 
-import { SettingsReadOnlyNotice } from "@/components/system-settings/read-only-notice";
+import { SettingsReadOnlyNotice } from "@/components/admin/settings/read-only-notice";
 
 import { useState } from "react";
 import { BookOpen, Plus, Search } from "lucide-react";
-import type { TermDefinition } from "@asmblyr/contracts";
+import type { TermDefinition } from "@asmblyr-collaborative/contracts";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import {
   Table,
   TableBody,
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/table";
 import { EditorDialog } from "@/components/collections/editor-dialog";
 import { TermForm } from "./term-form";
+import { useUiCopy } from "@/lib/ui-copy";
+import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 
 export function TermsWorkspace({
   readOnly = false,
@@ -26,6 +28,9 @@ export function TermsWorkspace({
   readOnly?: boolean;
   initial: TermDefinition[];
 }) {
+  const copy = useUiCopy();
+  const { t } = useTranslations();
+
   const [terms, setTerms] = useState(initial);
   const [query, setQuery] = useState("");
   const [editor, setEditor] = useState<{ term: TermDefinition | null } | null>(
@@ -49,17 +54,18 @@ export function TermsWorkspace({
             id="terms-title"
             className="text-xl font-semibold tracking-tight"
           >
-            Термины
+            {t("admin.terms")}
           </h1>
           <p className="text-sm leading-6 text-muted-foreground">
-            Общий словарь для работы с данными. Объясните понятия вашей команды,
-            а в настройках коллекций свяжите их с точными условиями.
+            {copy(
+              "Общий словарь для работы с данными. Объясните понятия вашей команды, а в настройках коллекций свяжите их с точными условиями. ",
+            )}
           </p>
         </div>
         {!readOnly && (
           <Button onClick={() => setEditor({ term: null })}>
             <Plus />
-            Добавить термин
+            {copy("Добавить термин ")}
           </Button>
         )}
       </div>
@@ -72,8 +78,8 @@ export function TermsWorkspace({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="pl-9"
-              aria-label="Поиск терминов"
-              placeholder="Найти термин или синоним…"
+              aria-label={copy("Поиск терминов")}
+              placeholder={copy("Найти термин или синоним…")}
             />
           </div>
           <span className="text-xs text-muted-foreground">
@@ -83,9 +89,9 @@ export function TermsWorkspace({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-56 pl-4">Термин</TableHead>
-              <TableHead>Определение</TableHead>
-              <TableHead className="w-28">Состояние</TableHead>
+              <TableHead className="w-56 pl-4">{copy("Термин")}</TableHead>
+              <TableHead>{copy("Определение")}</TableHead>
+              <TableHead className="w-28">{copy("Состояние")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -108,7 +114,7 @@ export function TermsWorkspace({
                   </Button>
                   {term.builtin && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Базовый
+                      {copy("Базовый ")}
                     </p>
                   )}
                 </TableCell>
@@ -122,7 +128,7 @@ export function TermsWorkspace({
                 </TableCell>
                 <TableCell className="align-top py-4">
                   <Badge variant={term.enabled ? "secondary" : "outline"}>
-                    {term.enabled ? "Включён" : "Выключен"}
+                    {term.enabled ? copy("Включён") : copy("Выключен")}
                   </Badge>
                 </TableCell>
               </TableRow>
@@ -132,19 +138,22 @@ export function TermsWorkspace({
         {!visible.length && (
           <div className="space-y-2 p-10 text-center text-sm text-muted-foreground">
             <BookOpen className="mx-auto size-6" />
-            <p>Термины не найдены</p>
+            <p>{copy("Термины не найдены")}</p>
           </div>
         )}
       </div>
       <p className="text-xs leading-5 text-muted-foreground">
-        Базовые определения можно менять. Термин начинает работать с данными
-        после настройки условия в коллекции.
+        {copy(
+          "Базовые определения можно менять. Термин начинает работать с данными после настройки условия в коллекции. ",
+        )}
       </p>
       {editor && (
         <EditorDialog
           open
-          title={editor.term ? "Настройка термина" : "Новый термин"}
-          eyebrow={readOnly ? "Справочник · просмотр" : "Справочник"}
+          title={editor.term ? copy("Настройка термина") : copy("Новый термин")}
+          eyebrow={
+            readOnly ? copy("Справочник · просмотр") : copy("Справочник")
+          }
           onClose={() => setEditor(null)}
         >
           {(_container, close) => (

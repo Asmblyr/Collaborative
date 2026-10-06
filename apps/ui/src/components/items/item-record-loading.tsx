@@ -1,5 +1,8 @@
-import { Button } from "@asmblyr/kit/ui/button";
+"use client";
+
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemRecordLoading({
   message,
@@ -8,6 +11,8 @@ export function ItemRecordLoading({
   message: string;
   onRetry: () => void;
 }) {
+  const copy = useUiCopy();
+
   return (
     <div
       className="space-y-6"
@@ -19,13 +24,13 @@ export function ItemRecordLoading({
             role="alert"
             className="text-sm text-destructive"
           >
-            {message}
+            {copy(message)}
           </p>
           <Button
             variant="outline"
             onClick={onRetry}
           >
-            Повторить
+            {copy("Повторить ")}
           </Button>
         </div>
       ) : (
@@ -34,7 +39,7 @@ export function ItemRecordLoading({
             role="status"
             className="sr-only"
           >
-            Загрузка записи…
+            {copy("Загрузка записи… ")}
           </p>
           <Skeleton className="h-9 w-full" />
           <div

@@ -1,3 +1,3 @@
-import { definePlugin } from "@asmblyr/kit";
+import { definePlugin } from "@asmblyr-collaborative/kit";
 
 export default definePlugin({});

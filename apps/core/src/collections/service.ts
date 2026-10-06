@@ -23,6 +23,7 @@ import { assertNoAlias } from "./field-name.js";
 import { postgresCode } from "../shared/postgres-error.js";
 import { createCollectionStorage } from "./create-storage.js";
 import { saveFieldMetadata } from "./field-metadata.js";
+import { assertCollectionWritable } from "./source-access.js";
 
 export { listCollections } from "./catalog-repository.js";
 export { updateCollectionField } from "./field-update-service.js";
@@ -126,6 +127,7 @@ export async function addFieldDefinition(
     await database.transaction(async (transaction) => {
       const settings = await findCollectionSettings(transaction, name);
       if (!settings) throw new CollectionNotFoundError(name);
+      assertCollectionWritable(settings);
       if (isManagedColumn(settings, field.name)) {
         throw new CollectionFieldConflictError(
           `Field name is managed: ${field.name}`,

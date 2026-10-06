@@ -2,11 +2,12 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { ItemFieldInput } from "./item-field-input";
 import { payloadValue } from "./item-input-values";
 import type { Collection, ItemValue } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemBulkDialog({
   collection,
@@ -26,6 +27,8 @@ export function ItemBulkDialog({
     close: () => void,
   ) => Promise<void>;
 }) {
+  const copy = useUiCopy();
+
   const formId = useId(),
     [enabled, setEnabled] = useState<Set<string>>(() => new Set());
   const [initialCount] = useState(count);
@@ -47,13 +50,15 @@ export function ItemBulkDialog({
         Object.fromEntries(
           fields
             .filter((f) => enabled.has(f.name))
-            .map((f) => [f.name, payloadValue(f, values[f.name] ?? "")]),
+            .map((f) => [f.name, payloadValue(f, values[f.name] ?? "", copy)]),
         ),
         close,
       );
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : "Не удалось изменить записи",
+        reason instanceof Error
+          ? reason.message
+          : copy("Не удалось изменить записи"),
       );
     }
   }
@@ -61,7 +66,7 @@ export function ItemBulkDialog({
     <EditorDialog
       open
       busy={pending || uploading}
-      title="Изменить выбранные записи"
+      title={copy("Изменить выбранные записи")}
       eyebrow={collection.displayName || collection.name}
       onClose={onClose}
       footer={(close) => (
@@ -71,14 +76,18 @@ export function ItemBulkDialog({
             form={formId}
             disabled={pending || uploading || !enabled.size}
           >
-            {pending ? "Сохраняем…" : `Применить к ${initialCount} записям`}
+            {pending
+              ? copy("Сохраняем…")
+              : copy("Применить к {{value0}} записям", {
+                  value0: initialCount,
+                })}
           </Button>
           <Button
             variant="ghost"
             disabled={pending || uploading}
             onClick={close}
           >
-            Отмена
+            {copy("Отмена ")}
           </Button>
         </div>
       )}
@@ -90,8 +99,9 @@ export function ItemBulkDialog({
           className="space-y-5"
         >
           <p className="text-sm text-muted-foreground">
-            Отметьте поля, которые нужно заменить во всех выбранных записях.
-            Остальные значения сохранятся.
+            {copy(
+              "Отметьте поля, которые нужно заменить во всех выбранных записях. Остальные значения сохранятся. ",
+            )}
           </p>
           {fields.map((field) => (
             <section
@@ -137,7 +147,7 @@ export function ItemBulkDialog({
               role="alert"
               className="text-sm text-destructive"
             >
-              {error}
+              {copy(error)}
             </p>
           )}
         </form>

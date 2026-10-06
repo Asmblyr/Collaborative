@@ -1,3 +1,4 @@
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 export interface StoredFile {
   id: string;
   filename: string;
@@ -8,6 +9,7 @@ export interface StoredFile {
   sha256: string;
   status: "uploading" | "ready" | "failed" | "deleting";
   previewable: boolean;
+  visibility?: "private" | "public";
   uploadedBy: string;
   createdAt: string;
   updatedAt: string;
@@ -29,10 +31,10 @@ export const fileStatus = {
   failed: "Ошибка загрузки",
   deleting: "Удаляется",
 };
-export function fileSize(bytes: number) {
+export function fileSize(bytes: number, copy: UiCopy = originalCopy) {
   return bytes < 1024
-    ? `${bytes} Б`
+    ? copy("{{value0}} Б", { value0: bytes })
     : bytes < 1024 * 1024
-      ? `${(bytes / 1024).toFixed(1)} КБ`
-      : `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+      ? copy("{{value0}} КБ", { value0: (bytes / 1024).toFixed(1) })
+      : copy("{{value0}} МБ", { value0: (bytes / (1024 * 1024)).toFixed(1) });
 }

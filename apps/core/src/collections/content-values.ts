@@ -1,6 +1,6 @@
-import { richTextSanitizerOptions } from "@asmblyr/contracts";
-import type { FieldConstraints } from "@asmblyr/contracts";
-export type { FieldConstraints } from "@asmblyr/contracts";
+import { richTextSanitizerOptions } from "@asmblyr-collaborative/contracts";
+import type { FieldConstraints } from "@asmblyr-collaborative/contracts";
+export type { FieldConstraints } from "@asmblyr-collaborative/contracts";
 import sanitizeHtml from "sanitize-html";
 import { decodeHTML } from "entities";
 import { CollectionInputError } from "./validation.js";

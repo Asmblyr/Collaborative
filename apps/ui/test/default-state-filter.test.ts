@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defaultCollectionState } from "@asmblyr/contracts";
+import { defaultCollectionState } from "@asmblyr-collaborative/contracts";
 import { defaultStateFilter } from "../src/components/items/default-state-filter";
 import { filterFields } from "../src/components/items/item-filter-options";
 import { describeFilter } from "../src/components/items/item-filter-description";

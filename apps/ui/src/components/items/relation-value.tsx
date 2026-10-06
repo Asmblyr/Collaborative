@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { itemLabelField } from "./item-label";
 import { useRelationItems } from "./use-relation-items";
 import type { Collection } from "./types";

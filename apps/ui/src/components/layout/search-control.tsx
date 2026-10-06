@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { itemSearchHref, type SearchResults } from "@/lib/search";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function SearchControl({
   collection,
@@ -14,6 +15,8 @@ export function SearchControl({
   collection?: string;
   localLabel?: string;
 }) {
+  const copy = useUiCopy();
+
   const scoped = Boolean(collection || localLabel);
   const pathname = usePathname();
   const router = useRouter();
@@ -37,12 +40,14 @@ export function SearchControl({
       if (query) next.set("q", query);
       else next.delete("q");
       next.delete("page");
+      if (collection && !urlQuery && query) next.set("order", "relevance");
+      if (collection && !query) next.set("order", "field");
       router.replace(`${pathname}${next.size ? `?${next}` : ""}`, {
         scroll: false,
       });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [scoped, params, pathname, query, router, urlQuery]);
+  }, [collection, scoped, params, pathname, query, router, urlQuery]);
 
   useEffect(() => {
     if (scoped || !query) return;
@@ -79,6 +84,8 @@ export function SearchControl({
       if (query) next.set("q", query);
       else next.delete("q");
       next.delete("page");
+      if (collection && !urlQuery && query) next.set("order", "relevance");
+      if (collection && !query) next.set("order", "field");
       router.replace(`${pathname}${next.size ? `?${next}` : ""}`, {
         scroll: false,
       });
@@ -109,10 +116,14 @@ export function SearchControl({
           ref={input}
           type="search"
           aria-label={
-            scoped ? `Поиск в ${localLabel ?? collection}` : "Глобальный поиск"
+            scoped
+              ? copy("Поиск в {{value0}}", { value0: localLabel ?? collection })
+              : copy("Глобальный поиск")
           }
           placeholder={
-            scoped ? `Поиск в ${localLabel ?? collection}` : "Поиск везде"
+            scoped
+              ? copy("Поиск в {{value0}}", { value0: localLabel ?? collection })
+              : copy("Поиск везде")
           }
           value={value}
           onChange={(event) => {
@@ -129,25 +140,27 @@ export function SearchControl({
           href={`/search?q=${encodeURIComponent(query)}`}
           className="absolute right-1 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
         >
-          Везде
+          {copy("Везде ")}
         </Link>
       )}
       {!scoped && open && query && (
         <div
           role="region"
-          aria-label="Результаты поиска"
+          aria-label={copy("Результаты поиска")}
           className="absolute right-0 z-50 mt-2 max-h-96 w-full min-w-72 overflow-y-auto rounded-xl border bg-popover p-2 text-sm shadow-lg sm:w-96"
         >
           {error ? (
-            <p className="p-2 text-muted-foreground">Поиск недоступен</p>
+            <p className="p-2 text-muted-foreground">
+              {copy("Поиск недоступен")}
+            </p>
           ) : !results ? (
-            <p className="p-2 text-muted-foreground">Ищем…</p>
+            <p className="p-2 text-muted-foreground">{copy("Ищем…")}</p>
           ) : (
             <>
               {results.collections.length > 0 && (
                 <div className="py-1">
                   <p className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                    Коллекции
+                    {copy("Коллекции ")}
                   </p>
                   {results.collections
                     .slice(0, 5)
@@ -165,7 +178,7 @@ export function SearchControl({
               {results.items.length > 0 && (
                 <div className="py-1">
                   <p className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                    Записи
+                    {copy("Записи ")}
                   </p>
                   {results.items.slice(0, 5).map((item) => (
                     <Link
@@ -183,13 +196,15 @@ export function SearchControl({
               )}
               {results.collections.length === 0 &&
                 results.items.length === 0 && (
-                  <p className="p-2 text-muted-foreground">Ничего не найдено</p>
+                  <p className="p-2 text-muted-foreground">
+                    {copy("Ничего не найдено")}
+                  </p>
                 )}
               <Link
                 href={`/search?q=${encodeURIComponent(query)}`}
                 className="block rounded border-t px-2 py-2 text-primary hover:bg-muted"
               >
-                Открыть страницу поиска
+                {copy("Открыть страницу поиска ")}
               </Link>
             </>
           )}

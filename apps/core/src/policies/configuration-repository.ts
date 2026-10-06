@@ -1,8 +1,12 @@
 import {
+  lockPermissionCollection,
+  validateSourcePermission,
+} from "../permissions/collection-lock.js";
+import {
   parseRowFilter,
   validateRowFilter,
 } from "../permissions/row-filter.js";
-import type { PermissionFilter } from "@asmblyr/contracts";
+import type { PermissionFilter } from "@asmblyr-collaborative/contracts";
 import { replaceSettingsPermissions } from "../permissions/settings-permissions.js";
 import type { CollectionPermissionInput } from "../permissions/validation.js";
 import type { Knex } from "knex";
@@ -62,14 +66,12 @@ async function writePermissions(
   );
 
   for (const name of names) {
-    await transaction.raw("LOCK TABLE ?? IN ACCESS SHARE MODE", [
-      `public.${name}`,
-    ]);
+    await lockPermissionCollection(transaction, name);
   }
   const columns =
     names.length === 0
       ? []
-      : await transaction("information_schema.columns")
+      : await transaction("public.asmblyr_columns")
           .where({ table_schema: "public" })
           .whereIn("table_name", names)
           .select<
@@ -91,6 +93,7 @@ async function writePermissions(
     aliases.map((alias) => `${alias.collection_name}:${alias.field_name}`),
   );
   for (const entry of input.permissions) {
+    await validateSourcePermission(transaction, entry.collection, entry.action);
     await validateRowFilter(transaction, entry.collection, entry.rowFilter);
     if (
       entry.fields.some(

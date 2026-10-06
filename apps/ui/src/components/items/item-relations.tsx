@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { RelationPanel } from "./relation-panel";
 import type { Collection } from "./types";
 import type { RecordEditorRequest } from "./record-editor-types";
 import type { RecordDraft } from "./record-draft-model";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface RelatedGroup {
   sourceCollection: string;
@@ -17,6 +18,7 @@ interface RelatedGroup {
 
 export function ItemRelations({
   collection,
+  excludeAliases = [],
   catalog,
   itemId,
   portalContainer,
@@ -26,6 +28,7 @@ export function ItemRelations({
   busy,
 }: {
   collection: Collection;
+  excludeAliases?: string[];
   catalog: Collection[];
   itemId: string;
   portalContainer: HTMLElement | null;
@@ -34,6 +37,8 @@ export function ItemRelations({
   onDraftChange: (draft: RecordDraft) => void;
   busy: boolean;
 }) {
+  const copy = useUiCopy();
+
   const [groups, setGroups] = useState<RelatedGroup[]>([]);
   const [pending, setPending] = useState(true);
   const [error, setError] = useState("");
@@ -54,7 +59,7 @@ export function ItemRelations({
             message?: string;
           } | null;
           throw new Error(
-            body?.message ?? "Не удалось загрузить связанные записи",
+            body?.message ?? copy("Не удалось загрузить связанные записи"),
           );
         }
         return response.json() as Promise<{ data: RelatedGroup[] }>;
@@ -67,7 +72,7 @@ export function ItemRelations({
           setError(
             reason instanceof Error
               ? reason.message
-              : "Не удалось загрузить связанные записи",
+              : copy("Не удалось загрузить связанные записи"),
           );
         }
       })
@@ -75,12 +80,14 @@ export function ItemRelations({
         if (!controller.signal.aborted) setPending(false);
       });
     return () => controller.abort();
-  }, [collection.name, itemId, revision]);
+  }, [collection.name, itemId, revision, copy]);
 
   const aliases = collection.fields
     .filter(
       (field) =>
         field.type === "alias" &&
+        !field.presentation?.rules?.hidden &&
+        !excludeAliases.includes(field.name) &&
         (collection.access.read?.includes("*") ||
           collection.access.read?.includes(field.name)),
     )
@@ -110,10 +117,10 @@ export function ItemRelations({
     <div className="space-y-4">
       {(aliases.length > 0 || visibleGroups.length > 0) && (
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-semibold">Связанные записи</h3>
+          <h3 className="text-sm font-semibold">{copy("Связанные записи")}</h3>
           {aliases.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              Связи сохранятся вместе с карточкой
+              {copy("Связи сохранятся вместе с карточкой ")}
             </p>
           )}
         </div>
@@ -143,7 +150,7 @@ export function ItemRelations({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          Загрузка связанных записей…
+          {copy("Загрузка связанных записей… ")}
         </p>
       )}
       {error && (
@@ -151,7 +158,7 @@ export function ItemRelations({
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
           <Button
             type="button"
             variant="ghost"
@@ -162,12 +169,14 @@ export function ItemRelations({
               setRevision((value) => value + 1);
             }}
           >
-            Повторить
+            {copy("Повторить ")}
           </Button>
         </div>
       )}
       {visibleGroups.length > 0 && (
-        <h3 className="text-sm font-medium">Где используется эта запись</h3>
+        <h3 className="text-sm font-medium">
+          {copy("Где используется эта запись")}
+        </h3>
       )}
       {visibleGroups.map((group) => (
         <section
@@ -199,7 +208,7 @@ export function ItemRelations({
           </ul>
           {group.hasMore && (
             <p className="text-xs text-muted-foreground">
-              Показаны первые 20 записей.
+              {copy("Показаны первые 20 записей. ")}
             </p>
           )}
         </section>

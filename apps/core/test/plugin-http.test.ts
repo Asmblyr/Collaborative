@@ -6,7 +6,7 @@ import {
   definePlugin,
   useAsmblyr,
   type EndpointDefinition,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import {
   getRouterParam,
   HTTPError,

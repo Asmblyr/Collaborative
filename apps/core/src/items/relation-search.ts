@@ -1,3 +1,4 @@
+import { searchPriorities } from "../collections/search-priority.js";
 import type { Knex } from "knex";
 import type { Collection } from "../collections/types.js";
 import { grantFor, type Access } from "../permissions/access.js";
@@ -9,6 +10,7 @@ export interface RelationSearchPath {
   targetCollection: string;
   targetKey: string;
   targetFields: string[];
+  targetPriorities?: Record<string, boolean>;
   throughCollection?: string;
   throughField?: string;
   relatedField?: string;
@@ -24,6 +26,7 @@ export function relationSearchPaths(
   for (const field of source.fields) {
     if (
       field.searchable !== true ||
+      field.presentation?.sensitive ||
       !field.relation ||
       (!sourceAllowed.includes("*") && !sourceAllowed.includes(field.name))
     )
@@ -39,6 +42,7 @@ export function relationSearchPaths(
         (entry) =>
           (entry.type === "text" || entry.type === "email") &&
           entry.searchable !== false &&
+          !entry.presentation?.sensitive &&
           (allowed.includes("*") || allowed.includes(entry.name)),
       )
       .map((entry) => entry.name);
@@ -66,6 +70,12 @@ export function relationSearchPaths(
       targetCollection: target.name,
       targetKey: target.primaryKey.name,
       targetFields,
+      targetPriorities: Object.fromEntries(
+        [...searchPriorities(target, target.fields)].map(([name, primary]) => [
+          name,
+          field.searchPriority ? field.searchPriority === "primary" : primary,
+        ]),
+      ),
       ...(relation.kind !== "m2o"
         ? {
             throughCollection: relation.throughCollection,
@@ -80,39 +90,34 @@ export function relationSearchPaths(
   return paths;
 }
 
-export function applyRelationSearch(
-  where: Knex.QueryBuilder,
+export function relationSearchQuery(
   database: Knex,
-  paths: RelationSearchPath[],
+  path: RelationSearchPath,
   pattern: string,
-): void {
-  for (const path of paths) {
-    if (path.kind === "m2m" && !path.relatedField) continue;
-    const matched =
-      path.kind === "m2m"
-        ? database({ bridge: `public.${path.throughCollection}` })
-            .join(
-              { related: `public.${path.targetCollection}` },
-              `bridge.${path.relatedField}`,
-              `related.${path.targetKey}`,
-            )
-            .select(`bridge.${path.throughField}`)
-        : database({ related: `public.${path.targetCollection}` }).select(
-            path.kind === "o2m"
-              ? `related.${path.throughField}`
-              : `related.${path.targetKey}`,
-          );
-    matched.where((target) => {
-      for (const field of path.targetFields) {
-        target.orWhereRaw("lower(??) LIKE lower(?) ESCAPE E'\\\\'", [
-          `related.${field}`,
-          pattern,
-        ]);
-      }
-    });
-    where.orWhereIn(
-      path.kind === "m2o" ? path.sourceField : path.sourceKey,
-      matched,
-    );
-  }
+  relatedAlias = "related",
+  bridgeAlias = "bridge",
+): Knex.QueryBuilder {
+  const matched =
+    path.kind === "m2m"
+      ? database({ [bridgeAlias]: `public.${path.throughCollection}` })
+          .join(
+            { [relatedAlias]: `public.${path.targetCollection}` },
+            `${bridgeAlias}.${path.relatedField}`,
+            `${relatedAlias}.${path.targetKey}`,
+          )
+          .select(`${bridgeAlias}.${path.throughField}`)
+      : database({ [relatedAlias]: `public.${path.targetCollection}` }).select(
+          path.kind === "o2m"
+            ? `${relatedAlias}.${path.throughField}`
+            : `${relatedAlias}.${path.targetKey}`,
+        );
+  matched.where((target) => {
+    for (const field of path.targetFields) {
+      target.orWhereRaw("lower(??) LIKE lower(?) ESCAPE E'\\\\'", [
+        `${relatedAlias}.${field}`,
+        pattern,
+      ]);
+    }
+  });
+  return matched;
 }

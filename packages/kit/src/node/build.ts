@@ -1,6 +1,7 @@
 import { lstat, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import ts from "typescript";
+import { readPluginTranslations } from "./translations.js";
 import { scanApiRoutes } from "./scan.js";
 import { parsePluginNamespace, scanCollectionFiles } from "./collections.js";
 import { scanMigrationFiles } from "./migrations.js";
@@ -21,6 +22,7 @@ function formatDiagnostics(diagnostics: readonly ts.Diagnostic[]): string {
 
 export async function buildPlugin(directory: string): Promise<void> {
   const root = await realpath(directory);
+  await readPluginTranslations(root);
   const metadata = JSON.parse(
     await readFile(path.join(root, "package.json"), "utf8"),
   );

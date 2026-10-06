@@ -1,4 +1,5 @@
 import type { Knex } from "knex";
+import { assertCollectionWritable } from "../collections/source-access.js";
 import {
   AccessDeniedError,
   requireGrant,
@@ -57,6 +58,7 @@ export async function commitRecordDraft(
       forced: Record<string, unknown> = {},
     ): Promise<string> {
       const schema = await collectionSchema(transaction, name);
+      assertCollectionWritable(schema.settings);
       const before = input.id
         ? await getItem(
             transaction,

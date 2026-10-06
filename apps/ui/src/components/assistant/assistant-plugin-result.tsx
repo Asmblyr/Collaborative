@@ -3,20 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight, SquareFunction } from "lucide-react";
-import type { AssistantPluginResult } from "@asmblyr/contracts";
-import { Button } from "@asmblyr/kit/ui/button";
+import type { AssistantPluginResult } from "@asmblyr-collaborative/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   loadPreparedAction,
   preparedActionHref,
 } from "@/components/plugins/action-client";
 import { pluginPageBlocksNavigation } from "@/components/plugins/page-state";
 import { navigateWithEditorGuard } from "@/components/collections/use-editor-navigation-guard";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function AssistantPluginResultCard({
   result,
 }: {
   result: AssistantPluginResult;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -25,21 +28,28 @@ export function AssistantPluginResultCard({
     setError("");
     if (pluginPageBlocksNavigation()) {
       setError(
-        "Сначала завершите расчёт или отмените изменения в текущей форме.",
+        copy(
+          "Сначала завершите расчёт или отмените изменения в текущей форме.",
+        ),
       );
       return;
     }
     setPending(true);
     try {
-      const draft = await loadPreparedAction(result.namespace, result.draftId);
+      const draft = await loadPreparedAction(
+        result.namespace,
+        result.draftId,
+        undefined,
+        copy,
+      );
       if (pluginPageBlocksNavigation())
-        throw new Error("В текущей форме появились изменения.");
+        throw new Error(copy("В текущей форме появились изменения."));
       navigateWithEditorGuard(() => router.push(preparedActionHref(draft)));
     } catch (failure) {
       setError(
         failure instanceof Error
           ? failure.message
-          : "Не удалось открыть форму.",
+          : copy("Не удалось открыть форму."),
       );
     } finally {
       setPending(false);
@@ -53,8 +63,9 @@ export function AssistantPluginResultCard({
         {result.title}
       </div>
       <p className="text-xs leading-5 text-muted-foreground">
-        Параметры и результат готовы к просмотру и редактированию. Форма
-        доступна до{" "}
+        {copy(
+          "Параметры и результат готовы к просмотру и редактированию. Форма доступна до",
+        )}{" "}
         {new Date(result.expiresAt).toLocaleTimeString("ru", {
           hour: "2-digit",
           minute: "2-digit",
@@ -69,14 +80,14 @@ export function AssistantPluginResultCard({
         onClick={() => void open()}
       >
         <ArrowUpRight />
-        {pending ? "Открываем…" : "Открыть страницу"}
+        {pending ? copy("Открываем…") : copy("Открыть страницу")}
       </Button>
       {error && (
         <p
           role="status"
           className="text-xs text-muted-foreground"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
     </div>

@@ -8,8 +8,8 @@ import {
   Link2,
   Plus,
 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { RecordChooser } from "./record-chooser";
 import { RelationRows } from "./relation-rows";
 import { RelationCreateDialog } from "./relation-create-dialog";
@@ -23,6 +23,7 @@ import {
 import { useRelationPanel } from "./use-relation-panel";
 import type { RecordEditorRequest } from "./record-editor-types";
 import type { Collection, CollectionField } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function RelationPanel({
   collection,
@@ -47,6 +48,8 @@ export function RelationPanel({
   draft: RelationDraft;
   onDraftChange: (draft: RelationDraft) => void;
 }) {
+  const copy = useUiCopy();
+
   const endpoint = `/api/items/${encodeURIComponent(collection)}/${encodeURIComponent(itemId)}/relations/${encodeURIComponent(field.name)}`;
   const state = useRelationPanel(
     endpoint,
@@ -162,13 +165,17 @@ export function RelationPanel({
               candidatesEndpoint={`${endpoint}/candidates`}
               description={
                 relation?.kind === "o2m"
-                  ? "Показаны только непривязанные записи. Занятые записи нужно сначала отвязать в прежней карточке."
-                  : "Записи, уже добавленные в эту карточку, скрыты."
+                  ? copy(
+                      "Показаны только непривязанные записи. Занятые записи нужно сначала отвязать в прежней карточке.",
+                    )
+                  : copy("Записи, уже добавленные в эту карточку, скрыты.")
               }
               emptyMessage={
                 relation?.kind === "o2m"
-                  ? "Нет свободных записей. Создайте новую или сначала отвяжите существующую в другой карточке."
-                  : "Нет доступных записей для добавления."
+                  ? copy(
+                      "Нет свободных записей. Создайте новую или сначала отвяжите существующую в другой карточке.",
+                    )
+                  : copy("Нет доступных записей для добавления.")
               }
               labelField={
                 field.presentation?.relation?.labelField
@@ -182,9 +189,10 @@ export function RelationPanel({
                   ? (choice) => {
                       onEdit({
                         collection: junction.name,
-                        title: "Параметры новой связи",
-                        description:
+                        title: copy("Параметры новой связи"),
+                        description: copy(
                           "Заполните параметры, чтобы связать выбранную запись с текущей.",
+                        ),
                         omitFields: keys,
                         onDraft: (record) =>
                           onDraftChange({
@@ -208,12 +216,12 @@ export function RelationPanel({
               trigger={
                 <>
                   <Link2 className="size-4" />
-                  Добавить существующую
+                  {copy("Добавить существующую ")}
                 </>
               }
               pending={pending}
               disabled={busy}
-              actionError={error}
+              actionError={copy(error)}
               onApply={
                 hasLinkForm
                   ? undefined
@@ -251,7 +259,7 @@ export function RelationPanel({
               onClick={() => (hasLinkForm ? setCreating(true) : editNew())}
             >
               <Plus />
-              Создать
+              {copy("Создать ")}
             </Button>
           )}
         </div>
@@ -266,8 +274,10 @@ export function RelationPanel({
               type="search"
               value={query}
               maxLength={100}
-              aria-label={`Поиск связанных записей ${field.name}`}
-              placeholder="Найти связанную запись…"
+              aria-label={copy("Поиск связанных записей {{value0}}", {
+                value0: field.name,
+              })}
+              placeholder={copy("Найти связанную запись…")}
               onChange={(event) => state.setQuery(event.target.value)}
             />
           </div>
@@ -277,14 +287,14 @@ export function RelationPanel({
             role="alert"
             className="px-4 py-3 text-sm text-destructive"
           >
-            {error}
+            {copy(error)}
             <Button
               type="button"
               size="sm"
               variant="ghost"
               onClick={refresh}
             >
-              Повторить
+              {copy("Повторить ")}
             </Button>
           </div>
         )}
@@ -293,12 +303,14 @@ export function RelationPanel({
             role="status"
             className="p-4 text-sm text-muted-foreground"
           >
-            Загрузка…
+            {copy("Загрузка… ")}
           </p>
         ) : !result?.data.length ? (
           !error && (
             <p className="p-5 text-center text-sm text-muted-foreground">
-              {query ? "Ничего не найдено" : "Связанных записей пока нет"}
+              {query
+                ? copy("Ничего не найдено")
+                : copy("Связанных записей пока нет")}
             </p>
           )
         ) : (
@@ -326,7 +338,9 @@ export function RelationPanel({
                     onEdit({
                       collection: junction.name,
                       id: row.linkId,
-                      title: `Параметры связи · ${row.label}`,
+                      title: copy("Параметры связи · {{value0}}", {
+                        value0: row.label,
+                      }),
                       itemEndpoint: `${endpoint}/links/${encodeURIComponent(row.linkId)}`,
                       omitFields: keys,
                       draft: draft.links?.find(
@@ -381,7 +395,7 @@ export function RelationPanel({
                     id: kind === "link" ? id : undefined,
                     draft: staged,
                     omitFields: keys,
-                    title: "Параметры связи",
+                    title: copy("Параметры связи"),
                     itemEndpoint:
                       kind === "link"
                         ? `${endpoint}/links/${encodeURIComponent(id)}`
@@ -425,14 +439,17 @@ export function RelationPanel({
         {result && Number(result.page.total) > result.page.size && (
           <div className="flex items-center justify-between gap-2 border-t px-3 py-2">
             <span className="text-xs text-muted-foreground">
-              Всего: {result.page.total}
+              {copy("Всего: ")}
+              {result.page.total}
             </span>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                aria-label={`Предыдущая страница ${field.name}`}
+                aria-label={copy("Предыдущая страница {{value0}}", {
+                  value0: field.name,
+                })}
                 disabled={busy || page === 1}
                 onClick={() => state.setPage(page - 1)}
               >
@@ -449,7 +466,9 @@ export function RelationPanel({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                aria-label={`Следующая страница ${field.name}`}
+                aria-label={copy("Следующая страница {{value0}}", {
+                  value0: field.name,
+                })}
                 disabled={
                   busy || page * result.page.size >= Number(result.page.total)
                 }

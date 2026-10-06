@@ -1,4 +1,5 @@
 export const pluginCapabilities = [
+  "connections.google",
   "identity.profile",
   "items.read",
   "items.write",
@@ -7,6 +8,7 @@ export const pluginCapabilities = [
   "hooks.items",
   "hooks.collections",
   "settings",
+  "notifications",
 ] as const;
 
 export type PluginCapability = (typeof pluginCapabilities)[number];

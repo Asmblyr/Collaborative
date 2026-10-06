@@ -10,6 +10,7 @@ import {
 import { ItemError, parseItem, parseItemId } from "./validation.js";
 import { databaseValues } from "./database-values.js";
 import { syncFileReferences, validateFileWrites } from "../files/references.js";
+import { applyFieldRules } from "./field-rule-service.js";
 import { assertExpectedValues } from "./expected-values.js";
 
 export async function updateItemRow(
@@ -45,6 +46,14 @@ export async function updateItemRow(
     before,
     values,
     expectedValues,
+    context,
+  );
+  values = await applyFieldRules(
+    transaction,
+    name,
+    fields,
+    values,
+    before,
     context,
   );
   if (

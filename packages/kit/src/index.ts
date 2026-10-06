@@ -46,17 +46,31 @@ export type {
   ItemReadOptions,
   ItemRecord,
   ItemResult,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 export type { ItemsReader, ItemsService } from "./items.js";
 export type { PluginStorage } from "./storage.js";
+export type {
+  NotificationRecord,
+  RecordNotificationInput,
+  RecordNotifications,
+} from "./notifications.js";
 export type {
   ItemFilterCondition,
   ItemFilterGroup,
   ItemFilterOperator,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 
 export { defineAction, useActionContext, ActionInputError } from "./action.js";
 export type { ActionContext, PluginAction } from "./action.js";
+export type {
+  PersonalConnections,
+  GoogleFile,
+  GoogleFileList,
+  GoogleText,
+  GoogleSheet,
+  GoogleCells,
+  GoogleWriteInput,
+} from "./connections.js";
 export { AccessGate } from "./access-gate.js";
 export {
   defineModelAnnotation,

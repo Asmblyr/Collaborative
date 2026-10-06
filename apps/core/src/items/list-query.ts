@@ -13,6 +13,7 @@ export interface ItemListQuery {
   sort?: unknown;
   direction?: unknown;
   q?: unknown;
+  order?: unknown;
   filter?: unknown;
 }
 
@@ -23,6 +24,7 @@ interface ParsedItemListQuery {
   direction: "asc" | "desc";
   offset: number;
   q: string;
+  order: import("@asmblyr-collaborative/contracts").ItemOrder;
   filters: FilterGroup;
 }
 
@@ -77,13 +79,23 @@ export function parseItemListQuery(
   if (direction !== "asc" && direction !== "desc") {
     throw new ItemError("Invalid sort direction", 400);
   }
+  const q = parseSearchQuery(query.q);
+  const order =
+    query.order ??
+    (q && query.sort === undefined && query.direction === undefined
+      ? "relevance"
+      : "field");
+  if (order !== "field" && order !== "relevance") {
+    throw new ItemError("Invalid ordering mode", 400);
+  }
   return {
+    order: q ? order : "field",
     page,
     limit,
     sort,
     direction,
     offset: (page - 1) * limit,
-    q: parseSearchQuery(query.q),
+    q,
     filters: parseItemFilters(
       query.filter,
       name,

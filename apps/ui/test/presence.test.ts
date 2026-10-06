@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PresenceResult } from "@asmblyr/contracts";
+import type { PresenceResult } from "@asmblyr-collaborative/contracts";
 import { createPresenceSession } from "../src/components/presence/presence-session";
-import { pagePresenceScope } from "../src/components/presence/presence-location";
 
 const result: PresenceResult = {
   data: {
@@ -72,18 +71,4 @@ test("offline presence clears stale people, can recover, and cleanup failure is 
   await session.refresh();
   session.dispose();
   assert.deepEqual(updates, [result, null, result]);
-});
-
-test("table and card URLs share the collection header without sharing filters or private paths", () => {
-  assert.deepEqual(pagePresenceScope("/items/articles/123", "articles"), {
-    kind: "collection",
-    collection: "articles",
-  });
-  assert.equal(pagePresenceScope("/items/articles_extra", "articles"), null);
-  assert.equal(pagePresenceScope("/search?q=private"), null);
-  assert.equal(pagePresenceScope("/plugins/private"), null);
-  assert.deepEqual(pagePresenceScope("/search"), {
-    kind: "page",
-    page: "/search",
-  });
 });

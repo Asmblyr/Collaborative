@@ -1,11 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { RecordPanelDefinition, RecordPanelProps } from "@asmblyr/kit/ui";
-import { TabsContent, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import type {
+  RecordPanelDefinition,
+  RecordPanelProps,
+} from "@asmblyr-collaborative/kit/ui";
+import { TabsContent, TabsTrigger } from "@asmblyr-collaborative/kit/ui/tabs";
 import { pluginRequest } from "./request";
 import { useUiPlugins } from "./registry";
 import { PluginUiHost } from "./ui-host";
+import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface Panel extends RecordPanelDefinition {
   key: string;
@@ -18,6 +23,7 @@ interface PanelState {
 
 export function useRecordPanels(record: RecordPanelProps["record"]) {
   const plugins = useUiPlugins();
+  const { translate } = useTranslations();
   const [states, setStates] = useState<Record<string, PanelState>>({});
   const [visited, setVisited] = useState<string[]>([]);
   const panels: Panel[] = plugins.flatMap((plugin) =>
@@ -25,6 +31,11 @@ export function useRecordPanels(record: RecordPanelProps["record"]) {
       .filter((panel) => !panel.supports || panel.supports(record))
       .map((panel) => ({
         ...panel,
+        title: translate(
+          `plugin.${plugin.namespace}`,
+          panel.titleKey,
+          panel.title,
+        ),
         key: `plugin:${plugin.namespace}:${panel.id}`,
         namespace: plugin.namespace,
       })),
@@ -39,16 +50,18 @@ export function useRecordPanels(record: RecordPanelProps["record"]) {
       return { ...current, [key]: state };
     });
   }, []);
+  const visit = useCallback((key: string) => {
+    if (key.startsWith("plugin:")) {
+      setVisited((current) =>
+        current.includes(key) ? current : [...current, key],
+      );
+    }
+  }, []);
   return {
     panels,
     reportState,
     visited,
-    visit(key: string) {
-      if (key.startsWith("plugin:"))
-        setVisited((current) =>
-          current.includes(key) ? current : [...current, key],
-        );
-    },
+    visit,
     dirty: Object.values(states).some((state) => state.dirty),
     busy: Object.values(states).some((state) => state.busy),
   };
@@ -76,14 +89,20 @@ function PanelContent({
   panel,
   record,
   reportState,
+  active,
+  targetId,
 }: {
   panel: Panel;
   record: RecordPanelProps["record"];
   reportState(key: string, state: PanelState): void;
+  active: boolean;
+  targetId?: string;
 }) {
+  const copy = useUiCopy();
+
   const request = useMemo(
-    () => pluginRequest(panel.namespace),
-    [panel.namespace],
+    () => pluginRequest(panel.namespace, copy),
+    [panel.namespace, copy],
   );
   const onStateChange = useCallback(
     (state: PanelState) => reportState(panel.key, state),
@@ -102,6 +121,8 @@ function PanelContent({
         record={record}
         request={request}
         onStateChange={onStateChange}
+        active={active}
+        targetId={targetId}
       />
     </PluginUiHost>
   );
@@ -113,12 +134,14 @@ export function RecordPanelContents({
   section,
   reportState,
   visited,
+  target,
 }: {
   panels: Panel[];
   record: RecordPanelProps["record"];
   section: string;
   reportState(key: string, state: PanelState): void;
   visited: string[];
+  target?: { panel: string; id: string };
 }) {
   // Keep mounted once opened, so switching to the card/history cannot discard a composer draft.
   return panels
@@ -134,6 +157,8 @@ export function RecordPanelContents({
           panel={panel}
           record={record}
           reportState={reportState}
+          active={section === panel.key}
+          targetId={target?.panel === panel.key ? target.id : undefined}
         />
       </TabsContent>
     ));

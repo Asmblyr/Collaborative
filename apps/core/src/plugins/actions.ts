@@ -2,12 +2,13 @@ import type {
   ActionContext,
   EndpointDefinition,
   PluginAction,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import { readBody, type H3Event } from "h3";
 import type {
   PluginActionResult,
   PluginPreparedAction,
-} from "@asmblyr/contracts";
+  SchemaPluginMethod,
+} from "@asmblyr-collaborative/contracts";
 import { AccessDeniedError, type Access } from "../permissions/access.js";
 import { ItemError } from "../items/validation.js";
 import type { ToolDefinition } from "../tools/tool-definitions.js";
@@ -33,7 +34,9 @@ type ContextFactory = (
   access: Access,
   scope: ActionScope,
   plugin: LoadedPlugin,
-) => Promise<Pick<ActionContext, "actor" | "items" | "settings">>;
+) => Promise<
+  Pick<ActionContext, "actor" | "items" | "settings" | "connections">
+>;
 
 export class PluginActions {
   private readonly entries: RegisteredAction[] = [];
@@ -41,6 +44,7 @@ export class PluginActions {
     plugins: readonly LoadedPlugin[],
     private readonly context: ContextFactory,
     private readonly drafts = new ActionDrafts(),
+    private readonly connectionAvailable?: (access: Access) => Promise<boolean>,
   ) {
     for (const plugin of plugins) {
       parsePluginDefinition(plugin.definition, plugin.name);
@@ -108,6 +112,41 @@ export class PluginActions {
       }));
   }
 
+  /** Reuse the loaded model registry; discovery does not execute plugin code. */
+  consumerDefinitions(access: Access): SchemaPluginMethod[] {
+    return this.entries
+      .filter(
+        ({ action }) => this.allowed(access, action) && action.outputSchema,
+      )
+      .map(({ namespace, action, endpoint }) => ({
+        namespace,
+        id: action.id,
+        path: endpoint.path,
+        inputSchema: { ...action.inputSchema },
+        outputSchema: action.outputSchema!,
+      }))
+      .sort((a, b) =>
+        `${a.namespace}:${a.id}`.localeCompare(`${b.namespace}:${b.id}`, "en"),
+      );
+  }
+
+  async availableDefinitions(access: Access): Promise<ToolDefinition[]> {
+    const connected =
+      access.principal.kind === "user" &&
+      Boolean(await this.connectionAvailable?.(access));
+    const hidden = new Set(
+      this.entries
+        .filter(
+          (entry) =>
+            entry.action.connection &&
+            (!connected ||
+              !entry.plugin.capabilities?.includes("connections.google")),
+        )
+        .map((entry) => entry.toolName),
+    );
+    return this.definitions(access).filter((tool) => !hidden.has(tool.name));
+  }
+
   hasTool(name: string): boolean {
     return this.entries.some(
       (entry) => entry.action.mcp && entry.toolName === name,
@@ -123,6 +162,14 @@ export class PluginActions {
     mcp = false,
   ): Promise<PluginActionResult> {
     const { action, endpoint, plugin } = this.find(access, namespace, id);
+    if (
+      action.connection &&
+      (access.principal.kind !== "user" ||
+        !plugin.capabilities?.includes("connections.google") ||
+        !(await this.connectionAvailable?.(access)))
+    ) {
+      throw new AccessDeniedError();
+    }
     const bounded = AbortSignal.any([signal, AbortSignal.timeout(10_000)]);
     const result = await runActionWithSignal(bounded, async () => {
       const context = await this.context(
@@ -140,6 +187,7 @@ export class PluginActions {
         signal: bounded,
         superuser: access.principal.superuser,
         items: context.items,
+        ...(context.connections ? { connections: context.connections } : {}),
         ...(context.settings ? { settings: context.settings } : {}),
       });
     });

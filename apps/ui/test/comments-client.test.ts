@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { RecordPanelProps } from "@asmblyr/kit/ui";
+import type { RecordPanelProps } from "@asmblyr-collaborative/kit/ui";
 import { createCommentsClient } from "../../../packages/plugin-comments/ui/api/comments.js";
 
 test("comments client encodes record addresses and exposes separate typed operations", async () => {

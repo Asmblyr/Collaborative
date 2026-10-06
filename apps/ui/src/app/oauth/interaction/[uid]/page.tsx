@@ -3,17 +3,23 @@ import { requireSession, coreAddress } from "@/lib/session";
 import { oauthCookies } from "@/lib/oauth-cookies";
 import { OAuthConsent, type ConsentDetails } from "@/components/oauth/consent";
 import { ContinueOAuthSignIn } from "@/components/oauth/continue-sign-in";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
-export const metadata = {
-  title: "Вход в приложение · Asmblyr",
-  referrer: "no-referrer",
-};
+export async function generateMetadata() {
+  const copy = await getUiCopy();
+  return {
+    title: copy("Вход в приложение · Asmblyr"),
+    referrer: "no-referrer",
+  };
+}
 
 export default async function OAuthInteractionPage({
   params,
 }: {
   params: Promise<{ uid: string }>;
 }) {
+  const copy = await getUiCopy();
+
   const { uid } = await params;
   const { token } = await requireSession(
     `/oauth/interaction/${encodeURIComponent(uid)}`,
@@ -33,9 +39,11 @@ export default async function OAuthInteractionPage({
   if (!response.ok)
     return (
       <main className="mx-auto max-w-md p-8">
-        <h1 className="text-xl font-semibold">Не удалось продолжить вход</h1>
+        <h1 className="text-xl font-semibold">
+          {copy("Не удалось продолжить вход")}
+        </h1>
         <p className="mt-3 text-muted-foreground">
-          Вернитесь в приложение и начните вход заново.
+          {copy("Вернитесь в приложение и начните вход заново. ")}
         </p>
       </main>
     );

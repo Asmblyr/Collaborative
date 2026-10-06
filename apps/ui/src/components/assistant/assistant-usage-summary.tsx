@@ -1,41 +1,55 @@
-import type { AssistantTurnSummary } from "@asmblyr/contracts";
+"use client";
+
+import type { AssistantTurnSummary } from "@asmblyr-collaborative/contracts";
 import { usageLabel } from "./assistant-usage";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function AssistantUsageSummary({
   summary,
 }: {
   summary: AssistantTurnSummary;
 }) {
+  const copy = useUiCopy();
+
   const partial =
     summary.usageSamples.inputTokens < summary.modelCalls ||
     summary.usageSamples.outputTokens < summary.modelCalls;
   const model = summary.models.length
     ? summary.models.join(", ")
-    : `${summary.requestedModel} (запрошена)`;
-  const seconds = (summary.durationMs / 1000).toLocaleString("ru-RU", {
-    maximumFractionDigits: 1,
-  });
+    : copy("{{value0}} (запрошена)", { value0: summary.requestedModel });
+  const seconds = (summary.durationMs / 1000).toLocaleString(
+    copy.locale === "en" ? "en-US" : "ru-RU",
+    {
+      maximumFractionDigits: 1,
+    },
+  );
   return (
     <div
       className="space-y-1 text-[11px] leading-4 text-muted-foreground"
-      aria-label="Расход за сообщение"
+      aria-label={copy("Расход за сообщение")}
     >
       <p className="break-words">
-        {model} · {seconds} с
+        {model} · {seconds} {copy(" с ")}
       </p>
       <p>
-        Вызовы модели: {summary.modelCalls} · инструментов: {summary.toolCalls}
+        {copy("Вызовы модели: ")}
+        {summary.modelCalls} {copy(" · инструментов: ")}
+        {summary.toolCalls}
         {summary.toolErrors > 0 &&
-          ` · ошибок инструментов: ${summary.toolErrors}`}
+          copy(" · ошибок инструментов: {{value0}}", {
+            value0: summary.toolErrors,
+          })}
       </p>
       <p className="tabular-nums">
-        Токены: вход {usageLabel(summary, "inputTokens")} · выход{" "}
-        {usageLabel(summary, "outputTokens")}
+        {copy("Токены: вход ")}
+        {usageLabel(summary, "inputTokens", copy.locale)} {copy(" · выход")}{" "}
+        {usageLabel(summary, "outputTokens", copy.locale)}
       </p>
       {partial && (
         <p>
-          Расход известен не полностью. «≥» — сумма известных значений, «—» —
-          нет данных.
+          {copy(
+            "Расход известен не полностью. «≥» — сумма известных значений, «—» — нет данных. ",
+          )}
         </p>
       )}
     </div>

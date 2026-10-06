@@ -1,6 +1,7 @@
 import type { Knex } from "knex";
 import { InvalidCredentialsError } from "../auth/validation.js";
 import { secretHash, serviceSecret } from "./repository.js";
+import { recordServiceRequest } from "./activity.js";
 
 export interface AuthenticatedService {
   kind: "service";
@@ -27,26 +28,33 @@ export async function exchangeServiceKey(db: Knex, value: unknown) {
     .withSchema("public")
     .where({ key_hash: hash })
     .first<{ service_id: string }>("service_id");
-  if (!lookup) throw new InvalidCredentialsError();
+  if (!lookup) {
+    throw new InvalidCredentialsError();
+  }
   return db.transaction(async (trx) => {
     const account = await trx("asmblyr_service_accounts")
       .withSchema("public")
       .where({ id: lookup.service_id })
       .forUpdate()
       .first<{ status: string }>("status");
-    if (!account || account.status !== "active")
+    if (!account || account.status !== "active") {
       throw new InvalidCredentialsError();
+    }
     const key = await trx("asmblyr_service_keys")
       .withSchema("public")
       .where({ key_hash: hash, revoked_at: null })
       .where("expires_at", ">", trx.fn.now())
       .first<{ id: string; expires_at: Date }>("id", "expires_at");
-    if (!key) throw new InvalidCredentialsError();
+    if (!key) {
+      throw new InvalidCredentialsError();
+    }
     const expiresIn = Math.min(
       900,
       Math.floor((key.expires_at.getTime() - Date.now()) / 1000),
     );
-    if (expiresIn < 1) throw new InvalidCredentialsError();
+    if (expiresIn < 1) {
+      throw new InvalidCredentialsError();
+    }
     const accessToken = serviceSecret("asm_st_");
     // Opportunistic bounded cleanup; a busy credential cannot accumulate expired grants forever.
     await trx("asmblyr_service_tokens")
@@ -64,7 +72,12 @@ export async function exchangeServiceKey(db: Knex, value: unknown) {
     await trx("asmblyr_service_keys")
       .withSchema("public")
       .where({ id: key.id })
-      .update({ last_used_at: trx.fn.now() });
+      .update({
+        last_used_at: trx.raw("clock_timestamp()"),
+        last_activity_at: trx.raw(
+          "greatest(last_activity_at, clock_timestamp())",
+        ),
+      });
     return { tokenType: "Bearer", accessToken, expiresIn };
   });
 }
@@ -74,7 +87,9 @@ export async function authenticateService(
   authorization: string,
 ): Promise<AuthenticatedService> {
   const match = /^Bearer (asm_st_[A-Za-z0-9_-]{43})$/i.exec(authorization);
-  if (!match) throw new InvalidCredentialsError();
+  if (!match) {
+    throw new InvalidCredentialsError();
+  }
   const row = await db("asmblyr_service_tokens as token")
     .withSchema("public")
     .leftJoin("asmblyr_service_keys as key", "key.id", "token.key_id")
@@ -107,6 +122,11 @@ export async function authenticateService(
       "key.id as keyId",
       "federation.id as federationId",
     );
-  if (!row) throw new InvalidCredentialsError();
+  if (!row) {
+    throw new InvalidCredentialsError();
+  }
+  if (row.keyId) {
+    await recordServiceRequest(db, row.keyId);
+  }
   return { kind: "service", ...row, superuser: false };
 }

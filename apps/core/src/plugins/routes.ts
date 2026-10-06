@@ -3,7 +3,7 @@ import type {
   EndpointDefinition,
   EndpointLogger,
   PluginAction,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { endpointLogger } from "./logger.js";
 import {
@@ -27,7 +27,7 @@ type LoadContext = (
 ) => Promise<
   Pick<
     AsmblyrContext,
-    "actor" | "items" | "storage" | "settings" | "withRecord"
+    "actor" | "items" | "storage" | "settings" | "withRecord" | "notifications"
   > & { access?: Access }
 >;
 
@@ -80,11 +80,18 @@ export function registerPluginRoutes(
         bodyLimit: action ? 16_000 : 1_048_576,
         onRequest: async (request, reply) => {
           reply.header("Cache-Control", "no-store");
-          const { actor, items, storage, settings, withRecord, access } =
-            await loadContext(request.headers.authorization, plugin, {
-              requestId: request.id,
-              logger: endpointLogger(request.log.child({ plugin: name })),
-            });
+          const {
+            actor,
+            items,
+            storage,
+            settings,
+            withRecord,
+            notifications,
+            access,
+          } = await loadContext(request.headers.authorization, plugin, {
+            requestId: request.id,
+            logger: endpointLogger(request.log.child({ plugin: name })),
+          });
           contexts.set(request, {
             access,
             context: Object.freeze({
@@ -98,6 +105,7 @@ export function registerPluginRoutes(
               items,
               settings,
               withRecord,
+              notifications,
               ...(storage ? { storage } : {}),
               requestId: request.id,
               logger: endpointLogger(request.log.child({ plugin: name })),

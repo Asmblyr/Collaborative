@@ -1,20 +1,26 @@
 "use client";
 
 import { policySettingsDraft } from "./policy-settings-draft";
-import { PortalContainerContext } from "@asmblyr/kit/ui/portal-container";
+import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
 import { PolicySettingsPermissions } from "./policy-settings-permissions";
 import { useState, type FormEvent } from "react";
 import type { PolicyCollection } from "./types";
 import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import { PolicyUsersPicker } from "./policy-users-picker";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import { policyDraft } from "./policy-draft";
 import { PolicyPermissionsMatrix } from "./policy-permissions-matrix";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Permission, type Policy } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PolicyEditorDialog({
   open,
@@ -39,6 +45,8 @@ export function PolicyEditorDialog({
   onClose: () => void;
   onChange: () => Promise<void>;
 }) {
+  const copy = useUiCopy();
+
   const [name, setName] = useState(policy?.name ?? "");
   const [grants, setGrants] = useState(() =>
     policyDraft(policy?.id, permissions),
@@ -94,7 +102,11 @@ export function PolicyEditorDialog({
       readOnly ||
       assignmentOnly ||
       !policy ||
-      !window.confirm(`Удалить политику «${policy.name}» и её назначения?`)
+      !window.confirm(
+        copy("Удалить политику «{{value0}}» и её назначения?", {
+          value0: policy.name,
+        }),
+      )
     ) {
       return;
     }
@@ -147,13 +159,17 @@ export function PolicyEditorDialog({
     <EditorDialog
       open={open}
       size={assignmentOnly ? "default" : "wide"}
-      title={policy ? `Политика: ${policy.name}` : "Новая политика"}
+      title={
+        policy
+          ? copy("Политика: {{value0}}", { value0: policy.name })
+          : copy("Новая политика")
+      }
       eyebrow={
         readOnly
-          ? "Доступ · просмотр"
+          ? copy("Доступ · просмотр")
           : assignmentOnly
-            ? "Доступ · назначения"
-            : "Доступ"
+            ? copy("Доступ · назначения")
+            : copy("Доступ")
       }
       busy={busy}
       hasUnsavedChanges={
@@ -172,19 +188,21 @@ export function PolicyEditorDialog({
                 role="alert"
                 className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
               >
-                {error}
+                {copy(error)}
               </p>
             )}
             {assignmentOnly && !readOnly && (
               <p className="text-xs text-muted-foreground">
-                Можно назначать готовую политику другим пользователям. Состав
-                прав меняет администратор.
+                {copy(
+                  "Можно назначать готовую политику другим пользователям. Состав прав меняет администратор. ",
+                )}
               </p>
             )}
             {!assignmentOnly && (
               <div className="space-y-3">
                 <Label htmlFor="policy-editor-name">
-                  Название политики <span className="text-destructive">*</span>
+                  {copy("Название политики ")}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="policy-editor-name"
@@ -202,8 +220,12 @@ export function PolicyEditorDialog({
                 className="space-y-5"
               >
                 <TabsList>
-                  <TabsTrigger value="users">Пользователи</TabsTrigger>
-                  <TabsTrigger value="permissions">Права политики</TabsTrigger>
+                  <TabsTrigger value="users">
+                    {copy("Пользователи")}
+                  </TabsTrigger>
+                  <TabsTrigger value="permissions">
+                    {copy("Права политики")}
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent
                   value="users"
@@ -235,7 +257,7 @@ export function PolicyEditorDialog({
                   disabled={busy}
                   onClick={() => remove(close)}
                 >
-                  Удалить политику
+                  {copy("Удалить политику ")}
                 </Button>
               ) : (
                 <span />
@@ -247,14 +269,14 @@ export function PolicyEditorDialog({
                   disabled={busy}
                   onClick={close}
                 >
-                  {readOnly ? "Закрыть" : "Отмена"}
+                  {readOnly ? copy("Закрыть") : copy("Отмена")}
                 </Button>
                 {!readOnly && (
                   <Button
                     type="submit"
                     disabled={busy || !name.trim()}
                   >
-                    {busy ? "Сохранение…" : "Сохранить"}
+                    {busy ? copy("Сохранение…") : copy("Сохранить")}
                   </Button>
                 )}
               </div>

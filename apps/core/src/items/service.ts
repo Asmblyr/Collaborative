@@ -19,6 +19,7 @@ import type { Access } from "../permissions/access.js";
 import { databaseValues } from "./database-values.js";
 import { syncFileReferences, validateFileWrites } from "../files/references.js";
 import { resolveRecordLabels } from "./record-labels.js";
+import { applyFieldRules } from "./field-rule-service.js";
 import { selectedColumns } from "./read-columns.js";
 
 export { selectedColumns } from "./read-columns.js";
@@ -50,12 +51,7 @@ export async function listItems(
       .modify((builder) =>
         selectRowPermissions(builder, database, access, name),
       )
-      .orderBy(sort, direction, "last")
-      .modify((builder) => {
-        if (sort !== schema.settings.primaryKey.name) {
-          builder.orderBy(schema.settings.primaryKey.name);
-        }
-      })
+      .modify(read.order)
       .limit(limit)
       .offset(offset),
     read.query.clone().count<{ total: string }>("* as total").first(),
@@ -80,6 +76,7 @@ export async function listItems(
       number: page,
       size: limit,
       total: count?.total ?? "0",
+      order: read.options.order,
       sort,
       direction,
     },
@@ -129,13 +126,22 @@ export async function createItem(
           ? settings.primaryKey.name
           : undefined,
       );
-      const values = parseItem(
+      const parsed = parseItem(
         body,
         fields,
         true,
         settings.primaryKey.type === "text"
           ? settings.primaryKey.name
           : undefined,
+      );
+      const values = await applyFieldRules(
+        transaction,
+        name,
+        fields,
+        parsed,
+        null,
+        context,
+        Object.keys(body as Record<string, unknown>),
       );
       await validateFileWrites(transaction, values, fields, context.actor);
       if (settings.mode === "single") {
@@ -163,9 +169,18 @@ export async function createItem(
         "create",
         settings.primaryKey.name,
         item[settings.primaryKey.name],
-        Object.keys(body as object).filter(
-          (field) => field !== settings.primaryKey.name,
-        ),
+        [
+          ...new Set([
+            ...Object.keys(body as Record<string, unknown>),
+            ...[...fields.values()]
+              .filter(
+                (field) =>
+                  field.presentation?.rules?.computed &&
+                  Object.hasOwn(values, field.name),
+              )
+              .map((field) => field.name),
+          ]),
+        ].filter((field) => field !== settings.primaryKey.name),
       );
       await syncFileReferences(
         transaction,

@@ -1,11 +1,16 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import type { Collection, CollectionField } from "@/components/items/types";
 import { AliasFieldEditor } from "./alias-field-editor";
 import { FieldDefaultInput } from "./field-default-input";
@@ -14,7 +19,9 @@ import { RelationSearchSettings } from "./relation-search-settings";
 import type { DataFieldType } from "./field-type-picker";
 
 import { useFieldEditor } from "./use-field-editor";
+import { FieldRulesSettings } from "./field-rules-settings";
 import { FieldPresentationSettings } from "./field-presentation-settings";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface FieldEditorFormProps {
   collection: string;
@@ -37,6 +44,8 @@ export function FieldEditorForm({
   onCancel,
   onBack,
 }: FieldEditorFormProps) {
+  const copy = useUiCopy();
+
   const editor = useFieldEditor({ collection, field, type, onSaved });
   const {
     name,
@@ -54,6 +63,8 @@ export function FieldEditorForm({
     indexed,
     setIndexed,
     relationSearchable,
+    searchPriority,
+    setSearchPriority,
     setRelationSearchable,
     presentation,
     setPresentation,
@@ -93,23 +104,23 @@ export function FieldEditorForm({
           disabled={pending || created}
           onClick={onBack}
         >
-          <ArrowLeft aria-hidden="true" /> К выбору типа
+          <ArrowLeft aria-hidden="true" /> {copy(" К выбору типа ")}
         </Button>
       )}
       <div className="space-y-2">
         {field ? (
           <>
-            <span className="text-sm font-medium">Имя поля</span>
+            <span className="text-sm font-medium">{copy("Имя поля")}</span>
             <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">
               {field.name}
             </div>
             <p className="text-xs text-muted-foreground">
-              Имя поля нельзя изменить после создания.
+              {copy("Имя поля нельзя изменить после создания. ")}
             </p>
           </>
         ) : (
           <>
-            <Label htmlFor="field-editor-name">Имя поля</Label>
+            <Label htmlFor="field-editor-name">{copy("Имя поля")}</Label>
             <Input
               id="field-editor-name"
               value={name}
@@ -122,7 +133,7 @@ export function FieldEditorForm({
               className="h-10 font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              Строчные латинские буквы, цифры и подчёркивание.
+              {copy("Строчные латинские буквы, цифры и подчёркивание. ")}
             </p>
           </>
         )}
@@ -130,17 +141,17 @@ export function FieldEditorForm({
 
       {field ? (
         <div className="space-y-2 text-sm">
-          <span className="font-medium">Тип данных</span>
+          <span className="font-medium">{copy("Тип данных")}</span>
           <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">
             {field.type}
           </div>
           <p className="text-xs text-muted-foreground">
-            Тип поля нельзя изменить после создания.
+            {copy("Тип поля нельзя изменить после создания. ")}
           </p>
         </div>
       ) : (
         <div className="space-y-2 text-sm">
-          <span className="font-medium">Тип данных</span>
+          <span className="font-medium">{copy("Тип данных")}</span>
           <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono">
             {selectedType}
           </div>
@@ -149,17 +160,20 @@ export function FieldEditorForm({
 
       {selectedType === "relation" && (
         <div className="space-y-2">
-          <Label htmlFor="field-editor-target">Целевая коллекция</Label>
+          <Label htmlFor="field-editor-target">
+            {copy("Целевая коллекция")}
+          </Label>
           <div className="rounded-lg border bg-muted/50 px-3 py-2 font-mono text-sm">
             {field?.relation?.collection}
           </div>
           <p className="text-xs text-muted-foreground">
-            В этой коллекции появится внешний ключ. Обратные записи будут видны
-            в карточке целевой записи.
+            {copy(
+              "В этой коллекции появится внешний ключ. Обратные записи будут видны в карточке целевой записи. ",
+            )}
           </p>
           {field?.relation?.kind === "m2o" && (
             <p className="text-xs text-muted-foreground">
-              При удалении связанной записи:{" "}
+              {copy("При удалении связанной записи:")}{" "}
               <code>{field.relation.onDelete}</code>
             </p>
           )}
@@ -171,10 +185,15 @@ export function FieldEditorForm({
         className="space-y-4"
       >
         <TabsList className="w-full justify-start">
-          <TabsTrigger value="basic">Основное</TabsTrigger>
-          <TabsTrigger value="presentation">Отображение</TabsTrigger>
-          {textField && <TabsTrigger value="search">Поиск</TabsTrigger>}
-          {relationField && <TabsTrigger value="search">Поиск</TabsTrigger>}
+          <TabsTrigger value="basic">{copy("Основное")}</TabsTrigger>
+          <TabsTrigger value="presentation">{copy("Отображение")}</TabsTrigger>
+          <TabsTrigger value="rules">{copy("Правила")}</TabsTrigger>
+          {textField && (
+            <TabsTrigger value="search">{copy("Поиск")}</TabsTrigger>
+          )}
+          {relationField && (
+            <TabsTrigger value="search">{copy("Поиск")}</TabsTrigger>
+          )}
         </TabsList>
         <TabsContent
           value="basic"
@@ -190,9 +209,13 @@ export function FieldEditorForm({
                 className="mt-1"
               />
               <div className="space-y-1">
-                <Label htmlFor="field-editor-required">Обязательно в API</Label>
+                <Label htmlFor="field-editor-required">
+                  {copy("Обязательно в API")}
+                </Label>
                 <p className="text-xs text-muted-foreground">
-                  Требует значение в API. Default покрывает пропуск поля.
+                  {copy(
+                    "Требует значение в API. Default покрывает пропуск поля. ",
+                  )}
                 </p>
               </div>
             </div>
@@ -206,11 +229,12 @@ export function FieldEditorForm({
               />
               <div className="space-y-1">
                 <Label htmlFor="field-editor-nullable">
-                  Разрешить NULL в БД
+                  {copy("Разрешить NULL в БД ")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  При отключении существующие пустые значения помешают
-                  сохранению.
+                  {copy(
+                    "При отключении существующие пустые значения помешают сохранению. ",
+                  )}
                 </p>
               </div>
             </div>
@@ -228,17 +252,20 @@ export function FieldEditorForm({
                 />
                 <div className="space-y-1">
                   <Label htmlFor="field-editor-has-default">
-                    Значение по умолчанию
+                    {copy("Значение по умолчанию ")}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Применяется при создании записи, если поле не передано.
+                    {copy(
+                      "Применяется при создании записи, если поле не передано. ",
+                    )}
                   </p>
                 </div>
               </div>
               {hasDefault && (
                 <div className="space-y-2">
                   <Label htmlFor="field-editor-default-value">
-                    Значение{selectedType === "datetime" ? " (UTC)" : ""}
+                    {copy("Значение")}
+                    {selectedType === "datetime" ? " (UTC)" : ""}
                   </Label>
                   <FieldDefaultInput
                     type={selectedType}
@@ -250,17 +277,33 @@ export function FieldEditorForm({
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                При добавлении поля default заполнит существующие строки.
-                Изменение default позже их не меняет.
+                {copy(
+                  "При добавлении поля default заполнит существующие строки. Изменение default позже их не меняет. ",
+                )}
               </p>
             </div>
           )}
+        </TabsContent>
+        <TabsContent value="rules">
+          <FieldRulesSettings
+            value={presentation}
+            fieldName={name}
+            type={selectedType}
+            collection={collections.find((c) => c.name === collection)}
+            catalog={collections}
+            disabled={pending}
+            container={portalContainer}
+            onChange={setPresentation}
+          />
         </TabsContent>
         {textField && (
           <TabsContent value="search">
             <FieldSearchSettings
               searchable={searchable}
               indexed={indexed}
+              priority={searchPriority}
+              onPriorityChange={setSearchPriority}
+              container={portalContainer}
               disabled={pending}
               onSearchableChange={setSearchable}
               onIndexedChange={setIndexed}
@@ -271,6 +314,9 @@ export function FieldEditorForm({
           <TabsContent value="search">
             <RelationSearchSettings
               searchable={relationSearchable}
+              priority={searchPriority}
+              onPriorityChange={setSearchPriority}
+              container={portalContainer}
               disabled={pending}
               onChange={setRelationSearchable}
             />
@@ -292,7 +338,7 @@ export function FieldEditorForm({
           role="status"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <div className="flex flex-wrap gap-2">
@@ -301,10 +347,10 @@ export function FieldEditorForm({
           disabled={pending || !changed}
         >
           {pending
-            ? "Сохраняем…"
+            ? copy("Сохраняем…")
             : field
-              ? "Сохранить изменения"
-              : "Добавить поле"}
+              ? copy("Сохранить изменения")
+              : copy("Добавить поле")}
         </Button>
         <Button
           type="button"
@@ -312,7 +358,7 @@ export function FieldEditorForm({
           disabled={pending}
           onClick={onCancel}
         >
-          Отмена
+          {copy("Отмена ")}
         </Button>
       </div>
     </form>

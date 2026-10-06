@@ -8,7 +8,7 @@ import { createApp } from "../src/app.js";
 import { issueUserTokens } from "../src/auth/tokens.js";
 import { AssistantService } from "../src/assistant/service.js";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
-import type { PluginPreparedAction } from "@asmblyr/contracts";
+import type { PluginPreparedAction } from "@asmblyr-collaborative/contracts";
 
 test("HTTP and assistant/internal MCP use one calculation; drafts recheck session and owner", async (t) => {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });

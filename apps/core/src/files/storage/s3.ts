@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  HeadBucketCommand,
 } from "@aws-sdk/client-s3";
 import { Readable } from "node:stream";
 import { StorageError, type FileStorage } from "./types.js";
@@ -11,11 +12,17 @@ export function s3Storage(options: {
   bucket: string;
   region: string;
   endpoint?: string;
+  credentials?: {
+    accessKeyId: string;
+    secretAccessKey: string;
+    sessionToken?: string;
+  };
 }): FileStorage {
   // The official credential chain supports environment, profiles and workload roles.
   const client = new S3Client({
     region: options.region,
     endpoint: options.endpoint,
+    credentials: options.credentials,
     forcePathStyle: Boolean(options.endpoint),
     maxAttempts: 2,
     requestChecksumCalculation: "WHEN_REQUIRED",
@@ -23,6 +30,15 @@ export function s3Storage(options: {
   const location = { Bucket: options.bucket };
   return {
     id: `s3:${options.endpoint ?? options.region}:${options.bucket}`,
+    async check() {
+      try {
+        await client.send(new HeadBucketCommand(location), {
+          abortSignal: AbortSignal.timeout(15000),
+        });
+      } catch {
+        throw new StorageError();
+      }
+    },
     async put(key, body, contentType) {
       try {
         await client.send(

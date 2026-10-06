@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { RecordPanelProps } from "@asmblyr/kit/ui";
+import type { RecordPanelProps } from "@asmblyr-collaborative/kit/ui";
 import type { CommentPage } from "../../shared/comments.js";
 import { createCommentsClient } from "../api/comments.ts";
 
@@ -100,6 +100,7 @@ export function useComments({
   }
 
   return {
+    revision,
     result,
     loading,
     pending,

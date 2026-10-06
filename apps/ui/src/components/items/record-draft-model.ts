@@ -1,5 +1,5 @@
 import type { Item } from "./types";
-import type { ItemCommitDraft } from "@asmblyr/contracts";
+import type { ItemCommitDraft } from "@asmblyr-collaborative/contracts";
 
 export interface RecordDraft {
   id?: string;

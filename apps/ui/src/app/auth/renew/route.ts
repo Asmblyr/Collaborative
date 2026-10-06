@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { ACCESS_COOKIE, REFRESH_COOKIE, safeNext } from "@/lib/session";
 import { renewSession, SessionExpiredError } from "@/lib/renew-session";
 import { setSessionCookies } from "@/lib/session-cookies";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
 export async function GET(request: Request) {
   const next = safeNext(new URL(request.url).searchParams.get("next"));
@@ -17,8 +18,11 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     if (!(error instanceof SessionExpiredError)) {
+      const copy = await getUiCopy();
       return new NextResponse(
-        "Core API временно недоступен. Обновите страницу, чтобы повторить вход.",
+        copy(
+          "Core API временно недоступен. Обновите страницу, чтобы повторить вход.",
+        ),
         {
           status: 503,
           headers: {

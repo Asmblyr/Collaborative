@@ -3,18 +3,23 @@ import type {
   AssistantSelection,
   AssistantTurnSummary,
   AssistantPluginResult,
-} from "@asmblyr/contracts";
+  AssistantActivity,
+} from "@asmblyr-collaborative/contracts";
 
 export interface AssistantMessage {
   id: string;
   role: "assistant" | "user";
   content: string;
+  activity?: AssistantActivity[];
+  activityDraft?: string;
+  startedAt?: number;
   truncated?: boolean;
   cancelled?: boolean;
   failed?: boolean;
   streaming?: boolean;
   selections?: AssistantSelection[];
   pluginResults?: AssistantPluginResult[];
+  connectionWrites?: import("@asmblyr-collaborative/contracts").ConnectionWriteProposal[];
   summary?: AssistantTurnSummary;
   proposals?: FilterProposal[];
   contextScope?: string;
@@ -52,13 +57,9 @@ export interface AssistantStatus {
 export const welcomeMessage: AssistantMessage = {
   id: "welcome",
   role: "assistant",
-  content:
-    "Привет! Помогу найти доступные вам коллекции, разобраться в полях и связях, найти записи, прочитать их по ID или посчитать. Для открытой таблицы могу предложить фильтр. При включённом контексте запрошенные данные передаются AI-провайдеру. Черновики форм мне недоступны; изменять данные я пока не умею.",
+  // The empty conversation is rendered by AssistantWelcome, never sent to the model.
+  content: "",
 };
-export const suggestions = [
-  "Как спроектировать коллекцию товаров?",
-  "Объясни связи между коллекциями",
-];
 
 // Keep complete user/assistant pairs. Displayed history stays intact in this browser tab.
 export function conversationInput(

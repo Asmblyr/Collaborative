@@ -13,12 +13,12 @@
 - `shared/overview.ts` — общий тип ответа.
 - `plugin.ts` — обязательный серверный entry.
 
-UI получает `PluginPageProps` из `@asmblyr/kit/ui`. Его `request("/session")`
+UI получает `PluginPageProps` из `@asmblyr-collaborative/kit/ui`. Его `request("/session")`
 обращается к `/api/overview/session` через сессию пользователя. Прямой адрес Core:
 `GET http://localhost:3001/overview/session` (нужен bearer token).
 Токены и серверные модули в компонент не передаются.
 
-Общий shadcn `Button` импортируется из `@asmblyr/kit/ui/button`.
+Общий shadcn `Button` импортируется из `@asmblyr-collaborative/kit/ui/button`.
 Доступные компоненты и правила их использования описаны в
 [Kit UI](../../../packages/kit/UI.md).
 

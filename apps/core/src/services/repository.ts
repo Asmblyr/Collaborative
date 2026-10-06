@@ -20,6 +20,8 @@ const keyColumns = [
   "created_at as createdAt",
   "expires_at as expiresAt",
   "last_used_at as lastUsedAt",
+  "last_activity_at as lastActivityAt",
+  "request_count as requestCount",
   "revoked_at as revokedAt",
 ];
 

@@ -1,10 +1,13 @@
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { EndpointDefinition } from "@asmblyr/kit";
-import { bindModelDefinition } from "@asmblyr/kit";
-import type { ModelDefinition } from "@asmblyr/kit/model";
-import { scanApiRoutes, sourceModelDefinitions } from "@asmblyr/kit/node";
+import type { EndpointDefinition } from "@asmblyr-collaborative/kit";
+import { bindModelDefinition } from "@asmblyr-collaborative/kit";
+import type { ModelDefinition } from "@asmblyr-collaborative/kit/model";
+import {
+  scanApiRoutes,
+  sourceModelDefinitions,
+} from "@asmblyr-collaborative/kit/node";
 import { isRecord, parseEndpoint, parseEndpointAddress } from "./definition.js";
 
 export interface PendingEndpoint {

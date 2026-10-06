@@ -3,7 +3,7 @@ import type {
   ItemCommitDraft,
   ItemCommitRelation,
   ItemRecord,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 
 export type RecordDraft = ItemCommitDraft<ItemRecord>;
 export type RelationDraft = ItemCommitRelation<ItemRecord>;

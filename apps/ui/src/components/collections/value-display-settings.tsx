@@ -1,23 +1,24 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import {
   PresentedValue,
   statusColors,
 } from "@/components/items/presented-value";
 import type { FieldPresentation } from "@/components/items/types";
 import type { ValueDisplay } from "@/components/items/presentation-types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ValueDisplaySettings({
   value,
@@ -32,6 +33,8 @@ export function ValueDisplaySettings({
   container?: HTMLElement | null;
   onChange: (value: FieldPresentation) => void;
 }) {
+  const copy = useUiCopy();
+
   const display = value.display;
   const set = (next?: ValueDisplay) => {
     const rest = { ...value };
@@ -44,10 +47,10 @@ export function ValueDisplaySettings({
     <section className="space-y-4 rounded-xl border p-4">
       <div className="space-y-1">
         <h3 className="text-sm font-medium">
-          Значение в таблице и при просмотре
+          {copy("Значение в таблице и при просмотре ")}
         </h3>
         <p className="text-xs text-muted-foreground">
-          Оформление не меняет хранимые данные и способ ввода.
+          {copy("Оформление не меняет хранимые данные и способ ввода. ")}
         </p>
       </div>
       <Select
@@ -71,6 +74,7 @@ export function ValueDisplaySettings({
                       kind: "status",
                       statuses: value.options?.map((o) => ({
                         ...o,
+                        value: String(o.value),
                         color: "gray",
                       })) ?? [{ value: "", label: "", color: "gray" }],
                     },
@@ -78,21 +82,21 @@ export function ValueDisplaySettings({
         }
       >
         <SelectTrigger
-          aria-label="Отображение значения"
+          aria-label={copy("Отображение значения")}
           className="w-full"
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent container={container}>
-          <SelectItem value="auto">Автоматически</SelectItem>
+          <SelectItem value="auto">{copy("Автоматически")}</SelectItem>
           {["text", "integer", "boolean"].includes(type) && (
-            <SelectItem value="status">Цветные статусы</SelectItem>
+            <SelectItem value="status">{copy("Цветные статусы")}</SelectItem>
           )}
           {["integer", "decimal"].includes(type) && (
-            <SelectItem value="number">Число</SelectItem>
+            <SelectItem value="number">{copy("Число")}</SelectItem>
           )}
           {type === "datetime" && (
-            <SelectItem value="date">Дата и время</SelectItem>
+            <SelectItem value="date">{copy("Дата и время")}</SelectItem>
           )}
         </SelectContent>
       </Select>
@@ -104,7 +108,9 @@ export function ValueDisplaySettings({
               className="grid grid-cols-[1fr_1fr_6rem_auto] items-center gap-2"
             >
               <Input
-                aria-label={`Значение статуса ${index + 1}`}
+                aria-label={copy("Значение статуса {{value0}}", {
+                  value0: index + 1,
+                })}
                 placeholder="draft"
                 value={s.value}
                 disabled={disabled}
@@ -119,8 +125,10 @@ export function ValueDisplaySettings({
                 }
               />
               <Input
-                aria-label={`Подпись статуса ${index + 1}`}
-                placeholder="Черновик"
+                aria-label={copy("Подпись статуса {{value0}}", {
+                  value0: index + 1,
+                })}
+                placeholder={copy("Черновик")}
                 value={s.label}
                 disabled={disabled}
                 maxLength={120}
@@ -147,17 +155,21 @@ export function ValueDisplaySettings({
                   })
                 }
               >
-                <SelectTrigger aria-label={`Цвет статуса ${index + 1}`}>
+                <SelectTrigger
+                  aria-label={copy("Цвет статуса {{value0}}", {
+                    value0: index + 1,
+                  })}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent container={container}>
                   {Object.entries({
-                    gray: "Серый",
-                    blue: "Синий",
-                    green: "Зелёный",
-                    amber: "Жёлтый",
-                    red: "Красный",
-                    violet: "Фиолетовый",
+                    gray: copy("Серый"),
+                    blue: copy("Синий"),
+                    green: copy("Зелёный"),
+                    amber: copy("Жёлтый"),
+                    red: copy("Красный"),
+                    violet: copy("Фиолетовый"),
                   }).map(([color, label]) => (
                     <SelectItem
                       key={color}
@@ -176,7 +188,9 @@ export function ValueDisplaySettings({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                aria-label={`Удалить статус ${index + 1}`}
+                aria-label={copy("Удалить статус {{value0}}", {
+                  value0: index + 1,
+                })}
                 disabled={disabled || display.statuses.length === 1}
                 onClick={() =>
                   set({
@@ -205,14 +219,14 @@ export function ValueDisplaySettings({
             }
           >
             <Plus />
-            Статус
+            {copy("Статус ")}
           </Button>
         </div>
       )}
       {display?.kind === "number" && (
         <div className="grid grid-cols-2 gap-3">
           <label className="space-y-2 text-sm">
-            Знаков после запятой
+            {copy("Знаков после запятой ")}
             <Input
               type="number"
               min={0}
@@ -230,10 +244,10 @@ export function ValueDisplaySettings({
               disabled={disabled}
               onCheckedChange={(v) => set({ ...display, grouping: v === true })}
             />
-            Разделять разряды
+            {copy("Разделять разряды ")}
           </label>
           <label className="space-y-2 text-sm">
-            Перед числом
+            {copy("Перед числом ")}
             <Input
               value={display.prefix}
               disabled={disabled}
@@ -242,7 +256,7 @@ export function ValueDisplaySettings({
             />
           </label>
           <label className="space-y-2 text-sm">
-            После числа
+            {copy("После числа ")}
             <Input
               value={display.suffix}
               disabled={disabled}
@@ -262,19 +276,19 @@ export function ValueDisplaySettings({
             }
           >
             <SelectTrigger
-              aria-label="Формат даты"
+              aria-label={copy("Формат даты")}
               className="w-full"
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent container={container}>
-              <SelectItem value="date">Дата</SelectItem>
-              <SelectItem value="datetime">Дата и время</SelectItem>
-              <SelectItem value="time">Время</SelectItem>
+              <SelectItem value="date">{copy("Дата")}</SelectItem>
+              <SelectItem value="datetime">{copy("Дата и время")}</SelectItem>
+              <SelectItem value="time">{copy("Время")}</SelectItem>
             </SelectContent>
           </Select>
           <div className="space-y-1">
-            <Label htmlFor="display-timezone">Часовой пояс</Label>
+            <Label htmlFor="display-timezone">{copy("Часовой пояс")}</Label>
             <Input
               id="display-timezone"
               placeholder="Europe/Moscow"
@@ -287,7 +301,9 @@ export function ValueDisplaySettings({
       )}
       {display && (
         <div className="flex items-center gap-4 rounded-lg bg-muted/50 p-3">
-          <span className="text-xs text-muted-foreground">Пример</span>
+          <span className="text-xs text-muted-foreground">
+            {copy("Пример")}
+          </span>
           <DisplayPreview display={display} />
         </div>
       )}
@@ -296,13 +312,15 @@ export function ValueDisplaySettings({
 }
 
 function DisplayPreview({ display }: { display: ValueDisplay }) {
+  const copy = useUiCopy();
+
   try {
     if (display.kind === "date")
       new Intl.DateTimeFormat("ru", { timeZone: display.timeZone });
   } catch {
     return (
       <span className="text-xs text-destructive">
-        Укажите часовой пояс IANA
+        {copy("Укажите часовой пояс IANA ")}
       </span>
     );
   }

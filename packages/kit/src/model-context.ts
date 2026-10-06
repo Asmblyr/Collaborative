@@ -7,6 +7,8 @@ import { ActionInputError, type PluginAction } from "./action.js";
 import { actionInputSchema, z } from "./action-contract.js";
 
 export interface ModelAnnotation {
+  /** Hide this tool until the current human has an active personal connection. */
+  readonly connection?: "google";
   readonly title: string;
   readonly description: string;
   readonly middleware: AccessMiddleware;
@@ -64,6 +66,7 @@ export function bindModelDefinition(
     throw new Error("Model inputs and outputs must be JSON objects");
   }
   const action: PluginAction = Object.freeze({
+    connection: annotation.connection,
     id: definition.id,
     title: annotation.title,
     description: annotation.description,
@@ -72,6 +75,7 @@ export function bindModelDefinition(
     mcp: true,
     readOnly: annotation.readOnly ?? false,
     inputSchema: actionInputSchema(input),
+    outputSchema: definition.outputSchema,
     parseInput(value: unknown) {
       const result = input.safeParse(value);
       if (!result.success) throw new ActionInputError(zodMessage(result.error));

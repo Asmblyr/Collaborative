@@ -18,6 +18,8 @@ const entries = defineCollection({
       defaultValue: false,
     },
     price: { type: "decimal", required: false, nullable: true },
+    day: { type: "date", required: false, nullable: true },
+    counter: { type: "bigint", required: false, nullable: true },
   },
 });
 
@@ -33,6 +35,14 @@ void [body, createdAt, author];
 declare const storage: CollectionStorage<typeof entries>;
 storage.create({ body: "hello", author: null });
 storage.update("id", { resolved: true, price: "12.30" });
+storage.update("id", { day: "2026-10-04", counter: "9007199254740993" });
+const day: string | null = row.day;
+const counter: string | null = row.counter;
+void [day, counter];
+// @ts-expect-error Bigint values must not be passed through lossy JS numbers.
+storage.update("id", { counter: 9007199254740993 });
+// @ts-expect-error A calendar date is a string, not a timezone-dependent Date.
+storage.update("id", { day: new Date() });
 storage.list({ sort: "created_at" });
 // @ts-expect-error Generated primary keys are managed by Core.
 storage.create({ id: "generated", body: "hello" });

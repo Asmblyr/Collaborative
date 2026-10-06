@@ -1,4 +1,7 @@
-import type { ItemListResult, ItemResult } from "@asmblyr/contracts";
+import type {
+  ItemListResult,
+  ItemResult,
+} from "@asmblyr-collaborative/contracts";
 import type { Knex } from "knex";
 import { requireGrant, type Access } from "../permissions/access.js";
 import type { ItemListQuery } from "./list-query.js";

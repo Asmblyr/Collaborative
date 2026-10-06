@@ -12,9 +12,9 @@ import {
   permissionContextParameters,
   type PermissionCondition,
   type PermissionOperand,
-} from "@asmblyr/contracts";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+} from "@asmblyr-collaborative/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -26,6 +26,7 @@ import {
 } from "../items/item-filter-options";
 import { compatibleParameters } from "./policy-condition-model";
 import { PolicyPickerTrigger } from "./policy-picker-trigger";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PolicyValuePicker({
   field,
@@ -36,13 +37,21 @@ export function PolicyValuePicker({
   condition: PermissionCondition;
   onChange: (value: PermissionOperand) => void;
 }) {
+  const copy = useUiCopy();
+
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"quick" | "parameters" | "literal">("quick");
   const [query, setQuery] = useState("");
   const [literal, setLiteral] = useState("");
   const operand = condition.value;
   const multiple = hasMultipleValues(condition.op);
-  const parameters = compatibleParameters(field, condition.op);
+  const parameters = compatibleParameters(field, condition.op).map(
+    (parameter) => ({
+      ...parameter,
+      label: copy(parameter.label),
+      description: copy(parameter.description),
+    }),
+  );
   const current =
     operand?.kind === "context"
       ? permissionContextParameters.find((entry) => entry.path === operand.path)
@@ -54,18 +63,18 @@ export function PolicyValuePicker({
         : operand.value
       : "";
   const label =
-    current?.label ??
+    (current ? copy(current.label) : undefined) ??
     field.options?.find((entry) => entry.value === rawValue)?.label ??
     (field.type === "boolean" && rawValue
       ? rawValue === "true"
-        ? "Да"
-        : "Нет"
+        ? copy("Да")
+        : copy("Нет")
       : rawValue);
   const options =
     field.type === "boolean"
       ? [
-          { value: "true", label: "Да" },
-          { value: "false", label: "Нет" },
+          { value: "true", label: copy("Да") },
+          { value: "false", label: copy("Нет") },
         ]
       : ["eq", "neq"].includes(condition.op)
         ? (field.options ?? [])
@@ -98,15 +107,17 @@ export function PolicyValuePicker({
     >
       <PopoverTrigger asChild>
         <PolicyPickerTrigger
-          aria-label={`Значение для ${field.label}`}
-          title={current ? `${current.description} ${current.path}` : rawValue}
+          aria-label={copy("Значение для {{value0}}", { value0: field.label })}
+          title={
+            current ? `${copy(current.description)} ${current.path}` : rawValue
+          }
         >
           <span className="flex min-w-0 items-center gap-2">
             {current && <UserRound className="size-4 shrink-0 text-primary" />}
             <span
               className={`truncate ${!label ? "text-muted-foreground" : ""}`}
             >
-              {label || "Выберите значение…"}
+              {label || copy("Выберите значение…")}
             </span>
           </span>
           <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
@@ -122,10 +133,13 @@ export function PolicyValuePicker({
       >
         {mode === "literal" ? (
           <div className="space-y-3">
-            <p className="text-sm font-medium">Значение для {field.label}</p>
+            <p className="text-sm font-medium">
+              {copy("Значение для ")}
+              {field.label}
+            </p>
             <Input
               autoFocus
-              aria-label="Значение условия"
+              aria-label={copy("Значение условия")}
               maxLength={multiple ? 1024 : 255}
               type={
                 field.type === "datetime" && !multiple
@@ -134,7 +148,9 @@ export function PolicyValuePicker({
               }
               step="any"
               placeholder={
-                multiple ? "Значения через запятую" : "Введите значение…"
+                multiple
+                  ? copy("Значения через запятую")
+                  : copy("Введите значение…")
               }
               value={literal}
               onChange={(event) => setLiteral(event.target.value)}
@@ -146,7 +162,7 @@ export function PolicyValuePicker({
                 size="sm"
                 onClick={() => setMode("quick")}
               >
-                Назад
+                {copy("Назад ")}
               </Button>
               <Button
                 type="button"
@@ -167,7 +183,7 @@ export function PolicyValuePicker({
                   });
                 }}
               >
-                Выбрать
+                {copy("Выбрать ")}
               </Button>
             </div>
           </div>
@@ -176,8 +192,8 @@ export function PolicyValuePicker({
             <div className="relative">
               <Search className="absolute left-3 top-2 size-4 text-muted-foreground" />
               <Input
-                aria-label="Найти параметр"
-                placeholder="Найти параметр…"
+                aria-label={copy("Найти параметр")}
+                placeholder={copy("Найти параметр…")}
                 className="pl-9"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -243,7 +259,7 @@ export function PolicyValuePicker({
                   entry.label.toLowerCase().includes(query.toLowerCase()),
                 ) && (
                   <p className="px-2 py-3 text-sm text-muted-foreground">
-                    Подходящих параметров нет
+                    {copy("Подходящих параметров нет ")}
                   </p>
                 )}
             </div>
@@ -256,7 +272,7 @@ export function PolicyValuePicker({
                   className="w-full justify-between text-sm font-normal"
                   onClick={() => setMode("parameters")}
                 >
-                  Все параметры…
+                  {copy("Все параметры… ")}
                   <ChevronRight className="size-4" />
                 </Button>
               )}
@@ -267,7 +283,7 @@ export function PolicyValuePicker({
                 className="w-full justify-start text-sm font-normal"
                 onClick={() => setMode("literal")}
               >
-                Задать значение…
+                {copy("Задать значение… ")}
               </Button>
             </div>
           </>

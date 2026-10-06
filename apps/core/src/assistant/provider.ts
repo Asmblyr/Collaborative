@@ -3,7 +3,10 @@ import type { AssistantConfig } from "./config.js";
 import { assistantLimits, type AssistantInput } from "./validation.js";
 import { buildAssistantInstructions } from "./instructions.js";
 import type { AssistantResponseMetadata } from "./telemetry/usage.js";
-import { providerConversation, type ToolCall } from "./provider-step.js";
+import { providerConversation } from "./provider-step.js";
+import { maxAssistantModelCalls } from "./budget.js";
+import { createToolExecutor } from "./tool-execution.js";
+import { toolDiagnosticCode } from "../tools/errors.js";
 import {
   AssistantProviderError,
   checkAssistantSignal,
@@ -25,29 +28,6 @@ export type AssistantGenerate = (
   customInstructions?: string | null,
   run?: AssistantRun,
 ) => Promise<AssistantAnswer>;
-
-async function executeTool(
-  tool: ToolCall,
-  run: AssistantRun | undefined,
-  signal: AbortSignal,
-): Promise<object> {
-  let args: unknown;
-  try {
-    const raw =
-      typeof tool.arguments === "string"
-        ? tool.arguments
-        : JSON.stringify(tool.arguments);
-    if (!raw || raw.length > 12000) return { error: "Invalid JSON arguments" };
-    args = JSON.parse(raw);
-  } catch {
-    return { error: "Invalid JSON arguments" };
-  }
-  return (
-    (await run?.tools?.execute(tool.name, args, signal)) ?? {
-      error: "Tool unavailable",
-    }
-  );
-}
 
 export function createAssistantProvider(
   config: AssistantConfig,
@@ -85,12 +65,20 @@ export function createAssistantProvider(
       signal,
     );
     let resultSize = 0;
-    const publicText: string[] = [];
-    let truncated = false;
+    const executor = createToolExecutor(run, signal);
 
     // A turn has a hard cost bound in addition to timeout and context limits.
-    for (let step = 0; step < 8; step++) {
+    for (let step = 0; step < maxAssistantModelCalls; step++) {
       checkAssistantSignal(timeout, externalSignal);
+      const remaining = Math.min(
+        maxAssistantModelCalls - step,
+        run?.remainingModelCalls?.() ?? maxAssistantModelCalls,
+      );
+      const finalize =
+        Boolean(run?.tools?.definitions.length) &&
+        (remaining <= 1 || executor.finalize);
+      const provisional = Boolean(run?.tools?.definitions.length) && !finalize;
+      let provisionalText = "";
       const call = async () => {
         try {
           checkAssistantSignal(timeout, externalSignal);
@@ -104,15 +92,27 @@ export function createAssistantProvider(
                 if (!text || signal.aborted) {
                   return;
                 }
+                if (provisional) {
+                  provisionalText += text;
+                }
                 run.onText?.({
                   type: "text-delta",
                   delta: text,
                   reset: emitted === 0,
+                  ...(provisional ? { provisional: true } : {}),
                 });
                 emitted += text.length;
               }
             : undefined;
-          const answer = await conversation.next(onDelta);
+          const answer = await conversation.next(onDelta, finalize);
+          if (finalize && answer.calls.length) {
+            throw new AssistantProviderError(
+              429,
+              "assistant_step_limit",
+              "Провайдер запросил инструмент вместо итогового ответа. Доступные шаги закончились.",
+              answer.metadata,
+            );
+          }
           if (!answer.calls.length && !answer.content.trim()) {
             throw new AssistantProviderError(
               502,
@@ -137,6 +137,9 @@ export function createAssistantProvider(
               answer.content.length > assistantLimits.maxMessageChars,
           };
         } catch (error) {
+          if (provisionalText.trim()) {
+            run?.onActivity?.({ kind: "note", text: provisionalText.trim() });
+          }
           throw providerFailure(
             error,
             config.api,
@@ -149,40 +152,77 @@ export function createAssistantProvider(
       const answer = run ? await run.record(call) : await call();
       checkAssistantSignal(timeout, externalSignal);
       const text = answer.content.trim();
-      if (text) {
-        publicText.push(text);
-      }
-      truncated ||= answer.truncated;
 
       if (!answer.calls.length) {
+        if (provisional) {
+          // Promote the completed step; never mix earlier commentary into the answer.
+          run?.onText?.({ type: "text-delta", delta: text, reset: true });
+        }
         return {
-          content: publicText.join("\n\n"),
-          truncated,
+          content: text,
+          truncated: answer.truncated,
           metadata: answer.metadata,
         };
       }
-      for (const tool of answer.calls) {
-        checkAssistantSignal(timeout, externalSignal);
-        const execute = () => executeTool(tool, run, signal);
-        let result: object;
-        try {
-          result = run?.recordTool
-            ? await run.recordTool(execute, tool.name)
-            : await execute();
-        } catch (error) {
+      const presentationOnly =
+        Boolean(text) &&
+        answer.calls.every(
+          (tool) =>
+            tool.name === "present_selection" ||
+            tool.name === "present_plugin_result",
+        );
+      if (text && !presentationOnly) {
+        run?.onActivity?.({ kind: "note", text });
+      }
+      let presentationSucceeded = presentationOnly;
+      let promoted = false;
+      try {
+        for (const tool of answer.calls) {
           checkAssistantSignal(timeout, externalSignal);
-          throw error;
+          const execute = () => executor.execute(tool);
+          let result: object;
+          try {
+            result = run?.recordTool
+              ? await run.recordTool(execute, tool.name)
+              : await execute();
+          } catch (error) {
+            checkAssistantSignal(timeout, externalSignal);
+            throw error;
+          }
+          checkAssistantSignal(timeout, externalSignal);
+          resultSize += JSON.stringify(result).length;
+          if (resultSize > 60000) {
+            throw new AssistantProviderError(
+              502,
+              "assistant_context_limit",
+              "Результаты слишком велики для одного запроса. Запросите меньше записей или полей.",
+            );
+          }
+          conversation.result(tool, result);
+          if (
+            !("presented" in result && result.presented === true) ||
+            !(
+              "requiresUserClick" in result && result.requiresUserClick === true
+            ) ||
+            toolDiagnosticCode(result) !== null
+          ) {
+            presentationSucceeded = false;
+          }
         }
-        checkAssistantSignal(timeout, externalSignal);
-        resultSize += JSON.stringify(result).length;
-        if (resultSize > 60000) {
-          throw new AssistantProviderError(
-            502,
-            "assistant_context_limit",
-            "Результаты слишком велики для одного запроса. Запросите меньше записей или полей.",
-          );
+        if (presentationSucceeded) {
+          // Presentation adds a verified UI card, not new data for another model call.
+          promoted = true;
+          run?.onText?.({ type: "text-delta", delta: text, reset: true });
+          return {
+            content: text,
+            truncated: answer.truncated,
+            metadata: answer.metadata,
+          };
         }
-        conversation.result(tool, result);
+      } finally {
+        if (presentationOnly && !promoted) {
+          run?.onActivity?.({ kind: "note", text });
+        }
       }
     }
     throw new AssistantProviderError(

@@ -68,6 +68,7 @@ test("required API validation and PostgreSQL nullability are independent", async
       nullable: true,
       searchable: true,
       searchIndexed: false,
+      searchPriority: null,
     });
 
     const column = await database("columns")
@@ -226,6 +227,7 @@ test("field settings update without losing rows or changing the field type", asy
       nullable: true,
       searchable: true,
       searchIndexed: false,
+      searchPriority: null,
     });
 
     const changed = await app.inject({
@@ -248,6 +250,7 @@ test("field settings update without losing rows or changing the field type", asy
       nullable: false,
       searchable: true,
       searchIndexed: false,
+      searchPriority: null,
     });
     const item = await app.inject({
       method: "GET",
@@ -268,6 +271,7 @@ test("field settings update without losing rows or changing the field type", asy
       nullable: true,
       searchable: true,
       searchIndexed: false,
+      searchPriority: null,
     });
 
     const contact = await app.inject({
@@ -283,6 +287,7 @@ test("field settings update without losing rows or changing the field type", asy
       nullable: true,
       searchable: true,
       searchIndexed: false,
+      searchPriority: null,
     });
     const typeChange = await app.inject({
       method: "PATCH",

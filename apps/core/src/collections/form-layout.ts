@@ -1,5 +1,13 @@
-import type { FormCondition, FormNode, FormLayout } from "@asmblyr/contracts";
-export type { FormCondition, FormNode, FormLayout } from "@asmblyr/contracts";
+import type {
+  FormCondition,
+  FormNode,
+  FormLayout,
+} from "@asmblyr-collaborative/contracts";
+export type {
+  FormCondition,
+  FormNode,
+  FormLayout,
+} from "@asmblyr-collaborative/contracts";
 import { CollectionInputError } from "./validation.js";
 
 type Field = { name: string; type: string };
@@ -34,9 +42,7 @@ export function parseFormLayout(
   };
   const ids = new Set<string>(),
     used = new Set<string>();
-  const available = new Map(
-    fields.filter((f) => f.type !== "alias").map((f) => [f.name, f.type]),
-  );
+  const available = new Map(fields.map((f) => [f.name, f.type]));
   const identity = (v: unknown) => {
     if (typeof v !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(v) || ids.has(v))
       return fail("duplicate or invalid node ID");
@@ -64,6 +70,8 @@ export function parseFormLayout(
             "text",
             "email",
             "integer",
+            "bigint",
+            "date",
             "decimal",
             "boolean",
             "datetime",

@@ -1,10 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { registerReadiness } from "./health/readiness.js";
 import { registerPresenceRoutes } from "./presence/routes.js";
+import { registerNotificationRoutes } from "./notifications/routes.js";
 import { registerErrorHandler } from "./http/error-handler.js";
 import Fastify from "fastify";
 import knex from "knex";
+import { postgresConnection } from "./postgres-connection.js";
 import { registerAuthRoutes } from "./auth/routes.js";
+import { registerCliRoutes } from "./auth/cli/routes.js";
 import { registerPasskeyRoutes } from "./auth/passkeys/routes.js";
 import type { PasskeyConfig } from "./auth/passkeys/config.js";
 import { privateLogger } from "./operations/logging.js";
@@ -16,11 +19,14 @@ import {
 import { registerUserRoutes } from "./auth/user-routes.js";
 import { registerProfileRoutes } from "./auth/profile-routes.js";
 import { registerServiceRoutes } from "./services/routes.js";
+import { registerServiceActivity } from "./services/activity.js";
 import { registerFederationRoutes } from "./services/federation-routes.js";
 import { registerPreferenceRoutes } from "./preferences/routes.js";
 import { registerTableViewRoutes } from "./preferences/table-view-routes.js";
 import { registerWorkspaceRoutes } from "./workspaces/routes.js";
 import { registerCollectionRoutes } from "./collections/routes.js";
+import { registerTranslationRoutes } from "./translations/routes.js";
+import { registerSchemaRoutes } from "./schema/routes.js";
 import { registerItemRoutes } from "./items/routes.js";
 import { registerItemRelationRoutes } from "./items/relation-routes.js";
 import { registerFilterPresetRoutes } from "./items/filter-preset-routes.js";
@@ -53,8 +59,20 @@ import { pluginActor } from "./plugins/actor.js";
 import { PluginActions } from "./plugins/actions.js";
 import { createActionItems } from "./plugins/action-items.js";
 import { registerPluginDraftRoutes } from "./plugins/action-draft-routes.js";
+import { IntegrationService } from "./integrations/service.js";
+import { IntegrationRuntime } from "./integrations/runtime.js";
+import { registerIntegrationRoutes } from "./integrations/routes.js";
+import type { IntegrationOptions } from "./integrations/providers.js";
+import { GoogleConnections } from "./connections/google/connections.js";
+import type { GoogleOAuthProtocol } from "./connections/google/protocol.js";
+import { personalConnections } from "./connections/broker.js";
+import { registerConnectionRoutes } from "./connections/routes.js";
+import { MonitoringRuntime } from "./monitoring/runtime.js";
+import { registerMonitoringRoutes } from "./monitoring/routes.js";
+import type { MonitoringSinkFactory } from "./monitoring/sentry.js";
 
 interface AppOptions {
+  monitoringSink?: MonitoringSinkFactory;
   operationLimits?: OperationLimits;
   passkeys?: PasskeyConfig;
   databaseUrl?: string;
@@ -65,14 +83,19 @@ interface AppOptions {
   sso?: SsoService;
   oauth?: OAuthConfig;
   plugins?: readonly LoadedPlugin[];
+  integrations?: IntegrationOptions;
+  googleProtocol?: GoogleOAuthProtocol;
 }
 
 export function createApp({
+  monitoringSink,
   databaseUrl,
   logger = true,
   setupToken,
   fileStorage = null,
   assistant = null,
+  integrations,
+  googleProtocol,
   sso = new SsoService([]),
   oauth,
   plugins = [],
@@ -88,31 +111,70 @@ export function createApp({
     genReqId: () => randomUUID(),
   });
   registerErrorHandler(app);
+  registerServiceActivity(app);
   registerPluginBoundary(app);
   const database = databaseUrl
-    ? knex({ client: "pg", connection: databaseUrl })
+    ? knex({ client: "pg", connection: postgresConnection(databaseUrl) })
     : null;
   const hooks = new PluginHooks(plugins, endpointLogger(app.log));
+  const integrationSettings =
+    database && integrations
+      ? new IntegrationService(database, integrations)
+      : null;
+  const integrationRuntime = integrationSettings
+    ? new IntegrationRuntime(integrationSettings)
+    : null;
+  const monitoring = integrationSettings
+    ? new MonitoringRuntime(integrationSettings, monitoringSink)
+    : null;
+  monitoring?.register(app);
+  const google = integrationSettings
+    ? new GoogleConnections(
+        integrationSettings,
+        integrations?.exchange,
+        googleProtocol,
+      )
+    : null;
+  const storageSource = integrationRuntime?.storage ?? fileStorage;
+  const assistantSource = integrationRuntime?.assistant ?? assistant;
   registerCredentialLimits(app, database);
-  const actions = new PluginActions(plugins, async (access, scope, plugin) => {
-    if (!database) {
-      throw Object.assign(new Error("Database is not configured"), {
-        statusCode: 503,
-      });
-    }
-    return {
-      actor: Object.freeze(
-        plugin.capabilities?.includes("identity.profile")
-          ? await pluginActor(database, access.principal)
-          : { id: access.principal.id, kind: access.principal.kind },
-      ),
-      items: capabilityItems(
-        plugin,
-        createActionItems(database, access, scope, hooks.mutation),
-      ),
-      settings: await pluginSettingsValues(database, plugin),
-    };
-  });
+  registerCliRoutes(app, database, passkeys.origin);
+  const actions = new PluginActions(
+    plugins,
+    async (access, scope, plugin) => {
+      if (!database) {
+        throw Object.assign(new Error("Database is not configured"), {
+          statusCode: 503,
+        });
+      }
+      return {
+        actor: Object.freeze(
+          plugin.capabilities?.includes("identity.profile")
+            ? await pluginActor(database, access.principal)
+            : { id: access.principal.id, kind: access.principal.kind },
+        ),
+        items: capabilityItems(
+          plugin,
+          createActionItems(database, access, scope, hooks.mutation),
+        ),
+        settings: await pluginSettingsValues(database, plugin),
+        ...(google &&
+        access.principal.kind === "user" &&
+        plugin.capabilities?.includes("connections.google")
+          ? {
+              connections: personalConnections(
+                google,
+                access.principal.id,
+                scope.signal,
+              ),
+            }
+          : {}),
+      };
+    },
+    undefined,
+    async (access) =>
+      Boolean(google && (await google.available(access.principal.id))),
+  );
   app.addHook("onReady", async () => {
     if (database) {
       await installPluginCollections(database, plugins);
@@ -128,6 +190,8 @@ export function createApp({
       hooks.emit(transaction, access, requestId, "collections.delete", target),
   );
   registerItemRoutes(app, database, hooks.mutation);
+  registerTranslationRoutes(app, database, plugins);
+  registerSchemaRoutes(app, database, actions);
   registerItemRelationRoutes(app, database, hooks.mutation);
   registerFilterPresetRoutes(app, database);
   registerAuthRoutes(app, database, setupToken);
@@ -137,6 +201,7 @@ export function createApp({
   registerUserRoutes(app, database);
   registerProfileRoutes(app, database);
   registerPresenceRoutes(app, database);
+  registerNotificationRoutes(app, database, plugins);
   registerServiceRoutes(app, database);
   registerFederationRoutes(app, database);
   registerPreferenceRoutes(app, database);
@@ -144,10 +209,22 @@ export function createApp({
   registerWorkspaceRoutes(app, database);
   registerPolicyRoutes(app, database);
   registerPermissionRoutes(app, database);
-  registerFileRoutes(app, database, fileStorage);
-  registerAssistantRoutes(app, database, assistant, actions, operationLimits);
+  registerFileRoutes(app, database, storageSource);
+  registerAssistantRoutes(
+    app,
+    database,
+    assistantSource,
+    actions,
+    operationLimits,
+    google,
+  );
   registerSettingsAccessRoutes(app, database);
-  registerSettingsRoutes(app, database, assistant);
+  registerSettingsRoutes(app, database, assistantSource);
+  registerIntegrationRoutes(app, database, integrationSettings, () =>
+    monitoring?.refresh(),
+  );
+  registerMonitoringRoutes(app, database, monitoring);
+  registerConnectionRoutes(app, database, google);
   registerPluginSettingsRoutes(app, database, plugins);
   registerTermRoutes(app, database);
 
@@ -182,6 +259,7 @@ export function createApp({
   );
 
   app.addHook("onClose", async () => {
+    integrationRuntime?.close();
     fileStorage?.close?.();
     await database?.destroy();
   });

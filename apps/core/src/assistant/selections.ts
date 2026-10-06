@@ -3,7 +3,7 @@ import type { Knex } from "knex";
 import type {
   AssistantSelection,
   AssistantSelectionQuery,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { Access } from "../permissions/access.js";
 import {
   collectionData,
@@ -45,6 +45,9 @@ export function captureSelection(
     filter: conditions.filter,
     sort: value.sort,
     direction: value.direction,
+    ...(value.order === "field" || value.order === "relevance"
+      ? { order: value.order }
+      : {}),
     count: typeof value.count === "string" ? value.count : null,
   };
 }
@@ -62,6 +65,7 @@ export async function validateSelection(
     "filter",
     "sort",
     "direction",
+    "order",
   ]);
   const name = toolCollectionName(body.collection);
   const data = await collectionData(db, access, name);
@@ -81,6 +85,7 @@ export async function validateSelection(
       filter: JSON.stringify(body.filter),
       sort: body.sort,
       direction: body.direction,
+      order: body.order,
     },
     name,
     data.schema,
@@ -93,6 +98,7 @@ export async function validateSelection(
     q: query.q,
     filter: plainFilter(query.filters),
     sort: query.sort,
+    order: query.order,
     direction: query.direction as AssistantSelection["direction"],
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { availableSettings } from "@/components/system-settings/sections";
+import { availableSettings } from "@/components/admin/settings/sections";
 import { useEffect, useState } from "react";
 import { EditorDialog } from "@/components/collections/editor-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { accessRequest } from "@/lib/access-request";
 import { actionName, type EffectivePermission, type UserAccess } from "./types";
 import type { Policy } from "./types";
 import { PolicyDelegationForm } from "./policy-delegation-form";
+import { useUiCopy } from "@/lib/ui-copy";
 
 function permissionGroups(permissions: EffectivePermission[]) {
   const groups = new Map<string, EffectivePermission[]>();
@@ -34,6 +35,8 @@ export function UserAccessDialog({
   onDelegationSaved: () => Promise<void>;
   onClose: () => void;
 }) {
+  const copy = useUiCopy();
+
   const [access, setAccess] = useState<UserAccess | null>(null);
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
@@ -60,8 +63,8 @@ export function UserAccessDialog({
   return (
     <EditorDialog
       open
-      title={`Доступ: ${email}`}
-      eyebrow="Пользователь"
+      title={copy("Доступ: {{value0}}", { value0: email })}
+      eyebrow={copy("Пользователь")}
       size="wide"
       busy={busy}
       hasUnsavedChanges={dirty}
@@ -74,7 +77,7 @@ export function UserAccessDialog({
               role="alert"
               className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
             >
-              {error}
+              {copy(error)}
             </p>
           )}
           {!access && !error && (
@@ -82,34 +85,42 @@ export function UserAccessDialog({
               role="status"
               className="text-sm text-muted-foreground"
             >
-              Загружаем права…
+              {copy("Загружаем права… ")}
             </p>
           )}
           {access && (
             <>
               {access.user.status === "disabled" && (
                 <p className="rounded-lg border p-3 text-sm">
-                  Учётная запись отключена. Назначения сохранены, но сейчас
-                  войти и использовать права нельзя.
+                  {copy(
+                    "Учётная запись отключена. Назначения сохранены, но сейчас войти и использовать права нельзя. ",
+                  )}
                 </p>
               )}
               {!access.user.hasPassword &&
                 !access.user.superuser &&
                 access.user.status === "active" && (
                   <p className="rounded-lg border p-3 text-sm">
-                    Приглашение ещё не принято. Права начнут действовать после
-                    входа.
+                    {copy(
+                      "Приглашение ещё не принято. Права начнут действовать после входа. ",
+                    )}
                   </p>
                 )}
               {access.user.superuser && (
                 <p className="rounded-lg border p-3 text-sm">
                   {access.user.status === "disabled"
-                    ? "После включения учётной записи суперпользователь получит полный доступ к коллекциям и структуре."
-                    : "Суперпользователь имеет полный доступ к коллекциям и структуре без разрешений в политиках."}
+                    ? copy(
+                        "После включения учётной записи суперпользователь получит полный доступ к коллекциям и структуре.",
+                      )
+                    : copy(
+                        "Суперпользователь имеет полный доступ к коллекциям и структуре без разрешений в политиках.",
+                      )}
                 </p>
               )}
               <section className="space-y-3">
-                <h3 className="font-semibold">Назначенные политики</h3>
+                <h3 className="font-semibold">
+                  {copy("Назначенные политики")}
+                </h3>
                 {access.policies.length ? (
                   <div className="flex flex-wrap gap-2">
                     {access.policies.map((policy) => (
@@ -123,12 +134,12 @@ export function UserAccessDialog({
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Политики не назначены.
+                    {copy("Политики не назначены. ")}
                   </p>
                 )}
               </section>
               <section className="space-y-3">
-                <h3 className="font-semibold">Разделы настроек</h3>
+                <h3 className="font-semibold">{copy("Разделы настроек")}</h3>
                 {access.sections.length ? (
                   <div className="flex flex-wrap gap-2">
                     {availableSettings(access.sections).map((section) => (
@@ -136,16 +147,16 @@ export function UserAccessDialog({
                         key={section.id}
                         variant="secondary"
                       >
-                        {section.title} ·{" "}
+                        {copy(section.title)} ·{" "}
                         {access.editableSections.includes(section.id)
-                          ? "Изменение"
-                          : "Просмотр"}
+                          ? copy("Изменение")
+                          : copy("Просмотр")}
                       </Badge>
                     ))}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Доступ к настройкам не выдан.
+                    {copy("Доступ к настройкам не выдан. ")}
                   </p>
                 )}
               </section>
@@ -169,9 +180,13 @@ export function UserAccessDialog({
               {!access.user.superuser && (
                 <section className="space-y-3">
                   <div>
-                    <h3 className="font-semibold">Права по политикам</h3>
+                    <h3 className="font-semibold">
+                      {copy("Права по политикам")}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      Объединение разрешений всех назначенных политик.
+                      {copy(
+                        "Объединение разрешений всех назначенных политик. ",
+                      )}
                     </p>
                   </div>
                   {access.permissions.length ? (
@@ -190,19 +205,19 @@ export function UserAccessDialog({
                                   className="grid gap-1 text-sm sm:grid-cols-[8rem_1fr]"
                                 >
                                   <span className="font-medium">
-                                    {actionName[permission.action]}
+                                    {copy(actionName[permission.action])}
                                   </span>
                                   <span className="break-words text-muted-foreground">
                                     {permission.action === "delete"
-                                      ? "Вся запись"
+                                      ? copy("Вся запись")
                                       : permission.fields.includes("*")
-                                        ? "Все поля"
+                                        ? copy("Все поля")
                                         : permission.fields.join(", ")}
                                     {permission.rules?.some(
                                       (rule) => rule.rowFilter,
                                     ) && (
                                       <span className="ml-2 text-xs">
-                                        · По условиям политик
+                                        {copy("· По условиям политик ")}
                                       </span>
                                     )}
                                   </span>
@@ -215,7 +230,7 @@ export function UserAccessDialog({
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Разрешений на коллекции нет.
+                      {copy("Разрешений на коллекции нет. ")}
                     </p>
                   )}
                 </section>

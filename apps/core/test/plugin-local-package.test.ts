@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
-import { isLocalPluginPackage } from "@asmblyr/kit/node";
+import { isLocalPluginPackage } from "@asmblyr-collaborative/kit/node";
 
 test("source selection excludes installed dependencies, private caches and external packages", () => {
   const root = path.resolve("workspace");

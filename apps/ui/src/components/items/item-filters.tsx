@@ -2,13 +2,18 @@
 
 import { useState, type FormEvent } from "react";
 import { Bookmark, ListFilter, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import { ItemFilterGroup } from "./item-filter-group";
 import { ItemFilterPresets } from "./item-filter-presets";
 import {
@@ -24,6 +29,7 @@ import {
   type FilterGroup,
 } from "./item-filter-options";
 import type { Collection } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function itemFilterCount(raw: string): number {
   return filterCount(readFilter(raw));
@@ -42,6 +48,8 @@ export function ItemFilters({
   filter: string;
   onApply: (group: FilterGroup | null) => void;
 }) {
+  const copy = useUiCopy();
+
   const scopes = filterScopes(collection, catalog);
   const [group, setGroup] = useState<FilterGroup>(() => readFilter(filter));
   const [message, setMessage] = useState("");
@@ -52,12 +60,14 @@ export function ItemFilters({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      const next = normalizeFilter(group, scopes);
+      const next = normalizeFilter(group, scopes, copy);
       setMessage("");
       setOpen(false);
       onApply(next.children.length > 0 ? next : null);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Проверьте фильтр");
+      setMessage(
+        error instanceof Error ? error.message : copy("Проверьте фильтр"),
+      );
     }
   }
 
@@ -79,7 +89,7 @@ export function ItemFilters({
           variant={filter ? "secondary" : "outline"}
           size="sm"
         >
-          <ListFilter aria-hidden="true" /> Фильтры
+          <ListFilter aria-hidden="true" /> {copy(" Фильтры ")}
           {filter && (
             <span className="ml-0.5 rounded bg-foreground/10 px-1.5 text-xs">
               {itemFilterCount(filter)}
@@ -89,7 +99,7 @@ export function ItemFilters({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        aria-label="Настройка фильтров"
+        aria-label={copy("Настройка фильтров")}
         className="flex max-h-[min(85vh,var(--radix-popover-content-available-height))] w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden p-0"
       >
         <Tabs
@@ -106,7 +116,7 @@ export function ItemFilters({
                   aria-hidden="true"
                   className="size-3.5"
                 />{" "}
-                Фильтры
+                {copy("Фильтры ")}
                 {total > 0 && (
                   <span className="text-muted-foreground">{total}</span>
                 )}
@@ -119,14 +129,14 @@ export function ItemFilters({
                   aria-hidden="true"
                   className="size-3.5"
                 />{" "}
-                Сохранённые
+                {copy("Сохранённые ")}
               </TabsTrigger>
             </TabsList>
             <Button
               type="button"
               size="icon-sm"
               variant="ghost"
-              aria-label="Закрыть фильтры"
+              aria-label={copy("Закрыть фильтры")}
               className="h-7 w-7 text-muted-foreground"
               onClick={() => setOpen(false)}
             >
@@ -143,7 +153,7 @@ export function ItemFilters({
             <form
               onSubmit={submit}
               className="flex max-h-[65vh] flex-col"
-              aria-label="Фильтры записей"
+              aria-label={copy("Фильтры записей")}
             >
               <div className="min-h-0 overflow-y-auto p-3">
                 <ItemFilterGroup
@@ -186,7 +196,7 @@ export function ItemFilters({
                   role="alert"
                   className="px-4 pb-3 text-xs text-destructive"
                 >
-                  {message}
+                  {copy(message)}
                 </p>
               )}
               <div className="flex shrink-0 items-center justify-between gap-2 border-t bg-muted/20 px-3 py-2.5">
@@ -206,13 +216,13 @@ export function ItemFilters({
                     }
                   }}
                 >
-                  Сбросить
+                  {copy("Сбросить ")}
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
                 >
-                  Применить
+                  {copy("Применить ")}
                 </Button>
               </div>
             </form>
@@ -226,9 +236,9 @@ export function ItemFilters({
               legacyKey={
                 "asmblyr.items.filters." + userId + "." + collection.name
               }
-              current={() => normalizeFilter(group, scopes)}
+              current={() => normalizeFilter(group, scopes, copy)}
               onLoad={(saved) => {
-                const next = normalizeFilter(saved, scopes);
+                const next = normalizeFilter(saved, scopes, copy);
                 setGroup(next);
                 setOpen(false);
                 onApply(next.children.length ? next : null);

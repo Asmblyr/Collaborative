@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import type { TermDefinition } from "@asmblyr/contracts";
-import { Button } from "@asmblyr/kit/ui/button";
+import type { TermDefinition } from "@asmblyr-collaborative/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -12,8 +12,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
-import { PortalContainerContext } from "@asmblyr/kit/ui/portal-container";
+} from "@asmblyr-collaborative/kit/ui/select";
+import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
 import { useEditorState } from "@/components/collections/editor-lifecycle";
 import {
   filterScopes,
@@ -22,6 +22,7 @@ import {
 import { normalizeFilter } from "@/components/items/item-filter-model";
 import type { Collection } from "@/components/items/types";
 import { TermFilterEditor } from "./term-filter-editor";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface Binding {
   termId: string;
@@ -46,6 +47,8 @@ export function CollectionTerms({
   disabled: boolean;
   onStateChange: (dirty: boolean, busy: boolean) => void;
 }) {
+  const copy = useUiCopy();
+
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [bindings, setBindings] = useState<Binding[]>([]);
   const [busy, setBusy] = useState(false);
@@ -65,20 +68,20 @@ export function CollectionTerms({
         const response = await fetch(path, { signal: controller.signal });
         const body = await response.json();
         if (!response.ok)
-          throw new Error(body.message ?? "Не удалось загрузить термины");
+          throw new Error(body.message ?? copy("Не удалось загрузить термины"));
         setSnapshot(body.data);
         setBindings(body.data.bindings);
         setError("");
       } catch (cause) {
         if (!controller.signal.aborted)
           setError(
-            cause instanceof Error ? cause.message : "Ошибка соединения",
+            cause instanceof Error ? cause.message : copy("Ошибка соединения"),
           );
       }
     }
     void load();
     return () => controller.abort();
-  }, [path, retry]);
+  }, [path, retry, copy]);
   const scopes = filterScopes(collection, catalog);
   async function save() {
     if (!snapshot || disabled || busy) return;
@@ -86,10 +89,12 @@ export function CollectionTerms({
     setNotice("");
     try {
       const next = bindings.map((binding) => {
-        const filter = normalizeFilter(binding.filter, scopes);
+        const filter = normalizeFilter(binding.filter, scopes, copy);
         if (!filter.children.length)
           throw new Error(
-            "Добавьте условие для каждого термина или уберите его из коллекции.",
+            copy(
+              "Добавьте условие для каждого термина или уберите его из коллекции.",
+            ),
           );
         return { termId: binding.termId, filter, valid: true };
       });
@@ -103,13 +108,15 @@ export function CollectionTerms({
       });
       if (!response.ok) {
         const body = await response.json();
-        throw new Error(body.message ?? "Не удалось сохранить условия");
+        throw new Error(body.message ?? copy("Не удалось сохранить условия"));
       }
       setSnapshot({ ...snapshot, bindings: next });
       setBindings(next);
-      setNotice("Условия сохранены");
+      setNotice(copy("Условия сохранены"));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Ошибка соединения");
+      setError(
+        cause instanceof Error ? cause.message : copy("Ошибка соединения"),
+      );
     } finally {
       setBusy(false);
     }
@@ -137,17 +144,18 @@ export function CollectionTerms({
             id="collection-terms-title"
             className="text-base font-medium"
           >
-            Термины этой коллекции
+            {copy("Термины этой коллекции ")}
           </h3>
           <p className="text-sm leading-6 text-muted-foreground">
-            Задайте, какие записи означают «активные» и другие понятия.
-            Ассистент будет применять эти условия при поиске и подсчёте.
+            {copy(
+              "Задайте, какие записи означают «активные» и другие понятия. Ассистент будет применять эти условия при поиске и подсчёте. ",
+            )}
           </p>
           <Link
-            href="/system-settings/terms"
+            href="/admin/settings/terms"
             className="text-xs underline underline-offset-4"
           >
-            Открыть общий справочник
+            {copy("Открыть общий справочник ")}
           </Link>
         </div>
         {!snapshot && !error && (
@@ -155,7 +163,7 @@ export function CollectionTerms({
             role="status"
             className="text-sm text-muted-foreground"
           >
-            Загрузка терминов…
+            {copy("Загрузка терминов… ")}
           </p>
         )}
         <fieldset
@@ -175,17 +183,21 @@ export function CollectionTerms({
                 <div className="flex items-start gap-3 border-b p-4">
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <p className="text-sm font-medium">
-                      {term?.name ?? "Недоступный термин"}
+                      {term?.name ?? copy("Недоступный термин")}
                     </p>
                     <p className="text-xs leading-5 text-muted-foreground">
                       {term?.description}
                     </p>
                     {term && !term.enabled && (
-                      <Badge variant="outline">Выключен в справочнике</Badge>
+                      <Badge variant="outline">
+                        {copy("Выключен в справочнике")}
+                      </Badge>
                     )}
                     {binding.valid === false && (
                       <p className="text-xs text-destructive">
-                        Структура изменилась. Исправьте или удалите условие.
+                        {copy(
+                          "Структура изменилась. Исправьте или удалите условие. ",
+                        )}
                       </p>
                     )}
                   </div>
@@ -193,7 +205,9 @@ export function CollectionTerms({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Убрать термин ${term?.name ?? ""}`}
+                    aria-label={copy("Убрать термин {{value0}}", {
+                      value0: term?.name ?? "",
+                    })}
                     onClick={() =>
                       change(
                         bindings.filter((_, position) => position !== index),
@@ -221,8 +235,9 @@ export function CollectionTerms({
           })}
           {snapshot && !bindings.length && (
             <p className="rounded-xl border border-dashed p-5 text-sm leading-6 text-muted-foreground">
-              Пока нет настроенных терминов. Добавьте понятие из справочника и
-              выберите условие.
+              {copy(
+                "Пока нет настроенных терминов. Добавьте понятие из справочника и выберите условие. ",
+              )}
             </p>
           )}
           {unused.length > 0 && (
@@ -238,9 +253,11 @@ export function CollectionTerms({
             >
               <SelectTrigger
                 className="w-full"
-                aria-label="Добавить термин в коллекцию"
+                aria-label={copy("Добавить термин в коллекцию")}
               >
-                <SelectValue placeholder="Добавить термин из справочника…" />
+                <SelectValue
+                  placeholder={copy("Добавить термин из справочника…")}
+                />
               </SelectTrigger>
               <SelectContent>
                 {unused.map((term) => (
@@ -260,14 +277,14 @@ export function CollectionTerms({
             role="alert"
             className="text-sm text-destructive"
           >
-            {error}
+            {copy(error)}
             {!snapshot && (
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setRetry(retry + 1)}
               >
-                Повторить
+                {copy("Повторить ")}
               </Button>
             )}
           </div>
@@ -279,7 +296,7 @@ export function CollectionTerms({
               disabled={busy || !dirty}
               onClick={() => void save()}
             >
-              {busy ? "Сохранение…" : "Сохранить условия терминов"}
+              {busy ? copy("Сохранение…") : copy("Сохранить условия терминов")}
             </Button>
             {dirty && (
               <Button
@@ -288,7 +305,7 @@ export function CollectionTerms({
                 disabled={busy}
                 onClick={() => change(snapshot.bindings)}
               >
-                Отменить изменения
+                {copy("Отменить изменения ")}
               </Button>
             )}
             {notice && (
@@ -296,7 +313,7 @@ export function CollectionTerms({
                 role="status"
                 className="text-xs text-muted-foreground"
               >
-                {notice}
+                {copy(notice)}
               </span>
             )}
           </div>

@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { JsonRecord } from "@asmblyr/contracts";
+import type { JsonRecord } from "@asmblyr-collaborative/contracts";
 
 export interface FieldEditorProps {
   id: string;
@@ -28,6 +28,7 @@ export interface FieldInterfaceSettingsProps {
 export interface FieldInterfaceDefinition {
   id: string;
   title: string;
+  titleKey?: string;
   types: readonly "text"[];
   editor: ComponentType<FieldEditorProps>;
   display?: ComponentType<FieldDisplayProps>;

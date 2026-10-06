@@ -1,7 +1,7 @@
 import "./support/require-test-database.js";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ApiError, createClient } from "@asmblyr/sdk";
+import { ApiError, createClient } from "@asmblyr-collaborative/sdk";
 import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 
 test("HTTP SDK and local kit read the same Core data and permissions", async (t) => {

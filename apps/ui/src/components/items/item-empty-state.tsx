@@ -1,5 +1,8 @@
+"use client";
+
 import { Database, SearchX } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemEmptyState({
   filtered,
@@ -14,6 +17,8 @@ export function ItemEmptyState({
   onReset: () => void;
   onFirstPage: () => void;
 }) {
+  const copy = useUiCopy();
+
   const Icon = filtered ? SearchX : Database;
   return (
     <div className="flex h-full min-h-72 flex-col items-center justify-center px-6 py-12 text-center">
@@ -25,19 +30,21 @@ export function ItemEmptyState({
       </div>
       <h2 className="text-base font-medium">
         {outOfRange
-          ? "На этой странице нет записей"
+          ? copy("На этой странице нет записей")
           : filtered
-            ? "Ничего не найдено"
-            : "Пока нет записей"}
+            ? copy("Ничего не найдено")
+            : copy("Пока нет записей")}
       </h2>
       <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
         {outOfRange
-          ? "Вернитесь на первую страницу, чтобы увидеть актуальные записи."
+          ? copy(
+              "Вернитесь на первую страницу, чтобы увидеть актуальные записи.",
+            )
           : filtered
-            ? "Попробуйте другой запрос или сбросьте условия отбора."
+            ? copy("Попробуйте другой запрос или сбросьте условия отбора.")
             : onCreate
-              ? "Создайте первую запись — она появится здесь."
-              : "В этой коллекции пока нет данных для просмотра."}
+              ? copy("Создайте первую запись — она появится здесь.")
+              : copy("В этой коллекции пока нет данных для просмотра.")}
       </p>
       <div className="mt-5">
         {outOfRange ? (
@@ -45,17 +52,19 @@ export function ItemEmptyState({
             variant="outline"
             onClick={onFirstPage}
           >
-            На первую страницу
+            {copy("На первую страницу ")}
           </Button>
         ) : filtered ? (
           <Button
             variant="outline"
             onClick={onReset}
           >
-            Сбросить поиск и фильтры
+            {copy("Сбросить поиск и фильтры ")}
           </Button>
         ) : (
-          onCreate && <Button onClick={onCreate}>Создать первую запись</Button>
+          onCreate && (
+            <Button onClick={onCreate}>{copy("Создать первую запись")}</Button>
+          )
         )}
       </div>
     </div>

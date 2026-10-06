@@ -3,7 +3,7 @@ import {
   defineModelAnnotation,
   defineModelContext,
   defineHandler,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import { readBody } from "h3";
 import type {
   CalculationInput,

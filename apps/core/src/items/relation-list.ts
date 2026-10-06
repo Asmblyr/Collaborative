@@ -3,7 +3,9 @@ import type { Knex } from "knex";
 import type { Access } from "../permissions/access.js";
 import { relationContext, type RelationAddress } from "./relation-context.js";
 import { parseItemListQuery, type ItemListQuery } from "./list-query.js";
-import { applyItemSearch, searchableColumns } from "./search.js";
+import { searchableColumns } from "./search.js";
+import { prepareItemSearch, applySearchPlan } from "./search-plan.js";
+import { searchPriorities } from "../collections/search-priority.js";
 import { recordLabelPlan } from "./record-label.js";
 import { relationDisplay } from "./relation-display.js";
 import { listCollections } from "../collections/catalog-repository.js";
@@ -19,11 +21,16 @@ export async function listRelationItems(
   const context = await relationContext(database, address, access);
   const { alias, id, target, through, allowed, abilities } = context;
   const display = relationDisplay(context);
-  const { page, limit, offset, q, sort, direction } = parseItemListQuery(
+  const { page, limit, offset, q, sort, direction, order } = parseItemListQuery(
     {
       page: query.page,
       limit: query.limit ?? String(display.pageSize),
       q: query.q,
+      order:
+        query.order ??
+        (query.q && query.sort === undefined && query.direction === undefined
+          ? "relevance"
+          : "field"),
       sort: query.sort ?? display.sortField,
       direction: query.direction ?? display.direction,
     },
@@ -96,27 +103,42 @@ export async function listRelationItems(
         sourceKey: `t.${path.sourceKey}`,
       }))
     : [];
-  applyItemSearch(
-    base,
-    columns,
-    q,
-    target.settings.primaryKey.type,
-    database,
-    relations,
-    access,
-    alias.related_collection,
+  const priorities = new Map(
+    [...searchPriorities(target.settings, target.fields.values())].map(
+      ([field, primary]) => [`t.${field}`, primary],
+    ),
   );
+  const plan = q
+    ? prepareItemSearch(
+        database,
+        columns,
+        q,
+        target.settings.primaryKey.type,
+        relations,
+        access,
+        alias.related_collection,
+        priorities,
+      )
+    : null;
+  if (plan) {
+    applySearchPlan(base, plan);
+  }
   const projection = Object.fromEntries(
     display.columns.map((name, index) => [`value_${index}`, `t.${name}`]),
   );
   const [rows, count] = await Promise.all([
     base
       .clone()
-      .select({
+      .select<Record<string, unknown>[]>({
         id: `t.${key}`,
         linkId: linkKey,
         ...projection,
         ...labelProjection,
+      })
+      .modify((builder) => {
+        if (plan && order === "relevance") {
+          builder.orderByRaw("(?) ASC", [plan.rank]);
+        }
       })
       .orderBy(`t.${sort}`, direction, "last")
       .orderBy(`t.${key}`)
@@ -130,11 +152,11 @@ export async function listRelationItems(
     : await resolveRecordLabels(
         database,
         alias.related_collection,
-        rows.map((row) => String(row.id)),
+        rows.map((row: Record<string, unknown>) => String(row.id)),
         access,
       );
   return {
-    data: rows.map((row) => ({
+    data: rows.map((row: Record<string, unknown>) => ({
       id: String(row.id),
       linkId: String(row.linkId),
       label:
@@ -154,6 +176,7 @@ export async function listRelationItems(
       total: count?.total ?? "0",
       sort,
       direction,
+      order,
     },
     abilities,
     display,

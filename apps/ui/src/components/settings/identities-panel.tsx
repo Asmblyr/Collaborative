@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Link2 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import type { LinkedIdentity, LoginProvider } from "@/lib/sso";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
+  const copy = useUiCopy();
+
   const [identities, setIdentities] = useState<LinkedIdentity[] | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -20,12 +23,14 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
       })
       .catch(() => {
         if (active)
-          setError("Не удалось загрузить способы входа. Обновите страницу.");
+          setError(
+            copy("Не удалось загрузить способы входа. Обновите страницу."),
+          );
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [copy]);
 
   async function unlink(id: string) {
     setPending(true);
@@ -38,7 +43,9 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
       setConfirm(null);
     } catch {
       setError(
-        "Не удалось отключить провайдера. Должен остаться хотя бы один доступный способ входа.",
+        copy(
+          "Не удалось отключить провайдера. Должен остаться хотя бы один доступный способ входа.",
+        ),
       );
     } finally {
       setPending(false);
@@ -63,10 +70,11 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
   return (
     <section className="mt-8 space-y-4 border-t pt-6">
       <div>
-        <h2 className="font-semibold">Подключённые аккаунты</h2>
+        <h2 className="font-semibold">{copy("Подключённые аккаунты")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Добавьте ещё один способ входа в свой аккаунт. Почта и права доступа
-          останутся прежними.
+          {copy(
+            "Добавьте ещё один способ входа в свой аккаунт. Почта и права доступа останутся прежними. ",
+          )}
         </p>
       </div>
       {error && (
@@ -74,15 +82,15 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       {identities === null && !error && (
-        <p className="text-sm text-muted-foreground">Загрузка…</p>
+        <p className="text-sm text-muted-foreground">{copy("Загрузка…")}</p>
       )}
       {identities && !entries.length && (
         <p className="text-sm text-muted-foreground">
-          Провайдеры входа пока не настроены.
+          {copy("Провайдеры входа пока не настроены. ")}
         </p>
       )}
       {identities &&
@@ -100,7 +108,9 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
                     variant="secondary"
                     className="mt-1"
                   >
-                    {identity.available ? "Подключён" : "Провайдер отключён"}
+                    {identity.available
+                      ? copy("Подключён")
+                      : copy("Провайдер отключён")}
                   </Badge>
                 )}
               </div>
@@ -112,7 +122,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
                 disabled={pending}
                 onClick={() => setConfirm(identity.id)}
               >
-                Отключить
+                {copy("Отключить ")}
               </Button>
             ) : (
               <form
@@ -130,7 +140,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
                   type="submit"
                   disabled={pending}
                 >
-                  Подключить
+                  {copy("Подключить ")}
                 </Button>
               </form>
             )}
@@ -139,8 +149,9 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
       {confirm && (
         <div className="space-y-3 rounded-lg bg-muted p-4">
           <p className="text-sm">
-            Отключить этот способ входа? Аккаунт Asmblyr и открытые сессии
-            сохранятся.
+            {copy(
+              "Отключить этот способ входа? Аккаунт Asmblyr и открытые сессии сохранятся. ",
+            )}
           </p>
           <div className="flex gap-2">
             <Button
@@ -149,7 +160,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
               disabled={pending}
               onClick={() => unlink(confirm)}
             >
-              Отключить
+              {copy("Отключить ")}
             </Button>
             <Button
               variant="ghost"
@@ -157,7 +168,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
               disabled={pending}
               onClick={() => setConfirm(null)}
             >
-              Отмена
+              {copy("Отмена ")}
             </Button>
           </div>
         </div>

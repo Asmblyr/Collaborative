@@ -1,8 +1,10 @@
 "use client";
 
+import { usePluginTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
+
 import { useId, type Ref } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 
 interface CommentComposerProps {
   text: string;
@@ -27,10 +29,11 @@ export function CommentComposer({
   onSubmit,
   onCancel,
 }: CommentComposerProps) {
+  const { t, locale } = usePluginTranslations("comments");
   const inputId = useId();
-  let submitLabel = editing ? "Сохранить" : "Отправить";
+  let submitLabel = editing ? t("save") : t("send");
   if (pending) {
-    submitLabel = "Сохранение…";
+    submitLabel = t("saving");
   }
 
   return (
@@ -47,7 +50,7 @@ export function CommentComposer({
         htmlFor={inputId}
         className="text-sm font-medium"
       >
-        {editing ? "Изменить комментарий" : "Новый комментарий"}
+        {editing ? t("composer.edit") : t("composer.new")}
       </label>
       <Textarea
         ref={inputRef}
@@ -57,7 +60,7 @@ export function CommentComposer({
         className="min-h-24 resize-y"
         maxLength={maxLength}
         disabled={pending}
-        placeholder="Добавьте контекст, вопрос или заметку…"
+        placeholder={t("composer.placeholder")}
         onKeyDown={(event) => {
           if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
             event.preventDefault();
@@ -70,8 +73,8 @@ export function CommentComposer({
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">
           {text.length
-            ? `${text.length.toLocaleString("ru")} / ${maxLength.toLocaleString("ru")}`
-            : "Ctrl / ⌘ + Enter — отправить"}
+            ? `${text.length.toLocaleString(locale)} / ${maxLength.toLocaleString(locale)}`
+            : t("composer.shortcut")}
         </span>
         <div className="flex gap-2">
           {editing && (
@@ -81,7 +84,7 @@ export function CommentComposer({
               disabled={pending}
               onClick={onCancel}
             >
-              Отмена
+              {t("cancel")}
             </Button>
           )}
           <Button

@@ -15,10 +15,12 @@ export async function modelPluginFixture(t: TestContext) {
     assert.equal(path.dirname(root), path.resolve(base));
     await rm(root, { recursive: true, force: true });
   });
-  await mkdir(path.join(root, "node_modules/@asmblyr"), { recursive: true });
+  await mkdir(path.join(root, "node_modules/@asmblyr-collaborative"), {
+    recursive: true,
+  });
   await symlink(
     fileURLToPath(new URL("../../../../packages/kit", import.meta.url)),
-    path.join(root, "node_modules/@asmblyr/kit"),
+    path.join(root, "node_modules/@asmblyr-collaborative/kit"),
     "junction",
   );
   await writeFile(

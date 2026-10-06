@@ -1,4 +1,4 @@
-import type { PluginStorage } from "@asmblyr/kit";
+import type { PluginStorage } from "@asmblyr-collaborative/kit";
 import type { Knex } from "knex";
 import { AccessDeniedError, type Access } from "../permissions/access.js";
 import type { LoadedPlugin } from "./definition.js";

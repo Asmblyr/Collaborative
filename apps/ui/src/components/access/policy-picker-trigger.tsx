@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { cn } from "cn";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 
 export function PolicyPickerTrigger({
   className,

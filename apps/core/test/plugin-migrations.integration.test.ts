@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test, { type TestContext } from "node:test";
 import knex from "knex";
-import type { CollectionFieldDefinition } from "@asmblyr/kit";
+import type { CollectionFieldDefinition } from "@asmblyr-collaborative/kit";
 import { parsePluginCollection } from "../src/plugins/collection-definition.js";
 import { installPluginCollections } from "../src/plugins/install-collections.js";
 import { parseMigration } from "../src/plugins/migration-index.js";

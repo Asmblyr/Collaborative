@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { AssistantTurnSummary } from "@asmblyr/contracts";
+import type { AssistantTurnSummary } from "@asmblyr-collaborative/contracts";
 import { usageLabel } from "../src/components/assistant/assistant-usage";
 import {
   conversationInput,
@@ -153,5 +153,35 @@ test("filter actions stay bound to the original page/workspace and refuse open e
       ...context,
       table: { ...context.table!, selectedCount: 3 },
     }),
+  );
+});
+
+test("record context separates history by key and cannot apply a table filter", () => {
+  const first: PageContext = {
+    page: "items",
+    workspaceId: null,
+    collection: "articles",
+    record: { id: "key:one/1" },
+  };
+  const second = { ...first, record: { id: "key:two/1" } };
+  assert.notEqual(contextScope(first), contextScope(second));
+  assert.notEqual(
+    contextScope(first),
+    contextScope({ ...first, record: undefined }),
+  );
+  assert.equal(contextScope(first), "all:items:articles:record:key%3Aone%2F1");
+  assert.equal(
+    contextLabel(first, () => "Статьи"),
+    "Статьи · Запись key:one/1",
+  );
+  assert.equal(
+    canApplyProposal(first, {
+      type: "filter",
+      collection: "articles",
+      collectionId: "stable-id",
+      workspaceId: null,
+      filter: { logic: "and", children: [] },
+    }),
+    false,
   );
 });

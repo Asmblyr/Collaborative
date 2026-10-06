@@ -1,5 +1,5 @@
 import type { MutationFactory } from "../items/mutation-context.js";
-import type { ItemsService } from "@asmblyr/kit";
+import type { ItemsService } from "@asmblyr-collaborative/kit";
 import type { Knex } from "knex";
 import { AccessDeniedError, type Access } from "../permissions/access.js";
 import { createItemsService } from "./items.js";

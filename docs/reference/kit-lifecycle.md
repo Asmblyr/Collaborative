@@ -8,7 +8,7 @@
 Нужен export `"./migrations": "./dist/migrations.json"` в package.json.
 
 ```ts
-import { defineMigration } from "@asmblyr/kit";
+import { defineMigration } from "@asmblyr-collaborative/kit";
 
 export default defineMigration({
   operations: [
@@ -71,7 +71,7 @@ Core под общей блокировкой запускает новые пл
 Для типизированного доступа к собственной коллекции используйте её декларацию:
 
 ```ts
-import { useStorage } from "@asmblyr/kit";
+import { useStorage } from "@asmblyr-collaborative/kit";
 import entries from "./server/collections/entries.js";
 
 const comments = useStorage(context, entries);
@@ -91,7 +91,7 @@ const row = await comments.get(id);
 ## Вкладки редактора записи
 
 `ui/index.ts` экспортирует `defineUiPlugin({ recordPanels: [...] })` из
-**`@asmblyr/kit/ui`**. Package.json экспортирует его сборку как `./ui`.
+**`@asmblyr-collaborative/kit/ui`**. Package.json экспортирует его сборку как `./ui`.
 Корневой entry kit и `plugin.ts` в браузер не импортируются.
 У вкладки есть `id`, `title`, React `component` и необязательный `supports(record)`.
 
@@ -101,7 +101,7 @@ Host передаёт `RecordPanelProps`:
 - `request<T>(path, init)`: запрос через сессию UI в `/api/<namespace>/…`;
 - `onStateChange({ dirty, busy })`: защита текста и выполняющейся записи от закрытия.
 
-Компоненты shadcn импортируются напрямую из `@asmblyr/kit/ui/<component>`.
+Компоненты shadcn импортируются напрямую из `@asmblyr-collaborative/kit/ui/<component>`.
 Админка и плагины используют одну реализацию из Kit, включая полные props и ref.
 Дополнительный provider или prop `components` не требуется.
 Подробнее: [общие компоненты UI](./kit-ui.md).
@@ -126,7 +126,7 @@ React — peer dependency. Для UI используйте `.ts`/`.tsx` в от
 страницы, вкладки записи или оба вида расширений:
 
 ```ts
-import { defineUiPlugin } from "@asmblyr/kit/ui";
+import { defineUiPlugin } from "@asmblyr-collaborative/kit/ui";
 import { OverviewPage } from "./pages/overview-page.tsx";
 
 export default defineUiPlugin({

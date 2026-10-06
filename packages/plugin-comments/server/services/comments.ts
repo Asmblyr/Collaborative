@@ -4,7 +4,7 @@ import {
   useSettings,
   type AsmblyrContext,
   type CollectionStorage,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import {
   COMMENTS_PAGE_SIZE,
   type Comment,
@@ -66,6 +66,13 @@ export class CommentsService {
         author_kind: actor.kind,
         author_name: actor.displayName ?? null,
       });
+      await service.notifications().publish({
+        ...canonical,
+        eventId: row.id,
+        panelId: "discussion",
+        targetId: row.id,
+        preview: input.body.trim().slice(0, 300),
+      });
       return presentComment(row, actor);
     });
   }
@@ -79,6 +86,7 @@ export class CommentsService {
       service.validateInput(input);
       await service.requireOwnComment(canonical, id);
       const row = await service.entries.update(id, { body: input.body });
+      await service.notifications().update(id, input.body.trim().slice(0, 300));
       return presentComment(row, service.context.actor);
     });
   }
@@ -87,7 +95,38 @@ export class CommentsService {
     await this.withTarget(target, async (service, canonical) => {
       await service.requireOwnComment(canonical, id);
       await service.entries.delete(id);
+      await service.notifications().remove(id);
     });
+  }
+
+  async get(target: CommentTarget, id: string): Promise<Comment> {
+    const canonical = await this.readableTarget(target);
+    return presentComment(
+      await this.commentAt(canonical, id),
+      this.context.actor,
+    );
+  }
+
+  async following(target: CommentTarget): Promise<{ enabled: boolean }> {
+    const canonical = await this.readableTarget(target);
+    return { enabled: await this.notifications().following(canonical) };
+  }
+
+  async follow(target: CommentTarget, enabled: boolean): Promise<void> {
+    await this.withTarget(target, async (service, canonical) => {
+      await service.notifications().follow(canonical, enabled);
+    });
+  }
+
+  private notifications() {
+    if (!this.context.notifications) {
+      throw new EndpointError(
+        403,
+        "PLUGIN_CAPABILITY_DENIED",
+        "Notifications capability is unavailable",
+      );
+    }
+    return this.context.notifications;
   }
 
   private validateInput(input: CommentInput) {
@@ -136,14 +175,7 @@ export class CommentsService {
     target: CommentTarget,
     id: string,
   ): Promise<void> {
-    const row = await this.entries.get(id);
-    if (row.collection !== target.collection || row.item !== target.item) {
-      throw new EndpointError(
-        404,
-        "COMMENT_NOT_FOUND",
-        "Комментарий не найден",
-      );
-    }
+    const row = await this.commentAt(target, id);
 
     const { actor } = this.context;
     if (row.author_id !== actor.id || row.author_kind !== actor.kind) {
@@ -153,5 +185,18 @@ export class CommentsService {
         "Можно изменять только свои комментарии",
       );
     }
+  }
+
+  private async commentAt(target: CommentTarget, id: string) {
+    const row = await this.entries.get(id);
+    if (row.collection !== target.collection || row.item !== target.item) {
+      throw new EndpointError(
+        404,
+        "COMMENT_NOT_FOUND",
+        "Комментарий не найден",
+      );
+    }
+
+    return row;
   }
 }

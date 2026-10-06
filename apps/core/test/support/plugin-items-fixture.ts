@@ -4,7 +4,7 @@ import {
   useAsmblyr,
   type ItemListOptions,
   type ItemReadOptions,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import { readBody } from "h3";
 import knex from "knex";
 import { createApp } from "../../src/app.js";

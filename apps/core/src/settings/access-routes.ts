@@ -40,9 +40,18 @@ export function registerSettingsAccessRoutes(
     const collections = await listCollections(db());
     return {
       data: collections.map(
-        ({ name, displayName, fields, primaryKey, timestamps, state }) => ({
+        ({
           name,
           displayName,
+          translations,
+          fields,
+          primaryKey,
+          timestamps,
+          state,
+        }) => ({
+          name,
+          displayName,
+          translations,
           fields: fields.map(
             ({ name, type, nullable, presentation, relation }) => ({
               name,

@@ -1,10 +1,10 @@
 "use client";
 
 import { useId } from "react";
-import type { FieldInterfaceSettingsProps } from "@asmblyr/kit/ui";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import type { FieldInterfaceSettingsProps } from "@asmblyr-collaborative/kit/ui";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { colorPattern, isHexColor, readColorOptions } from "./color-options.ts";
 
 export function ColorSettings({

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import type { MigrationOperation } from "@asmblyr/kit";
+import type { MigrationOperation } from "@asmblyr-collaborative/kit";
 import type { Knex } from "knex";
 import { addFieldColumn } from "../collections/field-types.js";
 import { saveFieldMetadata } from "../collections/field-metadata.js";

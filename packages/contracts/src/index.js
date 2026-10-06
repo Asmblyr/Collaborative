@@ -1,6 +1,18 @@
 // Kept dependency-free so the API and browser use exactly the same HTML policy.
 export { settingsSections } from "./settings-access.js";
+export {
+  columnWidthLimits,
+  isColumnWidth,
+  reconcileColumnWidths,
+} from "./table-columns.js";
+export { parseTags, tagLimits, TagValueError } from "./tags.js";
 export { presencePages } from "./presence.js";
+export { parseCalendarDate, parseBigintString } from "./scalar-values.js";
+export {
+  fieldConditionMatches,
+  relationFilterDependencies,
+  resolveRelationChoiceFilter,
+} from "./field-rules.js";
 
 export const richTextSanitizerOptions = {
   allowedTags: [
@@ -47,3 +59,13 @@ export function defaultCollectionState() {
   };
 }
 export { permissionContextParameters } from "./permission-filter.js";
+
+export {
+  uiLocales,
+  themeStyles,
+  resolveLocalizedText,
+} from "./localization.js";
+export {
+  monitoringBrowserRoute,
+  sanitizeMonitoringEvent,
+} from "./monitoring.js";

@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import type { SettingsSection } from "@asmblyr/contracts";
+import type { SettingsSection } from "@asmblyr-collaborative/contracts";
 import { AccessDeniedError } from "../permissions/access.js";
 import { effectiveSettingsAccess } from "../settings/access.js";
 

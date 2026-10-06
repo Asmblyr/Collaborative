@@ -8,7 +8,7 @@
 Каждый файл непосредственно в `server/hooks/` экспортирует один обработчик:
 
 ```ts
-import { defineHook } from "@asmblyr/kit";
+import { defineHook } from "@asmblyr-collaborative/kit";
 
 export default defineHook("items.delete", async (event, context) => {
   context.logger.info("Record removed", {
@@ -68,7 +68,7 @@ Production export: `"./hooks": "./dist/hooks.json"`.
 Файл `server/settings.ts`:
 
 ```ts
-import { defineSettings } from "@asmblyr/kit";
+import { defineSettings } from "@asmblyr-collaborative/kit";
 
 export default defineSettings({
   title: "Комментарии",

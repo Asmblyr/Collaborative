@@ -1,5 +1,5 @@
-import type { AssistantUsage } from "@asmblyr/contracts";
-export type { AssistantUsage } from "@asmblyr/contracts";
+import type { AssistantUsage } from "@asmblyr-collaborative/contracts";
+export type { AssistantUsage } from "@asmblyr-collaborative/contracts";
 
 export interface AssistantResponseMetadata {
   model: string | null;

@@ -1,7 +1,7 @@
 "use client";
 
 import { SlidersHorizontal } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -14,13 +14,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   effortLabels,
   type AssistantSettings as Settings,
   type AssistantStatus,
 } from "./assistant-types";
+import { useUiCopy } from "@/lib/ui-copy";
+import { AssistantIconButton } from "./assistant-icon-button";
 
 export function AssistantSettings({
   status,
@@ -33,17 +35,18 @@ export function AssistantSettings({
   onChange: (value: Settings) => void;
   disabled: boolean;
 }) {
+  const copy = useUiCopy();
+
   const config = status.settings;
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Настройки ассистента"
+        <AssistantIconButton
+          label={copy("Настройки ассистента")}
+          disabled={disabled}
         >
           <SlidersHorizontal />
-        </Button>
+        </AssistantIconButton>
       </PopoverTrigger>
       <PopoverContent
         side="bottom"
@@ -51,18 +54,18 @@ export function AssistantSettings({
         className="w-72 space-y-4 rounded-xl p-4"
       >
         <div>
-          <h3 className="text-sm font-medium">Параметры диалога</h3>
+          <h3 className="text-sm font-medium">{copy("Параметры диалога")}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Только для ваших следующих сообщений
+            {copy("Только для ваших следующих сообщений ")}
           </p>
         </div>
         <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="text-muted-foreground">Модель</span>
+          <span className="text-muted-foreground">{copy("Модель")}</span>
           <span className="truncate font-medium">{status.model}</span>
         </div>
         {config?.thinking === "optional" && (
           <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="assistant-thinking">Размышление</Label>
+            <Label htmlFor="assistant-thinking">{copy("Размышление")}</Label>
             <Switch
               id="assistant-thinking"
               checked={value.thinking ?? config.defaultThinking}
@@ -73,7 +76,7 @@ export function AssistantSettings({
         )}
         {!!config?.reasoningOptions.length && (
           <div className="space-y-2">
-            <Label htmlFor="assistant-effort">Глубина ответа</Label>
+            <Label htmlFor="assistant-effort">{copy("Глубина ответа")}</Label>
             <Select
               value={value.reasoningEffort ?? config.defaultEffort ?? undefined}
               disabled={
@@ -100,15 +103,15 @@ export function AssistantSettings({
                     key={effort}
                     value={effort}
                   >
-                    {effortLabels[effort]}
+                    {copy(effortLabels[effort])}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs leading-5 text-muted-foreground">
-              Более глубокий ответ может занять больше времени.
+              {copy("Более глубокий ответ может занять больше времени. ")}
               {config.thinking === "required"
-                ? " У этой модели размышление всегда включено."
+                ? copy(" У этой модели размышление всегда включено.")
                 : ""}
             </p>
           </div>
@@ -123,7 +126,7 @@ export function AssistantSettings({
             className="w-full"
             onClick={() => onChange({})}
           >
-            Использовать общие настройки
+            {copy("Использовать общие настройки ")}
           </Button>
         )}
       </PopoverContent>

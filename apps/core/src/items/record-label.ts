@@ -10,11 +10,15 @@ export function recordLabelPlan(
     displayField?: string | null;
     displayTemplate?: string | null;
   },
-  fields: Iterable<{ name: string; type: string | null }>,
+  fields: Iterable<{
+    name: string;
+    type: string | null;
+    presentation?: { sensitive?: boolean };
+  }>,
   allowed: string[],
   override?: string | null,
 ) {
-  const list = [...fields],
+  const list = [...fields].filter((f) => !f.presentation?.sensitive),
     key = settings.primaryKey.name;
   const fallback =
     override ?? itemLabelField(key, list, settings.displayField, allowed);
@@ -27,6 +31,8 @@ export function recordLabelPlan(
             "text",
             "email",
             "integer",
+            "bigint",
+            "date",
             "decimal",
             "boolean",
             "datetime",

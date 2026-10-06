@@ -1,16 +1,27 @@
 <!-- Generated from packages/sdk/README.md; edit the source. -->
 
-# @asmblyr/sdk
+# @asmblyr-collaborative/sdk
 
 Типизированный HTTP-клиент Asmblyr для браузера и Node.js 22+.
 Каждая операция вызывает основной API. В пакете нет H3, Knex, PostgreSQL,
 компилятора TypeScript или загрузчика плагинов во время исполнения.
-Для разработки расширений используется отдельный `@asmblyr/kit`.
+Для разработки расширений используется отдельный `@asmblyr-collaborative/kit`.
 
 ## Подключение
 
+Личные уведомления доступны через `client.notifications.list()`, `.read(id)` и
+`.readAll(result.readBefore)`. Они требуют человеческой сессии; сервисные ключи
+не дают доступ к личным входящим. Core хранит последние 200 событий пользователя.
+
+Предварительная версия устанавливается с тегом `beta`:
+
+```sh
+npm install @asmblyr-collaborative/sdk@beta
+npm install --save-dev @asmblyr-collaborative/cli@beta
+```
+
 ```ts
-import { createClient } from "@asmblyr/sdk";
+import { createClient } from "@asmblyr-collaborative/sdk";
 
 // В браузере: сессия админки остаётся в HttpOnly cookies.
 const client = createClient({ baseUrl: "/api" });
@@ -179,24 +190,31 @@ TypeScript проверяет имя коллекции, выбор и сорт�
 проекции, перечислите его в `fields`.
 
 Без `Schema` работает динамический режим со словарём JSON-значений.
+В своей схеме задавайте `date` как `string` (`YYYY-MM-DD`), обычный `bigint`
+как `string` с точным целым значением, а `integer` с вариантами — как `number`
+или числовой union. SDK передаёт эти значения без преобразования в `Date`/`Number`.
 Связанные пути в фильтрах пока проверяются Core во время запроса.
-Генерации схемы из сервера и проверки структуры ответов во время исполнения
-пока нет; TypeScript-схему предоставляет вызывающее приложение.
+Схему можно описать вручную или получить из Core через CLI `asm connect`:
+подробнее — [генерация типов и fluent-запросы](#generated-types-fluent-queries-and-plugin-methods).
+SDK не валидирует структуру ответов во время исполнения; текущие права и
+ограничения данных проверяет Core.
 
-Данные `create`/`update` и корневые `values` в `commit` типизируются как
+При вручную описанной схеме данные `create`/`update` и корневые `values` в `commit` типизируются как
 `Partial<Schema[collection]>`: проверяются имена, типы и nullable из вашей схемы.
 Обязательность при создании, значения по умолчанию, неизменяемые ключи и системные
 поля проверяет Core по метаданным. Тип строки сам по себе их не описывает.
-Вложенные черновики пока используют JSON-контракт без вывода типов связанных коллекций.
+Сгенерированная схема отдельно описывает чтение, создание и обновление, включая
+обязательные поля и доступные действия. Вложенные черновики пока используют
+JSON-контракт без вывода типов связанных коллекций.
 
 `CurrentUser`, контракты записей, страниц, фильтров и ошибок переэкспортируются
-из `@asmblyr/contracts`. Core использует этот же пакет. Строки БД, хеши паролей
+из `@asmblyr-collaborative/contracts`. Core использует этот же пакет. Строки БД, хеши паролей
 и внутренние модели Core не являются публичными типами SDK.
 
 ## Ошибки и отмена
 
 ```ts
-import { ApiError } from "@asmblyr/sdk";
+import { ApiError } from "@asmblyr-collaborative/sdk";
 
 try {
   await client.items.get("articles", 4, undefined, {
@@ -228,14 +246,115 @@ SDK не повторяет запросы автоматически и отк�
 
 ## Сборка и проверки
 
-Пакет пока приватный workspace-пакет, публикации в npm нет.
+Проверка установки архивов вне workspace: `pnpm packages:check`.
+После выпуска `pnpm packages:check --registry` проверяет установку той же версии
+из npm без локальных алиасов зависимостей.
 
 ```sh
-pnpm --filter @asmblyr/sdk build
-pnpm --filter @asmblyr/sdk typecheck
-pnpm --filter @asmblyr/sdk test
+pnpm --filter @asmblyr-collaborative/sdk build
+pnpm --filter @asmblyr-collaborative/sdk typecheck
+pnpm --filter @asmblyr-collaborative/sdk test
 node scripts/test.mjs core-sdk
 ```
 
 Интеграционный набор запускает Core на временном HTTP-порту с отдельной тестовой
 БД и сравнивает SDK с вызовом через kit, включая ограничения прав.
+
+## Переводы
+
+```ts
+const { data } = await client.translations.get("en");
+console.log(data.core["appearance.ocean"]);
+console.log(data.schema.articles?.fields.title?.label);
+```
+
+`GET /translations?locale=ru|en` (в админке `/api/translations`) требует
+активной сессии или сервисного ключа. Ответ версии 1 содержит язык,
+`fallbackLocale: "ru"`, плоский каталог `core`, каталоги активных `plugins`
+по namespace и подписи доступной `schema`. Схема использует права каталога
+коллекций, включая поля создания/изменения; это не разрешение читать записи.
+Ответ не содержит записей, значений по умолчанию или настроек плагинов.
+Пропуск языка выбирает русский; неподдержанный язык возвращает 400.
+
+## Generated types, fluent queries and plugin methods
+
+[CLI](./cli-guide.md) connects through the admin browser approval screen, or
+uses an API token from the environment/stdin. It saves no credentials:
+
+```sh
+pnpm exec asm connect --url https://asmblyr.example.test
+pnpm exec asm schema pull
+pnpm exec asm generate
+pnpm exec asm schema check --offline
+```
+
+GET /schema, also client.schema.pull(), exports accessible collection wire types,
+effective field permissions, supported filter kinds and generated plugin model
+contracts. Defaults, records, secret values and policy conditions are excluded.
+Browser approval grants only temporary schema access; runtime requests require a
+separate API credential or session. The generated file exports ordinary TS types
+and a small browser-safe descriptor. No custom compiler or consumer bundler plugin
+is needed. The Node-only generator is isolated in @asmblyr-collaborative/sdk/schema.
+
+JSON fields configured with `interface: "tags"` export as freeform `string[]`
+(or `string[] | null` when nullable), without a closed enum. After changing a field
+to tags, run `asm schema pull` and `asm generate` to update its generated types.
+
+```ts
+import { createClient } from "@asmblyr-collaborative/sdk";
+import { schema } from "./asmblyr.schema.js";
+
+const client = createClient({ baseUrl: "/api", schema });
+const articles = await client.Articles.select((a) => [a.id, a.title])
+  .where((a) => a.status.eq("published").and(a.price.gte("1000.00")))
+  .orderBy((a) => a.created_at.desc())
+  .limit(20)
+  .exec();
+// Equivalent collection entry point, with name completion:
+const result = await client.collection("articles").limit(10).result();
+await client.items.create("articles", { title: "Hello" });
+// When the calculator model is installed and accessible:
+const calculation = await client.plugins.calculator.calculate(input);
+```
+
+The example assumes those fields exist. Aliases derive from technical collection
+names, independent of translated labels. Query builders are immutable. where calls
+combine with AND; predicates support and/or groups. exec returns rows; result
+returns the existing ItemListResult envelope. orderBy supports one field, matching
+the Core API. `search("корм")` selects relevance unless a field order was already
+explicitly chosen. `orderBy` selects field order; `orderByRelevance()` restores
+relevance and keeps the chosen field as a tie-breaker. The low-level list API
+accepts `{ q: "корм", order: "relevance" }`, and `page.order` reports the effective
+mode. Relevance is calculated by Core before pagination using readable searchable
+fields and their configured priority, with exact, word-prefix, whole-word and
+substring matches. Without `q`, Core uses field order.
+
+limit accepts 1–100; page and search are also supported. Operators
+are suggested according to exported field capabilities. JSON and multiselect
+fields do not expose scalar predicates. Older snapshots without filterKind offer
+only conservative equality/list operators. Decimal and bigint remain API strings.
+
+Read/Create/Update maps separate required create fields, optional updates,
+managed fields and choice unions. Selected responses contain only selected keys;
+values remain optional because server permissions can hide fields. Current Core
+permissions and row conditions are always checked at runtime. Existing manually
+written row schemas and the items client remain supported.
+
+Plugin methods use generated Kit model input/output schemas and the existing
+HTTP routes; no additional handler registration is needed. AccessGate filters
+contracts in the exported schema, and execution checks current access again.
+Legacy actions without output schemas are omitted. The bounded JSON model subset
+supports closed objects, arrays, literals, unions and primitives; arbitrary refs,
+open objects and defaults are rejected. Personal integration authorization is
+checked when calling the method, even if its static contract was exported.
+
+An imported materialized view has sourceKind: "materialized-view" and read-only
+actions. Its generated Create/Update are never and delete is unavailable. Fluent
+queries, items.list and items.get still work. Core rejects all writes, including
+bulk/nested commits by a superuser. SQL creation and refresh remain external.
+
+asm schema check verifies hashes and detects remote contract changes. --offline
+compares generated source with the saved snapshot; asm generate recreates source
+from it. Names, choices and plugin annotations can disclose project structure;
+commit generated files only when appropriate. Npm publication remains a separate
+release action. See [package preparation](./packages.md).

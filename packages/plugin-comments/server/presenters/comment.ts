@@ -1,4 +1,4 @@
-import type { CollectionRow, EndpointActor } from "@asmblyr/kit";
+import type { CollectionRow, EndpointActor } from "@asmblyr-collaborative/kit";
 import type { Comment } from "../../shared/comments.js";
 import type entries from "../collections/entries.js";
 

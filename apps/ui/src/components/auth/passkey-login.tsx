@@ -6,10 +6,13 @@ import {
   type PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/browser";
 import { KeyRound } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { requestJson as apiRequest } from "@/lib/http-request";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PasskeyLogin({ next }: { next: string }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +42,9 @@ export function PasskeyLogin({ next }: { next: string }) {
             router.refresh();
           } catch {
             setError(
-              "Не удалось войти с passkey. Попробуйте ещё раз или используйте другой способ входа.",
+              copy(
+                "Не удалось войти с passkey. Попробуйте ещё раз или используйте другой способ входа.",
+              ),
             );
           } finally {
             setPending(false);
@@ -47,14 +52,14 @@ export function PasskeyLogin({ next }: { next: string }) {
         }}
       >
         <KeyRound className="size-4" />
-        {pending ? "Ожидаем passkey…" : "Войти с passkey"}
+        {pending ? copy("Ожидаем passkey…") : copy("Войти с passkey")}
       </Button>
       {error && (
         <p
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
     </div>

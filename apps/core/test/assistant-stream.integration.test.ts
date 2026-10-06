@@ -1,7 +1,7 @@
 import "./support/require-test-database.js";
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { AssistantStreamEvent } from "@asmblyr/contracts";
+import type { AssistantStreamEvent } from "@asmblyr-collaborative/contracts";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
 import { AssistantService } from "../src/assistant/service.js";
 import { createAssistantProvider } from "../src/assistant/provider.js";
@@ -112,8 +112,16 @@ test(
       }
     }
     assert.equal(cancelled, true);
-    assert.equal(events[1].type, "progress");
-    assert.equal(events[2].type, "text-delta");
+    assert.ok(events.some((event) => event.type === "progress"));
+    assert.ok(
+      events.some(
+        (event) =>
+          event.type === "activity" && event.activity.kind === "status",
+      ),
+    );
+    assert.ok(
+      events.some((event) => event.type === "text-delta" && !event.provisional),
+    );
     const terminal = events.at(-1)!;
     assert.equal(terminal.type, "error");
     assert.ok(terminal.type === "error" && terminal.summary);

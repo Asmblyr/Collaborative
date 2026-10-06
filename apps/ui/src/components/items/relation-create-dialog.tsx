@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ItemEditorDialog } from "./item-editor-dialog";
 import type { RecordDraft } from "./record-draft-model";
 import type { Collection } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function RelationCreateDialog({
   target,
@@ -22,6 +23,8 @@ export function RelationCreateDialog({
   onDraft: (record: RecordDraft, link: RecordDraft) => void;
   onClose: () => void;
 }) {
+  const copy = useUiCopy();
+
   const [stage, setStage] = useState<"item" | "link">("item");
   const [record, setRecord] = useState<RecordDraft | null>(null);
   const completed = useRef(false);
@@ -31,11 +34,12 @@ export function RelationCreateDialog({
       catalog={catalog}
       request={{
         collection: target.name,
-        title: "Новая связанная запись",
+        title: copy("Новая связанная запись"),
         leadField,
         draft: record ?? undefined,
-        description:
+        description: copy(
           "Сначала заполните запись, затем параметры связи. Всё сохранится вместе с основной карточкой.",
+        ),
         onDraft: (value) => {
           setRecord(value);
           completed.current = true;
@@ -54,11 +58,12 @@ export function RelationCreateDialog({
       catalog={catalog}
       request={{
         collection: junction.name,
-        title: "Параметры новой связи",
+        title: copy("Параметры новой связи"),
         omitFields,
         extraDirty: true,
-        description:
+        description: copy(
           "Последний шаг. Закрытие этого окна вернёт к новой записи.",
+        ),
         onDraft: (link) => {
           onDraft(record!, link);
           completed.current = true;

@@ -3,8 +3,13 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Collection } from "@/components/items/types";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@asmblyr/kit/ui/tabs";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import { CollectionDisplayFields } from "./collection-display-form";
 import {
   CollectionMcpFields,
@@ -13,6 +18,9 @@ import {
 } from "./collection-metadata-fields";
 import { CollectionStateFields } from "./collection-state-fields";
 import { CollectionTerms } from "@/components/terms/collection-terms";
+import { SchemaTranslationsEditor } from "./schema-translations-editor";
+import { useUiCopy } from "@/lib/ui-copy";
+import { requestErrorMessage, requestJson } from "@/lib/http-request";
 
 export function CollectionSettingsForm({
   collection,
@@ -27,8 +35,11 @@ export function CollectionSettingsForm({
   onSaved: () => void;
   onStateChange: (dirty: boolean, busy: boolean) => void;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const initial = {
+    translations: collection.translations ?? {},
     displayName: collection.displayName ?? "",
     hidden: collection.hidden ?? false,
     field: collection.displayField ?? "$auto",
@@ -47,9 +58,11 @@ export function CollectionSettingsForm({
     [],
   );
   const dirty = JSON.stringify(values) !== JSON.stringify(initial);
-  let saveHint = dirty ? "Есть несохранённые изменения" : "Настройки сохранены";
+  let saveHint = dirty
+    ? copy("Есть несохранённые изменения")
+    : copy("Настройки сохранены");
   if (termsState.dirty)
-    saveHint = "Сначала сохраните условия терминов на вкладке MCP";
+    saveHint = copy("Сначала сохраните условия терминов на вкладке MCP");
   function change(patch: Partial<typeof values>) {
     const next = { ...values, ...patch };
     setValues(next);
@@ -68,32 +81,26 @@ export function CollectionSettingsForm({
     setError("");
     onStateChange(dirty, true);
     try {
-      const response = await fetch(
+      await requestJson(
         `/api/collections/${encodeURIComponent(collection.name)}/settings`,
+        "PATCH",
         {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            displayName: values.displayName,
-            hidden: values.hidden,
-            displayField: values.field === "$auto" ? null : values.field,
-            displayTemplate: values.template || null,
-            mcp: { enabled: values.enabled, description: values.description },
-            ...(JSON.stringify(values.state) !== JSON.stringify(initial.state)
-              ? { state: values.state }
-              : {}),
-          }),
+          displayName: values.displayName,
+          translations: values.translations,
+          hidden: values.hidden,
+          displayField: values.field === "$auto" ? null : values.field,
+          displayTemplate: values.template || null,
+          mcp: { enabled: values.enabled, description: values.description },
+          ...(JSON.stringify(values.state) !== JSON.stringify(initial.state)
+            ? { state: values.state }
+            : {}),
         },
       );
-      if (!response.ok) {
-        const body = (await response.json()) as { message?: string };
-        throw new Error(body.message ?? "Не удалось сохранить настройки");
-      }
       onStateChange(false, false);
       router.refresh();
       onSaved();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Ошибка соединения");
+      setError(copy(requestErrorMessage(cause)));
       onStateChange(dirty, false);
     } finally {
       setPending(false);
@@ -116,14 +123,16 @@ export function CollectionSettingsForm({
               value="display"
               className="flex-1"
             >
-              Отображение
+              {copy("Отображение ")}
             </TabsTrigger>
-            <TabsTrigger
-              value="state"
-              className="flex-1"
-            >
-              Состояние
-            </TabsTrigger>
+            {collection.sourceKind !== "materialized-view" && (
+              <TabsTrigger
+                value="state"
+                className="flex-1"
+              >
+                {copy("Состояние ")}
+              </TabsTrigger>
+            )}
             <TabsTrigger
               value="mcp"
               className="flex-1"
@@ -147,8 +156,15 @@ export function CollectionSettingsForm({
               disabled={pending}
               onChange={(hidden) => change({ hidden })}
             />
+            <SchemaTranslationsEditor
+              collection
+              value={values.translations}
+              disabled={pending}
+              onChange={(translations) => change({ translations })}
+            />
             <div className="border-t pt-6">
               <CollectionDisplayFields
+                catalog={catalog}
                 collection={collection}
                 portalContainer={portalContainer}
                 field={values.field}
@@ -172,26 +188,28 @@ export function CollectionSettingsForm({
               onDescriptionChange={(description) => change({ description })}
             />
           </TabsContent>
-          <TabsContent
-            value="state"
-            forceMount
-            className="data-[state=inactive]:hidden"
-          >
-            <CollectionStateFields
-              collection={collection}
-              value={values.state}
-              disabled={pending}
-              container={portalContainer}
-              onChange={(state) => change({ state })}
-            />
-          </TabsContent>
+          {collection.sourceKind !== "materialized-view" && (
+            <TabsContent
+              value="state"
+              forceMount
+              className="data-[state=inactive]:hidden"
+            >
+              <CollectionStateFields
+                collection={collection}
+                value={values.state}
+                disabled={pending}
+                container={portalContainer}
+                onChange={(state) => change({ state })}
+              />
+            </TabsContent>
+          )}
         </Tabs>
         {error && (
           <p
             role="alert"
             className="text-sm text-destructive"
           >
-            {error}
+            {copy(error)}
           </p>
         )}
         <div className="flex items-center gap-3 border-t pt-4">
@@ -199,7 +217,7 @@ export function CollectionSettingsForm({
             type="submit"
             disabled={pending || !dirty || termsState.dirty || termsState.busy}
           >
-            {pending ? "Сохранение…" : "Сохранить настройки"}
+            {pending ? copy("Сохранение…") : copy("Сохранить настройки")}
           </Button>
           <span className="text-xs text-muted-foreground">{saveHint}</span>
         </div>

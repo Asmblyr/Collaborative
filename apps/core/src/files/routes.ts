@@ -1,3 +1,5 @@
+import { registerPublicFileRoutes } from "./public-routes.js";
+import { sendFileContent } from "./content-response.js";
 import type { FastifyInstance } from "fastify";
 import type { Knex } from "knex";
 import {
@@ -17,6 +19,10 @@ import {
   uploadHeaders,
 } from "./validation.js";
 import type { FileStorage } from "./storage/types.js";
+import {
+  resolveRuntime,
+  type RuntimeSource,
+} from "../shared/runtime-source.js";
 import { loadAccess } from "../permissions/access.js";
 import { requireFileRead } from "./references.js";
 import { listCollections } from "../collections/catalog-repository.js";
@@ -24,8 +30,9 @@ import { listCollections } from "../collections/catalog-repository.js";
 export function registerFileRoutes(
   app: FastifyInstance,
   database: Knex | null,
-  storage: FileStorage | null,
+  storage: RuntimeSource<FileStorage>,
 ) {
+  registerPublicFileRoutes(app, database, storage);
   app.register(async (scope) => {
     const db = () => {
       if (!database) throw fileError("База данных не настроена", 503);
@@ -72,7 +79,7 @@ export function registerFileRoutes(
         ...result,
         meta: {
           ...result.meta,
-          storageConfigured: Boolean(storage),
+          storageConfigured: Boolean(await resolveRuntime(storage)),
           canManage: access.editableSections.includes("files"),
           maxFileBytes: MAX_FILE_BYTES,
         },
@@ -180,21 +187,7 @@ export function registerFileRoutes(
           request.query.preview === "1",
         );
         const preview = request.query.preview === "1";
-        return reply
-          .header(
-            "Content-Type",
-            preview ? row.preview_type! : "application/octet-stream",
-          )
-          .header("Content-Length", String(row.size))
-          .header("X-Content-Type-Options", "nosniff")
-          .header("Content-Security-Policy", "default-src 'none'; sandbox")
-          .header(
-            "Content-Disposition",
-            `${preview ? "inline" : "attachment"}; filename="download"; filename*=UTF-8''${encodeURIComponent(
-              row.filename,
-            ).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16)}`)}`,
-          )
-          .send(stream);
+        return sendFileContent(reply, { row, stream }, preview);
       },
     );
   });

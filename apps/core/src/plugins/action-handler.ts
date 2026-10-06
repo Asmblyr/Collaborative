@@ -3,7 +3,7 @@ import type {
   ActionContext,
   EndpointDefinition,
   PluginAction,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 
 /** HTTP and MCP invoke the same H3 handler with validated JSON and the same capabilities. */
 export async function runActionHandler(

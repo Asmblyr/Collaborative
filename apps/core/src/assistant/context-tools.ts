@@ -1,14 +1,18 @@
+import { pageSnapshot } from "./page-context.js";
 import type { Knex } from "knex";
 import type { PluginActions } from "../plugins/actions.js";
+import type { GoogleConnections } from "../connections/google/connections.js";
+import { GoogleWrites } from "../connections/google/writes.js";
+import { toolErrorResult } from "../tools/errors.js";
 import { PluginResults } from "./plugin-results.js";
-import type { AssistantSelection } from "@asmblyr/contracts";
+import type {
+  AssistantSelection,
+  AssistantDataAccess,
+} from "@asmblyr-collaborative/contracts";
+import { assistantDataEnabled } from "./data-access.js";
 import { captureSelection, validateSelection } from "./selections.js";
 import { captureAggregateSelections } from "./aggregate-selections.js";
-import { requireGrant, type Access } from "../permissions/access.js";
-import { findCollectionSettings } from "../collections/settings-repository.js";
-import { parseItemListQuery } from "../items/list-query.js";
-import { plainFilter } from "../items/filter-wire.js";
-import { listWorkspaces } from "../workspaces/service.js";
+import type { Access } from "../permissions/access.js";
 import { objectInput } from "../shared/input.js";
 import { ItemError } from "../items/validation.js";
 import { parseId } from "../policies/validation.js";
@@ -29,63 +33,6 @@ import {
   type FilterProposal,
 } from "./tool-contract.js";
 
-async function pageSnapshot(
-  db: Knex,
-  access: Access,
-  context: AssistantContext,
-) {
-  const workspace = context.workspaceId
-    ? (await listWorkspaces(db, access)).workspaces.find(
-        (entry) => entry.id === context.workspaceId,
-      )
-    : null;
-  if (context.workspaceId && !workspace)
-    throw new ItemError("Workspace not found", 404);
-  const snapshot = {
-    page: context.page,
-    workspace: workspace ? { id: workspace.id, name: workspace.name } : null,
-  };
-  if (!context.collection || !context.table)
-    return { snapshot, collectionId: null, enabled: true };
-
-  const name = context.collection;
-  requireGrant(access, name, "read");
-  if ((await findCollectionSettings(db, name))?.mcp?.enabled === false) {
-    return {
-      snapshot: { ...snapshot, collectionToolsAvailable: false },
-      collectionId: null,
-      enabled: false,
-    };
-  }
-  const data = await collectionData(db, access, name);
-  const table = context.table;
-  const query = parseItemListQuery(
-    {
-      page: String(table.page),
-      limit: String(table.size),
-      sort: table.sort,
-      direction: table.direction,
-      q: table.q,
-      filter: table.filter || undefined,
-    },
-    name,
-    data.schema,
-    data.allowed,
-    data.catalog,
-    access,
-  );
-  return {
-    snapshot: {
-      ...snapshot,
-      collection: name,
-      displayName: data.schema.settings.displayName || name,
-      table: { ...table, filter: plainFilter(query.filters) },
-    },
-    collectionId: data.schema.settings.internalId,
-    enabled: true,
-  };
-}
-
 function contextualArguments(
   name: string,
   args: Record<string, unknown>,
@@ -96,7 +43,18 @@ function contextualArguments(
   const resolved: Record<string, unknown> = { ...args, collection };
   if (collection === context.collection && context.table) {
     for (const key of ["q", "filter", "sort", "direction"] as const) {
-      if (resolved[key] === null) resolved[key] = context.table[key];
+      if (resolved[key] === null) {
+        const inherited = context.table[key];
+        // The page explicitly supplies this literal query; preserve its case-insensitive scope.
+        resolved[key] =
+          key === "q" && inherited === "null" ? "NULL" : inherited;
+      }
+    }
+    if (name === "search_items" && args.order == null) {
+      const inheritsSort = args.sort === null && args.direction === null;
+      resolved.order = inheritsSort
+        ? (context.table.order ?? "field")
+        : "field";
     }
   }
   return resolved;
@@ -108,31 +66,65 @@ export async function createContextTools(
   context: AssistantContext | null,
   reloadAccess: () => Promise<Access>,
   actions?: PluginActions,
+  google: GoogleConnections | null = null,
+  dataAccess?: AssistantDataAccess,
 ): Promise<AssistantTools | undefined> {
-  // Keep the existing explicit context-off mode: plain chat, no data tools.
-  if (!context) return undefined;
-  const page = await pageSnapshot(db, access, context);
+  const dataEnabled = assistantDataEnabled(context, dataAccess);
+  if (!context && !dataEnabled) {
+    return undefined;
+  }
+  // Workspace remains an explicit conversation scope when the page is omitted.
+  // It does not grant collection access; every tool keeps ordinary ACL/MCP checks.
+  const page = await pageSnapshot(
+    db,
+    access,
+    context ?? {
+      page: "home",
+      workspaceId: dataAccess?.workspaceId ?? null,
+    },
+  );
+  const snapshot = context
+    ? page.snapshot
+    : { workspace: page.snapshot.workspace };
   const selections: AssistantSelection[] = [];
   const pluginResults = new PluginResults();
   const tools: AssistantTools = {
-    context: page.snapshot,
+    context: dataAccess
+      ? {
+          ...snapshot,
+          pageContextProvided: Boolean(context),
+          dataAccessEnabled: dataEnabled,
+        }
+      : snapshot,
     definitions: [],
     proposals: [],
     selections,
     pluginResults: pluginResults.cards,
+    connectionWrites: [],
     execute: async () => unavailableToolResult,
   };
-  if (!page.enabled) return tools;
+  if (!dataEnabled) {
+    return tools;
+  }
+  const googleAvailable = Boolean(
+    google && (await google.available(access.principal.id)),
+  );
+  if (!page.enabled && !googleAvailable) return tools;
 
   const pinned = new Map<string, string>();
-  if (context.collection && page.collectionId)
+  if (context?.collection && page.collectionId) {
     pinned.set(context.collection, page.collectionId);
+  }
   const session = createToolSession(db, access, reloadAccess, pinned);
   const mcp = await connectInternalMcp(session, actions);
   tools.close = () => mcp.close();
   tools.definitions = assistantToolDefinitions(
-    mcp.definitions,
-    Boolean(context.table),
+    page.enabled
+      ? mcp.definitions
+      : mcp.definitions.filter((tool) =>
+          tool.name.startsWith("plugin_google__"),
+        ),
+    page.enabled && Boolean(context?.table),
   );
   const results = new Map<string, AssistantSelection>();
   tools.execute = async (name, args, signal) => {
@@ -157,7 +149,7 @@ export async function createContextTools(
             ? results.get(body.resultId)
             : undefined;
         if (!selection) return unavailableToolResult;
-        const { collection, collectionId, q, filter, sort, direction } =
+        const { collection, collectionId, q, filter, sort, direction, order } =
           selection;
         await validateSelection(db, await session.authorize(signal), {
           collection,
@@ -166,6 +158,7 @@ export async function createContextTools(
           filter,
           sort,
           direction,
+          ...(order ? { order } : {}),
         });
         signal?.throwIfAborted();
         if (
@@ -176,7 +169,7 @@ export async function createContextTools(
         return { presented: true, requiresUserClick: true };
       }
       if (name === "propose_filter") {
-        if (!context.collection || !page.collectionId)
+        if (!context?.collection || !page.collectionId)
           return unavailableToolResult;
         const result = await mcp.call(
           "validate_filter",
@@ -207,15 +200,33 @@ export async function createContextTools(
           requiresUserClick: true,
         };
       }
-      const resolvedArgs = Object.hasOwn(
-        definition.parameters.properties,
-        "collection",
-      )
-        ? contextualArguments(name, body, context)
-        : body;
+      const resolvedArgs =
+        Object.hasOwn(definition.parameters.properties, "collection") && context
+          ? contextualArguments(name, body, context)
+          : body;
       const result = await mcp.call(name, resolvedArgs, signal);
       if (actions?.hasTool(name)) {
         pluginResults.capture(result);
+        if (
+          google &&
+          "output" in result &&
+          result.output &&
+          typeof result.output === "object" &&
+          "id" in result.output &&
+          "provider" in result.output &&
+          result.output.provider === "google" &&
+          typeof result.output.id === "string"
+        ) {
+          const verified = await new GoogleWrites(google).get(
+            access.principal.id,
+            result.output.id,
+          );
+          if (
+            !tools.connectionWrites!.some((entry) => entry.id === verified.id)
+          ) {
+            tools.connectionWrites!.push(verified);
+          }
+        }
         return result;
       }
       if (name === "aggregate_items") {
@@ -228,8 +239,8 @@ export async function createContextTools(
       if (!selection) return result;
       results.set(selection.resultId, selection);
       return { ...result, resultId: selection.resultId };
-    } catch {
-      return unavailableToolResult;
+    } catch (error) {
+      return toolErrorResult(error);
     }
   };
   return tools;
@@ -249,8 +260,9 @@ export async function validateFilterProposal(
     throw new ItemError("Filter group required", 400);
   }
   const context = parseAssistantContext(body.context);
-  if (!context?.collection)
+  if (!context?.collection || !context.table || context.record) {
     throw new ItemError("Collection context required", 400);
+  }
   const page = await pageSnapshot(db, access, context);
   const data = await collectionData(db, access, context.collection);
   if (

@@ -1,4 +1,8 @@
-import type { FieldExtension, JsonRecord, JsonValue } from "@asmblyr/contracts";
+import type {
+  FieldExtension,
+  JsonRecord,
+  JsonValue,
+} from "@asmblyr-collaborative/contracts";
 import { CollectionInputError } from "./validation.js";
 
 /** A disabled plugin's settings remain readable and editable without its code. */

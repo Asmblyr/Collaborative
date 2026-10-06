@@ -8,7 +8,7 @@ export function yandexStorage(
 ): FileStorage {
   async function request(
     key: string,
-    method: "PUT" | "GET" | "DELETE",
+    method: "PUT" | "GET" | "DELETE" | "HEAD",
     body?: Buffer,
     contentType?: string,
   ) {
@@ -40,6 +40,10 @@ export function yandexStorage(
   }
   return {
     id: `yandex:${bucket}`,
+    async check() {
+      const response = await request("", "HEAD");
+      await response.body?.cancel();
+    },
     async put(key, body, mime) {
       const response = await request(key, "PUT", body, mime);
       await response.body?.cancel();

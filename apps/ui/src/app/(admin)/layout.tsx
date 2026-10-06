@@ -6,6 +6,7 @@ import { loadCollections } from "@/lib/collections";
 import { ACCESS_COOKIE, loadSessionUser } from "@/lib/session";
 import { loadWorkspaces } from "@/lib/workspaces";
 import { loadPluginExtensions } from "@/lib/plugin-extensions";
+import { BrowserMonitoring } from "@/components/monitoring/browser-monitoring";
 
 export default async function AdminLayout({
   children,
@@ -15,28 +16,21 @@ export default async function AdminLayout({
   const jar = await cookies();
   const token = jar.get(ACCESS_COOKIE)?.value;
   const user = token ? await loadSessionUser(token) : null;
-  const {
-    data: collections,
-    folders,
-    online,
-  } = token
-    ? await loadCollections(token)
-    : { data: [], folders: [], online: false };
+  const [catalog, workspaces, settings, plugins] = await Promise.all([
+    token ? loadCollections(token) : { data: [], folders: [], online: false },
+    token && user
+      ? loadWorkspaces(token)
+      : { workspaces: [], selectedId: null },
+    token && user ? loadSettingsAccess(token) : { sections: [] },
+    token && user ? loadPluginExtensions(token).catch(() => []) : [],
+  ]);
+  const { data: collections, folders, online } = catalog;
   const usableCollections = collections.filter(
     (collection) =>
       collection.access.read ||
       collection.access.create ||
       collection.access.update,
   );
-  const workspaces =
-    token && user
-      ? await loadWorkspaces(token)
-      : { workspaces: [], selectedId: null };
-  const settings =
-    token && user ? await loadSettingsAccess(token) : { sections: [] };
-  const plugins =
-    token && user ? await loadPluginExtensions(token).catch(() => []) : [];
-
   if (
     online &&
     user &&
@@ -54,6 +48,7 @@ export default async function AdminLayout({
         ({
           name,
           displayName,
+          translations,
           hidden,
           folderId,
           parentCollection,
@@ -61,6 +56,7 @@ export default async function AdminLayout({
         }) => ({
           name,
           displayName,
+          translations,
           hidden,
           folderId,
           parentCollection,
@@ -73,6 +69,7 @@ export default async function AdminLayout({
       plugins={plugins}
       defaultOpen={jar.get("sidebar_state")?.value !== "false"}
     >
+      {user && <BrowserMonitoring key={user.id} />}
       {children}
     </AdminShell>
   );

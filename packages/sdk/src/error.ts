@@ -1,4 +1,4 @@
-import type { ApiErrorBody } from "@asmblyr/contracts";
+import type { ApiErrorBody } from "@asmblyr-collaborative/contracts";
 
 export class ApiError extends Error {
   constructor(

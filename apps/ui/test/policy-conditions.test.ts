@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PermissionFilter } from "@asmblyr/contracts";
+import type { PermissionFilter } from "@asmblyr-collaborative/contracts";
 import { policyDraft } from "../src/components/access/policy-draft";
 import {
   conditionIsValid,

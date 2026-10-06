@@ -1,4 +1,7 @@
-import type { PresenceInput, PresenceResult } from "@asmblyr/contracts";
+import type {
+  PresenceInput,
+  PresenceResult,
+} from "@asmblyr-collaborative/contracts";
 import type { RequestOptions } from "./options.js";
 import type { Transport } from "./transport.js";
 

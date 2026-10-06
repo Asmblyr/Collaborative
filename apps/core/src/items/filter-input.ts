@@ -7,7 +7,7 @@ import {
 } from "./filter-fields.js";
 import type { collectionSchema } from "./schema-repository.js";
 import { ItemError, parseItemId } from "./validation.js";
-import type { ItemFilterOperator } from "@asmblyr/contracts";
+import type { ItemFilterOperator } from "@asmblyr-collaborative/contracts";
 
 export type FilterOperator = ItemFilterOperator;
 
@@ -168,7 +168,9 @@ function parseCondition(
   }
   if (
     rangeOperators.has(operator) &&
-    !["integer", "decimal", "datetime"].includes(resolved.type)
+    !["integer", "bigint", "decimal", "date", "datetime"].includes(
+      resolved.type,
+    )
   ) {
     throw new ItemError("Invalid filter operator", 400);
   }

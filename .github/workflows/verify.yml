@@ -49,3 +49,5 @@ jobs:
         run: pnpm check
       - name: Build
         run: pnpm build
+      - name: Check package archives and clean consumer
+        run: pnpm packages:check

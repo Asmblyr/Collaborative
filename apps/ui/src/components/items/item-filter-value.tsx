@@ -1,8 +1,10 @@
+"use client";
+
 import { useState } from "react";
 import { CalendarDays, Plus, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -14,13 +16,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import {
   hasMultipleValues,
   hasNoValue,
   type FilterCondition,
   type FilterField,
 } from "./item-filter-options";
+import { useUiCopy } from "@/lib/ui-copy";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 function localDatetimeValue(value: string): string {
   if (!value || !/(?:Z|[+-]\d\d:\d\d)$/.test(value)) return value;
@@ -31,17 +35,25 @@ function localDatetimeValue(value: string): string {
     .slice(0, 19);
 }
 
-function formattedValue(value: string, field: FilterField): string {
+function formattedValue(
+  value: string,
+  field: FilterField,
+  copy: UiCopy = originalCopy,
+): string {
   if (field.options)
     return (
       field.options.find((option) => option.value === value)?.label ?? value
     );
   if (field.type === "boolean")
-    return value === "true" ? "Да" : value === "false" ? "Нет" : value;
+    return value === "true"
+      ? copy("Да")
+      : value === "false"
+        ? copy("Нет")
+        : value;
   if (field.type === "datetime" && value) {
     const date = new Date(value);
     if (!Number.isNaN(date.valueOf()))
-      return date.toLocaleString("ru-RU", {
+      return date.toLocaleString(copy.locale === "en" ? "en-US" : "ru-RU", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -67,6 +79,8 @@ function ValueInput({
   inline?: boolean;
   autoFocus?: boolean;
 }) {
+  const copy = useUiCopy();
+
   if (field.options?.length) {
     return (
       <Select
@@ -81,7 +95,7 @@ function ValueInput({
               : "w-full"
           }
         >
-          <SelectValue placeholder="выберите…" />
+          <SelectValue placeholder={copy("выберите…")} />
         </SelectTrigger>
         <SelectContent>
           {field.options.map((option) => (
@@ -110,11 +124,11 @@ function ValueInput({
               : "w-full"
           }
         >
-          <SelectValue placeholder="выберите…" />
+          <SelectValue placeholder={copy("выберите…")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="true">Да</SelectItem>
-          <SelectItem value="false">Нет</SelectItem>
+          <SelectItem value="true">{copy("Да")}</SelectItem>
+          <SelectItem value="false">{copy("Нет")}</SelectItem>
         </SelectContent>
       </Select>
     );
@@ -124,16 +138,20 @@ function ValueInput({
       autoFocus={autoFocus}
       aria-label={label}
       type={
-        field.type === "datetime"
-          ? "datetime-local"
-          : field.type === "integer"
-            ? "number"
-            : "text"
+        field.type === "date"
+          ? "date"
+          : field.type === "datetime"
+            ? "datetime-local"
+            : field.type === "integer"
+              ? "number"
+              : "text"
       }
       step={field.type === "datetime" ? 1 : undefined}
       maxLength={255}
       placeholder={
-        field.type === "key" && field.keyType === "uuid" ? "UUID…" : "значение…"
+        field.type === "key" && field.keyType === "uuid"
+          ? "UUID…"
+          : copy("значение…")
       }
       className={
         inline
@@ -157,6 +175,8 @@ export function ItemFilterValue({
   onChange: (value: string | string[]) => void;
   autoFocus?: boolean;
 }) {
+  const copy = useUiCopy();
+
   const multiple = hasMultipleValues(condition.op);
   const range = condition.op === "between" || condition.op === "notBetween";
   const complex = multiple || field.type === "datetime";
@@ -164,7 +184,7 @@ export function ItemFilterValue({
   if (hasNoValue(condition.op)) return null;
   const scalar = typeof condition.value === "string" ? condition.value : "";
   const values = Array.isArray(condition.value) ? condition.value : [];
-  const label = "Значение для " + field.label;
+  const label = copy("Значение для ") + field.label;
   const choiceField = ["eq", "neq", "in", "notIn"].includes(condition.op)
     ? field
     : { ...field, options: undefined };
@@ -182,14 +202,16 @@ export function ItemFilterValue({
 
   const populated = values.filter((value) => value !== "");
   const summary = range
-    ? values.map((value) => formattedValue(value, field) || "…").join(" — ")
+    ? values
+        .map((value) => formattedValue(value, field, copy) || "…")
+        .join(" — ")
     : multiple
       ? populated
           .slice(0, 2)
-          .map((value) => formattedValue(value, field))
+          .map((value) => formattedValue(value, field, copy))
           .join(", ") +
         (populated.length > 2 ? " +" + (populated.length - 2) : "")
-      : formattedValue(scalar, field);
+      : formattedValue(scalar, field, copy);
   const updateAt = (index: number, value: string) => {
     const next = range
       ? [values[0] ?? "", values[1] ?? ""]
@@ -225,10 +247,10 @@ export function ItemFilterValue({
           <span className="truncate">
             {summary ||
               (range
-                ? "задать диапазон…"
+                ? copy("задать диапазон…")
                 : multiple
-                  ? "выбрать значения…"
-                  : "выбрать дату…")}
+                  ? copy("выбрать значения…")
+                  : copy("выбрать дату…"))}
           </span>
         </Button>
       </PopoverTrigger>
@@ -241,7 +263,7 @@ export function ItemFilterValue({
           <p className="text-sm font-medium">{field.label}</p>
           {multiple && !range && (
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Каждое значение отдельно, до 20 значений.
+              {copy("Каждое значение отдельно, до 20 значений. ")}
             </p>
           )}
         </div>
@@ -268,7 +290,7 @@ export function ItemFilterValue({
           </div>
         ) : range ? (
           <div className="space-y-3">
-            {["От", "До"].map((bound, index) => (
+            {[copy("От"), copy("До")].map((bound, index) => (
               <label
                 key={bound}
                 className="block space-y-1.5 text-xs text-muted-foreground"
@@ -295,14 +317,14 @@ export function ItemFilterValue({
                   field={field}
                   value={value}
                   onChange={(next) => updateAt(index, next)}
-                  label={"Значение " + (index + 1)}
+                  label={copy("Значение ") + (index + 1)}
                   autoFocus={index === Math.max(0, values.length - 1)}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={"Удалить значение " + (index + 1)}
+                  aria-label={copy("Удалить значение ") + (index + 1)}
                   disabled={values.length === 0}
                   onClick={() =>
                     onChange(values.filter((_, position) => position !== index))
@@ -322,7 +344,7 @@ export function ItemFilterValue({
               disabled={values.length >= 20}
               onClick={() => onChange([...values, ""])}
             >
-              <Plus aria-hidden="true" /> Ещё значение
+              <Plus aria-hidden="true" /> {copy(" Ещё значение ")}
             </Button>
           </div>
         ) : (
@@ -340,7 +362,7 @@ export function ItemFilterValue({
             size="sm"
             onClick={() => setOpen(false)}
           >
-            Готово
+            {copy("Готово ")}
           </Button>
         </div>
       </PopoverContent>

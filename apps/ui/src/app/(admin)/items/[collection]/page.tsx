@@ -8,17 +8,20 @@ import { loadCollections } from "@/lib/collections";
 import { coreAddress, requireSession } from "@/lib/session";
 import type { TableView } from "@/components/items/table-view-dialog";
 import { defaultStateFilter } from "@/components/items/default-state-filter";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
-function LoadError({ message }: { message: string }) {
+async function LoadError({ message }: { message: string }) {
+  const copy = await getUiCopy();
+
   return (
     <div className="space-y-4">
       <Link
         href="/"
         className="text-sm text-muted-foreground underline"
       >
-        ← К коллекциям
+        {copy("← К коллекциям ")}
       </Link>
-      <p role="alert">{message}</p>
+      <p role="alert">{copy(message)}</p>
     </div>
   );
 }
@@ -30,6 +33,8 @@ export default async function CollectionItemsPage({
   params: Promise<{ collection: string; id?: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const copy = await getUiCopy();
+
   const { collection: name, id } = await params;
   const requested = await searchParams;
   const path = id === undefined ? collectionHref(name) : itemHref(name, id);
@@ -47,7 +52,8 @@ export default async function CollectionItemsPage({
     );
   }
   const { data: collections, online } = await loadCollections(token);
-  if (!online) return <LoadError message="Не удалось загрузить коллекции" />;
+  if (!online)
+    return <LoadError message={copy("Не удалось загрузить коллекции")} />;
   const collection = collections.find((entry) => entry.name === name);
   if (!collection) notFound();
 
@@ -95,6 +101,7 @@ export default async function CollectionItemsPage({
     "direction",
     "q",
     "filter",
+    "order",
   ].some((key) => typeof requested[key] === "string");
   const defaults = initialVisit ? defaultView?.definition : null;
   const layoutDefaults = defaultView?.definition;
@@ -112,11 +119,10 @@ export default async function CollectionItemsPage({
     for (const [key, value] of Object.entries(requested))
       if (typeof value === "string") query.set(key, value);
     query.set("limit", String(preferences?.pageSize ?? defaults.pageSize));
-    query.set("sort", preferences?.sort.field ?? defaults.sort.field);
-    query.set(
-      "direction",
-      preferences?.sort.direction ?? defaults.sort.direction,
-    );
+    const defaultSort = preferences?.sort ?? defaults.sort;
+    query.set("sort", defaultSort.field);
+    query.set("order", defaultSort.order ?? "field");
+    query.set("direction", defaultSort.direction);
     if (defaults.q) query.set("q", defaults.q);
     query.set("filter", defaults.filter ? JSON.stringify(defaults.filter) : "");
     redirect(`${path}?${query}`);
@@ -127,10 +133,22 @@ export default async function CollectionItemsPage({
       ? requested.filter
       : defaultStateFilter(collection);
   if (collection.access.read) {
+    let order = "field";
+    if (q.trim()) {
+      if (typeof requested.order === "string") {
+        order = requested.order;
+      } else if (
+        requested.sort === undefined &&
+        requested.direction === undefined
+      ) {
+        order = "relevance";
+      }
+    }
     let itemsResponse: Response;
     try {
       const query = new URLSearchParams({
         limit: String(preferences?.pageSize ?? 25),
+        order,
         sort: preferences?.sort.field ?? collection.primaryKey.name,
         direction: preferences?.sort.direction ?? "asc",
       });
@@ -138,7 +156,7 @@ export default async function CollectionItemsPage({
       if (filter) query.set("filter", filter);
       // An explicit empty filter disables the table default, but Core expects
       // either a JSON filter or no parameter at all.
-      for (const key of ["page", "limit", "sort", "direction", "q"]) {
+      for (const key of ["page", "limit", "sort", "direction", "q", "order"]) {
         const value = requested[key];
         if (typeof value === "string") query.set(key, value);
       }
@@ -151,10 +169,10 @@ export default async function CollectionItemsPage({
         },
       );
     } catch {
-      return <LoadError message="Не удалось загрузить записи" />;
+      return <LoadError message={copy("Не удалось загрузить записи")} />;
     }
     if (!itemsResponse.ok)
-      return <LoadError message="Не удалось загрузить записи" />;
+      return <LoadError message={copy("Не удалось загрузить записи")} />;
     items = (await itemsResponse.json()) as ItemList;
   }
 

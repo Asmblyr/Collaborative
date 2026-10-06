@@ -3,6 +3,7 @@ node_modules
 .turbo
 *.tsbuildinfo
 .next
+.next-visual
 dist
 .asmblyr
 .local-data

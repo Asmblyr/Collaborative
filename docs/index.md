@@ -17,8 +17,10 @@
 Руководства по [данным](./features/data.md), [правам](./features/access.md),
 [пользователям](./features/identity.md), [файлам](./features/files.md),
 [настройкам](./features/settings.md), [пространствам](./features/workspaces.md),
-[интеграциям](./features/integrations.md), [ассистенту](./features/assistant.md)
-и [расширениям](./features/plugins.md) описывают текущие контракты и их границы.
+[мониторингу](./features/monitoring.md),
+[интеграциям](./features/integrations.md), [ассистенту](./features/assistant.md),
+[обсуждениям и уведомлениям](./features/notifications.md),
+[локализации](./features/localization.md) и [расширениям](./features/plugins.md) описывают текущие контракты и их границы.
 
 ## Разработка и эксплуатация
 
@@ -27,3 +29,5 @@
 - [Эксплуатация и восстановление](./development/operations.md)
 - [Границы безопасности](./security/overview.md)
 - [Участие в проекте](https://github.com/Asmblyr/Collaborative/blob/main/CONTRIBUTING.md)
+
+Подключение личного Drive и Sheets описано в [Google Workspace](./features/google-workspace.md).

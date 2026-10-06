@@ -15,6 +15,8 @@ export async function cleanupOperations(
     deleted += result.rowCount;
   };
   const now = new Date();
+  await prune("public.asmblyr_cli_grants", "expires_at", now);
+  await prune("public.asmblyr_connection_secrets", "expires_at", now);
   await prune("public.asmblyr_passkey_challenges", "expires_at", now);
   await prune("public.asmblyr_request_buckets", "expires_at", now);
   await prune("public.asmblyr_assistant_leases", "expires_at", now);
@@ -27,6 +29,7 @@ export async function cleanupOperations(
     const cutoff = new Date(Date.now() - historyDays * 86400000);
     await prune("public.asmblyr_assistant_requests", "started_at", cutoff);
     await prune("public.asmblyr_assistant_turns", "started_at", cutoff);
+    await prune("public.asmblyr_assistant_conversations", "updated_at", cutoff);
     await prune("public.asmblyr_item_events", "occurred_at", cutoff);
     await prune("public.asmblyr_file_events", "created_at", cutoff);
   }

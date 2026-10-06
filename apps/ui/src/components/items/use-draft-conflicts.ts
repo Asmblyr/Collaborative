@@ -9,6 +9,7 @@ import {
   type DraftSnapshot,
   type DraftConflict,
 } from "./draft-conflicts";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface ConflictReview {
   draft: RecordDraft;
@@ -17,6 +18,8 @@ interface ConflictReview {
 }
 
 export function useDraftConflicts(collection: string) {
+  const copy = useUiCopy();
+
   const [review, setReview] = useState<ConflictReview | null>(null);
   async function inspect(draft: RecordDraft) {
     const snapshots = await Promise.all(
@@ -30,7 +33,11 @@ export function useDraftConflicts(collection: string) {
         return { ...target, current: result.data };
       }),
     );
-    setReview({ draft, snapshots, conflicts: findDraftConflicts(snapshots) });
+    setReview({
+      draft,
+      snapshots,
+      conflicts: findDraftConflicts(snapshots, copy),
+    });
   }
   return { review, inspect, clear: () => setReview(null) };
 }

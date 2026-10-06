@@ -8,10 +8,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useUiCopy } from "@/lib/ui-copy";
 
-export function AssistantMessageContent({ content }: { content: string }) {
+export function AssistantMessageContent({
+  content,
+  compact = false,
+}: {
+  content: string;
+  compact?: boolean;
+}) {
+  const copy = useUiCopy();
+
   return (
-    <div className="min-w-0 space-y-3 text-sm leading-6 [overflow-wrap:anywhere]">
+    <div
+      className={`min-w-0 [overflow-wrap:anywhere] ${compact ? "space-y-2 text-xs leading-5 text-muted-foreground" : "space-y-3 text-sm leading-6"}`}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -27,7 +38,18 @@ export function AssistantMessageContent({ content }: { content: string }) {
           h3: ({ children }) => <h3 className="font-semibold">{children}</h3>,
           table: ({ children }) => (
             <div className="max-w-full overflow-hidden rounded-lg border bg-background/40">
-              <Table className="text-xs leading-5">{children}</Table>
+              <Table
+                containerProps={{
+                  role: "region",
+                  "aria-label": copy("Таблица"),
+                  tabIndex: 0,
+                  className:
+                    "max-w-full overscroll-x-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                }}
+                className="w-max min-w-full text-xs leading-5 [overflow-wrap:normal]"
+              >
+                {children}
+              </Table>
             </div>
           ),
           thead: ({ children }) => (
@@ -48,7 +70,7 @@ export function AssistantMessageContent({ content }: { content: string }) {
           td: ({ children, style }) => (
             <TableCell
               style={style}
-              className="max-w-56 whitespace-normal px-2.5 py-2 align-top"
+              className="max-w-64 whitespace-normal px-2.5 py-2 align-top"
             >
               {children}
             </TableCell>
@@ -59,7 +81,7 @@ export function AssistantMessageContent({ content }: { content: string }) {
             </blockquote>
           ),
           pre: ({ children }) => (
-            <pre className="max-w-full overflow-x-auto rounded-lg bg-background/70 p-3 text-xs">
+            <pre className="max-w-full overflow-x-auto whitespace-pre rounded-lg bg-background/70 p-3 text-xs [overflow-wrap:normal]">
               {children}
             </pre>
           ),

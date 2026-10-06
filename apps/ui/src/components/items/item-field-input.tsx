@@ -5,13 +5,16 @@ import { PluginUiHost as FieldBoundary } from "@/components/plugins/ui-host";
 import {
   PortalContainerContext,
   usePortalContainer,
-} from "@asmblyr/kit/ui/portal-container";
+} from "@asmblyr-collaborative/kit/ui/portal-container";
 import { useFieldInterfaces } from "@/components/plugins/field-registry";
 import { BuiltinFieldInput } from "./builtin-field-input";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemFieldInput(
   props: ComponentProps<typeof BuiltinFieldInput>,
 ) {
+  const copy = useUiCopy();
+
   const inheritedContainer = usePortalContainer();
   const { field, id, value, disabled, required, onChange } = props;
   const presentation = field.presentation;
@@ -21,7 +24,7 @@ export function ItemFieldInput(
   );
   const fallback = <BuiltinFieldInput {...props} />;
 
-  if (!extension || !presentation) {
+  if (!extension || !presentation || presentation.sensitive) {
     return fallback;
   }
 
@@ -29,7 +32,9 @@ export function ItemFieldInput(
     <div className="space-y-2">
       {fallback}
       <p className="text-xs text-muted-foreground">
-        Редактор расширения недоступен. Значение можно изменить обычным полем.
+        {copy(
+          "Редактор расширения недоступен. Значение можно изменить обычным полем. ",
+        )}
       </p>
     </div>
   );

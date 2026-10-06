@@ -1,11 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import type { Knex } from "knex";
 import { requireSuperuser } from "../auth/require-superuser.js";
-import { grantFor, loadAccess } from "../permissions/access.js";
+import { loadAccess } from "../permissions/access.js";
 import {
   addCollectionField,
   createCollection,
-  listCollections,
   updateCollectionField,
 } from "./service.js";
 import {
@@ -27,9 +26,10 @@ import { updateRelationSearch } from "./relation-search.js";
 import { updateCollectionMetadata } from "./metadata.js";
 import { updateCollectionDisplay } from "./display.js";
 import { updateCollectionForm } from "./form-settings.js";
-import { reconcileForm } from "./form-layout.js";
-import { templateFields } from "./label-template.js";
 import { saveFieldConfiguration } from "./field-configuration.js";
+
+import { registerMaterializedRoutes } from "./materialized-routes.js";
+import { visibleCatalog } from "./visible-catalog.js";
 
 export function registerCollectionRoutes(
   app: FastifyInstance,
@@ -51,68 +51,7 @@ export function registerCollectionRoutes(
 
   app.get("/collections", async (request) => {
     const access = await loadAccess(db(), request.headers.authorization);
-    const collections = await listCollections(db());
-    const visibleCollections = collections.flatMap((collection) => {
-      const create = grantFor(access, collection.name, "create");
-      const read = grantFor(access, collection.name, "read");
-      const update = grantFor(access, collection.name, "update");
-      const remove = grantFor(access, collection.name, "delete");
-      if (!create && !read && !update && !remove) {
-        return [];
-      }
-      const visible = new Set([
-        ...(create ?? []),
-        ...(read ?? []),
-        ...(update ?? []),
-      ]);
-      const allFields = visible.has("*");
-      return [
-        {
-          ...collection,
-          state:
-            collection.state &&
-            (allFields || visible.has(collection.state.field))
-              ? collection.state
-              : null,
-          formLayout: reconcileForm(
-            collection.formLayout,
-            collection.fields
-              .filter((f) => allFields || visible.has(f.name))
-              .map((f) => f.name),
-          ),
-          displayTemplate:
-            collection.displayTemplate &&
-            templateFields(collection.displayTemplate).every(
-              (f) =>
-                f === collection.primaryKey.name ||
-                read?.includes("*") ||
-                read?.includes(f),
-            )
-              ? collection.displayTemplate
-              : null,
-          fields: allFields
-            ? collection.fields
-            : collection.fields.filter((field) => visible.has(field.name)),
-          timestamps: {
-            createdAt:
-              collection.timestamps.createdAt &&
-              (allFields || visible.has("created_at")),
-            updatedAt:
-              collection.timestamps.updatedAt &&
-              (allFields || visible.has("updated_at")),
-          },
-          access: {
-            create,
-            read,
-            update,
-            delete: Boolean(remove),
-            structure:
-              access.principal.superuser &&
-              !collection.name.startsWith("plugin_"),
-          },
-        },
-      ];
-    });
+    const visibleCollections = await visibleCatalog(db(), access);
     const folders = await listFolders(db());
     const visibleNames = new Set(
       visibleCollections.map((collection) => collection.name),
@@ -335,5 +274,6 @@ export function registerCollectionRoutes(
     }),
   );
 
+  registerMaterializedRoutes(app, database, onDeleted);
   registerCollectionLifecycleRoutes(app, database, onDeleted);
 }

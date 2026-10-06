@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { AssistantStreamEvent } from "@asmblyr/contracts";
+import type { AssistantStreamEvent } from "@asmblyr-collaborative/contracts";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
 import { createAssistantProvider } from "../src/assistant/provider.js";
 import { parseAssistantInput } from "../src/assistant/validation.js";

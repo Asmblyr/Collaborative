@@ -120,6 +120,7 @@ test("field names are immutable while other field settings remain editable", asy
       defaultValue: "Untitled",
       searchable: true,
       searchIndexed: false,
+      searchPriority: null,
     });
 
     const newItem = await app.inject({

@@ -1,7 +1,7 @@
 import "./support/require-test-database.js";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineHook } from "@asmblyr/kit";
+import { defineHook } from "@asmblyr-collaborative/kit";
 import { loadPlugins } from "../src/plugins/load.js";
 import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 import type { LoadedPlugin } from "../src/plugins/definition.js";

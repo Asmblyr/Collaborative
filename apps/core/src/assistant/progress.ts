@@ -1,4 +1,4 @@
-import type { AssistantProgress } from "@asmblyr/contracts";
+import type { AssistantProgress } from "@asmblyr-collaborative/contracts";
 
 const toolLabels: Record<string, string> = {
   list_collections: "Ищу коллекции",
@@ -18,11 +18,11 @@ export function createProgress(emit?: (progress: AssistantProgress) => void) {
   let modelCalls = 0;
   let toolCalls = 0;
   return {
-    model() {
+    model(label = "Думаю") {
       modelCalls++;
       emit?.({
         phase: "model",
-        label: "Обрабатываю запрос",
+        label,
         modelCalls,
         toolCalls,
       });

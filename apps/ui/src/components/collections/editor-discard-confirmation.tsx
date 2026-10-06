@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function EditorDiscardConfirmation({
   onContinue,
@@ -10,6 +11,8 @@ export function EditorDiscardConfirmation({
   onContinue: () => void;
   onDiscard: () => void;
 }) {
+  const copy = useUiCopy();
+
   const id = useId();
   const continueRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -30,13 +33,13 @@ export function EditorDiscardConfirmation({
             id={`${id}-title`}
             className="text-base font-semibold"
           >
-            Закрыть без сохранения?
+            {copy("Закрыть без сохранения? ")}
           </h3>
           <p
             id={`${id}-description`}
             className="text-sm leading-relaxed text-muted-foreground"
           >
-            Ваши несохранённые изменения будут потеряны.
+            {copy("Ваши несохранённые изменения будут потеряны. ")}
           </p>
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -45,14 +48,14 @@ export function EditorDiscardConfirmation({
             variant="outline"
             onClick={onDiscard}
           >
-            Не сохранять
+            {copy("Не сохранять ")}
           </Button>
           <Button
             ref={continueRef}
             type="button"
             onClick={onContinue}
           >
-            Продолжить редактирование
+            {copy("Продолжить редактирование ")}
           </Button>
         </div>
       </section>

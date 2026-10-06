@@ -1,4 +1,4 @@
-import type { FieldDisplayProps } from "@asmblyr/kit/ui";
+import type { FieldDisplayProps } from "@asmblyr-collaborative/kit/ui";
 import { isHexColor } from "./color-options.ts";
 
 export function ColorDisplay({ value }: FieldDisplayProps) {

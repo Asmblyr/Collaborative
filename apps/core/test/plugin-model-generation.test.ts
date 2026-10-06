@@ -3,7 +3,7 @@ import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
-import { modelValidator } from "@asmblyr/kit/model";
+import { modelValidator } from "@asmblyr-collaborative/kit/model";
 import {
   sourceEndpoints,
   builtEndpoints,
@@ -12,7 +12,7 @@ import {
 import { modelPluginFixture } from "./support/model-plugin-fixture.js";
 
 const handler = `
-import { defineModelContext as model, defineModelAnnotation, AccessGate, defineHandler } from '@asmblyr/kit';
+import { defineModelContext as model, defineModelAnnotation, AccessGate, defineHandler } from '@asmblyr-collaborative/kit';
 import type { Input } from '../../../shared/input.ts';
 const annotation = defineModelAnnotation({title:'Example',description:'Example model',middleware:AccessGate.authenticated});
 export default model<Input>(defineHandler(async () => ({ total: 42, currency: 'RUB' as const })), annotation);

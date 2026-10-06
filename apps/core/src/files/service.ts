@@ -10,37 +10,59 @@ import {
 import { fileError, rasterType } from "./validation.js";
 import { StorageError, type FileStorage } from "./storage/types.js";
 import { actualFileReferences } from "./references.js";
+import {
+  resolveRuntime,
+  type RuntimeSource,
+} from "../shared/runtime-source.js";
 
-function assertStorage(
-  storage: FileStorage | null,
+async function assertStorage(
+  source: RuntimeSource<FileStorage>,
   row?: FileRow,
-): FileStorage {
+  database?: Knex,
+): Promise<FileStorage> {
+  const storage =
+    database && typeof source === "function"
+      ? await (source as (database?: Knex) => Promise<FileStorage | null>)(
+          database,
+        )
+      : await resolveRuntime(source);
   if (!storage || (row && row.storage !== storage.id)) throw new StorageError();
   return storage;
 }
 
 export async function uploadFile(
   db: Knex,
-  storage: FileStorage | null,
+  storage: RuntimeSource<FileStorage>,
   content: Buffer,
   input: { filename: string; mimeType: string },
   actor: FileActor,
 ) {
-  const provider = assertStorage(storage);
   const id = randomUUID(),
     previewType = rasterType(content);
   // Persist intent before S3. If a PUT times out or the process dies, an administrator can clean up by ID.
-  await files(db).insert({
-    id,
-    storage: provider.id,
-    object_key: `files/${id}`,
-    filename: input.filename,
-    title: input.filename,
-    mime_type: previewType ?? input.mimeType,
-    preview_type: previewType,
-    size: content.length,
-    sha256: createHash("sha256").update(content).digest("hex"),
-    uploaded_by: actor.id,
+  const provider = await db.transaction(async (trx) => {
+    if (typeof storage === "function") {
+      // Synchronize the upload intent with changes to the storage location.
+      await trx("asmblyr_integration_settings")
+        .withSchema("public")
+        .where({ id: 1 })
+        .forShare()
+        .first();
+    }
+    const provider = await assertStorage(storage, undefined, trx);
+    await files(trx).insert({
+      id,
+      storage: provider.id,
+      object_key: `files/${id}`,
+      filename: input.filename,
+      title: input.filename,
+      mime_type: previewType ?? input.mimeType,
+      preview_type: previewType,
+      size: content.length,
+      sha256: createHash("sha256").update(content).digest("hex"),
+      uploaded_by: actor.id,
+    });
+    return provider;
   });
   try {
     return await db.transaction(async (trx) => {
@@ -68,7 +90,11 @@ export async function uploadFile(
 export async function updateFile(
   db: Knex,
   id: string,
-  patch: { title?: string; description?: string },
+  patch: {
+    title?: string;
+    description?: string;
+    visibility?: "private" | "public";
+  },
   actor: FileActor,
 ) {
   return db.transaction(async (trx) => {
@@ -96,7 +122,7 @@ export async function updateFile(
 
 export async function deleteFile(
   db: Knex,
-  storage: FileStorage | null,
+  storage: RuntimeSource<FileStorage>,
   id: string,
   actor: FileActor,
 ) {
@@ -114,7 +140,7 @@ export async function deleteFile(
       .withSchema("public")
       .where({ file_id: id })
       .delete();
-    assertStorage(storage, current);
+    const provider = await assertStorage(storage, current);
     if (
       current.status === "uploading" &&
       Date.now() - new Date(current.created_at).getTime() < 15 * 60000
@@ -124,11 +150,11 @@ export async function deleteFile(
     await files(trx)
       .where({ id })
       .update({ status: "deleting", updated_at: trx.fn.now() });
-    return current;
+    return { current, provider };
   });
   if (!row) return;
   // Tombstone is committed before deleting bytes. Retry is safe even if S3 or the process fails.
-  await assertStorage(storage, row).delete(row.object_key);
+  await row.provider.delete(row.current.object_key);
   await db.transaction(async (trx) => {
     const removed = await files(trx)
       .where({ id, status: "deleting" })
@@ -136,25 +162,30 @@ export async function deleteFile(
       .returning("id");
     if (removed.length)
       await fileEvent(trx, id, actor, "delete", {
-        filename: row.filename,
-        title: row.title,
-        size: Number(row.size),
-        sha256: row.sha256,
+        filename: row.current.filename,
+        title: row.current.title,
+        size: Number(row.current.size),
+        sha256: row.current.sha256,
       });
   });
 }
 
 export async function fileContent(
   db: Knex,
-  storage: FileStorage | null,
+  storage: RuntimeSource<FileStorage>,
   id: string,
   preview: boolean,
+  publicOnly = false,
 ) {
   const row = await files(db).where({ id }).first();
-  if (!row || row.status !== "ready")
+  if (
+    !row ||
+    row.status !== "ready" ||
+    (publicOnly && row.visibility !== "public")
+  )
     throw fileError("Файл не найден или недоступен", 404);
   if (preview && !row.preview_type)
     throw fileError("Для этого файла доступно только скачивание", 400);
-  const stream = await assertStorage(storage, row).get(row.object_key);
+  const stream = await (await assertStorage(storage, row)).get(row.object_key);
   return { row, stream };
 }

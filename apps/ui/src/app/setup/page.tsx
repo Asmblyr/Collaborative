@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { SetupForm } from "@/components/auth/setup-form";
 import { loadSetupStatus } from "@/lib/setup-status";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
 export default async function SetupPage() {
+  const copy = await getUiCopy();
+
   const status = await loadSetupStatus();
   if (status && !status.needsSetup) redirect("/");
 
@@ -13,10 +16,13 @@ export default async function SetupPage() {
           <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
             Asmblyr
           </p>
-          <h1 className="text-2xl font-semibold">Первоначальная настройка</h1>
+          <h1 className="text-2xl font-semibold">
+            {copy("Первоначальная настройка")}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Создайте первого суперпользователя. После этого повторная настройка
-            будет закрыта.
+            {copy(
+              "Создайте первого суперпользователя. После этого повторная настройка будет закрыта. ",
+            )}
           </p>
         </div>
         {!status ? (
@@ -24,15 +30,16 @@ export default async function SetupPage() {
             role="alert"
             className="text-sm text-destructive"
           >
-            Core API недоступен.
+            {copy("Core API недоступен. ")}
           </p>
         ) : !status.configured ? (
           <p
             role="alert"
             className="text-sm text-destructive"
           >
-            Установите ASMBLYR_SETUP_TOKEN в конфигурации Core и перезапустите
-            сервис.
+            {copy(
+              "Установите ASMBLYR_SETUP_TOKEN в конфигурации Core и перезапустите сервис. ",
+            )}
           </p>
         ) : (
           <SetupForm />

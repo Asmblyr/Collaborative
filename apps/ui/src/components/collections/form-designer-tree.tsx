@@ -1,10 +1,13 @@
+"use client";
+
 import { ArrowDown, ArrowUp, Folder, TextCursorInput } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type {
   FormLayout,
   FormNode,
 } from "@/components/items/presentation-types";
 import type { CollectionField } from "@/components/items/types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function FormDesignerTree({
   layout,
@@ -21,6 +24,8 @@ export function FormDesignerTree({
   onSelect: (id: string) => void;
   onMove: (id: string, offset: number) => void;
 }) {
+  const copy = useUiCopy();
+
   function row(
     id: string,
     label: string,
@@ -48,7 +53,7 @@ export function FormDesignerTree({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={`Поднять ${label}`}
+          aria-label={copy("Поднять {{value0}}", { value0: label })}
           disabled={disabled || index === 0}
           onClick={() => onMove(id, -1)}
         >
@@ -58,7 +63,7 @@ export function FormDesignerTree({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={`Опустить ${label}`}
+          aria-label={copy("Опустить {{value0}}", { value0: label })}
           disabled={disabled || index === count - 1}
           onClick={() => onMove(id, 1)}
         >
@@ -92,7 +97,7 @@ export function FormDesignerTree({
   );
   return (
     <nav
-      aria-label="Структура формы"
+      aria-label={copy("Структура формы")}
       className="space-y-3"
     >
       {layout.tabs.map((tab, index) => (

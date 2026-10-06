@@ -2,10 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import {
   Select,
@@ -13,16 +13,21 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import { apiRequest } from "@/lib/api-request";
 import type { ColumnPreferences } from "@/lib/table-preferences";
 import type { FilterGroup } from "./item-filter-options";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export interface TableViewDefinition {
   columns: ColumnPreferences;
   filter: FilterGroup | null;
   q: string;
-  sort: { field: string; direction: "asc" | "desc" };
+  sort: {
+    field: string;
+    direction: "asc" | "desc";
+    order?: import("@asmblyr-collaborative/contracts").ItemOrder;
+  };
   pageSize: number;
 }
 export interface TableView {
@@ -51,6 +56,8 @@ export function TableViewDialog({
   onChanged: () => void;
   superuser: boolean;
 }) {
+  const copy = useUiCopy();
+
   const [id, setId] = useState("new"),
     [name, setName] = useState("");
   const [pending, setPending] = useState(false),
@@ -82,7 +89,9 @@ export function TableViewDialog({
       close();
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : "Не удалось сохранить вид",
+        reason instanceof Error
+          ? reason.message
+          : copy("Не удалось сохранить вид"),
       );
     } finally {
       setPending(false);
@@ -97,7 +106,9 @@ export function TableViewDialog({
       close();
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : "Не удалось удалить вид",
+        reason instanceof Error
+          ? reason.message
+          : copy("Не удалось удалить вид"),
       );
     } finally {
       setPending(false);
@@ -107,7 +118,7 @@ export function TableViewDialog({
     <EditorDialog
       open
       busy={pending}
-      title="Сохранённые виды"
+      title={copy("Сохранённые виды")}
       eyebrow={collection}
       onClose={onClose}
     >
@@ -117,11 +128,12 @@ export function TableViewDialog({
           className="space-y-5"
         >
           <p className="text-sm text-muted-foreground">
-            Сохраните фильтры, поиск, столбцы, сортировку и размер страницы.
-            Общий вид доступен коллегам с правом чтения коллекции.
+            {copy(
+              "Сохраните фильтры, поиск, столбцы, сортировку и размер страницы. Общий вид доступен коллегам с правом чтения коллекции. ",
+            )}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="saved-view">Вид</Label>
+            <Label htmlFor="saved-view">{copy("Вид")}</Label>
             <Select
               value={id}
               disabled={pending}
@@ -141,7 +153,7 @@ export function TableViewDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={container}>
-                <SelectItem value="new">Создать новый</SelectItem>
+                <SelectItem value="new">{copy("Создать новый")}</SelectItem>
                 {views
                   .filter((view) => view.editable)
                   .map((view) => (
@@ -156,7 +168,7 @@ export function TableViewDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="view-scope">Доступность</Label>
+            <Label htmlFor="view-scope">{copy("Доступность")}</Label>
             <Select
               value={scope}
               disabled={pending || id !== "new"}
@@ -169,10 +181,12 @@ export function TableViewDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={container}>
-                <SelectItem value="personal">Только мне</SelectItem>
+                <SelectItem value="personal">{copy("Только мне")}</SelectItem>
                 {superuser && (
                   <>
-                    <SelectItem value="collection">Всем в коллекции</SelectItem>
+                    <SelectItem value="collection">
+                      {copy("Всем в коллекции")}
+                    </SelectItem>
                     {workspace?.active?.collections.includes(collection) && (
                       <SelectItem value="workspace">
                         Workspace: {workspace.active.name}
@@ -184,21 +198,22 @@ export function TableViewDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="saved-view-name">Название</Label>
+            <Label htmlFor="saved-view-name">{copy("Название")}</Label>
             <Input
               id="saved-view-name"
               value={name}
               maxLength={60}
               required
               disabled={pending}
-              placeholder="Например, статьи к публикации"
+              placeholder={copy("Например, статьи к публикации")}
               onChange={(event) => setName(event.target.value)}
             />
           </div>
           {id !== "new" && (
             <p className="rounded-lg bg-muted p-3 text-sm">
-              Сохранение заменит настройки выбранного вида текущими настройками
-              таблицы.
+              {copy(
+                "Сохранение заменит настройки выбранного вида текущими настройками таблицы. ",
+              )}
             </p>
           )}
           <label className="flex items-start gap-3 rounded-lg border p-3">
@@ -208,11 +223,13 @@ export function TableViewDialog({
               onCheckedChange={(value) => setDefault(value === true)}
             />
             <span className="space-y-1 text-sm">
-              <span className="block font-medium">Вид по умолчанию</span>
+              <span className="block font-medium">
+                {copy("Вид по умолчанию")}
+              </span>
               <span className="block text-xs text-muted-foreground">
-                Применяется при открытии коллекции. Личный вид имеет приоритет,
-                затем вид workspace и общий вид коллекции. Настройки ссылки и
-                ваши столбцы сохраняют приоритет.
+                {copy(
+                  "Применяется при открытии коллекции. Личный вид имеет приоритет, затем вид workspace и общий вид коллекции. Настройки ссылки и ваши столбцы сохраняют приоритет. ",
+                )}
               </span>
             </span>
           </label>
@@ -221,12 +238,12 @@ export function TableViewDialog({
               role="alert"
               className="text-sm text-destructive"
             >
-              {error}
+              {copy(error)}
             </p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button disabled={pending || !name.trim()}>
-              {pending ? "Сохраняем…" : "Сохранить"}
+              {pending ? copy("Сохраняем…") : copy("Сохранить")}
             </Button>
             {id !== "new" && (
               <Button
@@ -235,7 +252,7 @@ export function TableViewDialog({
                 disabled={pending}
                 onClick={() => void remove(close)}
               >
-                Удалить вид
+                {copy("Удалить вид ")}
               </Button>
             )}
             <Button
@@ -244,7 +261,7 @@ export function TableViewDialog({
               disabled={pending}
               onClick={close}
             >
-              Отмена
+              {copy("Отмена ")}
             </Button>
           </div>
         </form>

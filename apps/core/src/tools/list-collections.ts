@@ -2,6 +2,7 @@ import type { Knex } from "knex";
 import { grantFor, type Access } from "../permissions/access.js";
 import { objectInput } from "../shared/input.js";
 import { ItemError } from "../items/validation.js";
+import { parseToolSearch } from "./search-input.js";
 
 interface CatalogQuery {
   q: string;
@@ -16,10 +17,8 @@ interface CollectionSummary {
 
 function parseCatalogQuery(args: unknown): CatalogQuery {
   const body = objectInput(args, ["q", "page", "limit"]);
-  const q = body.q === null ? "" : body.q;
+  const q = parseToolSearch(body.q);
   if (
-    typeof q !== "string" ||
-    q.length > 100 ||
     typeof body.page !== "number" ||
     !Number.isInteger(body.page) ||
     body.page < 1 ||

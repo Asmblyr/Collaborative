@@ -1,4 +1,5 @@
 import type { Knex } from "knex";
+import { assertCollectionWritable } from "./source-access.js";
 import type {
   CollectionMode,
   PrimaryKey,
@@ -6,13 +7,15 @@ import type {
   Timestamps,
 } from "./types.js";
 import type { FormLayout } from "./form-layout.js";
-import type { CollectionState } from "@asmblyr/contracts";
+import type { CollectionState } from "@asmblyr-collaborative/contracts";
 import { CollectionNotFoundError } from "./validation.js";
 import { postgresCode } from "../shared/postgres-error.js";
 
 export interface CollectionSettings {
+  sourceKind?: "table" | "materialized-view";
   mode: CollectionMode;
   displayName?: string | null;
+  translations?: import("@asmblyr-collaborative/contracts").LabelTranslations;
   hidden?: boolean;
   mcp?: { enabled: boolean; description: string | null };
   displayField?: string | null;
@@ -24,9 +27,12 @@ export interface CollectionSettings {
 }
 
 interface SettingsRow {
+  source_kind?: "table" | "materialized-view";
+  source_schema_hash?: string | null;
   id: string;
   name: string;
   display_name?: string | null;
+  translations?: import("@asmblyr-collaborative/contracts").LabelTranslations;
   hidden?: boolean;
   mcp_enabled?: boolean;
   mcp_description?: string | null;
@@ -45,8 +51,12 @@ export function settingsFromRow(
   row: Omit<SettingsRow, "name" | "id">,
 ): CollectionSettings {
   return {
+    ...(row.source_kind === "materialized-view"
+      ? { sourceKind: row.source_kind }
+      : {}),
     mode: row.mode,
     displayName: row.display_name ?? null,
+    translations: row.translations ?? {},
     hidden: row.hidden ?? false,
     mcp: {
       enabled: row.mcp_enabled ?? true,
@@ -67,14 +77,23 @@ export function settingsFromRow(
 export async function findCollectionSettings(
   database: Knex,
   name: string,
-): Promise<(CollectionSettings & { internalId: string }) | null> {
+): Promise<
+  | (CollectionSettings & {
+      internalId: string;
+      sourceSchemaHash?: string | null;
+    })
+  | null
+> {
   const row = await database<SettingsRow>("asmblyr_collections")
     .withSchema("public")
     .where({ name })
     .first(
+      "source_kind",
+      "source_schema_hash",
       "id",
       "mode",
       "display_name",
+      "translations",
       "hidden",
       "mcp_enabled",
       "mcp_description",
@@ -87,7 +106,13 @@ export async function findCollectionSettings(
       "updated_at_enabled",
       "state",
     );
-  return row ? { ...settingsFromRow(row), internalId: row.id } : null;
+  return row
+    ? {
+        ...settingsFromRow(row),
+        internalId: row.id,
+        sourceSchemaHash: row.source_schema_hash,
+      }
+    : null;
 }
 
 export function isManagedColumn(
@@ -106,9 +131,16 @@ export async function lockedCollectionSettings(
   transaction: Knex.Transaction,
   name: string,
   mode: "ACCESS SHARE" | "ACCESS EXCLUSIVE" = "ACCESS EXCLUSIVE",
+  allowReadOnlyMetadata = false,
 ): Promise<CollectionSettings & { internalId: string }> {
-  if (!(await findCollectionSettings(transaction, name)))
-    throw new CollectionNotFoundError(name);
+  const current = await findCollectionSettings(transaction, name);
+  if (!current) throw new CollectionNotFoundError(name);
+  if (!allowReadOnlyMetadata) {
+    assertCollectionWritable(current);
+  }
+  if (current.sourceKind === "materialized-view") {
+    return current;
+  }
   try {
     await transaction.raw(`LOCK TABLE ?? IN ${mode} MODE`, [`public.${name}`]);
   } catch (error) {

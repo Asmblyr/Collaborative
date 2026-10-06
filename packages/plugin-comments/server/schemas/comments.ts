@@ -1,4 +1,4 @@
-import { EndpointError } from "@asmblyr/kit";
+import { EndpointError } from "@asmblyr-collaborative/kit";
 import { getQuery, getRouterParam, type H3Event } from "h3";
 import {
   COMMENT_MAX_LENGTH,

@@ -1,4 +1,4 @@
-import type { EndpointActor } from "@asmblyr/kit";
+import type { EndpointActor } from "@asmblyr-collaborative/kit";
 import type { Knex } from "knex";
 import type { Principal } from "../auth/principal.js";
 

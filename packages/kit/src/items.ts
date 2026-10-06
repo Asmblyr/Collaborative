@@ -7,7 +7,7 @@ import type {
   ItemCommitDraft,
   ItemCommitResult,
   JsonRecord,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 
 /** Bound to the caller of the current endpoint. Do not cache between requests. */
 export interface ItemsReader {

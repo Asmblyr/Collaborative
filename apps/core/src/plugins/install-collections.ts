@@ -1,6 +1,6 @@
 import { validatePluginCapabilities } from "./capabilities.js";
 import type { Knex } from "knex";
-import { parsePluginNamespace } from "@asmblyr/kit/node";
+import { parsePluginNamespace } from "@asmblyr-collaborative/kit/node";
 import { createCollectionStorage } from "../collections/create-storage.js";
 import { lockCollectionOrder } from "../collections/ordering.js";
 import type { LoadedPlugin } from "./definition.js";

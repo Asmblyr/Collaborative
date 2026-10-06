@@ -1,5 +1,9 @@
 import type { FieldType } from "./types.js";
 import {
+  parseCalendarDate,
+  parseBigintString,
+} from "@asmblyr-collaborative/contracts";
+import {
   parseDecimal,
   parseFileIds,
   parseJsonValue,
@@ -80,6 +84,10 @@ export function parseFieldValue(
       break;
     case "datetime":
       return parseDatetime(value, field.name);
+    case "date":
+      return parseCalendarDate(value);
+    case "bigint":
+      return parseBigintString(value);
     case "decimal":
       return parseDecimal(value);
     case "json":

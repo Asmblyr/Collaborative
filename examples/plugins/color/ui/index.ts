@@ -1,6 +1,6 @@
 "use client";
 
-import { defineUiPlugin } from "@asmblyr/kit/ui";
+import { defineUiPlugin } from "@asmblyr-collaborative/kit/ui";
 import { ColorEditor } from "./color-editor.tsx";
 import { ColorDisplay } from "./color-display.tsx";
 import { ColorSettings } from "./color-settings.tsx";

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineUiPlugin } from "@asmblyr/kit/ui";
+import { defineUiPlugin } from "@asmblyr-collaborative/kit/ui";
 
 const component = () => null;
 

@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import { apiRequest } from "@/lib/api-request";
 import { ServiceKeys } from "./service-keys";
 import { ServiceFederations } from "./service-federations";
 import type { ServiceDetail, ServicePolicy } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ServiceEditor({
   readOnly = false,
@@ -31,6 +37,8 @@ export function ServiceEditor({
   onBusy: (busy: boolean) => void;
   onSaved: (account: ServiceDetail) => void;
 }) {
+  const copy = useUiCopy();
+
   const [account, setAccount] = useState(initial);
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -63,12 +71,14 @@ export function ServiceEditor({
         },
       );
       setAccount(result);
-      setMessage("Настройки сохранены");
+      setMessage(copy("Настройки сохранены"));
       onSaved(result);
       if (!account) setTab("keys");
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Не удалось сохранить аккаунт",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось сохранить аккаунт"),
       );
     } finally {
       setPending(false);
@@ -82,24 +92,24 @@ export function ServiceEditor({
       onValueChange={setTab}
       className="space-y-6"
     >
-      <TabsList>
+      <TabsList className="h-auto max-w-full flex-wrap">
         <TabsTrigger
           value="settings"
           disabled={keyBusy}
         >
-          Настройки и доступ
+          {copy("Настройки и доступ ")}
         </TabsTrigger>
         <TabsTrigger
           value="keys"
           disabled={!account || pending || keyBusy}
         >
-          Ключи
+          {copy("Ключи ")}
         </TabsTrigger>
         <TabsTrigger
           value="federations"
           disabled={!account || pending || keyBusy}
         >
-          Федерации
+          {copy("Федерации ")}
         </TabsTrigger>
       </TabsList>
       <TabsContent
@@ -116,31 +126,33 @@ export function ServiceEditor({
             className="space-y-5"
           >
             <div className="space-y-2">
-              <Label htmlFor="service-name">Название</Label>
+              <Label htmlFor="service-name">{copy("Название")}</Label>
               <Input
                 id="service-name"
                 required
                 maxLength={120}
-                placeholder="Например, импорт каталога"
+                placeholder={copy("Например, импорт каталога")}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="service-description">Описание</Label>
+              <Label htmlFor="service-description">{copy("Описание")}</Label>
               <Input
                 id="service-description"
                 maxLength={500}
-                placeholder="Для чего используется этот аккаунт"
+                placeholder={copy("Для чего используется этот аккаунт")}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
             </div>
             <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
               <div>
-                <Label htmlFor="service-active">Аккаунт активен</Label>
+                <Label htmlFor="service-active">
+                  {copy("Аккаунт активен")}
+                </Label>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Отключение завершит доступ всех его токенов.
+                  {copy("Отключение завершит доступ всех его токенов. ")}
                 </p>
               </div>
               <Switch
@@ -150,16 +162,20 @@ export function ServiceEditor({
               />
             </div>
             <div className="space-y-3">
-              <h3 className="text-sm font-medium">Политики доступа</h3>
+              <h3 className="text-sm font-medium">
+                {copy("Политики доступа")}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Выберите, с какими данными может работать сервис. Без политик
-                доступ к данным закрыт.
+                {copy(
+                  "Выберите, с какими данными может работать сервис. Без политик доступ к данным закрыт. ",
+                )}
               </p>
               <div className="max-h-64 space-y-1 overflow-auto rounded-lg border p-2">
                 {policies.length === 0 && (
                   <p className="p-3 text-sm text-muted-foreground">
-                    Создайте политику в разделе «Доступ», затем назначьте её
-                    здесь.
+                    {copy(
+                      "Создайте политику в разделе «Доступ», затем назначьте её здесь. ",
+                    )}
                   </p>
                 )}
                 {policies.map((policy) => (
@@ -187,7 +203,7 @@ export function ServiceEditor({
                       {!canManageAll &&
                         !delegatablePolicyIds.includes(policy.id) && (
                           <span className="ml-2 text-xs text-muted-foreground">
-                            Только администратор
+                            {copy("Только администратор ")}
                           </span>
                         )}
                     </span>
@@ -201,17 +217,17 @@ export function ServiceEditor({
               role="alert"
               className="text-sm text-destructive"
             >
-              {error}
+              {copy(error)}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-3">
             {!readOnly && (
               <Button disabled={pending || keyBusy}>
                 {pending
-                  ? "Сохраняем…"
+                  ? copy("Сохраняем…")
                   : account
-                    ? "Сохранить"
-                    : "Создать аккаунт"}
+                    ? copy("Сохранить")
+                    : copy("Создать аккаунт")}
               </Button>
             )}
             {message && (
@@ -219,7 +235,7 @@ export function ServiceEditor({
                 role="status"
                 className="text-sm text-muted-foreground"
               >
-                {message}
+                {copy(message)}
               </p>
             )}
           </div>

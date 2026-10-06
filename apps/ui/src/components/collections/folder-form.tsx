@@ -4,10 +4,12 @@ import { useEditorDraft } from "./editor-lifecycle";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CollectionFolder } from "@/components/items/types";
+import { useUiCopy } from "@/lib/ui-copy";
+import { requestErrorMessage, requestJson } from "@/lib/http-request";
 
 export function FolderForm({
   folder,
@@ -18,6 +20,8 @@ export function FolderForm({
   onSaved: () => void;
   onCancel: () => void;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [name, setName] = useState(folder?.name ?? "");
   const [pending, setPending] = useState(false);
@@ -29,25 +33,17 @@ export function FolderForm({
     setPending(true);
     setMessage("");
     try {
-      const response = await fetch(
+      await requestJson(
         folder
           ? `/api/folders/${encodeURIComponent(folder.id)}`
           : "/api/folders",
-        {
-          method: folder ? "PATCH" : "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ name }),
-        },
+        folder ? "PATCH" : "POST",
+        { name },
       );
-      if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
-        setMessage(result.message ?? "Не удалось сохранить папку");
-        return;
-      }
       onSaved();
       router.refresh();
-    } catch {
-      setMessage("Не удалось связаться с сервером");
+    } catch (cause) {
+      setMessage(copy(requestErrorMessage(cause)));
     } finally {
       setPending(false);
     }
@@ -57,28 +53,23 @@ export function FolderForm({
     if (
       !folder ||
       !window.confirm(
-        `Удалить папку «${folder.name}»? Коллекции останутся без папки.`,
+        copy("Удалить папку «{{value0}}»? Коллекции останутся без папки.", {
+          value0: folder.name,
+        }),
       )
     )
       return;
     setPending(true);
     setMessage("");
     try {
-      const response = await fetch(
+      await requestJson(
         `/api/folders/${encodeURIComponent(folder.id)}`,
-        {
-          method: "DELETE",
-        },
+        "DELETE",
       );
-      if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
-        setMessage(result.message ?? "Не удалось удалить папку");
-        return;
-      }
       onSaved();
       router.refresh();
-    } catch {
-      setMessage("Не удалось связаться с сервером");
+    } catch (cause) {
+      setMessage(copy(requestErrorMessage(cause)));
     } finally {
       setPending(false);
     }
@@ -90,7 +81,7 @@ export function FolderForm({
       className="space-y-6"
     >
       <div className="space-y-2">
-        <Label htmlFor="folder-name">Название папки</Label>
+        <Label htmlFor="folder-name">{copy("Название папки")}</Label>
         <Input
           id="folder-name"
           value={name}
@@ -103,8 +94,9 @@ export function FolderForm({
       </div>
       {folder && (
         <p className="text-sm text-muted-foreground">
-          Папка упорядочивает коллекции в интерфейсе. Права доступа задаются для
-          самих коллекций.
+          {copy(
+            "Папка упорядочивает коллекции в интерфейсе. Права доступа задаются для самих коллекций. ",
+          )}
         </p>
       )}
       {message && (
@@ -112,7 +104,7 @@ export function FolderForm({
           role="status"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
@@ -120,7 +112,7 @@ export function FolderForm({
           type="submit"
           disabled={pending}
         >
-          {folder ? "Сохранить" : "Создать папку"}
+          {folder ? copy("Сохранить") : copy("Создать папку")}
         </Button>
         <Button
           type="button"
@@ -128,7 +120,7 @@ export function FolderForm({
           disabled={pending}
           onClick={onCancel}
         >
-          Отмена
+          {copy("Отмена ")}
         </Button>
         {folder && (
           <Button
@@ -138,7 +130,7 @@ export function FolderForm({
             onClick={remove}
             className="ml-auto text-destructive hover:text-destructive"
           >
-            Удалить папку
+            {copy("Удалить папку ")}
           </Button>
         )}
       </div>

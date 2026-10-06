@@ -2,8 +2,13 @@ import { access, readFile, realpath } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { isLocalPluginPackage, parsePluginNamespace } from "@asmblyr/kit/node";
-import type { PluginCapability } from "@asmblyr/kit";
+import {
+  isLocalPluginPackage,
+  parsePluginNamespace,
+  readPluginTranslations,
+} from "@asmblyr-collaborative/kit/node";
+import type { TranslationCatalogs } from "@asmblyr-collaborative/contracts";
+import type { PluginCapability } from "@asmblyr-collaborative/kit";
 import {
   approvedCapabilities,
   validatePluginCapabilities,
@@ -102,6 +107,7 @@ export async function loadPlugins(
   const resolve = createRequire(projectPackage).resolve;
   const projectDirectory = path.dirname(fileURLToPath(projectPackage));
   const entries: {
+    translations: TranslationCatalogs;
     name: string;
     namespace?: string;
     url: URL;
@@ -133,6 +139,10 @@ export async function loadPlugins(
         namespaces.add(namespace);
       }
       const packageRoot = path.dirname(manifestPath);
+      const translations = await readPluginTranslations(packageRoot);
+      if (Object.keys(translations).length && !namespace) {
+        throw new Error("Translations require a plugin namespace");
+      }
       const isLocal = isLocalPluginPackage(projectDirectory, packageRoot);
       const useSource = sourcePlugins && isLocal;
       const url = pathToFileURL(
@@ -207,6 +217,7 @@ export async function loadPlugins(
       const hasUi =
         isRecord(manifest.exports) && manifest.exports["./ui"] !== undefined;
       entries.push({
+        translations,
         name,
         namespace,
         url,
@@ -230,6 +241,7 @@ export async function loadPlugins(
 
   const plugins: LoadedPlugin[] = [];
   for (const {
+    translations,
     name,
     namespace,
     url,
@@ -244,6 +256,7 @@ export async function loadPlugins(
     const module: { default?: unknown } = await import(url.href);
     const definition = parsePluginDefinition(module.default, name);
     plugins.push({
+      translations,
       name,
       namespace,
       hasUi,

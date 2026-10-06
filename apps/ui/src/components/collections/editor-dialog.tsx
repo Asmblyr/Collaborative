@@ -8,10 +8,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { EditorDiscardConfirmation } from "./editor-discard-confirmation";
 import { useEditorNavigationGuard } from "./use-editor-navigation-guard";
 import { EditorLifecycleContext, type EditorState } from "./editor-lifecycle";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface EditorDialogProps {
   open: boolean;
@@ -45,6 +46,8 @@ export function EditorDialog({
   footer,
   children,
 }: EditorDialogProps) {
+  const copy = useUiCopy();
+
   const [forms, setForms] = useState<Record<string, EditorState>>({});
   const registerState = useCallback((id: string, state: EditorState | null) => {
     setForms((current) => {
@@ -221,9 +224,9 @@ export function EditorDialog({
             disabled={busy || closing}
             className="shrink-0"
             onClick={requestClose}
-            aria-label="Закрыть редактор"
+            aria-label={copy("Закрыть редактор")}
           >
-            Закрыть
+            {copy("Закрыть ")}
           </Button>
         </div>
         {open && navigation && (

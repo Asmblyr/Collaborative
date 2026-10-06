@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { ApiError, createClient } from "@asmblyr/sdk";
-import type { CurrentUser } from "@asmblyr/contracts";
+import { ApiError, createClient } from "@asmblyr-collaborative/sdk";
+import type { CurrentUser } from "@asmblyr-collaborative/contracts";
 export { safeNext } from "./safe-next";
 
 export const COOKIE_PREFIX = process.env.SESSION_COOKIE_PREFIX ?? "asmblyr";

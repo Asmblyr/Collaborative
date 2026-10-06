@@ -5,4 +5,4 @@ export type {
   FormCondition,
   FormNode,
   FormLayout,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";

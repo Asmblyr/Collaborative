@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { parseTags } from "@asmblyr-collaborative/contracts";
+import { tagErrorMessage } from "@/components/items/tag-values";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api-request";
 import type { CollectionField } from "@/components/items/types";
@@ -10,8 +12,10 @@ import {
   defaultPayload,
   InvalidDefaultError,
 } from "./field-default-value";
+import { fieldChoicePayload } from "./field-choice-values";
 import { defaultPresentation } from "./field-presentation-defaults";
 import { useEditorDraft } from "./editor-lifecycle";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function useFieldEditor({
   collection,
@@ -24,6 +28,8 @@ export function useFieldEditor({
   type?: DataFieldType;
   onSaved: () => void;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [name, setName] = useState(field?.name ?? "");
   const [required, setRequired] = useState(field?.required ?? false);
@@ -35,25 +41,38 @@ export function useFieldEditor({
     defaultInput(field?.defaultValue, field?.type ?? "text"),
   );
   const [searchable, setSearchable] = useState(field?.searchable ?? true);
+  const [searchPriority, setSearchPriority] = useState(
+    field?.searchPriority ?? null,
+  );
   const [indexed, setIndexed] = useState(field?.searchIndexed ?? false);
   const [relationSearchable, setRelationSearchable] = useState(
     field?.searchable ?? false,
   );
-  const [presentation, setPresentation] = useState(
-    field?.presentation ?? {
-      ...defaultPresentation,
-      ...(type === "select" || type === "multiselect"
-        ? { interface: type, options: [{ value: "", label: "" }] }
-        : {}),
-    },
-  );
+  const [presentation, setPresentation] = useState(() => {
+    if (field?.presentation) {
+      return field.presentation;
+    }
+    if (type === "select" || type === "multiselect") {
+      return {
+        ...defaultPresentation,
+        interface: type,
+        options: [{ value: "", label: "" }],
+      };
+    }
+    if (type === "tags") {
+      return { ...defaultPresentation, interface: "tags" as const };
+    }
+    return defaultPresentation;
+  });
   const [created, setCreated] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   let selectedType: string | undefined = field?.type ?? type;
   if (selectedType === "select") selectedType = "text";
-  if (selectedType === "multiselect") selectedType = "json";
-  if (!selectedType) throw new Error("Тип нового поля не выбран");
+  if (selectedType === "multiselect" || selectedType === "tags") {
+    selectedType = "json";
+  }
+  if (!selectedType) throw new Error(copy("Тип нового поля не выбран"));
   const resolvedType: string = selectedType;
   const textField = selectedType === "text" || selectedType === "email";
   const relationField = Boolean(field?.relation);
@@ -72,9 +91,12 @@ export function useFieldEditor({
   const searchChanged =
     textField &&
     (searchable !== (field?.searchable ?? true) ||
-      indexed !== (field?.searchIndexed ?? false));
+      indexed !== (field?.searchIndexed ?? false) ||
+      searchPriority !== (field?.searchPriority ?? null));
   const relationSearchChanged =
-    relationField && relationSearchable !== (field?.searchable ?? false);
+    relationField &&
+    (relationSearchable !== (field?.searchable ?? false) ||
+      searchPriority !== (field?.searchPriority ?? null));
   const presentationChanged =
     JSON.stringify(presentation) !==
     JSON.stringify(field?.presentation ?? defaultPresentation);
@@ -86,6 +108,7 @@ export function useFieldEditor({
       hasDefault,
       defaultValue,
       searchable,
+      searchPriority,
       indexed,
       relationSearchable,
       presentation,
@@ -104,26 +127,27 @@ export function useFieldEditor({
     setPending(true);
     setMessage("");
     try {
+      const nextPresentation = fieldChoicePayload(
+        presentation,
+        resolvedType,
+        copy,
+      );
+      let defaultSetting =
+        resolvedType !== "relation" && hasDefault
+          ? defaultPayload(resolvedType, defaultValue, copy)
+          : null;
       if (
-        presentation.interface === "select" ||
-        presentation.interface === "multiselect"
+        hasDefault &&
+        nextPresentation.interface === "tags" &&
+        defaultSetting !== null
       ) {
-        const options = presentation.options ?? [];
-        if (
-          !options.length ||
-          options.some((o) => !o.value.trim() || !o.label.trim()) ||
-          new Set(options.map((o) => o.value)).size !== options.length
-        ) {
-          throw new InvalidDefaultError(
-            "Задайте непустые, уникальные значения и подписи вариантов во вкладке «Отображение»",
-          );
+        try {
+          defaultSetting = parseTags(defaultSetting, required);
+        } catch (error) {
+          throw new InvalidDefaultError(tagErrorMessage(error, copy));
         }
       }
-      const defaultSetting =
-        resolvedType !== "relation" && hasDefault
-          ? defaultPayload(resolvedType, defaultValue)
-          : null;
-      if (hasDefault && presentation.options) {
+      if (hasDefault && nextPresentation.options) {
         if (
           required &&
           presentation.interface === "multiselect" &&
@@ -131,7 +155,9 @@ export function useFieldEditor({
           !defaultSetting.length
         ) {
           throw new InvalidDefaultError(
-            "Для обязательного поля выберите хотя бы один вариант в default",
+            copy(
+              "Для обязательного поля выберите хотя бы один вариант в default",
+            ),
           );
         }
         const values =
@@ -140,10 +166,12 @@ export function useFieldEditor({
             ? defaultSetting
             : [defaultSetting];
         if (
-          values.some((v) => !presentation.options?.some((o) => o.value === v))
+          values.some(
+            (v) => !nextPresentation.options?.some((o) => o.value === v),
+          )
         )
           throw new InvalidDefaultError(
-            "Default должен содержать только настроенные варианты",
+            copy("Default должен содержать только настроенные варианты"),
           );
       }
       const fieldName = field?.name ?? name;
@@ -170,9 +198,10 @@ export function useFieldEditor({
         field || created ? "PUT" : "POST",
         {
           ...(basicChanged ? { field: definition } : {}),
-          presentation,
+          presentation: nextPresentation,
           ...(textField ? { searchable } : {}),
           ...(relationField ? { relationSearchable } : {}),
+          ...(textField || relationField ? { searchPriority } : {}),
         },
       );
       if (!field) setCreated(true);
@@ -181,7 +210,15 @@ export function useFieldEditor({
           await apiRequest(`${path}/search`, "PUT", { searchable, indexed });
         } catch (error) {
           setMessage(
-            `Настройки поля сохранены. Индекс поиска не обновлён: ${error instanceof Error ? error.message : "ошибка соединения"}. Повторите сохранение.`,
+            copy(
+              "Настройки поля сохранены. Индекс поиска не обновлён: {{value0}}. Повторите сохранение.",
+              {
+                value0:
+                  error instanceof Error
+                    ? error.message
+                    : copy("ошибка соединения"),
+              },
+            ),
           );
           router.refresh();
           return;
@@ -193,7 +230,7 @@ export function useFieldEditor({
       setMessage(
         error instanceof Error
           ? error.message
-          : "Не удалось связаться с сервером",
+          : copy("Не удалось связаться с сервером"),
       );
     } finally {
       setPending(false);
@@ -213,6 +250,8 @@ export function useFieldEditor({
     setDefaultValue,
     searchable,
     setSearchable,
+    searchPriority,
+    setSearchPriority,
     indexed,
     setIndexed,
     relationSearchable,

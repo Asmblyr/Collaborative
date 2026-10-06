@@ -1,5 +1,7 @@
+import { parseSearchPriority } from "./search-priority.js";
 import { createHash } from "node:crypto";
 import type { Knex } from "knex";
+import { assertCollectionWritable } from "./source-access.js";
 import { fieldTypeFromDatabase } from "./field-types.js";
 import {
   findCollectionSettings,
@@ -16,6 +18,9 @@ import {
 interface SearchSettings {
   searchable: boolean;
   indexed: boolean;
+  searchPriority?:
+    | import("@asmblyr-collaborative/contracts").SearchPriority
+    | null;
 }
 
 function parseSettings(body: unknown): SearchSettings {
@@ -26,7 +31,9 @@ function parseSettings(body: unknown): SearchSettings {
   }
   const value = body as Record<string, unknown>;
   if (
-    Object.keys(value).length !== 2 ||
+    Object.keys(value).some(
+      (key) => !["searchable", "indexed", "searchPriority"].includes(key),
+    ) ||
     typeof value.searchable !== "boolean" ||
     typeof value.indexed !== "boolean"
   ) {
@@ -34,7 +41,13 @@ function parseSettings(body: unknown): SearchSettings {
       "Expected searchable and indexed boolean settings",
     );
   }
-  return { searchable: value.searchable, indexed: value.indexed };
+  return {
+    searchable: value.searchable,
+    indexed: value.indexed,
+    ...(Object.hasOwn(value, "searchPriority")
+      ? { searchPriority: parseSearchPriority(value.searchPriority) }
+      : {}),
+  };
 }
 
 export function searchIndexName(collection: string, field: string): string {
@@ -67,6 +80,7 @@ export async function updateFieldSearch(
     ]);
     const collectionSettings = await findCollectionSettings(database, name);
     if (!collectionSettings) throw new CollectionNotFoundError(name);
+    assertCollectionWritable(collectionSettings);
     if (isManagedColumn(collectionSettings, column)) {
       throw new CollectionInputError(`Field is managed by Core: ${column}`);
     }
@@ -74,7 +88,7 @@ export async function updateFieldSearch(
       `
       SELECT c.data_type, fm.semantic_type, COALESCE(fm.required, FALSE) AS required,
         fm.default_value, r.source_field IS NOT NULL AS is_relation
-      FROM information_schema.columns AS c
+      FROM public.asmblyr_columns AS c
       LEFT JOIN public.asmblyr_field_metadata AS fm
         ON fm.collection_name = ? AND fm.field_name = c.column_name
       LEFT JOIN public.asmblyr_relations AS r
@@ -130,10 +144,11 @@ export async function updateFieldSearch(
     await raw(
       `
       INSERT INTO public.asmblyr_field_metadata
-        (collection_name, field_name, semantic_type, required, default_value, searchable)
-      VALUES (?, ?, ?, ?, ?, ?)
+        (collection_name, field_name, semantic_type, required, default_value, searchable, search_priority)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (collection_name, field_name)
-        DO UPDATE SET searchable = EXCLUDED.searchable
+        DO UPDATE SET searchable = EXCLUDED.searchable,
+          search_priority = CASE WHEN ? THEN EXCLUDED.search_priority ELSE asmblyr_field_metadata.search_priority END
     `,
       [
         name,
@@ -144,6 +159,8 @@ export async function updateFieldSearch(
           ? null
           : JSON.stringify(current.default_value),
         settings.searchable,
+        settings.searchPriority ?? null,
+        Object.hasOwn(settings, "searchPriority"),
       ],
     );
   } finally {
@@ -156,5 +173,11 @@ export async function updateFieldSearch(
       await database.client.releaseConnection(connection);
     }
   }
-  return { searchable: settings.searchable, indexed: settings.indexed };
+  return {
+    searchable: settings.searchable,
+    indexed: settings.indexed,
+    ...(Object.hasOwn(settings, "searchPriority")
+      ? { searchPriority: settings.searchPriority }
+      : {}),
+  };
 }

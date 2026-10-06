@@ -6,18 +6,21 @@ import { ArrowUpRight, ListFilter, LoaderCircle } from "lucide-react";
 import type {
   AssistantSelection,
   AssistantSelectionQuery,
-} from "@asmblyr/contracts";
-import { Button } from "@asmblyr/kit/ui/button";
+} from "@asmblyr-collaborative/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { apiRequest } from "@/lib/api-request";
 import { useAssistantContext } from "./assistant-context";
 import { selectionHref } from "./selection-location";
 import { navigateWithEditorGuard } from "@/components/collections/use-editor-navigation-guard";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function AssistantSelectionCard({
   selection,
 }: {
   selection: AssistantSelection;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const page = useAssistantContext();
   const [pending, setPending] = useState(false);
@@ -30,7 +33,7 @@ export function AssistantSelectionCard({
     setPending(true);
     setError("");
     try {
-      const { collection, collectionId, q, filter, sort, direction } =
+      const { collection, collectionId, q, filter, sort, direction, order } =
         selection;
       const checked = await apiRequest<AssistantSelectionQuery>(
         "/api/assistant/selection/validate",
@@ -42,12 +45,15 @@ export function AssistantSelectionCard({
           filter,
           sort,
           direction,
+          ...(order ? { order } : {}),
         },
       );
       navigateWithEditorGuard(() => router.push(selectionHref(checked)));
     } catch {
       setError(
-        "Не удалось открыть подборку. Проверьте доступ или запросите её заново.",
+        copy(
+          "Не удалось открыть подборку. Проверьте доступ или запросите её заново.",
+        ),
       );
     } finally {
       setPending(false);
@@ -66,9 +72,13 @@ export function AssistantSelectionCard({
         )}
       </div>
       <p className="text-xs leading-5 text-muted-foreground">
-        Открыть таблицу с условиями этой подборки
-        {selection.q ? ` и поиском «${selection.q}»` : ""}.
-        {selection.count !== null && " Количество указано на момент ответа."}
+        {copy("Открыть таблицу с условиями этой подборки ")}
+        {selection.q
+          ? copy(" и поиском «{{value0}}»", { value0: selection.q })
+          : ""}
+        .
+        {selection.count !== null &&
+          copy(" Количество указано на момент ответа.")}
       </p>
       <Button
         variant="secondary"
@@ -78,11 +88,11 @@ export function AssistantSelectionCard({
         onClick={() => void open()}
       >
         {pending ? <LoaderCircle className="animate-spin" /> : <ArrowUpRight />}
-        {pending ? "Проверяем доступ…" : "Открыть записи"}
+        {pending ? copy("Проверяем доступ…") : copy("Открыть записи")}
       </Button>
       {editorOpen && (
         <p className="text-xs text-muted-foreground">
-          Закройте редактор записи перед переходом.
+          {copy("Закройте редактор записи перед переходом. ")}
         </p>
       )}
       {error && (
@@ -90,7 +100,7 @@ export function AssistantSelectionCard({
           role="alert"
           className="text-xs text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
     </div>

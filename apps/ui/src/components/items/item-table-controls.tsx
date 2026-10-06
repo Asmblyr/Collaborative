@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Download, Save, SlidersHorizontal } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { ItemColumn } from "./use-item-columns";
 import type { TableView } from "./table-view-dialog";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemViewMenu({
   all,
@@ -34,6 +35,8 @@ export function ItemViewMenu({
   onApplyView: (view: TableView) => void;
   onManageViews: () => void;
 }) {
+  const copy = useUiCopy();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -42,7 +45,7 @@ export function ItemViewMenu({
           variant="outline"
           size="sm"
         >
-          <SlidersHorizontal aria-hidden="true" /> Вид
+          <SlidersHorizontal aria-hidden="true" /> {copy(" Вид ")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -50,7 +53,7 @@ export function ItemViewMenu({
         className="w-72"
       >
         <p className="px-2 py-2 text-xs font-medium text-muted-foreground">
-          Столбцы
+          {copy("Столбцы ")}
         </p>
         <div className="max-h-64 overflow-y-auto">
           {all.map((column) => {
@@ -80,7 +83,7 @@ export function ItemViewMenu({
         {views.length > 0 && (
           <>
             <p className="px-2 py-2 text-xs font-medium text-muted-foreground">
-              Сохранённые виды
+              {copy("Сохранённые виды ")}
             </p>
             <div className="max-h-48 overflow-auto">
               {views.map((view) => (
@@ -92,18 +95,18 @@ export function ItemViewMenu({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">
                       {view.name}
-                      {view.isDefault ? " · по умолчанию" : ""}
+                      {view.isDefault ? copy(" · по умолчанию") : ""}
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {view.scope === "personal"
-                        ? "Личный"
+                        ? copy("Личный")
                         : view.scope === "workspace"
                           ? "Workspace"
-                          : "Общий"}
+                          : copy("Общий")}
                     </span>
                   </span>
                   {!view.available && (
-                    <span className="text-xs">Недоступен</span>
+                    <span className="text-xs">{copy("Недоступен")}</span>
                   )}
                 </DropdownMenuItem>
               ))}
@@ -113,23 +116,25 @@ export function ItemViewMenu({
         )}
         <DropdownMenuItem onSelect={onManageViews}>
           <Save />
-          Сохранить как… / управлять видами
+          {copy("Сохранить как… / управлять видами ")}
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={saving}
           onSelect={onSave}
         >
           <Save aria-hidden="true" />{" "}
-          {saving ? "Сохраняем…" : "Запомнить сортировку и размер"}
+          {saving ? copy("Сохраняем…") : copy("Запомнить сортировку и размер")}
         </DropdownMenuItem>
         {onImport && (
           <DropdownMenuItem onSelect={onImport}>
-            <Download aria-hidden="true" /> Импортировать из браузера
+            <Download aria-hidden="true" />{" "}
+            {copy(" Импортировать из браузера ")}
           </DropdownMenuItem>
         )}
         <p className="px-2 py-2 text-xs leading-relaxed text-muted-foreground">
-          Столбцы сохраняются автоматически. Именованные виды запоминают все
-          настройки таблицы.
+          {copy(
+            "Столбцы сохраняются автоматически. Именованные виды запоминают все настройки таблицы. ",
+          )}
         </p>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,7 +1,7 @@
 import type { Knex } from "knex";
 import type { AuthenticatedUser } from "../auth/tokens.js";
 import { InvalidCredentialsError } from "../auth/validation.js";
-import type { PresenceResult } from "@asmblyr/contracts";
+import type { PresenceResult } from "@asmblyr-collaborative/contracts";
 import { ItemError } from "../items/validation.js";
 
 export const presenceLeaseSeconds = 30;

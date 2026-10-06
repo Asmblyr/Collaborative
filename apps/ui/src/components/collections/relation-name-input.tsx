@@ -1,4 +1,4 @@
-import { Input } from "@asmblyr/kit/ui/input";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 const namePattern = "[a-z][a-z0-9_]*";
 export function NameInput({

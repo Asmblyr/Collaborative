@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Plus, Upload } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { FilePreview } from "./file-preview";
 import { fileSize, type FilePage, type StoredFile } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function FilePicker({
   selected,
@@ -27,6 +28,8 @@ export function FilePicker({
   onChoose: (files: StoredFile[]) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  const copy = useUiCopy();
+
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState("");
   const [page, setPage] = useState(1),
@@ -47,12 +50,13 @@ export function FilePicker({
           `/api/files?${new URLSearchParams({ search: query, page: String(page), limit: "20" })}`,
           { signal: controller.signal },
         );
-        if (!response.ok) throw new Error("Не удалось загрузить библиотеку");
+        if (!response.ok)
+          throw new Error(copy("Не удалось загрузить библиотеку"));
         setResult((await response.json()) as FilePage);
       } catch (reason) {
         if (!controller.signal.aborted)
           setError(
-            reason instanceof Error ? reason.message : "Ошибка загрузки",
+            reason instanceof Error ? reason.message : copy("Ошибка загрузки"),
           );
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -62,16 +66,20 @@ export function FilePicker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [open, query, page]);
+  }, [open, query, page, copy]);
 
   async function upload(files: File[]) {
     if (!result || lock.current || !files.length) return;
     if (files.length > (multiple ? Math.min(20, 100 - selected.length) : 1)) {
-      setError("Выбрано слишком много файлов");
+      setError(copy("Выбрано слишком много файлов"));
       return;
     }
     if (files.some((file) => file.size > result.meta.maxFileBytes)) {
-      setError(`Размер файла — до ${fileSize(result.meta.maxFileBytes)}`);
+      setError(
+        copy("Размер файла — до {{value0}}", {
+          value0: fileSize(result.meta.maxFileBytes, copy),
+        }),
+      );
       return;
     }
     lock.current = true;
@@ -92,12 +100,14 @@ export function FilePicker({
         });
         const body = await response.json();
         if (!response.ok)
-          throw new Error(body.message || "Не удалось загрузить файл");
+          throw new Error(body.message || copy("Не удалось загрузить файл"));
         completed.push(body.data as StoredFile);
       }
       setOpen(false);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Ошибка загрузки");
+      setError(
+        reason instanceof Error ? reason.message : copy("Ошибка загрузки"),
+      );
     } finally {
       if (completed.length) onChoose(completed);
       lock.current = false;
@@ -121,7 +131,7 @@ export function FilePicker({
           disabled={disabled || uploading}
         >
           <Plus aria-hidden />
-          {multiple ? "Добавить файлы" : "Выбрать файл"}
+          {multiple ? copy("Добавить файлы") : copy("Выбрать файл")}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -130,8 +140,8 @@ export function FilePicker({
         className="w-[min(420px,calc(100vw-3rem))] space-y-3 p-3"
       >
         <Input
-          aria-label="Поиск файлов"
-          placeholder="Найти файл…"
+          aria-label={copy("Поиск файлов")}
+          placeholder={copy("Найти файл…")}
           value={query}
           disabled={uploading}
           onChange={(event) => {
@@ -146,7 +156,7 @@ export function FilePicker({
           {loading ? (
             <p className="flex items-center gap-2 p-4 text-sm">
               <Loader2 className="size-4 animate-spin" />
-              Загрузка…
+              {copy("Загрузка… ")}
             </p>
           ) : (
             result?.data
@@ -174,7 +184,7 @@ export function FilePicker({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{file.title}</span>
                     <span className="block text-xs font-normal text-muted-foreground">
-                      {fileSize(file.size)}
+                      {fileSize(file.size, copy)}
                     </span>
                   </span>
                   {selected.includes(file.id) && <Check className="size-4" />}
@@ -183,7 +193,7 @@ export function FilePicker({
           )}
           {!loading && result && !result.data.length && (
             <p className="p-4 text-sm text-muted-foreground">
-              Файлы не найдены
+              {copy("Файлы не найдены ")}
             </p>
           )}
         </div>
@@ -196,7 +206,7 @@ export function FilePicker({
               disabled={page === 1 || loading || uploading}
               onClick={() => setPage(page - 1)}
             >
-              Назад
+              {copy("Назад ")}
             </Button>
             <span>
               {page} / {Math.ceil(result.meta.total / 20)}
@@ -208,7 +218,7 @@ export function FilePicker({
               disabled={page * 20 >= result.meta.total || loading || uploading}
               onClick={() => setPage(page + 1)}
             >
-              Далее
+              {copy("Далее ")}
             </Button>
           </div>
         )}
@@ -225,7 +235,7 @@ export function FilePicker({
           onClick={() => input.current?.click()}
         >
           {uploading ? <Loader2 className="animate-spin" /> : <Upload />}
-          Загрузить с устройства
+          {copy("Загрузить с устройства ")}
         </Button>
         <input
           ref={input}
@@ -233,7 +243,7 @@ export function FilePicker({
           multiple={multiple}
           className="sr-only"
           tabIndex={-1}
-          aria-label="Загрузить вложения"
+          aria-label={copy("Загрузить вложения")}
           disabled={uploading}
           onChange={(event) => {
             void upload(Array.from(event.target.files ?? []));
@@ -245,7 +255,7 @@ export function FilePicker({
             role="alert"
             className="text-xs text-destructive"
           >
-            {error}
+            {copy(error)}
           </p>
         )}
       </PopoverContent>

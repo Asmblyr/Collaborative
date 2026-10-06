@@ -20,6 +20,15 @@ WebAuthn реализован через SimpleWebAuthn: discoverable credential
 
 `AUTH_UI_URL` задаёт точный публичный origin и обязателен в production. HTTPS обязателен, кроме локального localhost. Опциональный `PASSKEY_RP_ID` должен совпадать с hostname. При смене домена нужны новые ключи. Вход через BFF выдаёт только `{ok:true}` и HttpOnly cookies; passkey challenge дополнительно связан с cookie браузера.
 
+## Подключение CLI
+
+`asm connect` открывает `/sdk/connect` в админке для входа и подтверждения получения
+схемы. CLI использует PKCE S256, одноразовый код на 60 секунд и точный callback на
+`127.0.0.1` со случайным портом. Доступ `schema:read` действует 10 минут, связан с
+активной сессией и принимается только `GET /schema`. Он не даёт читать или менять
+записи. CLI не сохраняет токен; следующий онлайн-запрос снова требует входа либо
+отдельного API-ключа из env/stdin. Подробнее — [CLI](../reference/cli-guide.md).
+
 ## SSO
 
 Поддержаны OIDC и OAuth через конфигурацию провайдеров. Ключ провайдера задаёт URL `/sign/sso/<provider>/callback` на UI. Серверные endpoints Core — `/auth/sso/:provider/start` и `/callback`.

@@ -9,9 +9,9 @@ import { NameInput } from "./relation-name-input";
 import { RelationBehaviorSettings } from "./relation-behavior-settings";
 
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,9 +19,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+} from "@asmblyr-collaborative/kit/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import type { Collection } from "@/components/items/types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function RelationCreateForm({
   collection,
@@ -40,6 +46,8 @@ export function RelationCreateForm({
   onCancel: () => void;
   onBack: () => void;
 }) {
+  const copy = useUiCopy();
+
   const editor = useRelationEditor(collection, collections, kind, onSaved);
   const {
     section,
@@ -87,14 +95,14 @@ export function RelationCreateForm({
           disabled={pending}
           onClick={onBack}
         >
-          <ArrowLeft aria-hidden="true" /> К выбору типа
+          <ArrowLeft aria-hidden="true" /> {copy(" К выбору типа ")}
         </Button>
         <Badge variant="secondary">
           {kind === "m2o"
-            ? "Многие к одному"
+            ? copy("Многие к одному")
             : kind === "o2m"
-              ? "Один ко многим"
-              : "Многие ко многим"}
+              ? copy("Один ко многим")
+              : copy("Многие ко многим")}
         </Badge>
       </div>
       {message && (
@@ -102,7 +110,7 @@ export function RelationCreateForm({
           role="alert"
           className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <Tabs
@@ -119,21 +127,21 @@ export function RelationCreateForm({
             value="basic"
             disabled={pending}
           >
-            Основное
+            {copy("Основное ")}
           </TabsTrigger>
           {kind !== "m2o" && (
             <TabsTrigger
               value="structure"
               disabled={pending}
             >
-              Структура
+              {copy("Структура ")}
             </TabsTrigger>
           )}
           <TabsTrigger
             value="behavior"
             disabled={pending}
           >
-            Поведение
+            {copy("Поведение ")}
           </TabsTrigger>
         </TabsList>
         <TabsContent
@@ -142,18 +150,24 @@ export function RelationCreateForm({
         >
           <NameInput
             id="relation-name"
-            label={kind === "m2o" ? "Имя внешнего ключа" : "Имя поля связи"}
+            label={
+              kind === "m2o"
+                ? copy("Имя внешнего ключа")
+                : copy("Имя поля связи")
+            }
             value={name}
             onChange={setName}
             required
             hint={
               kind === "m2o"
-                ? "Физический столбец в этой коллекции."
-                : "Виртуальное поле в этой коллекции."
+                ? copy("Физический столбец в этой коллекции.")
+                : copy("Виртуальное поле в этой коллекции.")
             }
           />
           <div className="space-y-2">
-            <Label htmlFor="relation-target">Связанная коллекция</Label>
+            <Label htmlFor="relation-target">
+              {copy("Связанная коллекция")}
+            </Label>
             <Select
               value={targetCollection}
               onValueChange={(value) => {
@@ -168,7 +182,7 @@ export function RelationCreateForm({
                 id="relation-target"
                 className="h-10 w-full"
               >
-                <SelectValue placeholder="Выберите коллекцию" />
+                <SelectValue placeholder={copy("Выберите коллекцию")} />
               </SelectTrigger>
               <SelectContent container={portalContainer}>
                 {collections.map((entry) => (
@@ -187,10 +201,12 @@ export function RelationCreateForm({
           {kind !== "o2m" && (
             <NameInput
               id="relation-reverse"
-              label="Поле на обратной стороне (необязательно)"
+              label={copy("Поле на обратной стороне (необязательно)")}
               value={reverseField}
               onChange={setReverseField}
-              hint="Виртуальное поле для просмотра связанных записей в целевой коллекции."
+              hint={copy(
+                "Виртуальное поле для просмотра связанных записей в целевой коллекции.",
+              )}
             />
           )}
         </TabsContent>
@@ -202,7 +218,9 @@ export function RelationCreateForm({
           >
             {!targetCollection && (
               <p className="text-sm text-muted-foreground">
-                Сначала выберите связанную коллекцию на вкладке «Основное».
+                {copy(
+                  "Сначала выберите связанную коллекцию на вкладке «Основное». ",
+                )}
               </p>
             )}
             {kind === "o2m" && targetCollection && (
@@ -217,13 +235,14 @@ export function RelationCreateForm({
                         setMessage("");
                       }}
                     />
-                    Использовать существующий внешний ключ
+                    {copy("Использовать существующий внешний ключ ")}
                   </label>
                 )}
                 {reuseExisting ? (
                   <div className="space-y-2">
                     <Label htmlFor="relation-existing-key">
-                      Внешний ключ в {targetCollection}
+                      {copy("Внешний ключ в ")}
+                      {targetCollection}
                     </Label>
                     <Select
                       value={foreignKey}
@@ -237,7 +256,7 @@ export function RelationCreateForm({
                         id="relation-existing-key"
                         className="h-10 w-full"
                       >
-                        <SelectValue placeholder="Выберите поле" />
+                        <SelectValue placeholder={copy("Выберите поле")} />
                       </SelectTrigger>
                       <SelectContent container={portalContainer}>
                         {existingKeys.map((field) => (
@@ -254,7 +273,9 @@ export function RelationCreateForm({
                 ) : (
                   <NameInput
                     id="relation-foreign-key"
-                    label={`Новый внешний ключ в ${targetCollection || "другой коллекции"}`}
+                    label={copy("Новый внешний ключ в {{value0}}", {
+                      value0: targetCollection || copy("другой коллекции"),
+                    })}
                     value={foreignKey || `${collection}_id`}
                     onChange={setForeignKey}
                     required
@@ -267,23 +288,27 @@ export function RelationCreateForm({
               <div className="space-y-4 rounded-xl border p-4">
                 <NameInput
                   id="relation-junction"
-                  label="Промежуточная коллекция"
+                  label={copy("Промежуточная коллекция")}
                   value={junctionName}
                   onChange={setJunctionCollection}
                   required
-                  hint="Будет создана как обычная коллекция. Имя нельзя изменить после создания."
+                  hint={copy(
+                    "Будет создана как обычная коллекция. Имя нельзя изменить после создания.",
+                  )}
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <NameInput
                     id="relation-source-key"
-                    label={`Ключ к ${collection}`}
+                    label={copy("Ключ к {{value0}}", { value0: collection })}
                     value={sourceKeyName}
                     onChange={setSourceKey}
                     required
                   />
                   <NameInput
                     id="relation-target-key"
-                    label={`Ключ к ${targetCollection || "связанной коллекции"}`}
+                    label={copy("Ключ к {{value0}}", {
+                      value0: targetCollection || copy("связанной коллекции"),
+                    })}
                     value={targetKeyName}
                     onChange={setTargetKey}
                     required
@@ -296,7 +321,7 @@ export function RelationCreateForm({
                       setAllowDuplicates(checked === true)
                     }
                   />
-                  Разрешить повторные пары записей
+                  {copy("Разрешить повторные пары записей ")}
                 </label>
               </div>
             )}
@@ -315,7 +340,7 @@ export function RelationCreateForm({
           type="submit"
           disabled={pending}
         >
-          {pending ? "Создаём…" : "Создать связь"}
+          {pending ? copy("Создаём…") : copy("Создать связь")}
         </Button>
         <Button
           type="button"
@@ -323,7 +348,7 @@ export function RelationCreateForm({
           disabled={pending}
           onClick={onCancel}
         >
-          Отмена
+          {copy("Отмена ")}
         </Button>
       </div>
     </form>

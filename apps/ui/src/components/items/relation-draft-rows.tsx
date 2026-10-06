@@ -1,8 +1,9 @@
 "use client";
 
 import { Settings2, Undo2 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { RecordDraft, RelationDraft } from "./record-draft-model";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function RelationDraftRows({
   draft,
@@ -17,11 +18,13 @@ export function RelationDraftRows({
   onEdit: (key: string, record: RecordDraft) => void;
   onEditAttributes?: (kind: "create" | "attach" | "link", id: string) => void;
 }) {
+  const copy = useUiCopy();
+
   const rows = [
     ...(draft.create ?? []).map((entry) => ({
       key: entry.key,
-      label: entry.record.label ?? "Новая запись",
-      state: "Будет создана",
+      label: entry.record.label ?? copy("Новая запись"),
+      state: copy("Будет создана"),
       attributes: entry.link
         ? () => onEditAttributes?.("create", entry.key)
         : undefined,
@@ -35,7 +38,7 @@ export function RelationDraftRows({
     ...(draft.attach ?? []).map((entry) => ({
       key: `attach:${entry.id}`,
       label: entry.label ?? entry.id,
-      state: "Будет добавлена",
+      state: copy("Будет добавлена"),
       attributes: entry.record
         ? () => onEditAttributes?.("attach", entry.id)
         : undefined,
@@ -49,7 +52,7 @@ export function RelationDraftRows({
     ...(draft.detach ?? []).map((id) => ({
       key: `detach:${id}`,
       label: draft.removedLabels?.[id] ?? id,
-      state: "Будет отвязана",
+      state: copy("Будет отвязана"),
       attributes: undefined,
       edit: undefined,
       undo: () =>
@@ -60,8 +63,8 @@ export function RelationDraftRows({
     })),
     ...(draft.links ?? []).map((entry) => ({
       key: `link:${entry.id}`,
-      label: `Параметры связи ${entry.id}`,
-      state: "Будут изменены",
+      label: copy("Параметры связи {{value0}}", { value0: entry.id }),
+      state: copy("Будут изменены"),
       attributes: () => onEditAttributes?.("link", entry.id),
       edit: undefined,
       undo: () =>
@@ -74,11 +77,12 @@ export function RelationDraftRows({
   if (!rows.length) return null;
   return (
     <section
-      aria-label="Изменения связей в черновике"
+      aria-label={copy("Изменения связей в черновике")}
       className="space-y-1 border-t bg-muted/20 p-3"
     >
       <p className="mb-2 text-xs font-medium text-muted-foreground">
-        В черновике · {rows.length}
+        {copy("В черновике · ")}
+        {rows.length}
       </p>
       {rows.map((row) => (
         <div
@@ -107,7 +111,9 @@ export function RelationDraftRows({
               variant="ghost"
               size="icon-sm"
               disabled={busy}
-              aria-label={`Параметры связи: ${row.label}`}
+              aria-label={copy("Параметры связи: {{value0}}", {
+                value0: row.label,
+              })}
               onClick={row.attributes}
             >
               <Settings2 />
@@ -118,7 +124,7 @@ export function RelationDraftRows({
             variant="ghost"
             size="icon-sm"
             disabled={busy}
-            aria-label={`Отменить: ${row.label}`}
+            aria-label={copy("Отменить: {{value0}}", { value0: row.label })}
             onClick={row.undo}
           >
             <Undo2 />

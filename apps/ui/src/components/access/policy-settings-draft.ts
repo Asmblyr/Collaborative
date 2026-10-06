@@ -1,7 +1,7 @@
 import {
   settingsSections,
   type SettingsPermissionInput,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { Permission } from "./types";
 
 export function policySettingsDraft(

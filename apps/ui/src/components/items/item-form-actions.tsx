@@ -1,6 +1,9 @@
+"use client";
+
 import { LoaderCircle, Plus, Save } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { CollectionField } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemFormActions({
   formId,
@@ -19,6 +22,8 @@ export function ItemFormActions({
   disabled?: boolean;
   label?: string;
 }) {
+  const copy = useUiCopy();
+
   const Icon = pending ? LoaderCircle : creating ? Plus : Save;
   return (
     <div className="flex items-center justify-between gap-3">
@@ -29,7 +34,7 @@ export function ItemFormActions({
           onClick={onCancel}
           disabled={pending}
         >
-          Отмена
+          {copy("Отмена ")}
         </Button>
       )}
       <Button
@@ -44,6 +49,8 @@ export function ItemFormActions({
               ![
                 "text",
                 "integer",
+                "bigint",
+                "date",
                 "boolean",
                 "datetime",
                 "email",
@@ -62,8 +69,8 @@ export function ItemFormActions({
           className={pending ? "animate-spin" : undefined}
         />
         {pending
-          ? "Сохраняем…"
-          : (label ?? (creating ? "Создать запись" : "Сохранить"))}
+          ? copy("Сохраняем…")
+          : (label ?? (creating ? copy("Создать запись") : copy("Сохранить")))}
       </Button>
     </div>
   );

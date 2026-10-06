@@ -1,4 +1,4 @@
-import type { JsonValue } from "@asmblyr/contracts";
+import type { JsonValue } from "@asmblyr-collaborative/contracts";
 import type {
   CollectionDefinition,
   CollectionFieldDefinition,
@@ -9,6 +9,8 @@ interface FieldValues {
   email: string;
   uuid: string;
   integer: number;
+  bigint: string;
+  date: string;
   decimal: string;
   boolean: boolean;
   datetime: string;

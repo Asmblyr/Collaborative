@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { cn } from "cn";
-import { usePortalContainer } from "@asmblyr/kit/ui/portal-container";
+import { usePortalContainer } from "@asmblyr-collaborative/kit/ui/portal-container";
 
 function Popover(props: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   return (

@@ -1,4 +1,4 @@
-import type { ItemsService } from "@asmblyr/kit";
+import type { ItemsService } from "@asmblyr-collaborative/kit";
 import type { Knex } from "knex";
 import { readItem, readItemList } from "../items/reader.js";
 import {

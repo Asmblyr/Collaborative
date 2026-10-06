@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import knex from "knex";
-import { defaultCollectionState } from "@asmblyr/contracts";
+import { defaultCollectionState } from "@asmblyr-collaborative/contracts";
 import { createCollection } from "../src/collections/service.js";
 import { saveCollectionState } from "../src/collections/state-settings.js";
 import { deleteCollectionField } from "../src/collections/lifecycle-service.js";

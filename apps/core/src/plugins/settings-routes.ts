@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Knex } from "knex";
-import { EndpointError } from "@asmblyr/kit";
+import { EndpointError } from "@asmblyr-collaborative/kit";
 import {
   requireSettingsSection,
   requireSettingsRead,
@@ -52,6 +52,11 @@ export function registerPluginSettingsRoutes(
       data: await Promise.all(
         plugins.map(async (plugin) => ({
           name: plugin.name,
+          title:
+            plugin.translations?.ru?.["settings.title"] ??
+            plugin.settings?.title ??
+            plugin.namespace ??
+            plugin.name,
           namespace: plugin.namespace ?? null,
           capabilities: plugin.capabilities ?? [],
           settings: plugin.settings

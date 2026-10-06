@@ -6,6 +6,10 @@ import {
 } from "../settings/access.js";
 import type { AssistantService } from "../assistant/service.js";
 import {
+  resolveRuntime,
+  type RuntimeSource,
+} from "../shared/runtime-source.js";
+import {
   parseAssistantDefaults,
   type AssistantDefaults,
 } from "../assistant/settings.js";
@@ -23,7 +27,7 @@ import { readAssistantTelemetry } from "../assistant/telemetry/repository.js";
 export function registerSettingsRoutes(
   app: FastifyInstance,
   database: Knex | null,
-  assistant: AssistantService | null,
+  assistantSource: RuntimeSource<AssistantService>,
 ) {
   const db = () => {
     if (!database) {
@@ -41,7 +45,8 @@ export function registerSettingsRoutes(
     );
     return user.id;
   }
-  function snapshot(value: AssistantDefaults) {
+  async function snapshot(value: AssistantDefaults) {
+    const assistant = await resolveRuntime(assistantSource);
     const status = assistant?.status();
     return {
       configured: Boolean(assistant),
@@ -57,7 +62,7 @@ export function registerSettingsRoutes(
   app.get("/settings/assistant", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
     await requireSettingsRead(db(), request, "assistant");
-    return { data: snapshot(await loadAssistantDefaults(db())) };
+    return { data: await snapshot(await loadAssistantDefaults(db())) };
   });
   app.get("/settings/assistant/telemetry", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
@@ -75,13 +80,14 @@ export function registerSettingsRoutes(
     async (request, reply) => {
       reply.header("Cache-Control", "no-store");
       const actorId = await authorize(request.headers.authorization);
+      const assistant = await resolveRuntime(assistantSource);
       const value = parseAssistantDefaults(
         request.body,
         assistant?.status().settings,
         await loadAssistantDefaults(db()),
       );
       await saveAssistantDefaults(db(), actorId, value);
-      return { data: snapshot(value) };
+      return { data: await snapshot(value) };
     },
   );
 }

@@ -12,6 +12,7 @@ export type {
   PermissionRule,
 } from "./permission-filter.js";
 export type {
+  ItemOrder,
   ItemListOptions,
   ItemListResult,
   ItemMutationResult,
@@ -28,6 +29,12 @@ export type {
   ItemCommitResult,
 } from "./item-commit.js";
 export { settingsSections } from "./settings-access.js";
+export {
+  columnWidthLimits,
+  isColumnWidth,
+  reconcileColumnWidths,
+} from "./table-columns.js";
+export type { ColumnPreferences } from "./table-columns.js";
 export { presencePages } from "./presence.js";
 export type {
   PresenceScope,
@@ -44,6 +51,16 @@ export type {
 } from "./settings-access.js";
 export type { CurrentUser, CurrentUserResult } from "./users.js";
 export type { ApiErrorBody } from "./api-error.js";
+export type { NotificationItem, NotificationResult } from "./notifications.js";
+export type {
+  SchemaValueType,
+  SchemaFilterKind,
+  SchemaPluginMethod,
+  SchemaField,
+  SchemaCollection,
+  SchemaSnapshot,
+  SchemaResult,
+} from "./schema.js";
 export type { FieldExtension } from "./field-extension.js";
 export type {
   PluginSettingField,
@@ -53,12 +70,21 @@ export type {
   PluginSettingsSnapshot,
 } from "./plugin-settings.js";
 export type {
+  SearchPriority,
   CollectionMode,
   FieldType,
   PrimaryKey,
   PrimaryKeyType,
   Timestamps,
 } from "./collections.js";
+
+export { parseCalendarDate, parseBigintString } from "./scalar-values.js";
+export {
+  fieldConditionMatches,
+  relationFilterDependencies,
+  resolveRelationChoiceFilter,
+} from "./field-rules.js";
+export type { FieldRules, RelationChoiceFilter } from "./field-rules.js";
 
 export interface AssistantUsage {
   inputTokens: number | null;
@@ -68,6 +94,14 @@ export interface AssistantUsage {
   reasoningTokens: number | null;
 }
 
+export interface AssistantToolDiagnostic {
+  index: number;
+  name: string;
+  durationMs: number;
+  status: "succeeded" | "failed";
+  errorCode: string | null;
+}
+
 export interface AssistantTurnSummary {
   turnId: string;
   requestedModel: string;
@@ -75,6 +109,8 @@ export interface AssistantTurnSummary {
   modelCalls: number;
   toolCalls: number;
   toolErrors: number;
+  /** At most 32 entries; no arguments, results or exception messages. */
+  toolTrace?: AssistantToolDiagnostic[];
   durationMs: number;
   status: "succeeded" | "failed" | "cancelled";
   errorCode: string | null;
@@ -160,6 +196,7 @@ export interface RelationPresentation {
 }
 
 export interface FieldPresentation {
+  translations?: import("./localization.js").LabelTranslations;
   label: string;
   description: string;
   placeholder: string;
@@ -169,15 +206,21 @@ export interface FieldPresentation {
     | "textarea"
     | "select"
     | "multiselect"
+    | "tags"
     | "markdown"
     | "richtext"
     | "url"
     | "repeater";
   constraints?: FieldConstraints;
+  rules?: import("./field-rules.js").FieldRules;
+  relationFilter?: import("./field-rules.js").RelationChoiceFilter;
+  /** Omit values from item history; value reads still follow field grants. */
+  sensitive?: boolean;
   width: "full" | "half";
   order: number;
   group: string;
-  options?: { value: string; label: string }[];
+  /** Integer selects use numbers; text selects and JSON multiselects use strings. */
+  options?: { value: string | number; label: string }[];
   relation?: RelationPresentation;
   repeater?: RepeaterSettings;
   display?: ValueDisplay;
@@ -218,10 +261,12 @@ export type TermInput = Pick<
   "name" | "description" | "aliases" | "enabled"
 >;
 export type {
+  AssistantDataAccess,
   AssistantSelection,
   AssistantSelectionQuery,
   AssistantFilterProposal,
   AssistantProgress,
+  AssistantActivity,
   AssistantStreamEvent,
 } from "./assistant.js";
 export type {
@@ -229,3 +274,55 @@ export type {
   PluginPreparedAction,
   AssistantPluginResult,
 } from "./plugin-actions.js";
+
+export {
+  uiLocales,
+  themeStyles,
+  resolveLocalizedText,
+} from "./localization.js";
+export type {
+  UiLocale,
+  ThemeStyle,
+  ThemeMode,
+  LabelTranslations,
+  UserPreferences,
+} from "./localization.js";
+export type {
+  TranslationMessages,
+  TranslationCatalogs,
+  TranslatedLabel,
+  TranslationsResult,
+} from "./translations.js";
+export type {
+  IntegrationSection,
+  StorageConnection,
+  AssistantConnection,
+  EncryptionConnection,
+  IntegrationValues,
+  IntegrationSecret,
+  IntegrationState,
+  IntegrationsSnapshot,
+  IntegrationUpdate,
+} from "./integrations.js";
+export type {
+  MaterializedViewCandidate,
+  ConnectMaterializedViewInput,
+} from "./materialized-views.js";
+export type { ServiceKey } from "./services.js";
+export type {
+  AssistantConversation,
+  AssistantHistoryMessage,
+  AssistantConversationPage,
+  AssistantConversationDetail,
+  AssistantConversationReceipt,
+} from "./assistant-history.js";
+export type { GoogleConnection } from "./integrations.js";
+export type {
+  PersonalConnectionStatus,
+  ConnectionWriteProposal,
+  ConnectionWriteDetail,
+  ConnectionWriteResult,
+  ConnectionWriteStatus,
+} from "./connections.js";
+export * from "./monitoring.js";
+export * from "./tags.js";

@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import type { RepeaterField, RepeaterSettings } from "./presentation-types";
 import type { CollectionField, Item, ItemValue } from "./types";
 import { ItemFieldInput } from "./item-field-input";
 import { inputValue, payloadValue } from "./item-input-values";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function repeaterChild(field: RepeaterField): CollectionField {
   return {
@@ -50,14 +51,17 @@ interface RepeaterInputProps {
 }
 
 export function RepeaterInput(props: RepeaterInputProps) {
+  const copy = useUiCopy();
+
   const { value, disabled, id, onChange } = props;
   const rows = repeaterRows(value);
   if (rows === null)
     return (
       <div className="space-y-2">
         <p className="text-sm text-amber-700 dark:text-amber-300">
-          Сохранённое значение не является списком объектов. Данные оставлены
-          без изменений. Для повторяемой формы нужен JSON-массив объектов.
+          {copy(
+            "Сохранённое значение не является списком объектов. Данные оставлены без изменений. Для повторяемой формы нужен JSON-массив объектов. ",
+          )}
         </p>
         <Textarea
           id={id}
@@ -85,6 +89,8 @@ function RepeaterRowsInput({
   id,
   container,
 }: RepeaterInputProps & { rows: Item[] }) {
+  const copy = useUiCopy();
+
   // Mount after legacy raw JSON becomes a list, so every row starts with an identity.
   const [keys, setKeys] = useState(() => rows.map(() => crypto.randomUUID()));
   const [collapsed, setCollapsed] = useState<string[]>([]);
@@ -104,7 +110,7 @@ function RepeaterRowsInput({
       id={id}
       className="@container space-y-3"
       role="group"
-      aria-label="Повторяемая форма"
+      aria-label={copy("Повторяемая форма")}
     >
       {rows.map((row, index) => {
         const key = keys[index] ?? `${id}-${index}`;
@@ -118,7 +124,7 @@ function RepeaterRowsInput({
           ((typeof label === "string" || typeof label === "number") &&
           String(label).trim()
             ? String(label).slice(0, 100)
-            : `Элемент ${index + 1}`);
+            : copy("Элемент {{value0}}", { value0: index + 1 }));
         return (
           <section
             key={key}
@@ -148,7 +154,9 @@ function RepeaterRowsInput({
                 size="icon-sm"
                 variant="ghost"
                 disabled={disabled || index === 0}
-                aria-label={`Поднять элемент ${index + 1}`}
+                aria-label={copy("Поднять элемент {{value0}}", {
+                  value0: index + 1,
+                })}
                 onClick={() => move(index, -1)}
               >
                 <ArrowUp />
@@ -158,7 +166,9 @@ function RepeaterRowsInput({
                 size="icon-sm"
                 variant="ghost"
                 disabled={disabled || index === rows.length - 1}
-                aria-label={`Опустить элемент ${index + 1}`}
+                aria-label={copy("Опустить элемент {{value0}}", {
+                  value0: index + 1,
+                })}
                 onClick={() => move(index, 1)}
               >
                 <ArrowDown />
@@ -168,7 +178,9 @@ function RepeaterRowsInput({
                 size="icon-sm"
                 variant="ghost"
                 disabled={disabled}
-                aria-label={`Удалить элемент ${index + 1}`}
+                aria-label={copy("Удалить элемент {{value0}}", {
+                  value0: index + 1,
+                })}
                 onClick={() =>
                   update(
                     rows.filter((_, i) => i !== index),
@@ -207,7 +219,7 @@ function RepeaterRowsInput({
                       onChange={(draft) => {
                         let parsed: ItemValue;
                         try {
-                          parsed = payloadValue(field, draft);
+                          parsed = payloadValue(field, draft, copy);
                         } catch {
                           parsed = draft;
                         }
@@ -227,7 +239,7 @@ function RepeaterRowsInput({
       })}
       {!rows.length && (
         <p className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-          Пока нет элементов
+          {copy("Пока нет элементов ")}
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
@@ -239,11 +251,12 @@ function RepeaterRowsInput({
           onClick={() => update([...rows, {}], [...keys, crypto.randomUUID()])}
         >
           <Plus />
-          Добавить элемент
+          {copy("Добавить элемент ")}
         </Button>
         <span className="text-xs text-muted-foreground">
           {rows.length} / {settings.maxItems}
-          {settings.minItems > 0 && ` · минимум ${settings.minItems}`}
+          {settings.minItems > 0 &&
+            copy(" · минимум {{value0}}", { value0: settings.minItems })}
         </span>
       </div>
     </div>

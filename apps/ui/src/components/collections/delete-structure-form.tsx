@@ -4,9 +4,15 @@ import { useEditorState } from "./editor-lifecycle";
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUiCopy } from "@/lib/ui-copy";
+import {
+  HttpError,
+  requestErrorMessage,
+  requestJson,
+} from "@/lib/http-request";
 
 interface DeleteImpact {
   itemCount: string;
@@ -21,22 +27,14 @@ interface DeleteStructureFormProps {
   onCancel: () => void;
 }
 
-async function responseMessage(response: Response): Promise<string> {
-  try {
-    const body = (await response.json()) as { message?: string };
-    if (body.message) return body.message;
-  } catch {
-    // An upstream error may not have a JSON body.
-  }
-  return "Не удалось выполнить операцию";
-}
-
 export function DeleteStructureForm({
   collection,
   field,
   onDeleted,
   onCancel,
 }: DeleteStructureFormProps) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [impact, setImpact] = useState<DeleteImpact | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,20 +55,16 @@ export function DeleteStructureForm({
       setImpact(null);
       setMessage("");
       try {
-        const response = await fetch(`${path}/impact`, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(await responseMessage(response));
-        const body = (await response.json()) as { data: DeleteImpact };
+        const body = await requestJson<{ data: DeleteImpact }>(
+          `${path}/impact`,
+          "GET",
+          undefined,
+          controller.signal,
+        );
         setImpact(body.data);
       } catch (error) {
         if (!controller.signal.aborted) {
-          setMessage(
-            error instanceof Error
-              ? error.message
-              : "Не удалось проверить данные",
-          );
+          setMessage(copy(requestErrorMessage(error)));
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -78,7 +72,7 @@ export function DeleteStructureForm({
     }
     void loadImpact();
     return () => controller.abort();
-  }, [path, retry]);
+  }, [path, retry, copy]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -86,19 +80,17 @@ export function DeleteStructureForm({
     setPending(true);
     setMessage("");
     try {
-      const response = await fetch(path, { method: "DELETE" });
-      if (!response.ok) {
-        setMessage(
-          response.status === 409
-            ? "Удаление заблокировано: в базе есть объекты, зависящие от этой структуры."
-            : await responseMessage(response),
-        );
-        return;
-      }
+      await requestJson(path, "DELETE");
       onDeleted();
       router.refresh();
-    } catch {
-      setMessage("Не удалось связаться с сервером");
+    } catch (cause) {
+      setMessage(
+        cause instanceof HttpError && cause.status === 409
+          ? copy(
+              "Удаление заблокировано: в базе есть объекты, зависящие от этой структуры.",
+            )
+          : copy(requestErrorMessage(cause)),
+      );
     } finally {
       setPending(false);
     }
@@ -110,33 +102,43 @@ export function DeleteStructureForm({
       className="space-y-6"
     >
       <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-        <p className="font-medium">Удаление без восстановления</p>
+        <p className="font-medium">{copy("Удаление без восстановления")}</p>
         <p className="text-muted-foreground">
           {field
             ? impact?.virtual
-              ? `Поле ${field} исчезнет из модели. Внешние ключи, промежуточная коллекция и данные останутся.`
-              : `Поле ${field} и его значения во всех записях будут удалены.`
-            : `Коллекция ${collection}, её таблица и все записи будут удалены.`}
+              ? copy(
+                  "Поле {{value0}} исчезнет из модели. Внешние ключи, промежуточная коллекция и данные останутся.",
+                  { value0: field },
+                )
+              : copy(
+                  "Поле {{value0}} и его значения во всех записях будут удалены.",
+                  { value0: field },
+                )
+            : copy(
+                "Коллекция {{value0}}, её таблица и все записи будут удалены.",
+                { value0: collection },
+              )}
         </p>
       </div>
 
       {loading ? (
         <p className="text-sm text-muted-foreground">
-          Проверяем затрагиваемые данные…
+          {copy("Проверяем затрагиваемые данные… ")}
         </p>
       ) : impact ? (
         <div className="space-y-1 rounded-xl border p-4 text-sm">
           <p>
-            Записей в коллекции: <strong>{impact.itemCount}</strong>
+            {copy("Записей в коллекции: ")}
+            <strong>{impact.itemCount}</strong>
           </p>
           {field && !impact.virtual && (
             <p>
-              Значение поля есть у <strong>{impact.populatedCount}</strong>{" "}
-              записей.
+              {copy("Значение поля есть у ")}
+              <strong>{impact.populatedCount}</strong> {copy("записей. ")}
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            Числа получены на момент проверки.
+            {copy("Числа получены на момент проверки. ")}
           </p>
         </div>
       ) : (
@@ -145,13 +147,14 @@ export function DeleteStructureForm({
           variant="outline"
           onClick={() => setRetry((current) => current + 1)}
         >
-          Повторить проверку
+          {copy("Повторить проверку ")}
         </Button>
       )}
 
       <div className="space-y-2">
         <Label htmlFor="delete-confirmation">
-          Для подтверждения введите {target}
+          {copy("Для подтверждения введите ")}
+          {target}
         </Label>
         <Input
           id="delete-confirmation"
@@ -169,7 +172,7 @@ export function DeleteStructureForm({
           role="status"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <div className="flex flex-wrap gap-2">
@@ -178,7 +181,11 @@ export function DeleteStructureForm({
           variant="destructive"
           disabled={pending || !impact || confirmation !== target}
         >
-          {pending ? "Удаляем…" : field ? "Удалить поле" : "Удалить коллекцию"}
+          {pending
+            ? copy("Удаляем…")
+            : field
+              ? copy("Удалить поле")
+              : copy("Удалить коллекцию")}
         </Button>
         <Button
           type="button"
@@ -186,7 +193,7 @@ export function DeleteStructureForm({
           disabled={pending}
           onClick={onCancel}
         >
-          Отмена
+          {copy("Отмена ")}
         </Button>
       </div>
     </form>

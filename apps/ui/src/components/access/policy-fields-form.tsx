@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import type { PolicyCollection } from "./types";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { actionName, type Action } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PolicyFieldsForm({
   readOnly = false,
@@ -21,6 +22,8 @@ export function PolicyFieldsForm({
   onSave: (fields: string[]) => void;
   onClose: () => void;
 }) {
+  const copy = useUiCopy();
+
   const [fields, setFields] = useState<string[]>(initialFields);
   const available = [
     ...new Set([
@@ -55,11 +58,11 @@ export function PolicyFieldsForm({
     <div className="space-y-4 border-t bg-muted/20 px-4 py-4">
       <div>
         <p className="font-medium">
-          {collection.displayName || collection.name} · {actionName[action]} ·
-          поля
+          {collection.displayName || collection.name} ·{" "}
+          {copy(actionName[action])} {copy(" · поля ")}
         </p>
         <p className="text-xs text-muted-foreground">
-          Эти поля будут доступны только для выбранного действия.
+          {copy("Эти поля будут доступны только для выбранного действия. ")}
         </p>
       </div>
       <div className="grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2">
@@ -73,7 +76,9 @@ export function PolicyFieldsForm({
               checked={fields.includes(field)}
               onCheckedChange={(checked) => toggle(field, checked === true)}
             />
-            <span>{field === "*" ? "Все поля, включая новые" : field}</span>
+            <span>
+              {field === "*" ? copy("Все поля, включая новые") : field}
+            </span>
           </label>
         ))}
       </div>
@@ -85,7 +90,7 @@ export function PolicyFieldsForm({
             disabled={fields.length === 0}
             onClick={save}
           >
-            Применить поля
+            {copy("Применить поля ")}
           </Button>
         )}
         <Button
@@ -94,7 +99,7 @@ export function PolicyFieldsForm({
           variant="outline"
           onClick={onClose}
         >
-          {readOnly ? "Закрыть" : "Отмена"}
+          {readOnly ? copy("Закрыть") : copy("Отмена")}
         </Button>
       </div>
     </div>

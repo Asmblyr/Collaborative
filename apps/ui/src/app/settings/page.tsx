@@ -4,19 +4,22 @@ import Link from "next/link";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { SettingsWorkspace } from "@/components/settings/settings-workspace";
 import { AccountTheme } from "@/components/settings/account-theme";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { loadCollections } from "@/lib/collections";
 import { requireSession } from "@/lib/session";
 import { loadWorkspaces } from "@/lib/workspaces";
 import { loadLoginProviders } from "@/lib/sso-server";
 import { loadPluginExtensions } from "@/lib/plugin-extensions";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; sso?: string }>;
+  searchParams: Promise<{ tab?: string; sso?: string; connection?: string }>;
 }) {
+  const copy = await getUiCopy();
+
   const query = await searchParams;
   const returnQuery = new URLSearchParams();
   if (query.tab === "security" || query.tab === "applications") {
@@ -31,7 +34,12 @@ export default async function SettingsPage({
   const { user, token } = await requireSession(returnPath);
   const settings = await loadSettingsAccess(token);
   const providers = await loadLoginProviders();
-  const ssoProps = { providers, initialTab: query.tab, ssoStatus: query.sso };
+  const ssoProps = {
+    providers,
+    initialTab: query.tab,
+    ssoStatus: query.sso,
+    connectionStatus: query.connection,
+  };
   const { data, folders } = await loadCollections(token);
   const collections = data.filter(
     (collection) =>
@@ -51,7 +59,7 @@ export default async function SettingsPage({
             asChild
             variant="ghost"
           >
-            <Link href="/">← На главную</Link>
+            <Link href="/">{copy("← На главную")}</Link>
           </Button>
           <LogoutButton />
         </div>
@@ -71,11 +79,15 @@ export default async function SettingsPage({
     <AdminShell
       settingsSections={settings.sections}
       user={user}
-      collections={collections.map(({ name, folderId, access }) => ({
-        name,
-        folderId,
-        readable: Boolean(access.read),
-      }))}
+      collections={collections.map(
+        ({ name, displayName, translations, folderId, access }) => ({
+          name,
+          displayName,
+          translations,
+          folderId,
+          readable: Boolean(access.read),
+        }),
+      )}
       folders={folders}
       workspaces={workspaces}
       plugins={plugins}

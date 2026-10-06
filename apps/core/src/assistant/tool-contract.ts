@@ -3,8 +3,9 @@ import type {
   AssistantSelection,
   AssistantFilterProposal,
   AssistantStreamEvent,
-} from "@asmblyr/contracts";
-import type { AssistantPluginResult } from "@asmblyr/contracts";
+  AssistantActivity,
+} from "@asmblyr-collaborative/contracts";
+import type { AssistantPluginResult } from "@asmblyr-collaborative/contracts";
 import {
   filterDescription,
   toolDefinitions,
@@ -16,6 +17,7 @@ export type FilterProposal = AssistantFilterProposal;
 export type AssistantToolDefinition = ToolDefinition;
 
 export interface AssistantTools {
+  connectionWrites?: import("@asmblyr-collaborative/contracts").ConnectionWriteProposal[];
   context: object;
   definitions: AssistantToolDefinition[];
   proposals: FilterProposal[];
@@ -28,8 +30,10 @@ export interface AssistantTools {
 export interface AssistantRun {
   tools?: AssistantTools;
   onText?(event: Extract<AssistantStreamEvent, { type: "text-delta" }>): void;
+  onActivity?(activity: AssistantActivity): void;
   record<T extends AssistantAnswer>(generate: () => Promise<T>): Promise<T>;
   recordTool?(execute: () => Promise<object>, name?: string): Promise<object>;
+  remainingModelCalls?(): number;
 }
 
 export function assistantToolDefinitions(

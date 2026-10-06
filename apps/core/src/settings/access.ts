@@ -3,7 +3,7 @@ import {
   settingsSections,
   type SettingsSection,
   type SettingsAccess,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import { authenticatePrincipal } from "../auth/principal.js";
 import { AccessDeniedError } from "../permissions/access.js";
 import { delegatedPolicyIds } from "../policies/delegation-repository.js";

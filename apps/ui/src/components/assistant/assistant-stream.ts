@@ -2,13 +2,17 @@ import type {
   AssistantProgress,
   AssistantStreamEvent,
   AssistantTurnSummary,
-} from "@asmblyr/contracts";
+  AssistantConversationReceipt,
+  AssistantActivity,
+} from "@asmblyr-collaborative/contracts";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 export class AssistantResponseError extends Error {
   constructor(
     message: string,
     readonly code?: string,
     readonly summary?: AssistantTurnSummary,
+    readonly conversation?: AssistantConversationReceipt,
   ) {
     super(message);
   }
@@ -17,6 +21,7 @@ export class AssistantResponseError extends Error {
 /** NDJSON can split anywhere, including inside a UTF-8 character or JSON token. */
 export async function* readAssistantEvents(
   response: Response,
+  copy: UiCopy = originalCopy,
 ): AsyncGenerator<AssistantStreamEvent> {
   if (
     !response.ok ||
@@ -24,12 +29,13 @@ export async function* readAssistantEvents(
   ) {
     const result = await response.json();
     throw new AssistantResponseError(
-      result.message || "Не удалось получить ответ",
+      result.message || copy("Не удалось получить ответ"),
       result.code,
       result.summary,
+      result.conversation,
     );
   }
-  if (!response.body) throw new Error("Пустой ответ ассистента");
+  if (!response.body) throw new Error(copy("Пустой ответ ассистента"));
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let pending = "";
@@ -38,7 +44,7 @@ export async function* readAssistantEvents(
       const { value, done } = await reader.read();
       pending += decoder.decode(value, { stream: !done });
       if (pending.length > 1_000_000)
-        throw new Error("Ответ ассистента слишком велик");
+        throw new Error(copy("Ответ ассистента слишком велик"));
       let boundary: number;
       while ((boundary = pending.indexOf("\n")) !== -1) {
         const line = pending.slice(0, boundary);
@@ -46,7 +52,7 @@ export async function* readAssistantEvents(
         if (line.trim()) yield JSON.parse(line) as AssistantStreamEvent;
       }
       if (done) {
-        if (pending.trim()) throw new Error("Ответ ассистента оборвался");
+        if (pending.trim()) throw new Error(copy("Ответ ассистента оборвался"));
         return;
       }
     }
@@ -61,6 +67,8 @@ export class AssistantRequest {
   readonly controller = new AbortController();
   stopping = false;
   text = "";
+  activity: AssistantActivity[] = [];
+  activityDraft = "";
   private requestId?: string;
   private cancelSent = false;
   private fallback?: ReturnType<typeof setTimeout>;
@@ -104,6 +112,7 @@ export class AssistantRequest {
     snapshot: object,
     onProgress: (progress: AssistantProgress) => void,
     onText?: (text: string) => void,
+    onActivity?: () => void,
   ) {
     let textTimer: ReturnType<typeof setTimeout> | undefined;
     let publishedText = "";
@@ -114,6 +123,7 @@ export class AssistantRequest {
         publishedText = this.text;
         onText?.(this.text);
       }
+      onActivity?.();
     };
     try {
       const response = await fetch("/api/assistant/messages", {
@@ -131,21 +141,36 @@ export class AssistantRequest {
           void this.cancelRemote();
         } else if (event.type === "progress") {
           onProgress(event.progress);
+        } else if (event.type === "activity") {
+          this.activity.push(event.activity);
+          this.activityDraft = "";
+          onActivity?.();
         } else if (event.type === "text-delta") {
-          // A new model step starts another paragraph, not another answer.
-          if (event.reset && this.text.trim()) {
-            this.text = `${this.text.trimEnd()}\n\n`;
+          if (event.provisional) {
+            this.activityDraft =
+              (event.reset ? "" : this.activityDraft) + event.delta;
+            textTimer ??= setTimeout(publishText, 32);
+            continue;
           }
-          this.text += event.delta;
+          this.activityDraft = "";
+          this.text = (event.reset ? "" : this.text) + event.delta;
           // Batch tokens so Markdown renders at most once per frame-sized interval.
           textTimer ??= setTimeout(publishText, 32);
         } else if (event.type === "answer") {
+          this.text = event.data.content;
+          this.activity = event.data.activity ?? this.activity;
+          this.activityDraft = "";
           return event.data;
         } else if (event.type === "error") {
+          this.activity = event.activity ?? this.activity;
+          if (event.activity) {
+            this.activityDraft = "";
+          }
           throw new AssistantResponseError(
             event.message,
             event.code,
             event.summary,
+            event.conversation,
           );
         }
       }

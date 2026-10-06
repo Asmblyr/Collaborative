@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { PermissionFilter } from "@asmblyr/contracts";
-import { PortalContainerContext } from "@asmblyr/kit/ui/portal-container";
-import { Button } from "@asmblyr/kit/ui/button";
+import type { PermissionFilter } from "@asmblyr-collaborative/contracts";
+import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import { EditorDialog } from "@/components/collections/editor-dialog";
 import { PolicyConditionGroup } from "./policy-condition-group";
 import {
@@ -22,6 +22,7 @@ import {
 import { PolicyFieldsForm } from "./policy-fields-form";
 import { type DraftGrant } from "./policy-draft";
 import { actionName, type Action, type PolicyCollection } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PolicyActionDialog({
   readOnly = false,
@@ -40,7 +41,9 @@ export function PolicyActionDialog({
   onSave: (grant: DraftGrant | null) => void;
   onClose: () => void;
 }) {
-  const available = permissionFields(collection);
+  const copy = useUiCopy();
+
+  const available = permissionFields(collection, copy);
   const initialMode = initial
     ? initial.rowFilter
       ? "condition"
@@ -63,8 +66,8 @@ export function PolicyActionDialog({
   return (
     <EditorDialog
       open
-      title={`${collection.displayName || collection.name} · ${actionName[action]}`}
-      eyebrow={policyName || "Политика доступа"}
+      title={`${collection.displayName || collection.name} · ${copy(actionName[action])}`}
+      eyebrow={policyName || copy("Политика доступа")}
       hasUnsavedChanges={dirty}
       onClose={onClose}
       footer={(close) => (
@@ -74,7 +77,7 @@ export function PolicyActionDialog({
             variant="outline"
             onClick={close}
           >
-            {readOnly ? "Закрыть" : "Отмена"}
+            {readOnly ? copy("Закрыть") : copy("Отмена")}
           </Button>
           {!readOnly && (
             <Button
@@ -96,7 +99,7 @@ export function PolicyActionDialog({
                 close();
               }}
             >
-              Применить
+              {copy("Применить ")}
             </Button>
           )}
         </div>
@@ -106,22 +109,24 @@ export function PolicyActionDialog({
         <PortalContainerContext.Provider value={container}>
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <span className="text-sm font-semibold">Доступ</span>
+              <span className="text-sm font-semibold">{copy("Доступ")}</span>
               <Select
                 disabled={readOnly}
                 value={mode}
                 onValueChange={setMode}
               >
                 <SelectTrigger
-                  aria-label="Доступ к записям"
+                  aria-label={copy("Доступ к записям")}
                   className="w-60"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Нет доступа</SelectItem>
-                  <SelectItem value="all">Все записи</SelectItem>
-                  <SelectItem value="condition">По условию</SelectItem>
+                  <SelectItem value="none">{copy("Нет доступа")}</SelectItem>
+                  <SelectItem value="all">{copy("Все записи")}</SelectItem>
+                  <SelectItem value="condition">
+                    {copy("По условию")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -136,19 +141,21 @@ export function PolicyActionDialog({
                 </fieldset>
                 <div className="border-t pt-3 text-sm text-muted-foreground">
                   {valid
-                    ? conditionSummary(filter, available)
-                    : "Заполните значения условий, чтобы применить правило."}
+                    ? conditionSummary(filter, available, copy)
+                    : copy(
+                        "Заполните значения условий, чтобы применить правило.",
+                      )}
                 </div>
               </div>
             )}
             {mode === "all" && (
               <p className="text-sm text-muted-foreground">
-                Действие доступно для всех записей коллекции.
+                {copy("Действие доступно для всех записей коллекции. ")}
               </p>
             )}
             {mode === "none" && (
               <p className="text-sm text-muted-foreground">
-                Эта политика не разрешает выбранное действие.
+                {copy("Эта политика не разрешает выбранное действие. ")}
               </p>
             )}
             {mode !== "none" && action !== "delete" && (
@@ -159,9 +166,9 @@ export function PolicyActionDialog({
                   className="h-auto justify-start gap-2 px-0 text-sm font-normal text-muted-foreground"
                   onClick={() => setEditFields(!editFields)}
                 >
-                  Доступные поля{" "}
+                  {copy("Доступные поля")}{" "}
                   <span className="text-foreground">
-                    · {fields.includes("*") ? "Все" : fields.length}
+                    · {fields.includes("*") ? copy("Все") : fields.length}
                   </span>
                 </Button>
                 {editFields && (
@@ -181,8 +188,8 @@ export function PolicyActionDialog({
             )}
             <p className="text-xs text-muted-foreground">
               {readOnly
-                ? "Просмотр правила доступа."
-                : "Изменения вступят в силу после сохранения политики."}
+                ? copy("Просмотр правила доступа.")
+                : copy("Изменения вступят в силу после сохранения политики.")}
             </p>
           </div>
         </PortalContainerContext.Provider>

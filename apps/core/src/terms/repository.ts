@@ -1,5 +1,8 @@
 import type { Knex } from "knex";
-import type { TermDefinition, TermInput } from "@asmblyr/contracts";
+import type {
+  TermDefinition,
+  TermInput,
+} from "@asmblyr-collaborative/contracts";
 import { ItemError } from "../items/validation.js";
 import { postgresCode } from "../shared/postgres-error.js";
 

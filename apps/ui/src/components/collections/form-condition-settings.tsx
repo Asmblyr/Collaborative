@@ -1,36 +1,45 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type { FormCondition } from "@/components/items/presentation-types";
 import type { CollectionField } from "@/components/items/types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function FormConditionSettings({
   value,
+  title = "Когда показывать",
+  description = "Скрытые значения сохраняются. Это настройка формы, обязательность и права остаются в силе.",
   fields,
   disabled,
   container,
   onChange,
 }: {
   value?: FormCondition;
+  title?: string;
+  description?: string;
   fields: CollectionField[];
   disabled: boolean;
   container: HTMLElement | null;
   onChange: (condition?: FormCondition) => void;
 }) {
+  const copy = useUiCopy();
+
   const eligible = fields.filter((f) =>
     [
       "text",
       "email",
       "integer",
+      "bigint",
+      "date",
       "decimal",
       "boolean",
       "datetime",
@@ -50,11 +59,8 @@ export function FormConditionSettings({
   return (
     <section className="space-y-3 border-t pt-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-medium">Когда показывать</h3>
-        <p className="text-xs text-muted-foreground">
-          Скрытые значения сохраняются. Это настройка формы, обязательность и
-          права остаются в силе.
-        </p>
+        <h3 className="text-sm font-medium">{copy(title)}</h3>
+        <p className="text-xs text-muted-foreground">{copy(description)}</p>
       </div>
       <Select
         value={value?.mode ?? "always"}
@@ -71,24 +77,24 @@ export function FormConditionSettings({
         }
       >
         <SelectTrigger
-          aria-label="Условия видимости"
+          aria-label={title}
           className="w-full"
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent container={container}>
-          <SelectItem value="always">Всегда</SelectItem>
+          <SelectItem value="always">{copy("Всегда")}</SelectItem>
           <SelectItem
             value="all"
             disabled={!eligible.length}
           >
-            Все условия выполнены
+            {copy("Все условия выполнены ")}
           </SelectItem>
           <SelectItem
             value="any"
             disabled={!eligible.length}
           >
-            Любое условие выполнено
+            {copy("Любое условие выполнено ")}
           </SelectItem>
         </SelectContent>
       </Select>
@@ -108,7 +114,9 @@ export function FormConditionSettings({
                 }
               >
                 <SelectTrigger
-                  aria-label={`Поле условия ${index + 1}`}
+                  aria-label={copy("Поле условия {{value0}}", {
+                    value0: index + 1,
+                  })}
                   className="w-full"
                 >
                   <SelectValue />
@@ -128,7 +136,9 @@ export function FormConditionSettings({
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={`Удалить условие ${index + 1}`}
+                aria-label={copy("Удалить условие {{value0}}", {
+                  value0: index + 1,
+                })}
                 disabled={disabled}
                 onClick={() =>
                   onChange(
@@ -158,16 +168,18 @@ export function FormConditionSettings({
               }
             >
               <SelectTrigger
-                aria-label={`Оператор условия ${index + 1}`}
+                aria-label={copy("Оператор условия {{value0}}", {
+                  value0: index + 1,
+                })}
                 className="w-full"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={container}>
-                <SelectItem value="eq">Равно</SelectItem>
-                <SelectItem value="ne">Не равно</SelectItem>
-                <SelectItem value="empty">Не заполнено</SelectItem>
-                <SelectItem value="notEmpty">Заполнено</SelectItem>
+                <SelectItem value="eq">{copy("Равно")}</SelectItem>
+                <SelectItem value="ne">{copy("Не равно")}</SelectItem>
+                <SelectItem value="empty">{copy("Не заполнено")}</SelectItem>
+                <SelectItem value="notEmpty">{copy("Заполнено")}</SelectItem>
               </SelectContent>
             </Select>
             {["eq", "ne"].includes(rule.operator) &&
@@ -180,27 +192,36 @@ export function FormConditionSettings({
                   }
                 >
                   <SelectTrigger
-                    aria-label={`Значение условия ${index + 1}`}
+                    aria-label={copy("Значение условия {{value0}}", {
+                      value0: index + 1,
+                    })}
                     className="w-full"
                   >
-                    <SelectValue placeholder="Выберите значение" />
+                    <SelectValue placeholder={copy("Выберите значение")} />
                   </SelectTrigger>
                   <SelectContent container={container}>
-                    <SelectItem value="true">Да</SelectItem>
-                    <SelectItem value="false">Нет</SelectItem>
+                    <SelectItem value="true">{copy("Да")}</SelectItem>
+                    <SelectItem value="false">{copy("Нет")}</SelectItem>
                   </SelectContent>
                 </Select>
               ) : field?.presentation?.options ? (
                 <Select
                   value={String(rule.value ?? "")}
                   disabled={disabled}
-                  onValueChange={(v) => setRule(index, { ...rule, value: v })}
+                  onValueChange={(v) =>
+                    setRule(index, {
+                      ...rule,
+                      value: field.type === "integer" ? Number(v) : v,
+                    })
+                  }
                 >
                   <SelectTrigger
-                    aria-label={`Значение условия ${index + 1}`}
+                    aria-label={copy("Значение условия {{value0}}", {
+                      value0: index + 1,
+                    })}
                     className="w-full"
                   >
-                    <SelectValue placeholder="Выберите значение" />
+                    <SelectValue placeholder={copy("Выберите значение")} />
                   </SelectTrigger>
                   <SelectContent container={container}>
                     {rule.value !== undefined &&
@@ -209,13 +230,13 @@ export function FormConditionSettings({
                         (o) => o.value === rule.value,
                       ) && (
                         <SelectItem value={String(rule.value)}>
-                          {String(rule.value)} (архивный вариант)
+                          {String(rule.value)} {copy(" (архивный вариант) ")}
                         </SelectItem>
                       )}
                     {field.presentation.options.map((o) => (
                       <SelectItem
                         key={o.value}
-                        value={o.value}
+                        value={String(o.value)}
                       >
                         {o.label}
                       </SelectItem>
@@ -224,8 +245,10 @@ export function FormConditionSettings({
                 </Select>
               ) : (
                 <Input
-                  aria-label={`Значение условия ${index + 1}`}
-                  placeholder="Значение"
+                  aria-label={copy("Значение условия {{value0}}", {
+                    value0: index + 1,
+                  })}
+                  placeholder={copy("Значение")}
                   maxLength={500}
                   value={String(rule.value ?? "")}
                   disabled={disabled}
@@ -248,7 +271,7 @@ export function FormConditionSettings({
           }
         >
           <Plus />
-          Условие
+          {copy("Условие ")}
         </Button>
       )}
     </section>

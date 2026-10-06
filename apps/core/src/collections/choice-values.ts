@@ -18,7 +18,9 @@ export function assertChoiceValue(
     new Set(values).size !== values.length ||
     values.some(
       (v) =>
-        typeof v !== "string" ||
+        (presentation.interface === "multiselect"
+          ? typeof v !== "string"
+          : !["string", "number"].includes(typeof v)) ||
         !presentation.options?.some((o) => o.value === v),
     )
   ) {

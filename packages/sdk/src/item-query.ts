@@ -1,4 +1,7 @@
-import type { ItemListOptions, ItemReadOptions } from "@asmblyr/contracts";
+import type {
+  ItemListOptions,
+  ItemReadOptions,
+} from "@asmblyr-collaborative/contracts";
 
 export function collectionPath(collection: string): string {
   if (
@@ -56,6 +59,12 @@ export function itemListQuery(options: ItemListOptions = {}): URLSearchParams {
   for (const key of ["sort", "direction", "q"] as const) {
     const value = options[key];
     if (value !== undefined) query.set(key, value);
+  }
+  if (options.order !== undefined) {
+    if (options.order !== "field" && options.order !== "relevance") {
+      throw new TypeError("Invalid ordering mode");
+    }
+    query.set("order", options.order);
   }
   if (options.filter !== undefined)
     query.set("filter", JSON.stringify(options.filter));

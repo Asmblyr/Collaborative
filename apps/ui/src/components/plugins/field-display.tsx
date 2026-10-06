@@ -1,6 +1,6 @@
 "use client";
 
-import type { FieldExtension } from "@asmblyr/contracts";
+import type { FieldExtension } from "@asmblyr-collaborative/contracts";
 import type { ReactNode } from "react";
 import { PluginUiHost as FieldBoundary } from "./ui-host";
 import { useFieldInterfaces } from "./field-registry";

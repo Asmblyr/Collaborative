@@ -3,7 +3,7 @@ import type {
   HookEventName,
   HookEvents,
   EndpointLogger,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import type { Knex } from "knex";
 import type { Access } from "../permissions/access.js";
 import { mutationContext } from "../items/mutation-context.js";
@@ -14,6 +14,7 @@ import { createPluginStorage } from "./storage.js";
 import { capabilityItems, validatePluginCapabilities } from "./capabilities.js";
 import { pluginSettingsValues } from "./settings-repository.js";
 import { pluginActor } from "./actor.js";
+import { clearRecordNotifications } from "../notifications/repository.js";
 
 /** Per-app registry. No global emitter or cross-request mutable context. */
 export class PluginHooks {
@@ -45,6 +46,13 @@ export class PluginHooks {
     // Internal writes must not recursively trigger user-collection lifecycle hooks.
     if (/^(asmblyr_|plugin_)/i.test(target.collection)) {
       return;
+    }
+    if (name === "items.delete" && "itemId" in target) {
+      await clearRecordNotifications(
+        transaction,
+        target.collectionId,
+        String(target.itemId),
+      );
     }
     for (const plugin of this.plugins) {
       const hooks = (plugin.hooks ?? []).filter(

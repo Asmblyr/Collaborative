@@ -2,13 +2,15 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { BookmarkPlus, RotateCw, Trash2, Upload } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import {
   filterCount,
   readFilter,
   type FilterGroup,
 } from "./item-filter-options";
+import { useUiCopy } from "@/lib/ui-copy";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 interface Preset {
   id: string;
@@ -47,14 +49,17 @@ function readLegacy(key: string): LegacyPreset[] {
   }
 }
 
-async function responseMessage(response: Response): Promise<string> {
+async function responseMessage(
+  response: Response,
+  copy: UiCopy = originalCopy,
+): Promise<string> {
   try {
     const body = (await response.json()) as { message?: string };
     if (body.message) return body.message;
   } catch {
     /* Keep the fallback below. */
   }
-  return "Не удалось выполнить запрос";
+  return copy("Не удалось выполнить запрос");
 }
 
 export function ItemFilterPresets({
@@ -68,6 +73,8 @@ export function ItemFilterPresets({
   current: () => FilterGroup;
   onLoad: (group: FilterGroup) => void;
 }) {
+  const copy = useUiCopy();
+
   const endpoint = `/api/filter-presets/${encodeURIComponent(collection)}`;
   const [presets, setPresets] = useState<Preset[]>([]);
   const [legacy, setLegacy] = useState<LegacyPreset[]>([]);
@@ -84,7 +91,8 @@ export function ItemFilterPresets({
     });
     fetch(endpoint, { signal: controller.signal })
       .then(async (response) => {
-        if (!response.ok) throw new Error(await responseMessage(response));
+        if (!response.ok)
+          throw new Error(await responseMessage(response, copy));
         return response.json() as Promise<{ data: Preset[] }>;
       })
       .then((result) => setPresets(result.data))
@@ -93,28 +101,30 @@ export function ItemFilterPresets({
           setMessage(
             error instanceof Error
               ? error.message
-              : "Не удалось загрузить фильтры",
+              : copy("Не удалось загрузить фильтры"),
           );
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [endpoint, legacyKey]);
+  }, [endpoint, legacyKey, copy]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const title = name.trim();
     if (!title || title.length > 60)
-      return setMessage("Введите название до 60 символов");
+      return setMessage(copy("Введите название до 60 символов"));
     let filter: FilterGroup;
     try {
       filter = current();
       if (filter.children.length === 0)
-        throw new Error("Добавьте хотя бы одно условие");
+        throw new Error(copy("Добавьте хотя бы одно условие"));
     } catch (error) {
       return setMessage(
-        error instanceof Error ? error.message : "Проверьте условия фильтра",
+        error instanceof Error
+          ? error.message
+          : copy("Проверьте условия фильтра"),
       );
     }
     setPending(true);
@@ -125,13 +135,15 @@ export function ItemFilterPresets({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: title, filter }),
       });
-      if (!response.ok) throw new Error(await responseMessage(response));
+      if (!response.ok) throw new Error(await responseMessage(response, copy));
       const { data } = (await response.json()) as { data: Preset };
       setPresets((saved) => [data, ...saved]);
       setName("");
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Не удалось сохранить фильтр",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось сохранить фильтр"),
       );
     } finally {
       setPending(false);
@@ -143,10 +155,12 @@ export function ItemFilterPresets({
     try {
       filter = current();
       if (filter.children.length === 0)
-        throw new Error("Добавьте хотя бы одно условие");
+        throw new Error(copy("Добавьте хотя бы одно условие"));
     } catch (error) {
       return setMessage(
-        error instanceof Error ? error.message : "Проверьте условия фильтра",
+        error instanceof Error
+          ? error.message
+          : copy("Проверьте условия фильтра"),
       );
     }
     setPending(true);
@@ -157,14 +171,16 @@ export function ItemFilterPresets({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: preset.name, filter }),
       });
-      if (!response.ok) throw new Error(await responseMessage(response));
+      if (!response.ok) throw new Error(await responseMessage(response, copy));
       const { data } = (await response.json()) as { data: Preset };
       setPresets((saved) =>
         saved.map((entry) => (entry.id === data.id ? data : entry)),
       );
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Не удалось обновить фильтр",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось обновить фильтр"),
       );
     } finally {
       setPending(false);
@@ -178,12 +194,14 @@ export function ItemFilterPresets({
       const response = await fetch(`${endpoint}/${preset.id}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error(await responseMessage(response));
+      if (!response.ok) throw new Error(await responseMessage(response, copy));
       setPresets((saved) => saved.filter((entry) => entry.id !== preset.id));
       setConfirmDeleteId(null);
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Не удалось удалить фильтр",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось удалить фильтр"),
       );
     } finally {
       setPending(false);
@@ -199,7 +217,7 @@ export function ItemFilterPresets({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: preset.name, filter: preset.filter }),
       });
-      if (!response.ok) throw new Error(await responseMessage(response));
+      if (!response.ok) throw new Error(await responseMessage(response, copy));
       const { data } = (await response.json()) as { data: Preset };
       const remaining = readLegacy(legacyKey).filter(
         (entry) => entry.id !== preset.id,
@@ -210,12 +228,16 @@ export function ItemFilterPresets({
         setLegacy(remaining);
       } catch {
         setMessage(
-          "Фильтр сохранён в аккаунте, но локальную копию не удалось убрать из браузера",
+          copy(
+            "Фильтр сохранён в аккаунте, но локальную копию не удалось убрать из браузера",
+          ),
         );
       }
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Не удалось перенести фильтр",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось перенести фильтр"),
       );
     } finally {
       setPending(false);
@@ -225,9 +247,9 @@ export function ItemFilterPresets({
   return (
     <div className="space-y-4 pt-3">
       <div>
-        <h4 className="text-sm font-medium">Мои фильтры</h4>
+        <h4 className="text-sm font-medium">{copy("Мои фильтры")}</h4>
         <p className="text-xs text-muted-foreground">
-          Сохраняются в аккаунте и доступны в других браузерах.
+          {copy("Сохраняются в аккаунте и доступны в других браузерах. ")}
         </p>
       </div>
       <form
@@ -235,8 +257,8 @@ export function ItemFilterPresets({
         className="flex flex-wrap gap-2"
       >
         <Input
-          aria-label="Название фильтра"
-          placeholder="Название нового фильтра"
+          aria-label={copy("Название фильтра")}
+          placeholder={copy("Название нового фильтра")}
           maxLength={60}
           className="min-w-40 flex-1"
           value={name}
@@ -247,14 +269,16 @@ export function ItemFilterPresets({
           size="sm"
           disabled={pending || loading}
         >
-          <BookmarkPlus aria-hidden="true" /> Сохранить текущий
+          <BookmarkPlus aria-hidden="true" /> {copy(" Сохранить текущий ")}
         </Button>
       </form>
       {loading ? (
-        <p className="text-xs text-muted-foreground">Загрузка фильтров…</p>
+        <p className="text-xs text-muted-foreground">
+          {copy("Загрузка фильтров…")}
+        </p>
       ) : presets.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Пока нет сохранённых фильтров.
+          {copy("Пока нет сохранённых фильтров. ")}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -267,8 +291,13 @@ export function ItemFilterPresets({
                 <p className="truncate text-sm font-medium">{preset.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {preset.available && preset.filter
-                    ? `${filterCount(preset.filter)} условий · ${new Date(preset.updatedAt).toLocaleDateString("ru-RU")}`
-                    : "Недоступен после изменения полей или прав"}
+                    ? copy("{{value0}} условий · {{value1}}", {
+                        value0: filterCount(preset.filter),
+                        value1: new Date(preset.updatedAt).toLocaleDateString(
+                          "ru-RU",
+                        ),
+                      })
+                    : copy("Недоступен после изменения полей или прав")}
                 </p>
               </div>
               <Button
@@ -284,22 +313,25 @@ export function ItemFilterPresets({
                     setMessage(
                       error instanceof Error
                         ? error.message
-                        : "Фильтр недоступен",
+                        : copy("Фильтр недоступен"),
                     );
                   }
                 }}
               >
-                Открыть
+                {copy("Открыть ")}
               </Button>
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
                 disabled={pending}
-                aria-label={`Обновить фильтр ${preset.name} текущими условиями`}
+                aria-label={copy(
+                  "Обновить фильтр {{value0}} текущими условиями",
+                  { value0: preset.name },
+                )}
                 onClick={() => void update(preset)}
               >
-                <RotateCw aria-hidden="true" /> Обновить
+                <RotateCw aria-hidden="true" /> {copy(" Обновить ")}
               </Button>
               {confirmDeleteId === preset.id ? (
                 <div className="flex items-center gap-1">
@@ -310,7 +342,7 @@ export function ItemFilterPresets({
                     disabled={pending}
                     onClick={() => void remove(preset)}
                   >
-                    Удалить?
+                    {copy("Удалить? ")}
                   </Button>
                   <Button
                     type="button"
@@ -319,7 +351,7 @@ export function ItemFilterPresets({
                     disabled={pending}
                     onClick={() => setConfirmDeleteId(null)}
                   >
-                    Нет
+                    {copy("Нет ")}
                   </Button>
                 </div>
               ) : (
@@ -328,7 +360,9 @@ export function ItemFilterPresets({
                   size="icon-sm"
                   variant="ghost"
                   disabled={pending}
-                  aria-label={`Удалить фильтр ${preset.name}`}
+                  aria-label={copy("Удалить фильтр {{value0}}", {
+                    value0: preset.name,
+                  })}
                   onClick={() => setConfirmDeleteId(preset.id)}
                 >
                   <Trash2 aria-hidden="true" />
@@ -341,11 +375,13 @@ export function ItemFilterPresets({
       {legacy.length > 0 && (
         <details className="rounded-lg border p-3 text-sm">
           <summary className="cursor-pointer">
-            Фильтры из этого браузера ({legacy.length})
+            {copy("Фильтры из этого браузера (")}
+            {legacy.length})
           </summary>
           <p className="my-2 text-xs text-muted-foreground">
-            Перенесите их в аккаунт по одному. До переноса они останутся в
-            браузере.
+            {copy(
+              "Перенесите их в аккаунт по одному. До переноса они останутся в браузере. ",
+            )}
           </p>
           <ul className="space-y-2">
             {legacy.map((preset) => (
@@ -361,7 +397,7 @@ export function ItemFilterPresets({
                   disabled={pending}
                   onClick={() => void importLegacy(preset)}
                 >
-                  <Upload aria-hidden="true" /> Перенести
+                  <Upload aria-hidden="true" /> {copy(" Перенести ")}
                 </Button>
               </li>
             ))}
@@ -373,7 +409,7 @@ export function ItemFilterPresets({
           role="alert"
           className="text-xs text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
     </div>

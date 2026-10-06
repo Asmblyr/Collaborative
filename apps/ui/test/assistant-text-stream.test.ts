@@ -81,7 +81,7 @@ test("text is visible before the response finishes and the final result replaces
   assert.equal(messages[1].streaming, undefined);
 });
 
-test("public text from every model step survives a network EOF", async (t) => {
+test("provisional work notes stay separate when the network ends", async (t) => {
   const stream = eventStream();
   t.mock.method(globalThis, "fetch", async () => stream.response);
   const request = new AssistantRequest();
@@ -91,12 +91,22 @@ test("public text from every model step survives a network EOF", async (t) => {
     () => {},
     (text) => rendered.push(text),
   );
-  stream.send({ type: "text-delta", delta: "Проверяю…", reset: true });
+  stream.send({
+    type: "text-delta",
+    delta: "Проверяю…",
+    reset: true,
+    provisional: true,
+  });
+  stream.send({
+    type: "activity",
+    activity: { kind: "note", text: "Проверяю…" },
+  });
   stream.send({ type: "text-delta", delta: "Результат: ", reset: true });
   stream.send({ type: "text-delta", delta: "4", reset: false });
   stream.end();
   await assert.rejects(pending, /Соединение прервалось/);
-  assert.equal(request.text, "Проверяю…\n\nРезультат: 4");
+  assert.equal(request.text, "Результат: 4");
+  assert.deepEqual(request.activity, [{ kind: "note", text: "Проверяю…" }]);
   assert.equal(rendered.at(-1), request.text);
 });
 
@@ -181,7 +191,7 @@ test("stop preserves pending text and retains cancellation statistics", async (t
     code: "assistant_cancelled",
     summary: { modelCalls: 1 },
   });
-  assert.equal(rendered, "Расчёт: 100 ₽\n\nЧасть ответа");
+  assert.equal(rendered, "Часть ответа");
   assert.equal(request.text, rendered);
 });
 

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import knex from "knex";
-import { defaultCollectionState } from "@asmblyr/contracts";
+import { defaultCollectionState } from "@asmblyr-collaborative/contracts";
 import { createApp } from "../src/app.js";
 import { authorizeTestApp } from "./support/authorized-app.js";
 import { createContextTools } from "../src/assistant/context-tools.js";

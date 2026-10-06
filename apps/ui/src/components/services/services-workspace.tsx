@@ -1,13 +1,13 @@
 "use client";
 
-import { SettingsReadOnlyNotice } from "@/components/system-settings/read-only-notice";
+import { SettingsReadOnlyNotice } from "@/components/admin/settings/read-only-notice";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound, Plus, ArrowUpRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -20,6 +20,7 @@ import {
 import { apiRequest } from "@/lib/api-request";
 import { ServiceEditor } from "./service-editor";
 import type { ServiceAccount, ServiceDetail, ServicePolicy } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ServicesWorkspace({
   readOnly = false,
@@ -34,6 +35,8 @@ export function ServicesWorkspace({
   accounts: ServiceAccount[];
   policies: ServicePolicy[];
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [selection, setSelection] = useState<ServiceDetail | "new" | null>(
     null,
@@ -65,7 +68,9 @@ export function ServicesWorkspace({
       );
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Не удалось загрузить аккаунт",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось загрузить аккаунт"),
       );
     } finally {
       setLoading(null);
@@ -74,8 +79,10 @@ export function ServicesWorkspace({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Сервисные аккаунты"
-        description="Доступ к API для приложений, интеграций и автоматизации."
+        title={copy("Сервисные аккаунты")}
+        description={copy(
+          "Доступ к API для приложений, интеграций и автоматизации.",
+        )}
       >
         {!readOnly && (
           <Button
@@ -83,7 +90,7 @@ export function ServicesWorkspace({
             onClick={create}
           >
             <Plus className="size-4" />
-            Создать аккаунт
+            {copy("Создать аккаунт ")}
           </Button>
         )}
       </PageHeader>
@@ -93,7 +100,7 @@ export function ServicesWorkspace({
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       {accounts.length ? (
@@ -101,11 +108,11 @@ export function ServicesWorkspace({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Аккаунт</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead>Политики</TableHead>
+                <TableHead>{copy("Аккаунт")}</TableHead>
+                <TableHead>{copy("Статус")}</TableHead>
+                <TableHead>{copy("Политики")}</TableHead>
                 <TableHead className="w-10">
-                  <span className="sr-only">Открыть</span>
+                  <span className="sr-only">{copy("Открыть")}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -126,7 +133,9 @@ export function ServicesWorkspace({
                         void open(account.id);
                       }}
                     >
-                      {loading === account.id ? "Загрузка…" : account.name}
+                      {loading === account.id
+                        ? copy("Загрузка…")
+                        : account.name}
                     </Button>
                     {account.description && (
                       <p className="mt-1 max-w-xl truncate text-xs text-muted-foreground">
@@ -140,7 +149,9 @@ export function ServicesWorkspace({
                         account.status === "active" ? "secondary" : "outline"
                       }
                     >
-                      {account.status === "active" ? "Активен" : "Отключён"}
+                      {account.status === "active"
+                        ? copy("Активен")
+                        : copy("Отключён")}
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-md text-sm text-muted-foreground">
@@ -150,7 +161,7 @@ export function ServicesWorkspace({
                           policies.find((policy) => policy.id === id)?.name,
                       )
                       .filter(Boolean)
-                      .join(", ") || "Нет доступа к данным"}
+                      .join(", ") || copy("Нет доступа к данным")}
                   </TableCell>
                   <TableCell>
                     <ArrowUpRight className="size-4 text-muted-foreground" />
@@ -165,10 +176,13 @@ export function ServicesWorkspace({
           <div className="mb-4 rounded-xl bg-muted p-3">
             <KeyRound className="size-6 text-muted-foreground" />
           </div>
-          <h2 className="font-semibold">Подключите первое приложение</h2>
+          <h2 className="font-semibold">
+            {copy("Подключите первое приложение")}
+          </h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-            Создайте сервисный аккаунт, назначьте политики и выпустите ключ. Он
-            будет работать независимо от личного аккаунта сотрудника.
+            {copy(
+              "Создайте сервисный аккаунт, назначьте политики и выпустите ключ. Он будет работать независимо от личного аккаунта сотрудника. ",
+            )}
           </p>
           {!readOnly && (
             <Button
@@ -176,7 +190,7 @@ export function ServicesWorkspace({
               className="mt-5"
               onClick={create}
             >
-              Создать сервисный аккаунт
+              {copy("Создать сервисный аккаунт ")}
             </Button>
           )}
         </section>
@@ -186,10 +200,12 @@ export function ServicesWorkspace({
         title={
           savedName ??
           (selection === "new"
-            ? "Новый сервисный аккаунт"
-            : (selection?.name ?? "Сервисный аккаунт"))
+            ? copy("Новый сервисный аккаунт")
+            : (selection?.name ?? copy("Сервисный аккаунт")))
         }
-        eyebrow={selectionReadOnly ? "Интеграции · просмотр" : "Интеграции"}
+        eyebrow={
+          selectionReadOnly ? copy("Интеграции · просмотр") : copy("Интеграции")
+        }
         busy={busy}
         onClose={() => {
           setSelection(null);

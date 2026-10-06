@@ -60,6 +60,7 @@ test("collection relations create foreign keys and expose readable reverse items
         required: false,
         nullable: true,
         searchable: false,
+        searchPriority: null,
         relation: {
           kind: "m2o",
           collection: authors,

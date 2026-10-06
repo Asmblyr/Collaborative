@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import type { PresenceResult, PresenceScope } from "@asmblyr/contracts";
+import type {
+  PresenceResult,
+  PresenceScope,
+} from "@asmblyr-collaborative/contracts";
 import { asmblyr } from "@/lib/asmblyr";
 import { createPresenceSession } from "./presence-session";
 

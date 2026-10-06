@@ -7,7 +7,7 @@ import type {
   ItemReadOptions,
   ItemResult,
   JsonRecord,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import {
   collectionPath,
   itemListQuery,
@@ -16,9 +16,21 @@ import {
 } from "./item-query.js";
 import type { RequestOptions } from "./options.js";
 import type { Transport } from "./transport.js";
+import type {
+  ReadRow,
+  CreateRow,
+  UpdateRow,
+  CommitInput,
+  Deletable,
+} from "./collection-schema.js";
 
 export type DynamicSchema = Record<string, JsonRecord>;
 type CollectionName<Schema> = Extract<keyof Schema, string>;
+type DeletableName<Schema> = {
+  [Name in CollectionName<Schema>]: Deletable<Schema[Name]> extends false
+    ? never
+    : Name;
+}[CollectionName<Schema>];
 type FieldName<Row> = Extract<keyof Row, string>;
 /** Permissions can omit fields even when they are required in the collection schema. */
 export type ReadableItem<
@@ -29,45 +41,52 @@ export type ReadableItem<
 export interface ItemsClient<Schema extends object> {
   list<
     Name extends CollectionName<Schema>,
-    Field extends FieldName<Schema[Name]> = FieldName<Schema[Name]>,
+    Field extends FieldName<ReadRow<Schema[Name]>> = FieldName<
+      ReadRow<Schema[Name]>
+    >,
   >(
     collection: Name,
-    options?: Omit<ItemListOptions<FieldName<Schema[Name]>>, "fields"> & {
+    options?: Omit<
+      ItemListOptions<FieldName<ReadRow<Schema[Name]>>>,
+      "fields"
+    > & {
       readonly fields?: readonly Field[];
     },
     request?: RequestOptions,
-  ): Promise<ItemListResult<ReadableItem<Schema[Name], Field>>>;
+  ): Promise<ItemListResult<ReadableItem<ReadRow<Schema[Name]>, Field>>>;
   get<
     Name extends CollectionName<Schema>,
-    Field extends FieldName<Schema[Name]> = FieldName<Schema[Name]>,
+    Field extends FieldName<ReadRow<Schema[Name]>> = FieldName<
+      ReadRow<Schema[Name]>
+    >,
   >(
     collection: Name,
     id: string | number,
     options?: ItemReadOptions<Field>,
     request?: RequestOptions,
-  ): Promise<ItemResult<ReadableItem<Schema[Name], Field>>>;
+  ): Promise<ItemResult<ReadableItem<ReadRow<Schema[Name]>, Field>>>;
   create<Name extends CollectionName<Schema>>(
     collection: Name,
-    values: Partial<Schema[Name]>,
+    values: CreateRow<Schema[Name]>,
     request?: RequestOptions,
-  ): Promise<ItemMutationResult<ReadableItem<Schema[Name]>>>;
+  ): Promise<ItemMutationResult<ReadableItem<ReadRow<Schema[Name]>>>>;
   update<Name extends CollectionName<Schema>>(
     collection: Name,
     id: string | number,
-    values: Partial<Schema[Name]>,
+    values: UpdateRow<Schema[Name]>,
     request?: RequestOptions,
-  ): Promise<ItemMutationResult<ReadableItem<Schema[Name]>>>;
-  delete<Name extends CollectionName<Schema>>(
+  ): Promise<ItemMutationResult<ReadableItem<ReadRow<Schema[Name]>>>>;
+  delete<Name extends DeletableName<Schema>>(
     collection: Name,
     id: string | number,
     request?: RequestOptions,
   ): Promise<void>;
   commit<Name extends CollectionName<Schema>>(
     collection: Name,
-    draft: Omit<ItemCommitDraft, "values" | "expectedValues"> & {
-      values: Partial<Schema[Name]>;
-      expectedValues?: Partial<Schema[Name]>;
-    },
+    draft: Omit<ItemCommitDraft, "id" | "values" | "expectedValues"> &
+      CommitInput<Schema[Name]> & {
+        expectedValues?: Partial<ReadRow<Schema[Name]>>;
+      },
     request?: RequestOptions,
   ): Promise<ItemCommitResult>;
 }

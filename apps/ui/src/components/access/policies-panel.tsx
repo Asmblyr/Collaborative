@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { PolicyCollection } from "./types";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Table,
   TableBody,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { PolicyEditorDialog } from "./policy-editor-dialog";
 import type { AccessUser, Permission, Policy } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PoliciesPanel({
   readOnly = false,
@@ -35,6 +36,8 @@ export function PoliciesPanel({
   users: AccessUser[];
   onChange: () => Promise<void>;
 }) {
+  const copy = useUiCopy();
+
   const [selection, setSelection] = useState<string | "new" | null>(null);
   const selected = policies.find((policy) => policy.id === selection);
 
@@ -42,11 +45,13 @@ export function PoliciesPanel({
     <section className="space-y-5 rounded-xl border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold">Политики</h2>
+          <h2 className="text-xl font-semibold">{copy("Политики")}</h2>
           <p className="text-sm text-muted-foreground">
             {canManagePolicies
-              ? "Настройте права и назначьте пользователей."
-              : "Посмотрите права. Разрешённые готовые политики можно назначать другим пользователям."}
+              ? copy("Настройте права и назначьте пользователей.")
+              : copy(
+                  "Посмотрите права. Разрешённые готовые политики можно назначать другим пользователям.",
+                )}
           </p>
         </div>
         {!readOnly && canManagePolicies && (
@@ -54,18 +59,18 @@ export function PoliciesPanel({
             type="button"
             onClick={() => setSelection("new")}
           >
-            Создать политику
+            {copy("Создать политику ")}
           </Button>
         )}
       </div>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Название</TableHead>
-            <TableHead>Коллекции</TableHead>
-            <TableHead>Разделы настроек</TableHead>
-            <TableHead>Пользователи</TableHead>
-            <TableHead className="text-right">Управление</TableHead>
+            <TableHead>{copy("Название")}</TableHead>
+            <TableHead>{copy("Коллекции")}</TableHead>
+            <TableHead>{copy("Разделы настроек")}</TableHead>
+            <TableHead>{copy("Пользователи")}</TableHead>
+            <TableHead className="text-right">{copy("Управление")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -115,12 +120,12 @@ export function PoliciesPanel({
                   onClick={() => setSelection(policy.id)}
                 >
                   {readOnly
-                    ? "Посмотреть"
+                    ? copy("Посмотреть")
                     : canManagePolicies
-                      ? "Настроить"
+                      ? copy("Настроить")
                       : delegatablePolicyIds.includes(policy.id)
-                        ? "Назначить"
-                        : "Посмотреть"}
+                        ? copy("Назначить")
+                        : copy("Посмотреть")}
                 </Button>
               </TableCell>
             </TableRow>
@@ -128,7 +133,9 @@ export function PoliciesPanel({
         </TableBody>
       </Table>
       {policies.length === 0 && (
-        <p className="text-sm text-muted-foreground">Пока нет политик.</p>
+        <p className="text-sm text-muted-foreground">
+          {copy("Пока нет политик.")}
+        </p>
       )}
       <PolicyEditorDialog
         readOnly={

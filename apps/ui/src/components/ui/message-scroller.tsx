@@ -9,7 +9,7 @@ import {
 } from "@shadcn/react/message-scroller";
 import { cn } from "cn";
 
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { ArrowDownIcon } from "lucide-react";
 
 function MessageScrollerProvider(

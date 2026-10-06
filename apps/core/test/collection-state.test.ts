@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defaultCollectionState } from "@asmblyr/contracts";
+import { defaultCollectionState } from "@asmblyr-collaborative/contracts";
 import { parseCollectionState } from "../src/collections/state-validation.js";
 import { parseCreateCollection } from "../src/collections/create-validation.js";
 

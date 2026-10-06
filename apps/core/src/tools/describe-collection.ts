@@ -1,6 +1,8 @@
 import type { Collection } from "../collections/types.js";
+import type { Knex } from "knex";
 import { resolveFilterField } from "../items/filter-fields.js";
-import { grantFor, type Access } from "../permissions/access.js";
+import type { Access } from "../permissions/access.js";
+import { relationDescriptions } from "./relation-description.js";
 import type { CollectionData } from "./collection-data.js";
 import { aggregateOperationsFor } from "./aggregate-fields.js";
 
@@ -13,7 +15,8 @@ function fieldNames(collection: Collection): string[] {
   ];
 }
 
-export function describeCollection(
+export async function describeCollection(
+  db: Knex,
   name: string,
   data: CollectionData,
   access: Access,
@@ -76,6 +79,7 @@ export function describeCollection(
   const canRead = (field: string) =>
     data.allowed.includes("*") || data.allowed.includes(field);
   const readable = source.fields.filter((field) => canRead(field.name));
+  const describeRelation = relationDescriptions(db, source, data, access);
   return {
     collection: name,
     displayName: source.displayName ?? name,
@@ -84,36 +88,25 @@ export function describeCollection(
     ...(source.state && canRead(source.state.field)
       ? { state: source.state }
       : {}),
-    fields: readable.slice(0, 100).map((field) => {
-      const relation = field.relation;
-      const readableTarget =
-        relation && grantFor(access, relation.collection, "read");
-      const reference =
-        relation?.kind === "m2o" && readableTarget
-          ? {
-              kind: relation.kind,
-              collection: relation.collection,
-              displayName:
-                data.catalog.find((entry) => entry.name === relation.collection)
-                  ?.displayName || relation.collection,
-              primaryKey: relation.primaryKey,
-            }
-          : undefined;
-      return {
-        name: field.name,
-        type: field.type,
-        nullable: field.nullable,
-        required: field.required,
-        ...(field.presentation?.label
-          ? { label: field.presentation.label }
-          : {}),
-        ...(field.presentation?.options
-          ? { options: field.presentation.options }
-          : {}),
-        readableValue: data.schema.fields.has(field.name),
-        ...(reference ? { relation: reference } : {}),
-      };
-    }),
+    fields: await Promise.all(
+      readable.slice(0, 100).map(async (field) => {
+        const reference = await describeRelation(field);
+        return {
+          name: field.name,
+          type: field.type,
+          nullable: field.nullable,
+          required: field.required,
+          ...(field.presentation?.label
+            ? { label: field.presentation.label }
+            : {}),
+          ...(field.presentation?.options
+            ? { options: field.presentation.options }
+            : {}),
+          readableValue: data.schema.fields.has(field.name),
+          ...(reference ? { relation: reference } : {}),
+        };
+      }),
+    ),
     filterPaths: paths,
     timestamps: fieldNames(source).filter(
       (field) =>

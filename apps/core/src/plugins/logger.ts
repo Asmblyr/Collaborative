@@ -1,4 +1,4 @@
-import type { EndpointLogger } from "@asmblyr/kit";
+import type { EndpointLogger } from "@asmblyr-collaborative/kit";
 import type { FastifyBaseLogger } from "fastify";
 
 export function endpointLogger(log: FastifyBaseLogger): EndpointLogger {

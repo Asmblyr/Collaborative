@@ -10,7 +10,7 @@ import {
   Link2,
   Plus,
 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -27,6 +27,7 @@ import type {
   FilterField,
   FilterScope,
 } from "./item-filter-options";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemFilterFieldPicker({
   scopes,
@@ -41,6 +42,8 @@ export function ItemFilterFieldPicker({
   onSelect: (condition: FilterCondition) => void;
   onAddGroup?: () => void;
 }) {
+  const copy = useUiCopy();
+
   const [open, setOpen] = useState(false);
   const [scopeId, setScopeId] = useState("$root");
   const [query, setQuery] = useState("");
@@ -75,10 +78,12 @@ export function ItemFilterFieldPicker({
     : undefined;
   const showKey =
     directKey &&
-    (directKey.name + " значение ключа").toLocaleLowerCase().includes(search);
+    (directKey.name + copy(" значение ключа"))
+      .toLocaleLowerCase()
+      .includes(search);
   const showPresence =
     scope.presenceField &&
-    "наличие связи есть нет связанных записей".includes(search);
+    copy("наличие связи есть нет связанных записей").includes(search);
   const selectedPresence =
     !!condition && ["exists", "notExists"].includes(condition.op);
   const selectedRelation = condition
@@ -89,7 +94,7 @@ export function ItemFilterFieldPicker({
       (selectedPresence
         ? scopeForCondition(scopes, condition).id
         : condition.field.replace(".", " › ")))
-    : "Добавить условие";
+    : copy("Добавить условие");
 
   function select(next: FilterCondition) {
     const same =
@@ -161,7 +166,9 @@ export function ItemFilterFieldPicker({
           size="sm"
           disabled={disabled}
           aria-label={
-            condition ? "Поле условия: " + triggerLabel : "Добавить условие"
+            condition
+              ? copy("Поле условия: ") + triggerLabel
+              : copy("Добавить условие")
           }
           className={
             condition
@@ -196,7 +203,7 @@ export function ItemFilterFieldPicker({
               type="button"
               size="icon-sm"
               variant="ghost"
-              aria-label="Назад к полям коллекции"
+              aria-label={copy("Назад к полям коллекции")}
               onClick={() => {
                 setScopeId("$root");
                 setQuery("");
@@ -215,7 +222,7 @@ export function ItemFilterFieldPicker({
         <ItemFilterMenu
           query={query}
           onQueryChange={setQuery}
-          placeholder="Найти поле или связь…"
+          placeholder={copy("Найти поле или связь…")}
         >
           {showPresence && (
             <Button
@@ -223,21 +230,22 @@ export function ItemFilterFieldPicker({
               variant="ghost"
               size="sm"
               className="h-9 w-full justify-start font-normal"
-              onClick={() => select(presenceCondition(scope, true))}
+              onClick={() => select(presenceCondition(scope, true, copy))}
             >
               <Link2
                 aria-hidden="true"
                 className="size-3.5 text-muted-foreground"
               />{" "}
-              Наличие связанных записей
+              {copy("Наличие связанных записей ")}
             </Button>
           )}
-          {showKey && fieldChoice(directKey, false, "Значение ключа связи")}
+          {showKey &&
+            fieldChoice(directKey, false, copy("Значение ключа связи"))}
           {fields.map((field) => fieldChoice(field))}
           {relations.length > 0 && (
             <>
               <p className="px-2 pb-1 pt-3 text-[11px] font-medium text-muted-foreground">
-                Связи
+                {copy("Связи ")}
               </p>
               {relations.map((entry) => (
                 <div
@@ -248,9 +256,11 @@ export function ItemFilterFieldPicker({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    aria-label={"Выбрать записи связи " + entry.id}
+                    aria-label={copy("Выбрать записи связи ") + entry.id}
                     className="h-9 min-w-0 flex-1 justify-start gap-2 rounded-r-none px-2 font-normal"
-                    onClick={() => select(relationSelectionCondition(entry))}
+                    onClick={() =>
+                      select(relationSelectionCondition(entry, copy))
+                    }
                   >
                     <Link2
                       aria-hidden="true"
@@ -271,9 +281,9 @@ export function ItemFilterFieldPicker({
                     variant="ghost"
                     size="icon-sm"
                     aria-label={
-                      "Поля связи " +
+                      copy("Поля связи ") +
                       entry.id +
-                      ", коллекция " +
+                      copy(", коллекция ") +
                       entry.collection
                     }
                     className="h-9 w-9 shrink-0 rounded-l-none border-l border-border/60"
@@ -294,7 +304,7 @@ export function ItemFilterFieldPicker({
           {relatedMatches.length > 0 && (
             <>
               <p className="px-2 pb-1 pt-3 text-[11px] font-medium text-muted-foreground">
-                Поля в связях
+                {copy("Поля в связях ")}
               </p>
               {relatedMatches.map((field) => fieldChoice(field, true))}
             </>
@@ -305,7 +315,7 @@ export function ItemFilterFieldPicker({
             !showPresence &&
             !showKey && (
               <p className="p-3 text-center text-xs text-muted-foreground">
-                Ничего не найдено
+                {copy("Ничего не найдено ")}
               </p>
             )}
         </ItemFilterMenu>
@@ -325,7 +335,7 @@ export function ItemFilterFieldPicker({
                 aria-hidden="true"
                 className="size-3.5"
               />{" "}
-              Группа условий И / ИЛИ
+              {copy("Группа условий И / ИЛИ ")}
             </Button>
           </div>
         )}

@@ -63,7 +63,15 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
       id: "1",
       fields: ["title", "author_id"],
     };
-    assert.ok("error" in (await client.call("read_item", read)));
+    assert.equal(
+      json(await client.call("read_item", read)).code,
+      "SCHEMA_REQUIRED",
+    );
+    const missing = json(
+      await client.call("read_item", { collection: names.posts }),
+    );
+    assert.equal(missing.code, "INVALID_ARGUMENTS");
+    assert.deepEqual(missing.arguments, ["id", "fields"]);
     const schema = json(
       await client.call("describe_collection", { collection: names.posts }),
     );
@@ -77,6 +85,19 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
       },
     );
     assert.ok(!JSON.stringify(schema).includes("secret"));
+    const invalidFilter = json(
+      await client.call("validate_filter", {
+        collection: names.posts,
+        filter: JSON.stringify({
+          field: "title",
+          op: "unknown",
+          value: "private-operand",
+        }),
+      }),
+    );
+    assert.equal(invalidFilter.code, "INVALID_FILTER");
+    assert.ok(invalidFilter.hint.includes("filterPaths"));
+    assert.ok(!JSON.stringify(invalidFilter).includes("private-operand"));
     const row = json(await client.call("read_item", read));
     assert.equal(row.item.values.title, "Alpha");
     assert.equal(row.item.values.author_id, "author-a");

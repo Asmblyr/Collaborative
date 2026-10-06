@@ -17,6 +17,7 @@ import {
   type PageContext,
   type FilterProposal,
 } from "./assistant-context-types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface Registration {
   pathname: string;
@@ -39,6 +40,8 @@ export function AssistantContextProvider({
   children: React.ReactNode;
   collections: readonly { name: string; displayName?: string | null }[];
 }) {
+  const copy = useUiCopy();
+
   const pathname = usePathname();
   const workspace = useWorkspace();
   const workspaceId = workspace?.active?.id ?? null;
@@ -48,7 +51,16 @@ export function AssistantContextProvider({
     registration.context.workspaceId === workspaceId
       ? registration
       : null;
-  const page = pathname === "/" ? "collections" : pathname.slice(1);
+  let page = pathname === "/" ? "home" : pathname.slice(1);
+  if (pathname === "/admin/collections") {
+    page = "collections";
+  }
+  if (
+    pathname === "/admin/settings" ||
+    pathname.startsWith("/admin/settings/")
+  ) {
+    page = "system-settings";
+  }
   const context: PageContext | null =
     current?.context ??
     (pathname.startsWith("/items/") ? null : { page, workspaceId });
@@ -65,7 +77,7 @@ export function AssistantContextProvider({
     const snapshot = latest.current;
     if (!canApplyProposal(snapshot.context, proposal) || !snapshot.current)
       throw new Error(
-        "Откройте исходную коллекцию и закройте редактор записи.",
+        copy("Откройте исходную коллекцию и закройте редактор записи."),
       );
     const result = await apiRequest<{ filter: object }>(
       "/api/assistant/filter/validate",
@@ -81,7 +93,7 @@ export function AssistantContextProvider({
       !canApplyProposal(latest.current.context, proposal)
     ) {
       throw new Error(
-        "Страница изменилась. Проверьте предложение и нажмите ещё раз.",
+        copy("Страница изменилась. Проверьте предложение и нажмите ещё раз."),
       );
     }
     snapshot.current.apply(JSON.stringify(result.filter));

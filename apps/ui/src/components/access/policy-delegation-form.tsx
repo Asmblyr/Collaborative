@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { accessRequest } from "@/lib/access-request";
 import type { Policy } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PolicyDelegationForm({
   userId,
@@ -24,6 +25,8 @@ export function PolicyDelegationForm({
   onBusy: (busy: boolean) => void;
   onSaved: (ids: string[]) => void;
 }) {
+  const copy = useUiCopy();
+
   const [selected, setSelected] = useState(initialIds);
   const [saved, setSaved] = useState(initialIds);
   const [search, setSearch] = useState("");
@@ -62,7 +65,7 @@ export function PolicyDelegationForm({
       setSaved(result.data.policyIds);
       onSaved(result.data.policyIds);
       onDirty(false);
-      setMessage("Разрешённый набор сохранён");
+      setMessage(copy("Разрешённый набор сохранён"));
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
@@ -79,11 +82,11 @@ export function PolicyDelegationForm({
   return (
     <section className="space-y-3">
       <div>
-        <h3 className="font-semibold">Разрешено назначать</h3>
+        <h3 className="font-semibold">{copy("Разрешено назначать")}</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Готовые политики для других пользователей и сервисов. Нужен доступ к
-          изменению соответствующего раздела настроек. Этот список не назначает
-          политики самому пользователю.
+          {copy(
+            "Готовые политики для других пользователей и сервисов. Нужен доступ к изменению соответствующего раздела настроек. Этот список не назначает политики самому пользователю. ",
+          )}
         </p>
       </div>
       <form
@@ -92,8 +95,8 @@ export function PolicyDelegationForm({
       >
         {editable && (
           <Input
-            aria-label="Найти политику для делегирования"
-            placeholder="Найти политику…"
+            aria-label={copy("Найти политику для делегирования")}
+            placeholder={copy("Найти политику…")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -117,8 +120,8 @@ export function PolicyDelegationForm({
           {!shown.length && (
             <p className="px-3 py-2 text-xs text-muted-foreground">
               {search
-                ? "Политики не найдены"
-                : "Назначение политик не разрешено"}
+                ? copy("Политики не найдены")
+                : copy("Назначение политик не разрешено")}
             </p>
           )}
         </div>
@@ -127,7 +130,7 @@ export function PolicyDelegationForm({
             role="alert"
             className="text-sm text-destructive"
           >
-            {error}
+            {copy(error)}
           </p>
         )}
         {editable && (
@@ -136,7 +139,9 @@ export function PolicyDelegationForm({
             size="sm"
             disabled={pending || !dirty}
           >
-            {pending ? "Сохранение…" : "Сохранить разрешённый набор"}
+            {pending
+              ? copy("Сохранение…")
+              : copy("Сохранить разрешённый набор")}
           </Button>
         )}
         {message && (
@@ -144,7 +149,7 @@ export function PolicyDelegationForm({
             role="status"
             className="text-xs text-muted-foreground"
           >
-            {message}
+            {copy(message)}
           </p>
         )}
       </form>

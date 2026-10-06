@@ -28,7 +28,7 @@ export default defineUiPlugin({
 
 ## Контракт компонентов
 
-Типы доступны из `@asmblyr/kit/ui`:
+Типы доступны из `@asmblyr-collaborative/kit/ui`:
 
 - `FieldEditorProps`: `id`, `label`, `value`, `options`, `disabled`, `required`,
   `placeholder`, `describedBy`, `onChange(value)`.
@@ -51,7 +51,7 @@ export default defineUiPlugin({
 показывает ошибку у нужного поля. Серверные ограничения остаются обязательными:
 UI-проверки не являются ограничением API или способом авторизации.
 
-Компоненты shadcn импортируются из `@asmblyr/kit/ui/<component>`. Хост передаёт
+Компоненты shadcn импортируются из `@asmblyr-collaborative/kit/ui/<component>`. Хост передаёт
 контейнер нативного диалога через `PortalContainerContext`: вложенные Select
 остаются внутри окна. Компоненты должны поддерживать серверный рендер React;
 доступ к DOM допустим в обработчиках и effects, а не при импорте/рендере.

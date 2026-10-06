@@ -8,6 +8,7 @@ import { compileRowFilter, permissionContext } from "./row-filter.js";
 import type { CompiledRule } from "./row-access.js";
 
 export interface Access {
+  readOnlyCollections?: Set<string>;
   principal: Principal;
   grants: Map<string, string[]>;
   rowRules?: Map<string, CompiledRule[]>;
@@ -25,6 +26,13 @@ export async function loadAccess(
   authorization?: string,
 ): Promise<Access> {
   const principal = await authenticatePrincipal(database, authorization);
+  return loadPrincipalAccess(database, principal);
+}
+
+export async function loadPrincipalAccess(
+  database: Knex,
+  principal: Principal,
+): Promise<Access> {
   const permissions = principal.superuser
     ? []
     : await permissionRules(database, principal.id, principal.kind);
@@ -65,7 +73,13 @@ export async function loadAccess(
   }
   for (const [key, rules] of rowRules)
     if (rules.every((rule) => rule.filter === null)) rowRules.delete(key);
-  return { principal, grants, rowRules };
+  const readOnlyCollections = new Set(
+    await database("asmblyr_collections")
+      .withSchema("public")
+      .where({ source_kind: "materialized-view" })
+      .pluck<string[]>("name"),
+  );
+  return { principal, grants, rowRules, readOnlyCollections };
 }
 
 export function grantFor(
@@ -73,6 +87,9 @@ export function grantFor(
   collection: string,
   action: PermissionAction,
 ): string[] | null {
+  if (action !== "read" && access.readOnlyCollections?.has(collection)) {
+    return null;
+  }
   return access.principal.superuser
     ? ["*"]
     : (access.grants.get(`${collection}:${action}`) ?? null);

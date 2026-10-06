@@ -13,5 +13,10 @@ export interface ItemField {
   nullable: boolean;
   defaultValue?: JsonValue;
   presentation?: FieldPresentation;
+  searchPriority?:
+    | import("@asmblyr-collaborative/contracts").SearchPriority
+    | null;
   searchable?: boolean;
+  /** Physical varchar bound; presentation cannot relax this database limit. */
+  maxLength?: number;
 }

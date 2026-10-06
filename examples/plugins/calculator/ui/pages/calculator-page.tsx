@@ -1,15 +1,15 @@
 "use client";
 
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
-import { useAction } from "@asmblyr/kit/ui/use-action";
-import type { PluginPageProps } from "@asmblyr/kit/ui";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { useAction } from "@asmblyr-collaborative/kit/ui/use-action";
+import type { PluginPageProps } from "@asmblyr-collaborative/kit/ui";
 import type {
   CalculationInput,
   CalculationOutput,
 } from "../../shared/calculation.ts";
 import calculation from "../../.asmblyr/models/calculator/calculate.post.json" with { type: "json" };
-import { modelField } from "@asmblyr/kit/model";
+import { modelField } from "@asmblyr-collaborative/kit/model";
 
 const initialInput: CalculationInput = {
   users: 1,

@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { X, Plus, ChevronDown } from "lucide-react";
-import type { PermissionCondition, PermissionFilter } from "@asmblyr/contracts";
-import { Button } from "@asmblyr/kit/ui/button";
+import type {
+  PermissionCondition,
+  PermissionFilter,
+} from "@asmblyr-collaborative/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import {
   Popover,
   PopoverContent,
@@ -26,6 +29,7 @@ import {
 import { newPermissionCondition } from "./policy-condition-model";
 import { PolicyValuePicker } from "./policy-condition-pickers";
 import { PolicyFieldPicker } from "./policy-field-picker";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PolicyConditionGroup({
   value,
@@ -38,6 +42,8 @@ export function PolicyConditionGroup({
   onChange: (value: PermissionFilter) => void;
   depth?: number;
 }) {
+  const copy = useUiCopy();
+
   const [groupMenuOpen, setGroupMenuOpen] = useState(false);
   function replace(
     index: number,
@@ -66,15 +72,17 @@ export function PolicyConditionGroup({
           }
         >
           <SelectTrigger
-            aria-label={`Связь условий группы ${depth}`}
+            aria-label={copy("Связь условий группы {{value0}}", {
+              value0: depth,
+            })}
             size="sm"
             className="w-auto gap-2 border-0 bg-transparent px-0 text-xs text-muted-foreground shadow-none dark:bg-transparent"
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="and">Все условия · И</SelectItem>
-            <SelectItem value="or">Любое условие · ИЛИ</SelectItem>
+            <SelectItem value="and">{copy("Все условия · И")}</SelectItem>
+            <SelectItem value="or">{copy("Любое условие · ИЛИ")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -91,7 +99,7 @@ export function PolicyConditionGroup({
                   size="icon-sm"
                   variant="ghost"
                   className="absolute right-0 top-4"
-                  aria-label="Удалить группу"
+                  aria-label={copy("Удалить группу")}
                   onClick={() => remove(index)}
                 >
                   <X className="size-4" />
@@ -154,7 +162,9 @@ export function PolicyConditionGroup({
                 }
               >
                 <SelectTrigger
-                  aria-label={`Оператор для ${field.label}`}
+                  aria-label={copy("Оператор для {{value0}}", {
+                    value0: field.label,
+                  })}
                   size="sm"
                   className="col-start-1 min-h-7 w-full min-w-0 py-0 shadow-none sm:col-start-auto"
                 >
@@ -168,7 +178,7 @@ export function PolicyConditionGroup({
                         key={op}
                         value={op}
                       >
-                        {operatorLabels[op]}
+                        {copy(operatorLabels[op])}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -190,7 +200,9 @@ export function PolicyConditionGroup({
                 variant="ghost"
                 size="icon-sm"
                 className="col-start-2 row-start-1 sm:col-start-auto sm:row-start-auto"
-                aria-label={`Удалить условие ${index + 1}`}
+                aria-label={copy("Удалить условие {{value0}}", {
+                  value0: index + 1,
+                })}
                 onClick={() => remove(index)}
               >
                 <X className="size-4" />
@@ -201,7 +213,7 @@ export function PolicyConditionGroup({
       </div>
       {!value.children.length && (
         <p className="py-5 text-sm text-muted-foreground">
-          Добавьте хотя бы одно условие.
+          {copy("Добавьте хотя бы одно условие. ")}
         </p>
       )}
       <div className="flex items-center gap-0.5 py-3">
@@ -218,7 +230,7 @@ export function PolicyConditionGroup({
           }
         >
           <Plus className="size-4" />
-          Добавить условие
+          {copy("Добавить условие ")}
         </Button>
         {depth < 3 && (
           <Popover
@@ -230,7 +242,7 @@ export function PolicyConditionGroup({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Дополнительные действия с условиями"
+                aria-label={copy("Дополнительные действия с условиями")}
               >
                 <ChevronDown className="size-4" />
               </Button>
@@ -262,7 +274,7 @@ export function PolicyConditionGroup({
                   });
                 }}
               >
-                Добавить группу И/ИЛИ
+                {copy("Добавить группу И/ИЛИ ")}
               </Button>
             </PopoverContent>
           </Popover>

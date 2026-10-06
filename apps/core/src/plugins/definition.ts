@@ -2,13 +2,15 @@ import type {
   EndpointDefinition,
   PluginDefinition,
   PluginCapability,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import type { PluginCollection } from "./collection-definition.js";
 import type { PluginMigration } from "./migration-index.js";
-import type { PluginSettingsDefinition } from "@asmblyr/contracts";
+import type { PluginSettingsDefinition } from "@asmblyr-collaborative/contracts";
 import type { LoadedHook } from "./hook-index.js";
+import type { TranslationCatalogs } from "@asmblyr-collaborative/contracts";
 
 export interface LoadedPlugin {
+  translations?: TranslationCatalogs;
   name: string;
   definition: PluginDefinition;
   endpoints: readonly EndpointDefinition[];

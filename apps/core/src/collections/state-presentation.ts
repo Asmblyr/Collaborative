@@ -1,4 +1,7 @@
-import type { CollectionState, FieldPresentation } from "@asmblyr/contracts";
+import type {
+  CollectionState,
+  FieldPresentation,
+} from "@asmblyr-collaborative/contracts";
 
 export function statePresentation(
   state: CollectionState,

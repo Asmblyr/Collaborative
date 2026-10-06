@@ -1,4 +1,4 @@
-# @asmblyr/kit
+# @asmblyr-collaborative/kit
 
 Типизированный API для описания плагинов Asmblyr.
 
@@ -7,15 +7,15 @@
 Плагины также могут предоставлять [редакторы текстовых полей](FIELDS.md)
 с настройками и отображением в таблице. Пример — `examples/plugins/color`.
 
-`@asmblyr/kit` содержит серверный контекст, H3-обработчики и сборщик плагинов.
-HTTP-клиент для браузера и Node находится в отдельном [@asmblyr/sdk](../sdk/README.md).
-Общие типы запросов и ответов принадлежат `@asmblyr/contracts`;
+`@asmblyr-collaborative/kit` содержит серверный контекст, H3-обработчики и сборщик плагинов.
+HTTP-клиент для браузера и Node находится в отдельном [@asmblyr-collaborative/sdk](../sdk/README.md).
+Общие типы запросов и ответов принадлежат `@asmblyr-collaborative/contracts`;
 kit переэкспортирует типы, необходимые авторам обработчиков.
 
 Обязательный `plugin.ts` в корне пакета пока остаётся пустым описанием:
 
 ```ts
-import { definePlugin } from "@asmblyr/kit";
+import { definePlugin } from "@asmblyr-collaborative/kit";
 
 export default definePlugin({});
 ```
@@ -33,7 +33,7 @@ TypeScript; описание хранится рядом с обработчик
 Файл `server/api/comments/status.get.ts`:
 
 ```ts
-import { defineHandler, useAsmblyr } from "@asmblyr/kit";
+import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
 
 export default defineHandler((event) => {
   const { actor, logger } = useAsmblyr(event);
@@ -48,6 +48,9 @@ export default defineHandler((event) => {
 - `useAsmblyr(event)` возвращает проверенный контекст: `actor` (`id`, `kind`,
   необязательный `displayName`), `requestId`, `logger`, `items` и разрешённые возможности пакета.
   `storage` требует namespace и `storage.own`; `displayName` — `identity.profile`. Вызов без контекста Core завершается ошибкой.
+  Возможность `notifications` добавляет подписки и публикацию событий своего
+  namespace в личные входящие. Core выбирает получателей и проверяет права на запись.
+  См. [контракт возможностей](./CAPABILITIES.md).
 - Core проверяет access token пользователя или сервисного аккаунта до чтения тела
   и запуска обработчика. Анонимных endpoints нет. `Authorization` в `event.req`
   не передаётся; UI также удаляет свои cookies входа из запроса к плагину.
@@ -75,7 +78,7 @@ export default defineHandler((event) => {
 ## Чтение данных
 
 ```ts
-import { defineHandler, useAsmblyr } from "@asmblyr/kit";
+import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
 
 export default defineHandler(async (event) => {
   const { items } = useAsmblyr(event);
@@ -98,7 +101,7 @@ export default defineHandler(async (event) => {
 | `items.get(collection, id, options?)` | `{ data, label }`; отсутствующая запись — ошибка 404               |
 
 Контракты `ItemsReader`, `ItemListOptions`, `ItemReadOptions`, `ItemListResult`,
-`ItemResult`, `ItemRecord` и типы фильтров экспортируются из `@asmblyr/kit`.
+`ItemResult`, `ItemRecord` и типы фильтров экспортируются из `@asmblyr-collaborative/kit`.
 
 - `collection` и `fields` используют технические имена. Выбор полей относится
   к физическим столбцам, включая внешние ключи и системные даты. Разворачивания
@@ -114,7 +117,8 @@ export default defineHandler(async (event) => {
   Это те же ограничения, что у HTTP API. Без `sort` используется первичный ключ.
 - `id` — строка или безопасное целое JS. Большие `bigserial` передавайте строками;
   в результате они также остаются строками. Поля имеют тип `unknown`, поскольку
-  схемы динамические. Внутри обработчика даты PostgreSQL могут быть `Date`;
+  схемы динамические. Календарный `date` всегда остаётся строкой `YYYY-MM-DD`,
+  обычный `bigint` — точной десятичной строкой. Внутри обработчика `datetime` может быть `Date`;
   при JSON-ответе они сериализуются в ISO-строки, как в `/items`.
 - Поддерживаются `q` и объект `filter` с теми же операторами и проверками, что у
   HTTP API. Значения условий — строки или массивы строк, включая числа и boolean.
@@ -191,7 +195,7 @@ await items.delete("articles", 4);
 ### Пример POST с проверкой тела
 
 ```ts
-import { defineHandler, useAsmblyr } from "@asmblyr/kit";
+import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
 import { readValidatedBody } from "h3";
 
 export default defineHandler(async (event) => {
@@ -257,7 +261,7 @@ UI автоматически проксирует пути плагинов, и
 имя файла совпадает с локальным именем коллекции. Подкаталоги и симлинки запрещены.
 
 ```ts
-import { defineCollection } from "@asmblyr/kit";
+import { defineCollection } from "@asmblyr-collaborative/kit";
 
 export default defineCollection({
   name: "entries",
@@ -284,6 +288,7 @@ export default defineCollection({
 - `required` — обязательность непустого значения в API; `nullable` — допустимость
   SQL NULL в БД. Оба параметра явные и независимые: `true` / `true` допустимо.
 - Типы полей соответствуют Core. Тип значения `defaultValue` зависит от поля;
+  `date` и `bigint` используют строки, включая `CollectionRow` и входы storage.
   для `file` / `files` дефолт не поддерживается. `searchable` доступен для `text`
   и `email`; создание индекса это свойство не описывает.
 - `presentation` поля использует существующий `FieldPresentation` из contracts;
@@ -342,7 +347,7 @@ MCP при установке выключен. Связи между колле
 ```json
 {
   "asmblyr": {
-    "plugins": ["@asmblyr/plugin-comments"]
+    "plugins": ["@asmblyr-collaborative/plugin-comments"]
   }
 }
 ```
@@ -372,7 +377,7 @@ Core и обновляет маршруты. Это перезапуск про�
 JavaScript. Сканирования исходников в этом режиме нет. Удалённые исходные маршруты
 не сохраняются в следующей сборке.
 
-Kit и comments — workspace-пакеты, ещё не опубликованные в npm. `pnpm build:plugins` собирает оба;
+В репозитории Kit и comments связаны как workspace-пакеты. `pnpm build:plugins` собирает оба;
 `pnpm dev` выполняет начальную сборку автоматически. `pnpm build` сначала собирает
 пакеты, затем Core и UI. Публикация пакетов остаётся отдельным шагом.
 
@@ -380,5 +385,56 @@ Kit и comments — workspace-пакеты, ещё не опубликованн
 
 ```sh
 pnpm build:plugins
-pnpm --filter @asmblyr/kit --filter @asmblyr/plugin-comments typecheck
+pnpm --filter @asmblyr-collaborative/kit --filter @asmblyr-collaborative/plugin-comments typecheck
 ```
+
+## Локализация расширения
+
+Необязательные плоские JSON-каталоги `locales/ru.json` и `locales/en.json`
+располагаются рядом с `package.json`. Включайте `locales/` в опубликованный пакет
+вместе с `dist/`. Core читает их одинаково в source и built режиме и добавляет
+в защищённый `GET /translations`. Каталоги содержат только публичные подписи: не
+добавляйте в них настройки, ключи или пользовательские данные.
+
+UI использует тот же каталог через `defineUiPlugin({ translations: { ru, en }, ... })`.
+Для JSON-импортов включите `resolveJsonModule` в tsconfig. У страниц, панелей
+и интерфейсов поля можно указать `titleKey`; `title` остаётся запасной подписью.
+
+```tsx
+import { usePluginTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
+
+function Panel() {
+  const { t, locale } = usePluginTranslations("comments");
+  return <p>{t("panel.title", "Discussion")}</p>;
+}
+```
+
+Хост предоставляет изолированный i18next provider на текущем языке профиля,
+пространство имён `plugin.<manifest.namespace>` и русский fallback. React
+экранирует текст при отображении. Не импортируйте серверный entry point в UI.
+Ключи `collection.<local-name>.label` и
+`field.<local-name>.<field>.label|description|placeholder` задают подписи
+собственных таблиц в UI и API. Для настроек используются `settings.title`,
+`settings.description` и `settings.<field>.label|description`.
+Имена коллекций/полей, значения записей и HTTP-контракты не переводятся.
+
+## Личные внешние подключения
+
+Model handler с `connection: "google"` в `defineModelAnnotation` виден ассистенту только при активном подключении текущего человека. Пакет запрашивает capability `connections.google`, установка явно одобряет её в `asmblyr.pluginPermissions`.
+
+`useActionContext(event).connections?.google` предоставляет owner-bound операции `list`, `readText`, `sheet`, `cells`, `proposeWrite`. Контракты `PersonalConnections`, `GoogleWriteInput`, `GoogleFileList`, `GoogleText`, `GoogleSheet`, `GoogleCells` экспортируются Kit. Нет raw token, произвольного URL или метода подтверждения. `proposeWrite` только сохраняет предложение; реальную запись подтверждает человек в UI Core. HTTP и внутренний MCP используют одинаковый handler. Пример — `packages/plugin-google-workspace`; ограничения и настройка — [Google Workspace](../../docs/features/google-workspace.md).
+
+## SDK consumer contracts
+
+Built defineModelContext handlers include generated JSON input/output schemas.
+Core exports accessible handlers through GET /schema, using their existing
+AccessGate and original HTTP address. The generated SDK provides
+`client.plugins.namespace[methodId](input)` with inferred output. Method IDs join
+route segments with hyphens. No extra SDK handler or registry is needed.
+
+Contracts describe Kit's bounded JSON model subset. They do not grant data access
+or imply that a personal OAuth connection is available. Execution still runs the
+original gate and current Core permissions. Legacy defineAction handlers without
+a generated outputSchema do not appear in the typed consumer API.
+
+[Package checks and release preparation](../../docs/reference/packages.md).

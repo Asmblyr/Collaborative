@@ -6,6 +6,7 @@ import { loadSetupStatus } from "@/lib/setup-status";
 import { SsoProviders } from "@/components/auth/sso-providers";
 import { loadLoginProviders } from "@/lib/sso-server";
 import { ssoMessage } from "@/lib/sso";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
 export default async function LoginPage({
   searchParams,
@@ -16,6 +17,8 @@ export default async function LoginPage({
     reauth?: string;
   }>;
 }) {
+  const copy = await getUiCopy();
+
   const query = await searchParams;
   const requested = query.next;
   const next = safeNext(typeof requested === "string" ? requested : null);
@@ -45,9 +48,9 @@ export default async function LoginPage({
           <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
             Asmblyr
           </p>
-          <h1 className="text-2xl font-semibold">Вход</h1>
+          <h1 className="text-2xl font-semibold">{copy("Вход")}</h1>
           <p className="text-sm text-muted-foreground">
-            Войдите в админку под своей учётной записью.
+            {copy("Войдите в админку под своей учётной записью. ")}
           </p>
         </div>
         {message && (
@@ -55,7 +58,7 @@ export default async function LoginPage({
             role="alert"
             className="rounded-lg bg-muted p-3 text-sm"
           >
-            {message}
+            {copy(message)}
           </p>
         )}
         <LoginForm next={next} />

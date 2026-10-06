@@ -1,5 +1,8 @@
 import OpenAI from "openai";
-import type { AssistantTurnSummary } from "@asmblyr/contracts";
+import type {
+  AssistantTurnSummary,
+  AssistantActivity,
+} from "@asmblyr-collaborative/contracts";
 import {
   responseMetadata,
   type AssistantResponseMetadata,
@@ -7,6 +10,7 @@ import {
 
 export class AssistantProviderError extends Error {
   summary?: AssistantTurnSummary;
+  activity?: AssistantActivity[];
   constructor(
     readonly statusCode: number,
     readonly code: string,

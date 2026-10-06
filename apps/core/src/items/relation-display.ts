@@ -23,9 +23,21 @@ export function relationDisplay({ alias, target, allowed }: RelationContext) {
     config?.labelField && readable(config.labelField)
       ? config.labelField
       : fallback;
-  // A stable identity remains visible even when a record's label is empty.
-  // Other columns are chosen explicitly in the relation presentation settings.
-  const defaults = [...new Set([key, labelField])].filter(readable);
+  // Reference context distinguishes rows whose own label is empty or repeated.
+  // The parent reference is already known; keep other automatic context bounded.
+  const references = [...fields.values()]
+    .filter(
+      (field) =>
+        field.relation &&
+        field.relation.collection !== alias.collection_name &&
+        !field.presentation?.sensitive &&
+        readable(field.name),
+    )
+    .slice(0, 2)
+    .map((field) => field.name);
+  const defaults = [...new Set([key, labelField, ...references])].filter(
+    readable,
+  );
   const columns = (config?.columns.length ? config.columns : defaults).filter(
     readable,
   );

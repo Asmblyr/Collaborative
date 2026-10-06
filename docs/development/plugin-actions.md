@@ -13,7 +13,7 @@ import {
   defineHandler,
   defineModelAnnotation,
   defineModelContext,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import type { CalculationInput } from "../../../shared/calculation.ts";
 
 const annotate = defineModelAnnotation({
@@ -101,7 +101,7 @@ Core проверяет вход до handler и выход после него.
 сгенерированной JSON Schema. Generic сам по себе не выполняет валидацию без Core.
 
 Форма импортирует JSON и использует `useAction<Input, Output>(model, props, options)`
-из `@asmblyr/kit/ui/use-action`. `modelField` из `@asmblyr/kit/model` возвращает
+из `@asmblyr-collaborative/kit/ui/use-action`. `modelField` из `@asmblyr-collaborative/kit/model` возвращает
 подпись/описание поля. В tsconfig нужен `resolveJsonModule: true`. Браузер не
 импортирует серверный handler или корневой Kit. Для начальной генерации —
 `pnpm build:plugins`; `pnpm dev` уже выполняет её перед запуском UI.
@@ -201,3 +201,7 @@ node scripts/test.mjs core-plugins
 
 Runner создаёт и удаляет отдельную временную PostgreSQL. Интеграционные тесты
 нельзя запускать напрямую на базе проекта. Изменения UI также проверяются в браузере.
+
+## Личные подключения
+
+Аннотация `connection: "google"` требует активного собственного подключения и одобренной capability `connections.google`. `useActionContext(event).connections.google` даёт ограниченный broker без credentials. `proposeWrite` подготавливает owner-bound предложение; подтверждение реализовано в Core и отсутствует в MCP. Google-плагин остается H3 file routes со схемами из типов; отдельной регистрации инструментов нет. См. [Google Workspace](../features/google-workspace.md).

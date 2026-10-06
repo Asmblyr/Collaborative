@@ -1,4 +1,4 @@
-import { defineHandler, useAsmblyr } from "@asmblyr/kit";
+import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
 import {
   readCommentId,
   readCommentInput,

@@ -7,14 +7,14 @@ import type {
   FieldType,
   PrimaryKey,
   Timestamps,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 export type {
   CollectionMode,
   FieldType,
   PrimaryKey,
   PrimaryKeyType,
   Timestamps,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 
 export interface CollectionField {
   name: string;
@@ -22,6 +22,9 @@ export interface CollectionField {
   required: boolean;
   nullable: boolean;
   defaultValue?: JsonValue;
+  searchPriority?:
+    | import("@asmblyr-collaborative/contracts").SearchPriority
+    | null;
   searchable?: boolean;
 }
 
@@ -41,8 +44,10 @@ export interface CreateCollectionInput {
 }
 
 export interface Collection {
+  sourceKind?: "table" | "materialized-view";
   name: string;
   displayName?: string | null;
+  translations?: import("@asmblyr-collaborative/contracts").LabelTranslations;
   hidden?: boolean;
   mcp?: { enabled: boolean; description: string | null };
   displayField?: string | null;
@@ -60,6 +65,9 @@ export interface Collection {
     required: boolean;
     nullable: boolean;
     defaultValue?: JsonValue;
+    searchPriority?:
+      | import("@asmblyr-collaborative/contracts").SearchPriority
+      | null;
     searchable?: boolean;
     searchIndexed?: boolean;
     presentation?: FieldPresentation;

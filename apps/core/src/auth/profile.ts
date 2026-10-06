@@ -9,7 +9,7 @@ import {
 } from "./validation.js";
 import { parseProfile } from "./profile-input.js";
 import { securityEvent } from "./security-events.js";
-import type { CurrentUser } from "@asmblyr/contracts";
+import type { CurrentUser } from "@asmblyr-collaborative/contracts";
 
 export async function getProfile(
   db: Knex,

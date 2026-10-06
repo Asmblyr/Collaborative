@@ -1,4 +1,4 @@
-import { useStorage, type HookContext } from "@asmblyr/kit";
+import { useStorage, type HookContext } from "@asmblyr-collaborative/kit";
 import entries from "../collections/entries.js";
 
 export async function deleteComments(

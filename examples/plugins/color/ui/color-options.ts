@@ -1,4 +1,4 @@
-import type { FieldEditorProps } from "@asmblyr/kit/ui";
+import type { FieldEditorProps } from "@asmblyr-collaborative/kit/ui";
 
 export const colorPattern = "#[0-9a-fA-F]{6}";
 export const defaultPalette = [

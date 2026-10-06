@@ -55,7 +55,8 @@ services:
       FILES_S3_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${S3_USER}
       AWS_SECRET_ACCESS_KEY: ${S3_PASSWORD}
-      ASSISTANT_ENABLED: "false"
+      ASSISTANT_ENABLED: ${ASSISTANT_ENABLED:-}
+      SECRETS_LOCAL_KEY: ${SECRETS_LOCAL_KEY:-}
       HISTORY_RETENTION_DAYS: ${HISTORY_RETENTION_DAYS:-0}
     depends_on:
       migrate: { condition: service_completed_successfully }

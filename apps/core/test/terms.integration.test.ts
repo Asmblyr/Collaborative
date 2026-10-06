@@ -2,7 +2,7 @@ import "./support/require-test-database.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
-import { defaultCollectionState } from "@asmblyr/contracts";
+import { defaultCollectionState } from "@asmblyr-collaborative/contracts";
 import { createToolSession } from "../src/tools/session.js";
 import { connectInternalMcp } from "../src/mcp/internal-client.js";
 import { mcpFixture } from "./support/assistant-mcp-fixture.js";

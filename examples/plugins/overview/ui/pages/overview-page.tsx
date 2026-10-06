@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@asmblyr/kit/ui/button";
-import type { PluginPageProps } from "@asmblyr/kit/ui";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import type { PluginPageProps } from "@asmblyr-collaborative/kit/ui";
 import { useOverview } from "../hooks/use-overview.ts";
 
 const timeFormat = new Intl.DateTimeFormat("ru", {

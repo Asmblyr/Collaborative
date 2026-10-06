@@ -9,8 +9,8 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -27,6 +27,8 @@ import { useTableRelationLabels } from "./use-table-relation-labels";
 import { availableColumns } from "./item-columns";
 import { PresentedValue } from "./presented-value";
 import type { Collection, Item } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
+
 export interface RecordChoice {
   id: string;
   label: string;
@@ -51,6 +53,7 @@ export function RecordChooser({
   title,
   previewColumns,
   candidatesEndpoint,
+  candidateFilter,
   description,
   emptyMessage,
   excludedIds = [],
@@ -74,10 +77,15 @@ export function RecordChooser({
   title?: string;
   previewColumns?: string[];
   candidatesEndpoint?: string;
+  candidateFilter?:
+    | import("@asmblyr-collaborative/contracts").ItemFilterGroup
+    | null;
   description?: string;
   emptyMessage?: string;
   excludedIds?: string[];
 }) {
+  const copy = useUiCopy();
+
   const [open, setOpen] = useState(false);
   const items = useRelationItems(
     collection.name,
@@ -88,6 +96,7 @@ export function RecordChooser({
     labelField ? null : collection.displayTemplate,
     candidatesEndpoint,
     !labelField,
+    candidateFilter,
   );
   const columns = recordChoiceColumns(collection, catalog, previewColumns);
   const relationLabels = useTableRelationLabels(
@@ -161,7 +170,9 @@ export function RecordChooser({
           variant="outline"
           id={id}
           disabled={disabled}
-          aria-label={`Выбрать записи: ${collection.name}`}
+          aria-label={copy("Выбрать записи: {{value0}}", {
+            value0: collection.name,
+          })}
           className={
             trigger
               ? "gap-2"
@@ -173,7 +184,7 @@ export function RecordChooser({
               <span className="truncate">
                 {selected.length
                   ? selectedLabel(selected[0])
-                  : "Выберите запись…"}
+                  : copy("Выберите запись…")}
               </span>
               <ChevronsUpDown
                 className="size-3.5 shrink-0 text-muted-foreground"
@@ -188,7 +199,9 @@ export function RecordChooser({
         align="start"
         sideOffset={6}
         aria-label={
-          title ? `Выбор: ${title}` : `Выбор записей ${collection.name}`
+          title
+            ? copy("Выбор: {{value0}}", { value0: title })
+            : copy("Выбор записей {{value0}}", { value0: collection.name })
         }
         className="w-[min(32rem,calc(100vw-3rem))] overflow-hidden p-0"
         onEscapeKeyDown={(event) => {
@@ -202,7 +215,9 @@ export function RecordChooser({
             {title || collection.displayName || collection.name}
           </span>
           <span className="text-xs text-muted-foreground">
-            {multiple ? `Выбрано: ${selected.length} / 100` : "Одна запись"}
+            {multiple
+              ? copy("Выбрано: {{value0}} / 100", { value0: selected.length })
+              : copy("Одна запись")}
           </span>
         </div>
         {description && (
@@ -224,7 +239,9 @@ export function RecordChooser({
                   variant="ghost"
                   className="size-6"
                   disabled={pending}
-                  aria-label={`Снять выбор ${selectedLabel(value)}`}
+                  aria-label={copy("Снять выбор {{value0}}", {
+                    value0: selectedLabel(value),
+                  })}
                   onClick={() => toggle(value)}
                 >
                   <X className="size-3" />
@@ -237,14 +254,14 @@ export function RecordChooser({
           query={items.query}
           onQueryChange={items.setQuery}
           maxLength={100}
-          placeholder="Поиск записей…"
+          placeholder={copy("Поиск записей…")}
         >
           {items.loading ? (
             <p
               role="status"
               className="p-3 text-sm text-muted-foreground"
             >
-              Загрузка…
+              {copy("Загрузка… ")}
             </p>
           ) : items.error ? (
             <div
@@ -258,14 +275,14 @@ export function RecordChooser({
                 variant="ghost"
                 onClick={items.retry}
               >
-                Повторить
+                {copy("Повторить ")}
               </Button>
             </div>
           ) : !options.length ? (
             <p className="p-4 text-center text-sm text-muted-foreground">
               {items.query.trim()
-                ? "По этому запросу доступных записей не найдено"
-                : (emptyMessage ?? "Ничего не найдено")}
+                ? copy("По этому запросу доступных записей не найдено")
+                : (emptyMessage ?? copy("Ничего не найдено"))}
             </p>
           ) : (
             options.map(({ id: value, label: originalLabel, item }) => {
@@ -297,7 +314,10 @@ export function RecordChooser({
                   <Checkbox
                     checked={checked}
                     disabled={pending || (!checked && selected.length >= 100)}
-                    aria-label={`Выбрать ${view?.selectedLabel ?? label} (ID: ${value})`}
+                    aria-label={copy("Выбрать {{value0}} (ID: {{value1}})", {
+                      value0: view?.selectedLabel ?? label,
+                      value1: value,
+                    })}
                     onCheckedChange={() => toggle(value)}
                   />
                   {content}
@@ -339,7 +359,7 @@ export function RecordChooser({
               type="button"
               size="icon-sm"
               variant="ghost"
-              aria-label="Предыдущие записи"
+              aria-label={copy("Предыдущие записи")}
               disabled={items.loading || items.page === 1 || pending}
               onClick={() => items.setPage(items.page - 1)}
             >
@@ -352,7 +372,7 @@ export function RecordChooser({
               type="button"
               size="icon-sm"
               variant="ghost"
-              aria-label="Следующие записи"
+              aria-label={copy("Следующие записи")}
               disabled={
                 items.loading || items.page * 25 >= items.total || pending
               }
@@ -378,7 +398,7 @@ export function RecordChooser({
                 else items.retry();
               }}
             >
-              {pending ? "Добавление…" : "Добавить выбранные"}
+              {pending ? copy("Добавление…") : copy("Добавить выбранные")}
             </Button>
           ) : (
             onCreate && (
@@ -392,7 +412,7 @@ export function RecordChooser({
                 }}
               >
                 <Plus className="size-4" />
-                Создать запись
+                {copy("Создать запись ")}
               </Button>
             )
           )}

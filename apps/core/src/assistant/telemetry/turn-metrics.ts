@@ -1,6 +1,11 @@
-import type { AssistantTurnSummary, AssistantUsage } from "@asmblyr/contracts";
+import type {
+  AssistantTurnSummary,
+  AssistantUsage,
+  AssistantToolDiagnostic,
+} from "@asmblyr-collaborative/contracts";
 import { AssistantProviderError, type AssistantAnswer } from "../provider.js";
 import type { AssistantResponseMetadata } from "./usage.js";
+import { toolDiagnosticCode } from "../../tools/errors.js";
 
 export class AssistantTurnMetrics {
   private readonly started = performance.now();
@@ -8,6 +13,7 @@ export class AssistantTurnMetrics {
   private modelCalls = 0;
   private toolCalls = 0;
   private toolErrors = 0;
+  private readonly toolTrace: AssistantToolDiagnostic[] = [];
   private readonly usage: AssistantUsage = {
     inputTokens: null,
     outputTokens: null,
@@ -53,20 +59,35 @@ export class AssistantTurnMetrics {
     }
   }
 
-  async recordTool(execute: () => Promise<object>): Promise<object> {
+  async recordTool(
+    execute: () => Promise<object>,
+    name = "unknown",
+  ): Promise<object> {
     this.toolCalls++;
+    const index = this.toolCalls;
+    const started = performance.now();
+    let errorCode: string | null = null;
     try {
       const result = await execute();
-      if (
-        "error" in result ||
-        ("isError" in result && result.isError === true)
-      ) {
+      errorCode = toolDiagnosticCode(result);
+      if (errorCode) {
         this.toolErrors++;
       }
       return result;
     } catch (error) {
+      errorCode = "TOOL_ERROR";
       this.toolErrors++;
       throw error;
+    } finally {
+      if (this.toolTrace.length < 32) {
+        this.toolTrace.push({
+          index,
+          name,
+          durationMs: Math.round(performance.now() - started),
+          status: errorCode ? "failed" : "succeeded",
+          errorCode,
+        });
+      }
     }
   }
 
@@ -81,6 +102,7 @@ export class AssistantTurnMetrics {
       modelCalls: this.modelCalls,
       toolCalls: this.toolCalls,
       toolErrors: this.toolErrors,
+      toolTrace: this.toolTrace.map((entry) => ({ ...entry })),
       durationMs: Math.round(performance.now() - this.started),
       status,
       errorCode,

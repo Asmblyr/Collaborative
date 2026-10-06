@@ -1,10 +1,19 @@
-import { Button } from "@asmblyr/kit/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+"use client";
+
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import type { Collection, CollectionField } from "@/components/items/types";
 import { FieldPresentationSettings } from "./field-presentation-settings";
 import { RelationDisplaySettings } from "./relation-display-settings";
 import { RelationSearchSettings } from "./relation-search-settings";
 import type { useFieldEditor } from "./use-field-editor";
+import { useUiCopy } from "@/lib/ui-copy";
+
 export function AliasFieldEditor({
   editor,
   field,
@@ -18,9 +27,13 @@ export function AliasFieldEditor({
   portalContainer?: HTMLElement | null;
   onCancel: () => void;
 }) {
+  const copy = useUiCopy();
+
   const {
     submit,
     relationSearchable,
+    searchPriority,
+    setSearchPriority,
     pending,
     setRelationSearchable,
     presentation,
@@ -42,47 +55,51 @@ export function AliasFieldEditor({
         className="space-y-4"
       >
         <TabsList className="h-auto w-full flex-wrap justify-start">
-          <TabsTrigger value="basic">Основное</TabsTrigger>
-          <TabsTrigger value="presentation">Отображение</TabsTrigger>
-          <TabsTrigger value="relation">Связанные записи</TabsTrigger>
-          <TabsTrigger value="search">Поиск</TabsTrigger>
+          <TabsTrigger value="basic">{copy("Основное")}</TabsTrigger>
+          <TabsTrigger value="presentation">{copy("Отображение")}</TabsTrigger>
+          <TabsTrigger value="relation">{copy("Связанные записи")}</TabsTrigger>
+          <TabsTrigger value="search">{copy("Поиск")}</TabsTrigger>
         </TabsList>
         <TabsContent
           value="basic"
           className="space-y-4"
         >
           <p>
-            <span className="font-medium">Поле:</span> <code>{field.name}</code>
+            <span className="font-medium">{copy("Поле:")}</span>{" "}
+            <code>{field.name}</code>
           </p>
           <p>
-            <span className="font-medium">Вид:</span>{" "}
+            <span className="font-medium">{copy("Вид:")}</span>{" "}
             {field.relation?.kind === "m2m"
-              ? "Многие ко многим"
-              : "Один ко многим"}
+              ? copy("Многие ко многим")
+              : copy("Один ко многим")}
           </p>
           <p>
-            <span className="font-medium">Связанная коллекция:</span>{" "}
+            <span className="font-medium">{copy("Связанная коллекция:")}</span>{" "}
             <code>{field.relation?.collection}</code>
           </p>
           {field.relation && field.relation.kind !== "m2o" && (
             <>
               <p>
-                <span className="font-medium">Через коллекцию:</span>{" "}
+                <span className="font-medium">{copy("Через коллекцию:")}</span>{" "}
                 <code>{field.relation.throughCollection}</code>
               </p>
               <p>
-                <span className="font-medium">Внешний ключ:</span>{" "}
+                <span className="font-medium">{copy("Внешний ключ:")}</span>{" "}
                 <code>{field.relation.throughField}</code>
               </p>
             </>
           )}
           <p className="text-muted-foreground">
-            Физические имена связи после создания не меняются.
+            {copy("Физические имена связи после создания не меняются. ")}
           </p>
         </TabsContent>
         <TabsContent value="search">
           <RelationSearchSettings
             searchable={relationSearchable}
+            priority={searchPriority}
+            onPriorityChange={setSearchPriority}
+            container={portalContainer}
             disabled={pending}
             onChange={setRelationSearchable}
           />
@@ -113,7 +130,7 @@ export function AliasFieldEditor({
           role="status"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <div className="flex gap-2">
@@ -121,7 +138,7 @@ export function AliasFieldEditor({
           type="submit"
           disabled={pending || !changed}
         >
-          {pending ? "Сохраняем…" : "Сохранить изменения"}
+          {pending ? copy("Сохраняем…") : copy("Сохранить изменения")}
         </Button>
         <Button
           type="button"
@@ -129,7 +146,7 @@ export function AliasFieldEditor({
           disabled={pending}
           onClick={onCancel}
         >
-          Отмена
+          {copy("Отмена ")}
         </Button>
       </div>
     </form>

@@ -12,9 +12,9 @@ export function aggregateOperationsFor(
   type: FilterFieldType,
 ): AggregateOperation[] {
   const operations: AggregateOperation[] = ["count", "count_distinct"];
-  if (type === "integer" || type === "decimal")
+  if (["integer", "bigint", "decimal"].includes(type))
     operations.push("sum", "avg", "min", "max");
-  if (type === "datetime") operations.push("min", "max");
+  if (type === "datetime" || type === "date") operations.push("min", "max");
   return operations;
 }
 

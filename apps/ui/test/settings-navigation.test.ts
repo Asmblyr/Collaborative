@@ -4,7 +4,7 @@ import {
   availableSettings,
   settingsCatalog,
   settingsHref,
-} from "../src/components/system-settings/sections";
+} from "../src/components/admin/settings/sections";
 import { policyDraft } from "../src/components/access/policy-draft";
 
 test("settings navigation contains only editable sections and keeps collection grants separate", () => {

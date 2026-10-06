@@ -7,21 +7,21 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "pnpm build:packages && pnpm --parallel --filter @asmblyr/ui --filter @asmblyr/core dev",
+    "dev": "pnpm build:packages && pnpm --parallel --filter @asmblyr-collaborative/ui --filter @asmblyr-collaborative/core dev",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
-    "db:migrate": "pnpm --filter @asmblyr/core db:migrate",
-    "db:rollback": "pnpm --filter @asmblyr/core db:rollback",
-    "db:status": "pnpm --filter @asmblyr/core db:status",
-    "test:integration": "pnpm build:packages && pnpm --filter @asmblyr/core test:integration",
-    "build": "pnpm build:packages && pnpm --filter @asmblyr/core --filter @asmblyr/ui build",
-    "build:plugins": "pnpm --filter @asmblyr/kit build && pnpm --filter @asmblyr/plugin-comments build",
-    "build:packages": "pnpm --filter @asmblyr/sdk build && pnpm build:plugins",
+    "db:migrate": "pnpm --filter @asmblyr-collaborative/core db:migrate",
+    "db:rollback": "pnpm --filter @asmblyr-collaborative/core db:rollback",
+    "db:status": "pnpm --filter @asmblyr-collaborative/core db:status",
+    "test:integration": "pnpm build:packages && pnpm --filter @asmblyr-collaborative/core test:integration",
+    "build": "pnpm build:packages && pnpm --filter @asmblyr-collaborative/core --filter @asmblyr-collaborative/ui build",
+    "build:plugins": "pnpm --filter @asmblyr-collaborative/kit build && pnpm --filter @asmblyr-collaborative/plugin-comments build && pnpm --filter @asmblyr-collaborative/plugin-google-workspace build",
+    "build:packages": "pnpm --filter @asmblyr-collaborative/sdk build && pnpm build:plugins",
     "typecheck": "pnpm build:packages && pnpm build:examples && pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "test:all": "pnpm build:packages && pnpm build:examples && pnpm --filter @asmblyr/sdk test && node scripts/test.mjs all",
+    "test:all": "pnpm build:packages && pnpm build:examples && pnpm --filter @asmblyr-collaborative/sdk test && pnpm --filter @asmblyr-collaborative/cli test && node scripts/test.mjs all",
     "test": "pnpm test:all",
-    "test:unit": "pnpm build:packages && pnpm build:examples && pnpm --filter @asmblyr/sdk test && pnpm -r test:unit",
+    "test:unit": "pnpm build:packages && pnpm build:examples && pnpm --filter @asmblyr-collaborative/sdk test && pnpm -r test:unit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:generate": "node scripts/docs/generate.mjs",
@@ -31,36 +31,44 @@
     "docs:preview": "vitepress preview docs --host 127.0.0.1",
     "check": "pnpm publication:check && pnpm format:check && pnpm typecheck && pnpm lint && pnpm test:all && pnpm docs:build",
     "build:examples": "pnpm build:plugins && pnpm --filter \"./examples/plugins/*\" build",
-    "publication:check": "node scripts/publication-check.mjs"
+    "publication:check": "node scripts/publication-check.mjs",
+    "packages:check": "node scripts/package-smoke.mjs"
   },
   "asmblyr": {
     "plugins": [
-      "@asmblyr/plugin-comments"
+      "@asmblyr-collaborative/plugin-comments",
+      "@asmblyr-collaborative/plugin-google-workspace"
     ],
     "pluginPermissions": {
-      "@asmblyr/plugin-comments": [
+      "@asmblyr-collaborative/plugin-comments": [
         "identity.profile",
         "items.read",
         "collections.manage",
         "storage.own",
         "hooks.items",
         "hooks.collections",
-        "settings"
+        "settings",
+        "notifications"
+      ],
+      "@asmblyr-collaborative/plugin-google-workspace": [
+        "connections.google"
       ]
     }
   },
   "dependencies": {
-    "@asmblyr/plugin-comments": "workspace:*"
+    "@asmblyr-collaborative/plugin-comments": "workspace:*",
+    "@asmblyr-collaborative/plugin-google-workspace": "workspace:*"
   },
   "devDependencies": {
+    "@asmblyr-collaborative/cli": "workspace:*",
     "prettier": "3.6.2",
     "typedoc": "0.28.20",
     "typedoc-plugin-markdown": "4.13.1",
     "vitepress": "1.6.4",
     "swagger-ui-dist": "5.33.1",
-    "@asmblyr/plugin-calculator": "workspace:*",
-    "@asmblyr/plugin-color": "workspace:*",
-    "@asmblyr/plugin-overview": "workspace:*"
+    "@asmblyr-collaborative/plugin-calculator": "workspace:*",
+    "@asmblyr-collaborative/plugin-color": "workspace:*",
+    "@asmblyr-collaborative/plugin-overview": "workspace:*"
   },
   "license": "MIT",
   "description": "Self-hosted collaborative data platform for PostgreSQL",

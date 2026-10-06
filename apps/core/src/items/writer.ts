@@ -3,7 +3,7 @@ import type {
   ItemCommitResult,
   ItemMutationResult,
   ItemRecord,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { Knex } from "knex";
 import { findCollectionSettings } from "../collections/settings-repository.js";
 import { grantFor, requireGrant, type Access } from "../permissions/access.js";

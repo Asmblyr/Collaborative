@@ -4,6 +4,7 @@ import { listCollections } from "./catalog-repository.js";
 import { readEditableField } from "./editable-field.js";
 import { updateFieldPresentation } from "./field-presentation.js";
 import { updateFieldDefinition } from "./field-update-service.js";
+import { parseSearchPriority, saveSearchPriority } from "./search-priority.js";
 import { updateRelationSearch } from "./relation-search.js";
 import { addFieldDefinition } from "./service.js";
 import {
@@ -33,6 +34,7 @@ export async function saveFieldConfiguration(
     "presentation",
     "searchable",
     "relationSearchable",
+    "searchPriority",
   ]);
   if (!Object.keys(input).length)
     throw new CollectionInputError("Expected field configuration");
@@ -42,7 +44,26 @@ export async function saveFieldConfiguration(
     }
   }
   return database.transaction(async (transaction) => {
-    const settings = await lockedCollectionSettings(transaction, name);
+    await transaction.raw(
+      "SELECT pg_advisory_xact_lock(hashtextextended(?::text, 0))",
+      ["asmblyr:field-behavior"],
+    );
+    const settings = await lockedCollectionSettings(
+      transaction,
+      name,
+      "ACCESS EXCLUSIVE",
+      true,
+    );
+    if (
+      settings.sourceKind === "materialized-view" &&
+      (create ||
+        input.field !== undefined ||
+        input.relationSearchable !== undefined)
+    ) {
+      throw new CollectionInputError(
+        "Materialized view fields support presentation settings only",
+      );
+    }
     if (isManagedColumn(settings, column)) {
       throw new CollectionInputError(`Field is managed by Core: ${column}`);
     }
@@ -99,6 +120,25 @@ export async function saveFieldConfiguration(
       await updateRelationSearch(transaction, name, column, {
         searchable: input.relationSearchable,
       });
+    }
+    if (Object.hasOwn(input, "searchPriority")) {
+      const current = (await listCollections(transaction))
+        .find((c) => c.name === name)
+        ?.fields.find((f) => f.name === column);
+      if (
+        !current ||
+        (!current.relation && !["text", "email"].includes(current.type ?? ""))
+      ) {
+        throw new CollectionInputError(
+          "Search priority requires a searchable field type",
+        );
+      }
+      await saveSearchPriority(
+        transaction,
+        name,
+        column,
+        parseSearchPriority(input.searchPriority),
+      );
     }
     const result = (await listCollections(transaction)).find(
       (entry) => entry.name === name,

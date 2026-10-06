@@ -3,9 +3,10 @@ import type { Collection, Item } from "./types";
 export function itemLabelField(collection: Collection): string {
   const key = collection.primaryKey.name;
   const readable = (name: string) =>
-    name === key ||
-    collection.access.read?.includes("*") ||
-    collection.access.read?.includes(name);
+    !collection.fields.find((f) => f.name === name)?.presentation?.sensitive &&
+    (name === key ||
+      collection.access.read?.includes("*") ||
+      collection.access.read?.includes(name));
   if (collection.displayField)
     return readable(collection.displayField) ? collection.displayField : key;
   return (
@@ -40,7 +41,9 @@ export function templateLabel(
 ): string | null {
   if (!template) return null;
   const names = [
-    ...template.matchAll(/\{\{\s*([a-z][a-z0-9_]{0,62})\s*\}\}/g),
+    ...template.matchAll(
+      /\{\{\s*([a-z][a-z0-9_]{0,62}(?:\.[a-z][a-z0-9_]{0,62}){0,2})\s*\}\}/g,
+    ),
   ].map((m) => m[1]);
   if (
     !names.length ||
@@ -50,10 +53,12 @@ export function templateLabel(
     return null;
   return (
     template
-      .replace(/\{\{\s*([a-z][a-z0-9_]{0,62})\s*\}\}/g, (_, field: string) =>
-        ["string", "number", "boolean"].includes(typeof item[field])
-          ? String(item[field])
-          : "",
+      .replace(
+        /\{\{\s*([a-z][a-z0-9_]{0,62}(?:\.[a-z][a-z0-9_]{0,62}){0,2})\s*\}\}/g,
+        (_, field: string) =>
+          ["string", "number", "boolean"].includes(typeof item[field])
+            ? String(item[field])
+            : "",
       )
       .trim()
       .slice(0, 160) || null

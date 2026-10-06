@@ -1,5 +1,8 @@
+"use client";
+
 import { Pencil, Trash2, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemSelectionBar({
   count,
@@ -26,11 +29,13 @@ export function ItemSelectionBar({
   onCancel: () => void;
   onClear: () => void;
 }) {
+  const copy = useUiCopy();
+
   if (!count) return null;
   return (
     <div
       role="group"
-      aria-label="Действия с выбранными записями"
+      aria-label={copy("Действия с выбранными записями")}
       className="fixed bottom-[calc(3rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card/95 px-4 py-3 text-sm shadow-[0_0_24px_rgb(0_0_0/0.12),0_4px_12px_rgb(0_0_0/0.08)] backdrop-blur-md sm:bottom-14 dark:shadow-[0_0_24px_rgb(0_0_0/0.5),0_0_0_1px_rgb(255_255_255/0.06)]"
     >
       <div className="flex items-center gap-2 font-medium">
@@ -38,7 +43,9 @@ export function ItemSelectionBar({
           {count}
         </span>
         <span>
-          {confirming ? "Удалить выбранные записи?" : "Выбрано на странице"}
+          {confirming
+            ? copy("Удалить выбранные записи?")
+            : copy("Выбрано на странице")}
         </span>
       </div>
       <div className="flex items-center gap-2">
@@ -50,7 +57,7 @@ export function ItemSelectionBar({
             onClick={onEdit}
           >
             <Pencil />
-            Изменить
+            {copy("Изменить ")}
           </Button>
         )}
         {canDelete &&
@@ -62,7 +69,7 @@ export function ItemSelectionBar({
                 disabled={pending}
                 onClick={onDelete}
               >
-                Да, удалить
+                {copy("Да, удалить ")}
               </Button>
               <Button
                 size="sm"
@@ -70,7 +77,7 @@ export function ItemSelectionBar({
                 disabled={pending}
                 onClick={onCancel}
               >
-                Отмена
+                {copy("Отмена ")}
               </Button>
             </>
           ) : (
@@ -80,7 +87,7 @@ export function ItemSelectionBar({
               disabled={pending || disabled}
               onClick={onConfirm}
             >
-              <Trash2 aria-hidden="true" /> Удалить
+              <Trash2 aria-hidden="true" /> {copy(" Удалить ")}
             </Button>
           ))}
         {!confirming && (
@@ -89,7 +96,7 @@ export function ItemSelectionBar({
             variant="ghost"
             disabled={pending}
             onClick={onClear}
-            aria-label="Снять выделение"
+            aria-label={copy("Снять выделение")}
           >
             <X aria-hidden="true" />
           </Button>

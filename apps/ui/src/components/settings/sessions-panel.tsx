@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Monitor } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/api-request";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface Session {
   id: string;
@@ -13,6 +14,8 @@ interface Session {
   refreshedAt: string | null;
 }
 export function SessionsPanel() {
+  const copy = useUiCopy();
+
   const [sessions, setSessions] = useState<Session[] | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -22,7 +25,7 @@ export function SessionsPanel() {
     try {
       setSessions(await apiRequest<Session[]>("/api/users/me/sessions", "GET"));
     } catch {
-      setError("Не удалось загрузить сессии");
+      setError(copy("Не удалось загрузить сессии"));
     }
   }
   useEffect(() => {
@@ -32,12 +35,12 @@ export function SessionsPanel() {
         if (active) setSessions(result);
       })
       .catch(() => {
-        if (active) setError("Не удалось загрузить сессии");
+        if (active) setError(copy("Не удалось загрузить сессии"));
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [copy]);
   async function revoke(id: string) {
     setPending(true);
     setError("");
@@ -51,7 +54,7 @@ export function SessionsPanel() {
       );
       setConfirm(null);
     } catch {
-      setError("Не удалось завершить сессию");
+      setError(copy("Не удалось завершить сессию"));
     } finally {
       setPending(false);
     }
@@ -59,26 +62,28 @@ export function SessionsPanel() {
   return (
     <section className="mt-8 space-y-4 border-t pt-6">
       <div>
-        <h2 className="font-semibold">Активные сессии</h2>
+        <h2 className="font-semibold">{copy("Активные сессии")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Устройства определяются приблизительно по браузеру при входе.
+          {copy(
+            "Устройства определяются приблизительно по браузеру при входе. ",
+          )}
         </p>
       </div>
       {sessions === null && !error && (
-        <p className="text-sm text-muted-foreground">Загрузка…</p>
+        <p className="text-sm text-muted-foreground">{copy("Загрузка…")}</p>
       )}
       {error && (
         <div
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}{" "}
+          {copy(error)}{" "}
           <Button
             size="sm"
             variant="ghost"
             onClick={load}
           >
-            Повторить
+            {copy("Повторить ")}
           </Button>
         </div>
       )}
@@ -92,22 +97,23 @@ export function SessionsPanel() {
             <div>
               <p className="text-sm font-medium">
                 {session.clientLabel === "Unknown client"
-                  ? "Неизвестное устройство"
+                  ? copy("Неизвестное устройство")
                   : session.clientLabel}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Вход: {new Date(session.createdAt).toLocaleString("ru-RU")}
+                {copy("Вход: ")}
+                {new Date(session.createdAt).toLocaleString("ru-RU")}
               </p>
               {session.refreshedAt && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Обновление сессии:{" "}
+                  {copy("Обновление сессии:")}{" "}
                   {new Date(session.refreshedAt).toLocaleString("ru-RU")}
                 </p>
               )}
             </div>
           </div>
           {session.current ? (
-            <Badge variant="secondary">Текущая</Badge>
+            <Badge variant="secondary">{copy("Текущая")}</Badge>
           ) : (
             <Button
               size="sm"
@@ -115,7 +121,7 @@ export function SessionsPanel() {
               disabled={pending}
               onClick={() => setConfirm(session.id)}
             >
-              Завершить
+              {copy("Завершить ")}
             </Button>
           )}
         </div>
@@ -126,15 +132,15 @@ export function SessionsPanel() {
           disabled={pending}
           onClick={() => setConfirm("others")}
         >
-          Завершить остальные сессии
+          {copy("Завершить остальные сессии ")}
         </Button>
       )}
       {confirm && (
         <div className="space-y-3 rounded-lg bg-muted p-4">
           <p className="text-sm">
             {confirm === "others"
-              ? "На остальных устройствах потребуется войти заново."
-              : "На этом устройстве потребуется войти заново."}
+              ? copy("На остальных устройствах потребуется войти заново.")
+              : copy("На этом устройстве потребуется войти заново.")}
           </p>
           <div className="flex gap-2">
             <Button
@@ -143,7 +149,7 @@ export function SessionsPanel() {
               disabled={pending}
               onClick={() => revoke(confirm)}
             >
-              Подтвердить
+              {copy("Подтвердить ")}
             </Button>
             <Button
               variant="ghost"
@@ -151,7 +157,7 @@ export function SessionsPanel() {
               disabled={pending}
               onClick={() => setConfirm(null)}
             >
-              Отмена
+              {copy("Отмена ")}
             </Button>
           </div>
         </div>

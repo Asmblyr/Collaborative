@@ -114,9 +114,9 @@ export function assistantConfigFromEnv(
     zai,
     timeoutMs: numberSetting(
       env.OPENAI_API_TIMEOUT_MS,
-      120_000,
+      180_000,
       1_000,
-      120_000,
+      300_000,
       "OPENAI_API_TIMEOUT_MS",
     ),
     maxOutputTokens: numberSetting(

@@ -74,6 +74,33 @@ node scripts/operations/create-oauth-keys.mjs .local-data/oauth-keys.json
 
 ## Диагностика
 
+Опциональный [Sentry и локальные p95/p99](../features/monitoring.md) подключаются
+в системных настройках. Мониторинг сам по себе не создаёт правила алертов,
+retention или dashboards в вашем Sentry: их настраивает оператор.
+
+Воспроизводимый замер API на синтетической схеме запускается только явно.
+Из корня репозитория в PowerShell:
+
+```powershell
+$env:ASMBLYR_PERFORMANCE_AUDIT = "1"
+node scripts/test.mjs core-performance
+Remove-Item Env:\ASMBLYR_PERFORMANCE_AUDIT
+```
+
+Runner создаёт и удаляет отдельную временную локальную БД. Нужен доступ к локальному
+PostgreSQL с правом CREATE DATABASE; удалённая рабочая БД не допускается. Тест
+создаёт 40 коллекций/20 000 записей, замеряет список, поиск и глубокую страницу
+при 1/8 параллельных запросах, выводит p50/p95/p99, SQL/request и планы поиска.
+Это Fastify inject без браузера и внешней сети, для superuser и простой схемы;
+он не доказывает производственный SLO или скорость сложных прав/связей.
+
+Для сравнения накладных расходов задайте `ASMBLYR_PERFORMANCE_MONITORING=disabled`
+или `enabled`. Enabled использует настоящий Sentry SDK с офлайн-транспортом,
+API performance и SQL spans; сеть/доставка в Sentry не измеряются.
+`ASMBLYR_PERFORMANCE_SAMPLE_RATE` задаёт долю трассировок от 0 до 1 (по умолчанию 1
+в тесте). `ASMBLYR_PERFORMANCE_REPORT` сохраняет JSON в указанный приватный путь.
+После проверки удалите тестовые переменные из окружения оболочки.
+
 `/health` проверяет процесс, `/ready` — БД и обязательные миграции.
 Логи не должны содержать тела запросов, токены и конфигурационные секреты.
 Retentions задаются окружением Core; история бизнес-изменений по умолчанию

@@ -2,11 +2,14 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function SetupForm() {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +21,7 @@ export function SetupForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (password !== confirmation) {
-      setMessage("Пароли не совпадают");
+      setMessage(copy("Пароли не совпадают"));
       return;
     }
     setPending(true);
@@ -33,17 +36,17 @@ export function SetupForm() {
         const result = (await response.json()) as { message?: string };
         setMessage(
           response.status === 409
-            ? "Суперпользователь уже создан. Обновите страницу."
+            ? copy("Суперпользователь уже создан. Обновите страницу.")
             : response.status === 401
-              ? "Неверный установочный секрет"
-              : (result.message ?? "Не удалось завершить настройку"),
+              ? copy("Неверный установочный секрет")
+              : (result.message ?? copy("Не удалось завершить настройку")),
         );
         return;
       }
       router.replace("/");
       router.refresh();
     } catch {
-      setMessage("Не удалось связаться с сервером");
+      setMessage(copy("Не удалось связаться с сервером"));
     } finally {
       setPending(false);
     }
@@ -55,7 +58,7 @@ export function SetupForm() {
       className="space-y-5"
     >
       <div className="space-y-2">
-        <Label htmlFor="setup-email">Электронная почта</Label>
+        <Label htmlFor="setup-email">{copy("Электронная почта")}</Label>
         <Input
           id="setup-email"
           type="email"
@@ -67,7 +70,7 @@ export function SetupForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="setup-password">Пароль</Label>
+        <Label htmlFor="setup-password">{copy("Пароль")}</Label>
         <Input
           id="setup-password"
           type="password"
@@ -78,10 +81,12 @@ export function SetupForm() {
           onChange={(event) => setPassword(event.target.value)}
           disabled={pending}
         />
-        <p className="text-xs text-muted-foreground">Не менее 12 символов.</p>
+        <p className="text-xs text-muted-foreground">
+          {copy("Не менее 12 символов.")}
+        </p>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="setup-confirmation">Повторите пароль</Label>
+        <Label htmlFor="setup-confirmation">{copy("Повторите пароль")}</Label>
         <Input
           id="setup-confirmation"
           type="password"
@@ -94,7 +99,7 @@ export function SetupForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="setup-token">Установочный секрет</Label>
+        <Label htmlFor="setup-token">{copy("Установочный секрет")}</Label>
         <Input
           id="setup-token"
           type="password"
@@ -105,7 +110,7 @@ export function SetupForm() {
           disabled={pending}
         />
         <p className="text-xs text-muted-foreground">
-          Возьмите значение ASMBLYR_SETUP_TOKEN из конфигурации Core.
+          {copy("Возьмите значение ASMBLYR_SETUP_TOKEN из конфигурации Core. ")}
         </p>
       </div>
       {message && (
@@ -113,7 +118,7 @@ export function SetupForm() {
           role="alert"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <Button
@@ -121,7 +126,7 @@ export function SetupForm() {
         disabled={pending}
         className="w-full"
       >
-        {pending ? "Создаём…" : "Создать суперпользователя"}
+        {pending ? copy("Создаём…") : copy("Создать суперпользователя")}
       </Button>
     </form>
   );

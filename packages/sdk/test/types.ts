@@ -2,15 +2,53 @@ import {
   createClient,
   type ItemListResult,
   type JsonRecord,
+  type CollectionSchema,
 } from "../src/index.js";
+
+type Generated = {
+  articles: CollectionSchema<
+    { id: string; title: string; price: string | null },
+    { title: string; price?: string | null },
+    { title?: string; price?: string | null }
+  >;
+};
+async function generatedConsumer() {
+  const client = createClient<Generated>({ baseUrl: "/api" });
+  await client.items.create("articles", { title: "Article" });
+  // @ts-expect-error Generated required create field.
+  await client.items.create("articles", {});
+  // @ts-expect-error Generated key is readonly.
+  await client.items.update("articles", "id", { id: "other" });
+  // @ts-expect-error Decimal is a string, never a JS number.
+  await client.items.create("articles", { title: "Article", price: 1.1 });
+  await client.items.commit("articles", {
+    id: "id",
+    values: { price: "1.10" },
+  });
+  // @ts-expect-error Commit creation requires the create shape too.
+  await client.items.commit("articles", { values: {} });
+}
+void generatedConsumer;
 
 interface Schema {
   articles: { id: number; title: string; created_at: string | null };
   shops: { key: string; name: string };
+  schedules: { id: number; day: string; counter: string; kind: 0 | 2 };
 }
 
 async function checkTypes(): Promise<void> {
   const client = createClient<Schema>({ baseUrl: "/api" });
+  await client.items.create("schedules", {
+    day: "2026-10-04",
+    counter: "9007199254740993",
+    kind: 0,
+  });
+  // @ts-expect-error Calendar values remain strings, not instants.
+  await client.items.update("schedules", 1, { day: new Date() });
+  // @ts-expect-error Large integers must not go through JS numbers.
+  await client.items.update("schedules", 1, { counter: 9007199254740993 });
+  // @ts-expect-error Numeric choice values retain their schema union.
+  await client.items.update("schedules", 1, { kind: "0" });
   const result = await client.items.list("articles", {
     fields: ["title"],
     sort: "id",

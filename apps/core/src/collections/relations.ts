@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Knex } from "knex";
+import { assertCollectionWritable } from "./source-access.js";
 import { parseItemId } from "../items/validation.js";
 import { listCollections } from "./catalog-repository.js";
 import {
@@ -49,6 +50,8 @@ export async function createForeignKey(
   );
   if (!targetSettings)
     throw new CollectionNotFoundError(input.targetCollection);
+  assertCollectionWritable(sourceSettings);
+  assertCollectionWritable(targetSettings);
   if (isManagedColumn(sourceSettings, input.name)) {
     throw new CollectionFieldConflictError(
       `Field name is managed: ${input.name}`,

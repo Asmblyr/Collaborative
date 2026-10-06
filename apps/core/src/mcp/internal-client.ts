@@ -13,9 +13,7 @@ import {
   type ToolDefinition,
 } from "../tools/tool-definitions.js";
 import type { PluginActions } from "../plugins/actions.js";
-import { ActionInputError, EndpointError } from "@asmblyr/kit";
-import { AccessDeniedError } from "../permissions/access.js";
-import { ItemError } from "../items/validation.js";
+import { toolErrorResult } from "../tools/errors.js";
 
 export interface InternalMcpClient {
   definitions: ToolDefinition[];
@@ -48,18 +46,19 @@ export async function connectInternalMcp(
   server.setRequestHandler(ListToolsRequestSchema, async (_request, extra) => {
     const access = await session.authorize(extra.signal);
     return {
-      tools: [...toolDefinitions, ...(actions?.definitions(access) ?? [])].map(
-        (tool) => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.parameters,
-          annotations: tool.annotations ?? {
-            readOnlyHint: true,
-            destructiveHint: false,
-            openWorldHint: false,
-          },
-        }),
-      ),
+      tools: [
+        ...toolDefinitions,
+        ...((await actions?.availableDefinitions(access)) ?? []),
+      ].map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.parameters,
+        annotations: tool.annotations ?? {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: false,
+        },
+      })),
     };
   });
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
@@ -83,23 +82,7 @@ export async function connectInternalMcp(
         ),
       );
     } catch (error) {
-      if (
-        error instanceof AccessDeniedError ||
-        ((error instanceof ItemError || error instanceof EndpointError) &&
-          error.statusCode === 403)
-      ) {
-        return result(
-          {
-            code: "PERMISSION_DENIED",
-            error:
-              "Недостаточно прав для этого действия или данные недоступны для MCP.",
-          },
-          true,
-        );
-      }
-      if (error instanceof ActionInputError)
-        return result({ error: error.message }, true);
-      return result(unavailableToolResult, true);
+      return result(toolErrorResult(error), true);
     }
   });
   async function close(): Promise<void> {

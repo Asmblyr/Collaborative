@@ -3,7 +3,7 @@ import {
   parseCapabilities,
   type ItemsService,
   type PluginCapability,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import type { LoadedPlugin } from "./definition.js";
 import { isRecord } from "./definition.js";
 

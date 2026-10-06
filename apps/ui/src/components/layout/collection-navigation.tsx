@@ -29,6 +29,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface NavigationProps {
   pathname: string;
@@ -46,6 +47,8 @@ function NavigationDropdown({
   nodes: CollectionNode[];
   folder?: boolean;
 }) {
+  const copy = useUiCopy();
+
   const navigating = useRef(false);
   const entries = flattenCollections(nodes);
   const active = entries.some(({ collection }) =>
@@ -59,7 +62,7 @@ function NavigationDropdown({
           <SidebarMenuButton
             tooltip={name}
             isActive={active}
-            aria-label={`Открыть группу ${name}`}
+            aria-label={copy("Открыть группу {{value0}}", { value0: name })}
           >
             <Icon aria-hidden="true" />
           </SidebarMenuButton>
@@ -120,6 +123,8 @@ function CollectionNavItem({
   pathname,
   onNavigate,
 }: NavigationProps & { node: CollectionNode; nested?: boolean }) {
+  const copy = useUiCopy();
+
   const { isMobile, state } = useSidebar();
   const [open, setOpen] = useState(true);
   const { collection, children } = node;
@@ -174,7 +179,11 @@ function CollectionNavItem({
         {children.length > 0 && (
           <>
             <Collapsible.Trigger asChild>
-              <SidebarMenuAction aria-label={`Вложенные коллекции ${name}`}>
+              <SidebarMenuAction
+                aria-label={copy("Вложенные коллекции {{value0}}", {
+                  value0: name,
+                })}
+              >
                 <ChevronRight
                   className={
                     open

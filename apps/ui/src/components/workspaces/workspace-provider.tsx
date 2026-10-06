@@ -4,8 +4,11 @@ import { createContext, useContext, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api-request";
 import type { WorkspaceSnapshot } from "@/lib/workspaces";
+import { useUiCopy } from "@/lib/ui-copy";
 
 function useWorkspaceState(initial: WorkspaceSnapshot) {
+  const copy = useUiCopy();
+
   const router = useRouter(),
     pathname = usePathname();
   const [snapshot, setSnapshot] = useState(initial),
@@ -44,7 +47,7 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
       setError(
         reason instanceof Error
           ? reason.message
-          : "Не удалось переключить workspace",
+          : copy("Не удалось переключить workspace"),
       );
     } finally {
       setPending(false);

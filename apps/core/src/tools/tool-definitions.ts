@@ -34,13 +34,13 @@ const scope = {
     type: ["string", "null"],
     maxLength: 100,
     description:
-      "Text search. Empty string clears search; null uses the caller's query defaults.",
+      'Text search. q="" clears search; actual JSON null inherits caller defaults. The string "null" is rejected; to intentionally search that word use q="NULL" (case-insensitive).',
   },
   filter: {
     type: ["string", "null"],
     maxLength: 8192,
     description:
-      "JSON filter in validate_filter syntax. Empty string clears the filter; null uses the caller's query defaults.",
+      'JSON text for a logic/children group, e.g. {"logic":"and","children":[{"field":"<filterPaths path>","op":"eq","value":"<text>"}]}. For a lookup without a filter pass filter="". Actual JSON null inherits caller defaults; never send the string "null". No Directus-style nested objects.',
   },
 };
 const fields = {
@@ -53,8 +53,8 @@ const fields = {
 };
 
 export const filterDescription = `Validate a filter without applying it or changing data.
-filter is JSON text: {"logic":"and"|"or","children":[condition or nested group]}.
-condition: {"field":"field or relation.field","op":"operator","value":"string or string[]","quantifier":"some or none, optional for to-many"}.
+filter is JSON text for a group, e.g. {"logic":"and","children":[{"field":"<path from filterPaths>","op":"eq","value":"<text>"}]}.
+logic is and/or; children contains conditions or nested groups. Each condition uses field, op, value and optional quantifier=some/none for to-many paths. Do not use a single condition as the root or Directus-style nested objects.
 Operators: eq neq in notIn contains notContains containsCase notContainsCase startsWith notStartsWith startsWithCase notStartsWithCase endsWith notEndsWith endsWithCase notEndsWithCase gt gte lt lte between notBetween isNull notNull isEmpty notEmpty exists notExists.
 All scalar values are strings, including numbers and booleans. in/notIn take 1-20 strings; between/notBetween exactly 2. Omit value for isNull/notNull/isEmpty/notEmpty/exists/notExists. exists/notExists require relation.primaryKey and no quantifier.
 Max 20 conditions, 3 group levels, 8192 characters. One relation level only.`;
@@ -81,14 +81,18 @@ export const toolDefinitions: ToolDefinition[] = [
     "list_collections",
     "Find collections readable by the current user and enabled for MCP. Returns only names and descriptions, no records. Search matches technical and display names. Hidden navigation and workspaces do not grant or revoke access.",
     {
-      q: { type: ["string", "null"], maxLength: 100 },
+      q: {
+        ...scope.q,
+        description:
+          'Collection name search. Use q="" or actual JSON null for no search; the string "null" is rejected.',
+      },
       page: { type: "integer", minimum: 1, maximum: 50 },
       limit: { type: "integer", minimum: 1, maximum: 20 },
     },
   ),
   define(
     "describe_collection",
-    "Read permitted fields, types, M2O references, filter paths (one relation level), and configured business terms with their meanings and filters. Call for each collection before reading its data or validating filters. A partial result is not the full schema.",
+    "Read permitted fields, types, M2O/O2M/M2M references, relatedRead hints for to-many records, filter paths (one relation level), and configured business terms with their meanings and filters. Call once per collection in this turn before reading its data or validating filters. Reuse the returned schema. A partial result is not the full schema.",
     { collection },
   ),
   define(
@@ -107,6 +111,12 @@ export const toolDefinitions: ToolDefinition[] = [
           "Readable physical field; null uses the caller's default sort.",
       },
       direction: { type: ["string", "null"], enum: ["asc", "desc", null] },
+      order: {
+        type: ["string", "null"],
+        enum: ["field", "relevance", null],
+        description:
+          "Use relevance for best text matches, field for chronological or column ordering, null to inherit the caller mode.",
+      },
     },
   ),
   define(

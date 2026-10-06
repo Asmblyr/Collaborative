@@ -29,6 +29,8 @@ export function useRecordLocation(collection: string) {
   function openRecord(id: string) {
     const query = new URLSearchParams(window.location.search);
     query.delete("item");
+    query.delete("panel");
+    query.delete("target");
     const suffix = query.size ? `?${query}` : "";
     // Next integrates native history with usePathname. Keep the current table,
     // selection and scroll mounted while adding a shareable record URL.
@@ -48,6 +50,8 @@ export function useRecordLocation(collection: string) {
       return;
     const query = new URLSearchParams(window.location.search);
     query.delete("item");
+    query.delete("panel");
+    query.delete("target");
     const listHref = `${listPath}${query.size ? `?${query}` : ""}`;
     if (window.history.state?.asmblyrRecordReturn === listHref)
       window.history.back();

@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api-request";
 import { asmblyr } from "@/lib/asmblyr";
-import { ApiError } from "@asmblyr/sdk";
+import { ApiError } from "@asmblyr-collaborative/sdk";
 import type { Collection, Item, ItemPage, ItemValue } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function useItemSelection({
   collection,
@@ -20,6 +21,8 @@ export function useItemSelection({
   setMessage: (message: string) => void;
   onNavigate: (changes: Partial<ItemPage>) => void;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -57,7 +60,7 @@ export function useItemSelection({
         failure =
           error instanceof ApiError
             ? error.message
-            : "Не удалось связаться с сервером";
+            : copy("Не удалось связаться с сервером");
         break;
       }
     }
@@ -66,8 +69,12 @@ export function useItemSelection({
     setSelected(new Set(ids.slice(removed)));
     setMessage(
       failure
-        ? `Удалено: ${removed} из ${ids.length}. ${failure}`
-        : `Удалено записей: ${removed}`,
+        ? copy("Удалено: {{value0}} из {{value1}}. {{value2}}", {
+            value0: removed,
+            value1: ids.length,
+            value2: failure,
+          })
+        : copy("Удалено записей: {{value0}}", { value0: removed }),
     );
     if (removed > 0) {
       const remaining = BigInt(page.total) - BigInt(removed);
@@ -92,7 +99,9 @@ export function useItemSelection({
       });
       close();
       setSelected(new Set());
-      setMessage(`Обновлено записей: ${result.changed}`);
+      setMessage(
+        copy("Обновлено записей: {{value0}}", { value0: result.changed }),
+      );
       router.refresh();
     } finally {
       setPending(false);

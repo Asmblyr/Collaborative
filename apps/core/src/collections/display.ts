@@ -1,10 +1,12 @@
 import type { Knex } from "knex";
+import { lockedCollectionSettings } from "./settings-repository.js";
 import { listCollections } from "./catalog-repository.js";
 import {
   CollectionInputError,
   CollectionNotFoundError,
   parseMutableCollectionName,
 } from "./validation.js";
+import { labelTemplatePaths } from "./label-paths.js";
 import { parseLabelTemplate } from "./label-template.js";
 
 export async function updateCollectionDisplay(
@@ -37,29 +39,12 @@ export async function updateCollectionDisplay(
     ) {
       throw new CollectionNotFoundError(name);
     }
-    await transaction.raw("LOCK TABLE ?? IN ROW EXCLUSIVE MODE", [
-      `public.${name}`,
-    ]);
-    const collection = (await listCollections(transaction)).find(
-      (entry) => entry.name === name,
-    )!;
+    await lockedCollectionSettings(transaction, name, "ACCESS SHARE", true);
+    const catalog = await listCollections(transaction);
+    const collection = catalog.find((entry) => entry.name === name)!;
     const displayTemplate = parseLabelTemplate(
       "displayTemplate" in body ? body.displayTemplate : null,
-      [
-        collection.primaryKey.name,
-        ...collection.fields
-          .filter((f) =>
-            [
-              "text",
-              "email",
-              "integer",
-              "decimal",
-              "boolean",
-              "datetime",
-            ].includes(f.type),
-          )
-          .map((f) => f.name),
-      ],
+      labelTemplatePaths(collection, catalog),
     );
     if (
       displayField !== null &&
@@ -67,6 +52,7 @@ export async function updateCollectionDisplay(
       !collection.fields.some(
         (field) =>
           field.name === displayField &&
+          !field.presentation?.sensitive &&
           ["text", "email", "integer"].includes(field.type),
       )
     ) {

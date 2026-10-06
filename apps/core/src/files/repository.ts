@@ -11,6 +11,7 @@ export interface FileRow {
   preview_type: string | null;
   size: string | number;
   sha256: string;
+  visibility: "private" | "public";
   status: "uploading" | "ready" | "failed" | "deleting";
   uploaded_by: string;
   created_at: Date;
@@ -32,6 +33,7 @@ export function publicFile(row: FileRow) {
     sha256: row.sha256,
     status: row.status,
     previewable: Boolean(row.preview_type),
+    visibility: row.visibility,
     uploadedBy: row.uploaded_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

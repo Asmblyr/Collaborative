@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -16,6 +16,7 @@ import {
 import { UserAccessDialog } from "./user-access-dialog";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Policy } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function UsersPanel({
   readOnly = false,
@@ -36,6 +37,8 @@ export function UsersPanel({
   onChange: () => Promise<void>;
   onError: (message: string) => void;
 }) {
+  const copy = useUiCopy();
+
   const [email, setEmail] = useState("");
   const [invite, setInvite] = useState<{
     email: string;
@@ -122,11 +125,13 @@ export function UsersPanel({
   return (
     <section className="space-y-5 rounded-xl border bg-card p-5">
       <div>
-        <h2 className="text-xl font-semibold">Пользователи</h2>
+        <h2 className="text-xl font-semibold">{copy("Пользователи")}</h2>
         <p className="text-sm text-muted-foreground">
           {readOnly
-            ? "Участники команды и назначенные им права."
-            : "Добавьте почту и передайте пользователю одноразовую ссылку для входа. Отправка письма не нужна."}
+            ? copy("Участники команды и назначенные им права.")
+            : copy(
+                "Добавьте почту и передайте пользователю одноразовую ссылку для входа. Отправка письма не нужна.",
+              )}
         </p>
       </div>
       {!readOnly && (
@@ -135,7 +140,7 @@ export function UsersPanel({
           className="flex flex-wrap items-end gap-2"
         >
           <div className="min-w-64 flex-1 space-y-2">
-            <Label htmlFor="access-email">Электронная почта</Label>
+            <Label htmlFor="access-email">{copy("Электронная почта")}</Label>
             <Input
               id="access-email"
               type="email"
@@ -149,20 +154,24 @@ export function UsersPanel({
             type="submit"
             disabled={busy}
           >
-            Пригласить
+            {copy("Пригласить ")}
           </Button>
         </form>
       )}
       {invite && (
         <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
           <p className="font-medium">
-            Ссылка для {invite.email} показана один раз. Действует до{" "}
-            {new Date(invite.expiresAt).toLocaleString("ru-RU")}.
+            {copy("Ссылка для ")}
+            {invite.email} {copy(" показана один раз. Действует до")}{" "}
+            {new Date(invite.expiresAt).toLocaleString(
+              copy.locale === "en" ? "en-US" : "ru-RU",
+            )}
+            .
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Input
               readOnly
-              aria-label="Ссылка приглашения"
+              aria-label={copy("Ссылка приглашения")}
               value={invitationUrl}
               className="min-w-64 flex-1"
             />
@@ -171,7 +180,7 @@ export function UsersPanel({
               variant="outline"
               onClick={() => navigator.clipboard.writeText(invitationUrl)}
             >
-              Копировать
+              {copy("Копировать ")}
             </Button>
           </div>
         </div>
@@ -179,11 +188,11 @@ export function UsersPanel({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Почта</TableHead>
-            <TableHead>Состояние</TableHead>
-            <TableHead>Политики</TableHead>
-            <TableHead>Приглашение</TableHead>
-            <TableHead>Доступ</TableHead>
+            <TableHead>{copy("Почта")}</TableHead>
+            <TableHead>{copy("Состояние")}</TableHead>
+            <TableHead>{copy("Политики")}</TableHead>
+            <TableHead>{copy("Приглашение")}</TableHead>
+            <TableHead>{copy("Доступ")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -203,14 +212,14 @@ export function UsersPanel({
                   }
                 >
                   {user.status === "disabled"
-                    ? "Отключён"
+                    ? copy("Отключён")
                     : user.superuser
-                      ? "Суперпользователь"
+                      ? copy("Суперпользователь")
                       : user.hasPassword
-                        ? "Активен"
+                        ? copy("Активен")
                         : user.invitationPending
-                          ? "Приглашён"
-                          : "Активен"}
+                          ? copy("Приглашён")
+                          : copy("Активен")}
                 </Badge>
               </TableCell>
               <TableCell className="whitespace-normal">
@@ -230,7 +239,7 @@ export function UsersPanel({
                     disabled={busy}
                     onClick={() => renew(user)}
                   >
-                    Новая ссылка
+                    {copy("Новая ссылка ")}
                   </Button>
                 )}
                 {canManageDelegation &&
@@ -265,7 +274,7 @@ export function UsersPanel({
                         }
                       }}
                     >
-                      Восстановить вход
+                      {copy("Восстановить вход ")}
                     </Button>
                   )}
               </TableCell>
@@ -276,7 +285,7 @@ export function UsersPanel({
                   variant="outline"
                   onClick={() => setSelectedUser(user)}
                 >
-                  Посмотреть
+                  {copy("Посмотреть ")}
                 </Button>
               </TableCell>
             </TableRow>

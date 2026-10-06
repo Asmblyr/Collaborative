@@ -4,8 +4,10 @@ import type { CollectionField, FieldType, PrimaryKey } from "./types.js";
 export const fieldTypes = [
   "text",
   "integer",
+  "bigint",
   "boolean",
   "datetime",
+  "date",
   "email",
   "decimal",
   "json",
@@ -18,12 +20,14 @@ export function fieldTypeFromDatabase(
   dataType: string,
   semanticType?: string | null,
 ): FieldType | null {
-  if (semanticType === "email") return dataType === "text" ? "email" : null;
+  const text = ["text", "character varying", "varchar"].includes(dataType);
+  if (semanticType === "email") return text ? "email" : null;
   if (semanticType === "file") return dataType === "uuid" ? "file" : null;
   if (semanticType === "files") return dataType === "jsonb" ? "files" : null;
   if (dataType === "numeric") return "decimal";
   if (dataType === "jsonb") return "json";
   if (dataType === "timestamp with time zone") return "datetime";
+  if (text) return "text";
   return fieldTypes.find((type) => type === dataType) ?? null;
 }
 
@@ -39,6 +43,12 @@ export function addFieldColumn(
       break;
     case "integer":
       column = table.integer(field.name);
+      break;
+    case "bigint":
+      column = table.bigInteger(field.name);
+      break;
+    case "date":
+      column = table.date(field.name);
       break;
     case "uuid":
       column = table.uuid(field.name);

@@ -1,4 +1,4 @@
-import type { CollectionState } from "@asmblyr/contracts";
+import type { CollectionState } from "@asmblyr-collaborative/contracts";
 import { CollectionInputError } from "./validation.js";
 
 const colors = new Set(["gray", "blue", "green", "amber", "red", "violet"]);

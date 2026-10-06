@@ -1,18 +1,23 @@
 "use client";
 
-import { Button } from "@asmblyr/kit/ui/button";
-import type { RecordPanelProps } from "@asmblyr/kit/ui";
+import { usePluginTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
+
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import type { RecordPanelProps } from "@asmblyr-collaborative/kit/ui";
 import { useComments } from "../hooks/use-comments.ts";
 import { useCommentComposer } from "../hooks/use-comment-composer.ts";
 import { CommentComposer } from "./comment-composer.tsx";
 import { CommentEntry } from "./comment-entry.tsx";
+import { useDiscussionNotifications } from "../hooks/use-discussion-notifications.ts";
 
 export function CommentsPanel(props: RecordPanelProps) {
+  const { t } = usePluginTranslations("comments");
   const comments = useComments(props);
+  const notices = useDiscussionNotifications(props, comments.revision);
   const composer = useCommentComposer({
     canCreate: comments.result?.canCreate ?? false,
     maxLength: comments.result?.maxLength ?? 10000,
-    pending: comments.pending,
+    pending: comments.pending || notices.pending,
     createComment: comments.createComment,
     updateComment: comments.updateComment,
     onStateChange: props.onStateChange,
@@ -25,30 +30,45 @@ export function CommentsPanel(props: RecordPanelProps) {
 
   return (
     <section
-      aria-label="Комментарии к записи"
+      aria-label={t("panel.label")}
       className="space-y-5"
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">
-            Обсуждение записи{comments.result ? ` · ${total}` : ""}
+            {t("panel.heading")}
+            {comments.result ? ` · ${total}` : ""}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Комментарии видны тем, у кого есть доступ к записи. Сохраняются
-            сразу.
+            {t("panel.hint")}
           </p>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={comments.reload}
-          disabled={comments.loading || comments.pending}
-        >
-          Обновить
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-pressed={notices.following === true}
+            title={t("follow.hint")}
+            disabled={
+              notices.following === null || notices.pending || comments.pending
+            }
+            onClick={() => void notices.toggle()}
+          >
+            {notices.following ? t("following") : t("follow")}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={comments.reload}
+            disabled={comments.loading || comments.pending}
+          >
+            {t("refresh")}
+          </Button>
+        </div>
       </div>
-      {[comments.loadError, comments.mutationError]
+      {[comments.loadError, comments.mutationError, notices.error]
         .filter(Boolean)
         .map((error, index) => (
           <p
@@ -59,6 +79,42 @@ export function CommentsPanel(props: RecordPanelProps) {
             {error}
           </p>
         ))}
+      {notices.focusMissing && (
+        <p
+          role="status"
+          className="text-sm text-muted-foreground"
+        >
+          {t("focus.missing")}
+        </p>
+      )}
+      {showComments &&
+        notices.focused &&
+        !comments.result?.data.some(
+          (comment) => comment.id === notices.focused?.id,
+        ) && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("focus.title")}
+            </p>
+            <CommentEntry
+              comment={notices.focused}
+              highlighted={props.active !== false}
+              editDisabled={!composer.canStartEdit}
+              deleteDisabled={
+                comments.pending || composer.editing?.id === notices.focused.id
+              }
+              pending={comments.pending}
+              onEdit={() =>
+                notices.focused && composer.startEdit(notices.focused)
+              }
+              onDelete={() =>
+                notices.focused
+                  ? comments.deleteComment(notices.focused.id)
+                  : Promise.resolve(false)
+              }
+            />
+          </div>
+        )}
       {composer.visible && (
         <CommentComposer
           text={composer.text}
@@ -77,14 +133,14 @@ export function CommentsPanel(props: RecordPanelProps) {
           role="status"
           className="py-8 text-center text-sm text-muted-foreground"
         >
-          Загрузка комментариев…
+          {t("loading")}
         </p>
       )}
       {showComments && comments.result?.data.length === 0 && (
         <div className="rounded-xl border border-dashed p-8 text-center">
-          <p className="text-sm font-medium">Здесь пока тихо</p>
+          <p className="text-sm font-medium">{t("empty.title")}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Первый комментарий начнёт обсуждение этой записи.
+            {t("empty.hint")}
           </p>
         </div>
       )}
@@ -94,6 +150,9 @@ export function CommentsPanel(props: RecordPanelProps) {
             <CommentEntry
               key={comment.id}
               comment={comment}
+              highlighted={
+                props.active !== false && comment.id === props.targetId
+              }
               editDisabled={!composer.canStartEdit}
               deleteDisabled={
                 comments.pending || composer.editing?.id === comment.id
@@ -107,7 +166,7 @@ export function CommentsPanel(props: RecordPanelProps) {
       )}
       {comments.result && pages > 1 && (
         <nav
-          aria-label="Страницы комментариев"
+          aria-label={t("pages.label")}
           className="flex items-center justify-between gap-3"
         >
           <Button
@@ -119,10 +178,10 @@ export function CommentsPanel(props: RecordPanelProps) {
             }
             onClick={() => comments.changePage(comments.page - 1)}
           >
-            Назад
+            {t("pages.previous")}
           </Button>
           <span className="text-xs text-muted-foreground">
-            Страница {comments.page} из {pages}
+            {t("pages.counter", undefined, { page: comments.page, pages })}
           </span>
           <Button
             type="button"
@@ -133,7 +192,7 @@ export function CommentsPanel(props: RecordPanelProps) {
             }
             onClick={() => comments.changePage(comments.page + 1)}
           >
-            Далее
+            {t("pages.next")}
           </Button>
         </nav>
       )}

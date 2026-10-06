@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Upload, FolderOpen, RefreshCw, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -18,6 +18,7 @@ import { ItemPagination } from "@/components/items/item-pagination";
 import { FileEditor } from "./file-editor";
 import { FilePreview } from "./file-preview";
 import { fileSize, fileStatus, type FilePage, type StoredFile } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function FilesWorkspace({
   result,
@@ -26,6 +27,8 @@ export function FilesWorkspace({
   result: FilePage;
   query: string;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const uploadLock = useRef(false);
@@ -53,7 +56,7 @@ export function FilesWorkspace({
     setError("");
     setMessage("");
     if (chosen.length > 20) {
-      setError("Выберите не более 20 файлов за раз.");
+      setError(copy("Выберите не более 20 файлов за раз."));
       return;
     }
     const oversized = chosen.find(
@@ -61,7 +64,10 @@ export function FilesWorkspace({
     );
     if (oversized) {
       setError(
-        `«${oversized.name}» больше ${fileSize(result.meta.maxFileBytes)}.`,
+        copy("«{{value0}}» больше {{value1}}.", {
+          value0: oversized.name,
+          value1: fileSize(result.meta.maxFileBytes, copy),
+        }),
       );
       return;
     }
@@ -69,7 +75,13 @@ export function FilesWorkspace({
     let completed = 0;
     try {
       for (const file of chosen) {
-        setUploading(`${completed + 1} из ${chosen.length} · ${file.name}`);
+        setUploading(
+          copy("{{value0}} из {{value1}} · {{value2}}", {
+            value0: completed + 1,
+            value1: chosen.length,
+            value2: file.name,
+          }),
+        );
         const response = await fetch("/api/files", {
           method: "POST",
           body: file,
@@ -82,16 +94,25 @@ export function FilesWorkspace({
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
           throw new Error(
-            `${file.name}: ${body.message ?? "Не удалось загрузить файл"}`,
+            copy("{{value0}}: {{value1}}", {
+              value0: file.name,
+              value1: body.message ?? copy("Не удалось загрузить файл"),
+            }),
           );
         }
         completed++;
       }
-      setMessage(`Загружено файлов: ${completed}`);
+      setMessage(copy("Загружено файлов: {{value0}}", { value0: completed }));
       if (result.meta.page !== 1) navigate(1);
     } catch (reason) {
       setError(
-        `${reason instanceof Error ? reason.message : "Ошибка загрузки"}${completed ? ` Уже загружено: ${completed}.` : ""}`,
+        copy("{{value0}}{{value1}}", {
+          value0:
+            reason instanceof Error ? reason.message : copy("Ошибка загрузки"),
+          value1: completed
+            ? copy(" Уже загружено: {{value0}}.", { value0: completed })
+            : "",
+        }),
       );
     } finally {
       uploadLock.current = false;
@@ -108,13 +129,13 @@ export function FilesWorkspace({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Файлы"
-        description="Изображения, документы и материалы вашей команды."
+        title={copy("Файлы")}
+        description={copy("Изображения, документы и материалы вашей команды.")}
       >
         <Button
           variant="outline"
           size="icon"
-          aria-label="Обновить файлы"
+          aria-label={copy("Обновить файлы")}
           onClick={() => router.refresh()}
         >
           <RefreshCw aria-hidden />
@@ -131,13 +152,13 @@ export function FilesWorkspace({
           ) : (
             <Upload aria-hidden />
           )}
-          Загрузить файлы
+          {copy("Загрузить файлы ")}
         </Button>
         <input
           ref={input}
           className="sr-only"
           tabIndex={-1}
-          aria-label="Выберите файлы для загрузки"
+          aria-label={copy("Выберите файлы для загрузки")}
           type="file"
           multiple
           disabled={disabled}
@@ -152,7 +173,7 @@ export function FilesWorkspace({
           role="status"
           className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground"
         >
-          Загрузка недоступна: хранилище ещё не подключено.
+          {copy("Загрузка недоступна: хранилище ещё не подключено. ")}
         </p>
       )}
       {uploading && (
@@ -161,7 +182,8 @@ export function FilesWorkspace({
           className="flex items-center gap-2 text-sm"
         >
           <Loader2 className="size-4 animate-spin" />
-          Загружаем {uploading}
+          {copy("Загружаем ")}
+          {uploading}
         </p>
       )}
       {message && (
@@ -169,7 +191,7 @@ export function FilesWorkspace({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       {error && (
@@ -177,11 +199,11 @@ export function FilesWorkspace({
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       <section
-        aria-label="Библиотека файлов"
+        aria-label={copy("Библиотека файлов")}
         onDrop={drop}
         onDragOver={(event) => {
           event.preventDefault();
@@ -196,12 +218,12 @@ export function FilesWorkspace({
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3 text-xs text-muted-foreground">
           <span>
             {query
-              ? `Результаты поиска: ${query}`
-              : `Всего файлов: ${result.meta.total}`}
+              ? copy("Результаты поиска: {{value0}}", { value0: query })
+              : copy("Всего файлов: {{value0}}", { value0: result.meta.total })}
           </span>
           <span>
-            Перетащите файлы сюда · до {fileSize(result.meta.maxFileBytes)}{" "}
-            каждый
+            {copy("Перетащите файлы сюда · до ")}
+            {fileSize(result.meta.maxFileBytes, copy)} {copy("каждый ")}
           </span>
         </div>
         {!result.data.length ? (
@@ -210,12 +232,16 @@ export function FilesWorkspace({
               <FolderOpen className="size-6 text-muted-foreground" />
             </div>
             <h2 className="font-medium">
-              {query ? "Файлы не найдены" : "Здесь будут ваши файлы"}
+              {query
+                ? copy("Файлы не найдены")
+                : copy("Здесь будут ваши файлы")}
             </h2>
             <p className="max-w-sm text-sm text-muted-foreground">
               {query
-                ? "Попробуйте другое название в поле поиска."
-                : "Добавьте изображения и документы. У каждого файла будут своё название, описание и история изменений."}
+                ? copy("Попробуйте другое название в поле поиска.")
+                : copy(
+                    "Добавьте изображения и документы. У каждого файла будут своё название, описание и история изменений.",
+                  )}
             </p>
             {!query && (
               <Button
@@ -225,7 +251,7 @@ export function FilesWorkspace({
                 onClick={() => input.current?.click()}
               >
                 <Upload aria-hidden />
-                Выбрать файлы
+                {copy("Выбрать файлы ")}
               </Button>
             )}
           </div>
@@ -233,10 +259,10 @@ export function FilesWorkspace({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-5">Название</TableHead>
-                <TableHead>Тип</TableHead>
-                <TableHead>Размер</TableHead>
-                <TableHead>Загружен</TableHead>
+                <TableHead className="pl-5">{copy("Название")}</TableHead>
+                <TableHead>{copy("Тип")}</TableHead>
+                <TableHead>{copy("Размер")}</TableHead>
+                <TableHead>{copy("Загружен")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -274,7 +300,7 @@ export function FilesWorkspace({
                               : "secondary"
                           }
                         >
-                          {fileStatus[file.status]}
+                          {copy(fileStatus[file.status])}
                         </Badge>
                       )}
                     </div>
@@ -283,7 +309,7 @@ export function FilesWorkspace({
                     {file.mimeType}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-muted-foreground">
-                    {fileSize(file.size)}
+                    {fileSize(file.size, copy)}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-muted-foreground">
                     {new Date(file.createdAt).toLocaleDateString("ru-RU")}
@@ -312,8 +338,8 @@ export function FilesWorkspace({
       )}
       <EditorDialog
         open={Boolean(selected)}
-        title={selected?.title ?? "Файл"}
-        eyebrow="Библиотека файлов"
+        title={selected?.title ?? copy("Файл")}
+        eyebrow={copy("Библиотека файлов")}
         busy={busy}
         onClose={() => {
           if (!busy) setSelected(null);

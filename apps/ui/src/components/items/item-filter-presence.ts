@@ -1,4 +1,5 @@
 import type { FilterCondition, FilterScope } from "./item-filter-options";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 export function scopeForCondition(
   scopes: FilterScope[],
@@ -24,8 +25,9 @@ export function presenceForCondition(
 export function presenceCondition(
   scope: FilterScope,
   exists: boolean,
+  copy: UiCopy = originalCopy,
 ): FilterCondition {
   if (!scope.presenceField)
-    throw new Error("Для этой связи недоступна проверка наличия");
+    throw new Error(copy("Для этой связи недоступна проверка наличия"));
   return { field: scope.presenceField, op: exists ? "exists" : "notExists" };
 }

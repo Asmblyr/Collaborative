@@ -10,23 +10,28 @@ Kit содержит исходники общих shadcn-компонентов
 обычные props, события, ref, `asChild` и варианты shadcn доступны напрямую.
 
 ```tsx
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@asmblyr/kit/ui/tabs";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 ```
 
-`buttonVariants` экспортируется из `@asmblyr/kit/ui/button` для ссылок и других
-элементов, которым нужен стиль кнопки. `@asmblyr/kit/ui` содержит регистрацию
-плагина и контракты его UI. Серверный entry `@asmblyr/kit` в браузер не импортируется.
+`buttonVariants` экспортируется из `@asmblyr-collaborative/kit/ui/button` для ссылок и других
+элементов, которым нужен стиль кнопки. `@asmblyr-collaborative/kit/ui` содержит регистрацию
+плагина и контракты его UI. Серверный entry `@asmblyr-collaborative/kit` в браузер не импортируется.
 React и ReactDOM — совместимые peer dependencies: плагины используют экземпляры
 хоста. Серверные потребители Kit не обязаны импортировать UI.
 
@@ -36,7 +41,7 @@ React и ReactDOM — совместимые peer dependencies: плагины �
 CSS уже подключено:
 
 ```css
-@import "@asmblyr/kit/ui/styles.css";
+@import "@asmblyr-collaborative/kit/ui/styles.css";
 ```
 
 Этот entry указывает Tailwind на собранные компоненты внутри пакета, поэтому их
@@ -44,14 +49,14 @@ CSS уже подключено:
 его собственные классы хост сканирует через сгенерированный `plugin-ui.css`.
 Цвета, радиусы и светлая/тёмная тема принадлежат хосту.
 
-После изменения Kit выполните из корня `pnpm --filter @asmblyr/kit build`.
+После изменения Kit выполните из корня `pnpm --filter @asmblyr-collaborative/kit build`.
 `pnpm dev` и `pnpm build` также собирают Kit перед приложениями.
 
 ## Выпадающие списки внутри нативного dialog
 
 Radix-портал должен находиться в том же диалоге, чтобы не попасть под его backdrop.
 В `SelectContent` можно передать `container={dialogElement}`. Для вложенных контролов
-есть общий контекст из `@asmblyr/kit/ui/portal-container`:
+есть общий контекст из `@asmblyr-collaborative/kit/ui/portal-container`:
 
 ```tsx
 <PortalContainerContext.Provider value={dialogElement}>

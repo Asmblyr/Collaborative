@@ -1,7 +1,7 @@
 import "./support/require-test-database.js";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { useAsmblyr, type PluginCapability } from "@asmblyr/kit";
+import { useAsmblyr, type PluginCapability } from "@asmblyr-collaborative/kit";
 import { readBody } from "h3";
 import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 import { modelDataPlugin } from "./support/model-data-plugin.js";

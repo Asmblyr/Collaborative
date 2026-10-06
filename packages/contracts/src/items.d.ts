@@ -16,6 +16,8 @@ export interface ItemReadOptions<Field extends string = string> {
   readonly fields?: readonly Field[];
 }
 
+export type ItemOrder = "field" | "relevance";
+
 export interface ItemListOptions<Field extends string = string>
   extends ItemReadOptions<Field> {
   /** One-based page number. Defaults to 1. */
@@ -25,6 +27,8 @@ export interface ItemListOptions<Field extends string = string>
   readonly sort?: Field;
   readonly direction?: "asc" | "desc";
   readonly q?: string;
+  /** Defaults to relevance for q without explicit sort/direction, otherwise field. */
+  readonly order?: ItemOrder;
   readonly filter?: ItemFilterGroup;
 }
 
@@ -35,6 +39,8 @@ export interface ItemPage {
   total: string;
   sort: string;
   direction: "asc" | "desc";
+  /** Effective ordering; sort remains the physical tie-breaker. */
+  order?: ItemOrder;
 }
 
 export interface ItemListResult<Row extends object = ItemRecord> {

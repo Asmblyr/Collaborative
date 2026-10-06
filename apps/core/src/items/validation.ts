@@ -84,6 +84,16 @@ export function parseItem(
     }
 
     try {
+      if (
+        typeof fieldValue === "string" &&
+        field.maxLength !== undefined &&
+        Array.from(fieldValue).length > field.maxLength
+      ) {
+        throw new ItemError(
+          `Text exceeds the database length limit: ${name}`,
+          400,
+        );
+      }
       if (field.type === "relation") {
         if (!field.relation)
           throw new ItemError(`Relation is not configured: ${name}`, 409);
@@ -124,6 +134,7 @@ export function parseItem(
     }
     for (const field of fields.values()) {
       if (item[field.name] === undefined) {
+        if (field.presentation?.rules?.computed) continue;
         if (field.defaultValue !== undefined) {
           try {
             item[field.name] = parsePresentedValue(

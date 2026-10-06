@@ -3,12 +3,15 @@ import { FilesWorkspace } from "@/components/files/files-workspace";
 import type { FilePage } from "@/components/files/types";
 import { coreAddress, requireSession } from "@/lib/session";
 import { loadSettingsAccess } from "@/lib/settings-access";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
 export default async function FilesPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const copy = await getUiCopy();
+
   const { user, token } = await requireSession("/files");
   if (
     !user.superuser &&
@@ -46,7 +49,7 @@ export default async function FilesPage({
         role="alert"
         className="text-sm text-destructive"
       >
-        Не удалось загрузить файлы. Обновите страницу.
+        {copy("Не удалось загрузить файлы. Обновите страницу. ")}
       </p>
     );
   }

@@ -1,7 +1,8 @@
 import type { EventHandler } from "h3";
 import type { ItemsService } from "./items.js";
 import type { PluginStorage } from "./storage.js";
-import type { PluginSettingsValues } from "@asmblyr/contracts";
+import type { RecordNotifications } from "./notifications.js";
+import type { PluginSettingsValues } from "@asmblyr-collaborative/contracts";
 
 export interface EndpointActor {
   readonly id: string;
@@ -23,6 +24,8 @@ export interface AsmblyrContext {
   /** Requires storage.own and a namespace. Domain authorization belongs to the endpoint. */
   readonly storage?: PluginStorage;
   readonly settings?: Readonly<PluginSettingsValues>;
+  /** Record subscriptions and inbox publication; requires notifications. */
+  readonly notifications?: RecordNotifications;
   /** Holds a readable target row while updating related plugin data atomically. */
   readonly withRecord?: <T>(
     collection: string,

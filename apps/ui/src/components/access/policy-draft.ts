@@ -1,4 +1,4 @@
-import type { PermissionFilter } from "@asmblyr/contracts";
+import type { PermissionFilter } from "@asmblyr-collaborative/contracts";
 import type { Action, Permission } from "./types";
 
 export interface DraftGrant {

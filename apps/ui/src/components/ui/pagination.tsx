@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import {
   ChevronLeftIcon,
@@ -5,13 +7,16 @@ import {
   MoreHorizontalIcon,
 } from "lucide-react";
 import { cn } from "cn";
-import { buttonVariants } from "@asmblyr/kit/ui/button";
+import { buttonVariants } from "@asmblyr-collaborative/kit/ui/button";
+import { useUiCopy } from "@/lib/ui-copy";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+  const copy = useUiCopy();
+
   return (
     <nav
       role="navigation"
-      aria-label="Пагинация"
+      aria-label={copy("Пагинация")}
       data-slot="pagination"
       className={cn("flex w-full justify-center", className)}
       {...props}
@@ -67,28 +72,32 @@ function PaginationLink({
 }
 
 function PaginationPrevious({ className, ...props }: PaginationLinkProps) {
+  const copy = useUiCopy();
+
   return (
     <PaginationLink
-      aria-label="Предыдущая страница"
+      aria-label={copy("Предыдущая страница")}
       size="default"
       className={cn("gap-1 px-2.5", className)}
       {...props}
     >
       <ChevronLeftIcon aria-hidden="true" />
-      <span>Назад</span>
+      <span>{copy("Назад")}</span>
     </PaginationLink>
   );
 }
 
 function PaginationNext({ className, ...props }: PaginationLinkProps) {
+  const copy = useUiCopy();
+
   return (
     <PaginationLink
-      aria-label="Следующая страница"
+      aria-label={copy("Следующая страница")}
       size="default"
       className={cn("gap-1 px-2.5", className)}
       {...props}
     >
-      <span>Далее</span>
+      <span>{copy("Далее")}</span>
       <ChevronRightIcon aria-hidden="true" />
     </PaginationLink>
   );
@@ -98,6 +107,8 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const copy = useUiCopy();
+
   return (
     <span
       aria-hidden="true"
@@ -106,7 +117,7 @@ function PaginationEllipsis({
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
-      <span className="sr-only">Другие страницы</span>
+      <span className="sr-only">{copy("Другие страницы")}</span>
     </span>
   );
 }

@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import type { AssistantTurnSummary } from "@asmblyr/contracts";
+import type { AssistantTurnSummary } from "@asmblyr-collaborative/contracts";
 import { telemetryCursor, type TelemetryQuery } from "./query.js";
 
 interface RequestRow {

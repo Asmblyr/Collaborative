@@ -26,6 +26,7 @@ import {
 import type { Workspace } from "@/lib/workspaces";
 import { useWorkspace } from "./workspace-provider";
 import { WorkspaceEditor } from "./workspace-editor";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function WorkspaceSwitcher({
   collections,
@@ -34,6 +35,8 @@ export function WorkspaceSwitcher({
   collections: { name: string; displayName?: string | null }[];
   superuser: boolean;
 }) {
+  const copy = useUiCopy();
+
   const state = useWorkspace(),
     { isMobile } = useSidebar();
   const [editor, setEditor] = useState<{ workspace: Workspace | null } | null>(
@@ -48,7 +51,7 @@ export function WorkspaceSwitcher({
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                aria-label="Переключить workspace"
+                aria-label={copy("Переключить workspace")}
                 disabled={state.pending}
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
@@ -57,7 +60,7 @@ export function WorkspaceSwitcher({
                 </span>
                 <span className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
-                    {state.active?.name || "Все коллекции"}
+                    {state.active?.name || copy("Все коллекции")}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
                     Asmblyr
@@ -73,7 +76,7 @@ export function WorkspaceSwitcher({
               className="w-(--radix-dropdown-menu-trigger-width) min-w-64 rounded-lg"
             >
               <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Рабочие пространства
+                {copy("Рабочие пространства ")}
               </DropdownMenuLabel>
               <DropdownMenuItem
                 className="gap-2 p-2"
@@ -82,7 +85,8 @@ export function WorkspaceSwitcher({
                 <span className="flex size-6 items-center justify-center rounded-sm border">
                   <Layers3 className="size-4" />
                 </span>
-                Все коллекции{!state.active && <Check className="ml-auto" />}
+                {copy("Все коллекции")}
+                {!state.active && <Check className="ml-auto" />}
               </DropdownMenuItem>
               <div className="max-h-72 overflow-auto">
                 {state.workspaces.map((workspace) => (
@@ -107,14 +111,14 @@ export function WorkspaceSwitcher({
                     onSelect={() => setEditor({ workspace: null })}
                   >
                     <Plus />
-                    Новый workspace
+                    {copy("Новый workspace ")}
                   </DropdownMenuItem>
                   {state.active && (
                     <DropdownMenuItem
                       onSelect={() => setEditor({ workspace: state.active })}
                     >
                       <Settings2 />
-                      Настроить workspace
+                      {copy("Настроить workspace ")}
                     </DropdownMenuItem>
                   )}
                 </>

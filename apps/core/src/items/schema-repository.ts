@@ -1,4 +1,6 @@
 import type { Knex } from "knex";
+import { assertCollectionWritable } from "../collections/source-access.js";
+import { verifyMaterializedSource } from "../collections/materialized-repository.js";
 import { fieldTypeFromDatabase } from "../collections/field-types.js";
 import { findCollectionSettings } from "../collections/settings-repository.js";
 import { ItemError, parseCollectionName } from "./validation.js";
@@ -9,11 +11,15 @@ import type { JsonValue } from "../collections/structured-values.js";
 interface ColumnRow {
   column_name: string;
   data_type: string;
+  character_maximum_length: number | null;
   is_nullable: "YES" | "NO";
   semantic_type: string | null;
   required: boolean | null;
   default_value: JsonValue;
   searchable: boolean | null;
+  search_priority:
+    | import("@asmblyr-collaborative/contracts").SearchPriority
+    | null;
   presentation: FieldPresentation;
   relation_target: string | null;
   relation_key_type: "uuid" | "serial" | "bigserial" | "text" | null;
@@ -24,12 +30,20 @@ export async function collectionSchema(database: Knex, name: string) {
   const settings = await findCollectionSettings(database, name);
   if (!settings) throw new ItemError(`Collection not found: ${name}`, 404);
 
+  if (settings.sourceKind === "materialized-view") {
+    await verifyMaterializedSource(
+      database,
+      name,
+      settings.sourceSchemaHash,
+      settings.primaryKey,
+    );
+  }
   const result = await database.raw<{ rows: ColumnRow[] }>(
     `
-    SELECT c.column_name, c.data_type, c.is_nullable, fm.semantic_type, fm.required,
-      fm.default_value, fm.searchable, fm.presentation, r.target_collection AS relation_target,
+    SELECT c.column_name, c.data_type, c.character_maximum_length, c.is_nullable, fm.semantic_type, fm.required,
+      fm.default_value, fm.searchable, fm.search_priority, fm.presentation, r.target_collection AS relation_target,
       target.primary_key_type AS relation_key_type
-    FROM information_schema.columns AS c
+    FROM public.asmblyr_columns AS c
     LEFT JOIN public.asmblyr_field_metadata AS fm
       ON fm.collection_name = ? AND fm.field_name = c.column_name
     LEFT JOIN public.asmblyr_relations AS r
@@ -69,7 +83,11 @@ export async function collectionSchema(database: Knex, name: string) {
           : {}),
         required: column.required ?? false,
         nullable: column.is_nullable === "YES",
+        ...(column.character_maximum_length === null
+          ? {}
+          : { maxLength: column.character_maximum_length }),
         presentation: column.presentation,
+        searchPriority: column.search_priority,
         ...(column.default_value === null
           ? {}
           : { defaultValue: column.default_value }),
@@ -90,6 +108,9 @@ export async function lockedCollectionSchema(
   name: string,
 ) {
   parseCollectionName(name);
+  const settings = await findCollectionSettings(transaction, name);
+  if (!settings) throw new ItemError(`Collection not found: ${name}`, 404);
+  assertCollectionWritable(settings);
   try {
     // Compatible with other item writes; excludes concurrent field or table DDL.
     await transaction.raw("LOCK TABLE ?? IN ROW EXCLUSIVE MODE", [

@@ -10,6 +10,7 @@ import { objectInput } from "../shared/input.js";
 import { ItemError } from "../items/validation.js";
 import { parseItemListQuery } from "../items/list-query.js";
 import { plainFilter, storedFilterInput } from "../items/filter-wire.js";
+import { columnWidths } from "./column-widths.js";
 
 export async function viewContext(db: Knex, name: string, access: Access) {
   requireHuman(access);
@@ -53,8 +54,9 @@ export function validateView(
     "filter",
     "q",
   ]);
-  const columns = objectInput(body.columns, ["order", "hidden"]);
-  const sort = objectInput(body.sort, ["field", "direction"]);
+  const columns = objectInput(body.columns, ["order", "hidden", "widths"]);
+  const widths = columnWidths(columns.widths, ctx.names, reconcile);
+  const sort = objectInput(body.sort, ["field", "direction", "order"]);
   const lists: Record<string, string[]> = {};
   for (const key of ["order", "hidden"]) {
     const list = columns[key];
@@ -80,6 +82,7 @@ export function validateView(
   const query = parseItemListQuery(
     {
       sort: field,
+      order: sort.order ?? "field",
       direction: sort.direction,
       limit: String(body.pageSize),
       q: body.q,
@@ -99,8 +102,14 @@ export function validateView(
   const order = [...new Set([...lists.order, ...ctx.names])];
   const hidden = lists.hidden.length >= order.length ? [] : lists.hidden;
   return {
-    columns: { order, hidden },
-    sort: { field: query.sort, direction: query.direction },
+    columns: { order, hidden, ...widths },
+    sort: {
+      field: query.sort,
+      direction: query.direction,
+      ...(sort.order === undefined
+        ? {}
+        : { order: sort.order === "relevance" ? "relevance" : "field" }),
+    },
     pageSize: query.limit,
     filter: query.filters.children.length ? plainFilter(query.filters) : null,
     q: query.q,

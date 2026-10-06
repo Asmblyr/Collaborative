@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import type { ServiceFederation } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ServiceFederations({
   readOnly = false,
@@ -21,6 +22,8 @@ export function ServiceFederations({
   initial: ServiceFederation[];
   onBusy: (busy: boolean) => void;
 }) {
+  const copy = useUiCopy();
+
   const [bindings, setBindings] = useState(initial);
   const [form, setForm] = useState({
     name: "GitLab CI",
@@ -42,7 +45,7 @@ export function ServiceFederations({
       await action();
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Не удалось сохранить федерацию",
+        e instanceof Error ? e.message : copy("Не удалось сохранить федерацию"),
       );
     } finally {
       setBusy(false);
@@ -52,9 +55,9 @@ export function ServiceFederations({
   return (
     <div className="space-y-5">
       <p className="text-sm leading-6 text-muted-foreground">
-        GitLab.com подтверждает, какой проект и ветка запустили задачу.
-        Постоянный секрет для CI не нужен. Доступ задают политики этого
-        аккаунта.
+        {copy(
+          "GitLab.com подтверждает, какой проект и ветка запустили задачу. Постоянный секрет для CI не нужен. Доступ задают политики этого аккаунта. ",
+        )}
       </p>
       {active && !readOnly && (
         <form
@@ -79,25 +82,25 @@ export function ServiceFederations({
               [
                 {
                   key: "name",
-                  label: "Название",
+                  label: copy("Название"),
                   placeholder: "GitLab CI",
                   max: 120,
                 },
                 {
                   key: "projectId",
-                  label: "ID проекта",
+                  label: copy("ID проекта"),
                   placeholder: "12345678",
                   max: 30,
                 },
                 {
                   key: "projectPath",
-                  label: "Путь проекта",
+                  label: copy("Путь проекта"),
                   placeholder: "group/project",
                   max: 255,
                 },
                 {
                   key: "ref",
-                  label: "Защищённая ветка",
+                  label: copy("Защищённая ветка"),
                   placeholder: "main",
                   max: 255,
                 },
@@ -125,11 +128,12 @@ export function ServiceFederations({
             ))}
           </fieldset>
           <p className="text-xs text-muted-foreground">
-            Только указанная защищённая ветка. Merge request pipelines не
-            допускаются.
+            {copy(
+              "Только указанная защищённая ветка. Merge request pipelines не допускаются. ",
+            )}
           </p>
           <Button disabled={busy}>
-            {busy ? "Сохраняем…" : "Добавить федерацию"}
+            {busy ? copy("Сохраняем…") : copy("Добавить федерацию")}
           </Button>
         </form>
       )}
@@ -138,12 +142,12 @@ export function ServiceFederations({
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       {bindings.length === 0 && (
         <p className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-          Федераций пока нет
+          {copy("Федераций пока нет ")}
         </p>
       )}
       {bindings.map((binding) => (
@@ -154,7 +158,7 @@ export function ServiceFederations({
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-medium">{binding.name}</h3>
             <Badge variant="secondary">
-              {binding.revokedAt ? "Отозвана" : "GitLab CI"}
+              {binding.revokedAt ? copy("Отозвана") : "GitLab CI"}
             </Badge>
           </div>
           <p className="break-all font-mono text-xs">
@@ -164,17 +168,17 @@ export function ServiceFederations({
             <>
               <details className="text-sm">
                 <summary className="cursor-pointer font-medium">
-                  Подключение к pipeline
+                  {copy("Подключение к pipeline ")}
                 </summary>
                 <div className="mt-3 space-y-3 text-muted-foreground">
                   <p>
-                    В переменных GitLab CI укажите ASMBLYR_CORE_URL — доступный
-                    runner’у HTTPS-адрес Core. Для локального runner допускается
-                    localhost.
+                    {copy(
+                      "В переменных GitLab CI укажите ASMBLYR_CORE_URL — доступный runner’у HTTPS-адрес Core. Для локального runner допускается localhost. ",
+                    )}
                   </p>
-                  <p>Добавьте в задачу:</p>
+                  <p>{copy("Добавьте в задачу:")}</p>
                   <pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{`id_tokens:\n  ASMBLYR_ID_TOKEN:\n    aud: "${binding.audience}"\nvariables:\n  ASMBLYR_FEDERATION_ID: "${binding.id}"`}</pre>
-                  <p>Выполните POST /auth/federation-token с JSON:</p>
+                  <p>{copy("Выполните POST /auth/federation-token с JSON:")}</p>
                   <pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">
                     {JSON.stringify(
                       {
@@ -186,9 +190,9 @@ export function ServiceFederations({
                     )}
                   </pre>
                   <p>
-                    Подставьте токен из переменной окружения. Ответ accessToken
-                    передавайте как Bearer. Обмен однократный, срок — до 15
-                    минут.
+                    {copy(
+                      "Подставьте токен из переменной окружения. Ответ accessToken передавайте как Bearer. Обмен однократный, срок — до 15 минут. ",
+                    )}
                   </p>
                 </div>
               </details>
@@ -196,7 +200,9 @@ export function ServiceFederations({
                 (confirm === binding.id ? (
                   <div className="space-y-2">
                     <p className="text-xs text-destructive">
-                      Все токены этой федерации сразу перестанут работать.
+                      {copy(
+                        "Все токены этой федерации сразу перестанут работать. ",
+                      )}
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -223,7 +229,7 @@ export function ServiceFederations({
                           })
                         }
                       >
-                        Подтвердить отзыв
+                        {copy("Подтвердить отзыв ")}
                       </Button>
                       <Button
                         size="sm"
@@ -231,7 +237,7 @@ export function ServiceFederations({
                         disabled={busy}
                         onClick={() => setConfirm(null)}
                       >
-                        Отмена
+                        {copy("Отмена ")}
                       </Button>
                     </div>
                   </div>
@@ -242,7 +248,7 @@ export function ServiceFederations({
                     disabled={busy}
                     onClick={() => setConfirm(binding.id)}
                   >
-                    Отозвать
+                    {copy("Отозвать ")}
                   </Button>
                 ))}
             </>

@@ -1,14 +1,16 @@
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+"use client";
+
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type { FormLayout } from "@/components/items/presentation-types";
 import type { CollectionField } from "@/components/items/types";
 import { fieldsInNodes } from "@/components/items/form-layout-model";
@@ -22,6 +24,7 @@ import {
   removeFormNode,
 } from "./form-designer-model";
 import { FormConditionSettings } from "./form-condition-settings";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function FormDesignerProperties({
   layout,
@@ -40,16 +43,18 @@ export function FormDesignerProperties({
   onChange: (layout: FormLayout) => void;
   onSelect: (id: string) => void;
 }) {
+  const copy = useUiCopy();
+
   const tab = layout.tabs.find((t) => t.id === selected);
   const node = findFormNode(layout, selected);
   if (tab)
     return (
       <div className="space-y-4">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Вкладка
+          {copy("Вкладка ")}
         </p>
         <label className="block space-y-2 text-sm">
-          Название вкладки
+          {copy("Название вкладки ")}
           <Input
             value={tab.label}
             maxLength={120}
@@ -65,8 +70,9 @@ export function FormDesignerProperties({
           />
         </label>
         <p className="text-xs text-muted-foreground">
-          Вкладка появится в форме, если содержит доступные поля. При одной
-          вкладке переключатель не показывается.
+          {copy(
+            "Вкладка появится в форме, если содержит доступные поля. При одной вкладке переключатель не показывается. ",
+          )}
         </p>
         {layout.tabs.length > 1 && (
           <Button
@@ -83,14 +89,16 @@ export function FormDesignerProperties({
               onSelect(tabs[0].id);
             }}
           >
-            Удалить вкладку, перенести содержимое
+            {copy("Удалить вкладку, перенести содержимое ")}
           </Button>
         )}
       </div>
     );
   if (!node)
     return (
-      <p className="text-sm text-muted-foreground">Выберите элемент слева.</p>
+      <p className="text-sm text-muted-foreground">
+        {copy("Выберите элемент слева.")}
+      </p>
     );
   const update = (patch: Partial<typeof node>) =>
     onChange(
@@ -105,12 +113,14 @@ export function FormDesignerProperties({
   return (
     <div className="space-y-4">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {node.kind === "field" ? `Поле · ${node.field}` : "Секция"}
+        {node.kind === "field"
+          ? copy("Поле · {{value0}}", { value0: node.field })
+          : copy("Секция")}
       </p>
       {node.kind === "group" && (
         <>
           <label className="block space-y-2 text-sm">
-            Название секции
+            {copy("Название секции ")}
             <Input
               value={node.label}
               maxLength={120}
@@ -119,7 +129,7 @@ export function FormDesignerProperties({
             />
           </label>
           <label className="block space-y-2 text-sm">
-            Описание
+            {copy("Описание ")}
             <Textarea
               value={node.description}
               maxLength={1000}
@@ -133,7 +143,7 @@ export function FormDesignerProperties({
               disabled={disabled}
               onCheckedChange={(v) => update({ collapsible: v === true })}
             />
-            Можно свернуть
+            {copy("Можно свернуть ")}
           </label>
           {node.collapsible && (
             <label className="flex items-center gap-2 text-sm">
@@ -142,7 +152,7 @@ export function FormDesignerProperties({
                 disabled={disabled}
                 onCheckedChange={(v) => update({ collapsed: v === true })}
               />
-              Свёрнута при открытии
+              {copy("Свёрнута при открытии ")}
             </label>
           )}
         </>
@@ -154,19 +164,19 @@ export function FormDesignerProperties({
           onValueChange={(width) => update({ width: width as "full" | "half" })}
         >
           <SelectTrigger
-            aria-label="Ширина поля в форме"
+            aria-label={copy("Ширина поля в форме")}
             className="w-full"
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent container={container}>
-            <SelectItem value="full">Вся строка</SelectItem>
-            <SelectItem value="half">Половина строки</SelectItem>
+            <SelectItem value="full">{copy("Вся строка")}</SelectItem>
+            <SelectItem value="half">{copy("Половина строки")}</SelectItem>
           </SelectContent>
         </Select>
       )}
       <div className="space-y-2">
-        <p className="text-sm">Расположение</p>
+        <p className="text-sm">{copy("Расположение")}</p>
         <Select
           value={parent}
           disabled={disabled}
@@ -175,7 +185,7 @@ export function FormDesignerProperties({
           }
         >
           <SelectTrigger
-            aria-label="Перенести в"
+            aria-label={copy("Перенести в")}
             className="w-full"
           >
             <SelectValue />
@@ -219,12 +229,14 @@ export function FormDesignerProperties({
         }}
       >
         {node.kind === "group"
-          ? "Убрать секцию, оставить поля"
-          : "Убрать из раскладки"}
+          ? copy("Убрать секцию, оставить поля")
+          : copy("Убрать из раскладки")}
       </Button>
       {node.kind === "field" && (
         <p className="text-xs text-muted-foreground">
-          Поле останется в коллекции и будет показано в разделе «Другие поля».
+          {copy(
+            "Поле останется в коллекции и будет показано в разделе «Другие поля». ",
+          )}
         </p>
       )}
     </div>

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Check, Link2 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { itemHref } from "@/lib/item-location";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function RecordLinkButton({
   collection,
@@ -12,13 +13,15 @@ export function RecordLinkButton({
   collection: string;
   id: string;
 }) {
+  const copy = useUiCopy();
+
   const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
   useEffect(() => {
     if (status === "idle") return;
     const timer = window.setTimeout(() => setStatus("idle"), 2500);
     return () => window.clearTimeout(timer);
   }, [status]);
-  async function copy() {
+  async function copyLink() {
     try {
       await navigator.clipboard.writeText(
         new URL(itemHref(collection, id), window.location.origin).href,
@@ -34,15 +37,15 @@ export function RecordLinkButton({
         type="button"
         variant="ghost"
         size="sm"
-        onClick={copy}
-        aria-label="Скопировать ссылку на запись"
+        onClick={copyLink}
+        aria-label={copy("Скопировать ссылку на запись")}
       >
         {status === "copied" ? (
           <Check aria-hidden="true" />
         ) : (
           <Link2 aria-hidden="true" />
         )}
-        {status === "copied" ? "Скопировано" : "Ссылка"}
+        {status === "copied" ? copy("Скопировано") : copy("Ссылка")}
       </Button>
       <span
         role="status"
@@ -51,9 +54,9 @@ export function RecordLinkButton({
         }
       >
         {status === "error"
-          ? "Не удалось скопировать ссылку"
+          ? copy("Не удалось скопировать ссылку")
           : status === "copied"
-            ? "Ссылка скопирована"
+            ? copy("Ссылка скопирована")
             : ""}
       </span>
     </div>

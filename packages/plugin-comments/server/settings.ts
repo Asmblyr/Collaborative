@@ -1,4 +1,4 @@
-import { defineSettings } from "@asmblyr/kit";
+import { defineSettings } from "@asmblyr-collaborative/kit";
 
 export default defineSettings({
   title: "Комментарии",

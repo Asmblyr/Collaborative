@@ -1,8 +1,8 @@
 "use client";
 
-import type { FieldEditorProps } from "@asmblyr/kit/ui";
-import { Input } from "@asmblyr/kit/ui/input";
-import { Button } from "@asmblyr/kit/ui/button";
+import type { FieldEditorProps } from "@asmblyr-collaborative/kit/ui";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { colorPattern, isHexColor, readColorOptions } from "./color-options.ts";
 
 export function ColorEditor({

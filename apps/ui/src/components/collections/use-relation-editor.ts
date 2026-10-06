@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Collection } from "@/components/items/types";
 import { useEditorDraft } from "./editor-lifecycle";
+import { useUiCopy } from "@/lib/ui-copy";
+import { requestErrorMessage, requestJson } from "@/lib/http-request";
+
 export type Kind = "m2o" | "o2m" | "m2m";
 export type DeleteAction = "restrict" | "setNull" | "setDefault" | "cascade";
 export type Section = "basic" | "structure" | "behavior";
@@ -17,6 +20,8 @@ export function useRelationEditor(
   kind: Kind,
   onSaved: () => void,
 ) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const focusField = useRef<string | null>(null);
@@ -94,19 +99,19 @@ export function useRelationEditor(
       return {
         section: "basic",
         id: "relation-name",
-        message: "Введите корректное имя поля",
+        message: copy("Введите корректное имя поля"),
       };
     if (!targetCollection)
       return {
         section: "basic",
         id: "relation-target",
-        message: "Выберите связанную коллекцию",
+        message: copy("Выберите связанную коллекцию"),
       };
     if (kind !== "o2m" && reverseField && !validName(reverseField)) {
       return {
         section: "basic",
         id: "relation-reverse",
-        message: "Проверьте имя обратного поля",
+        message: copy("Проверьте имя обратного поля"),
       };
     }
     if (kind === "o2m") {
@@ -114,14 +119,14 @@ export function useRelationEditor(
         return {
           section: "structure",
           id: "relation-existing-key",
-          message: "Выберите существующий внешний ключ",
+          message: copy("Выберите существующий внешний ключ"),
         };
       }
       if (!reuseExisting && !validName(foreignKey || `${collection}_id`)) {
         return {
           section: "structure",
           id: "relation-foreign-key",
-          message: "Проверьте имя внешнего ключа",
+          message: copy("Проверьте имя внешнего ключа"),
         };
       }
     }
@@ -135,14 +140,14 @@ export function useRelationEditor(
           return {
             section: "structure",
             id,
-            message: "Проверьте имена промежуточной коллекции и ключей",
+            message: copy("Проверьте имена промежуточной коллекции и ключей"),
           };
       }
       if (sourceKeyName === targetKeyName) {
         return {
           section: "structure",
           id: "relation-target-key",
-          message: "Ключи промежуточной коллекции должны различаться",
+          message: copy("Ключи промежуточной коллекции должны различаться"),
         };
       }
     }
@@ -155,7 +160,7 @@ export function useRelationEditor(
       return {
         section: "behavior",
         id: "relation-default",
-        message: "Укажите ID записи по умолчанию",
+        message: copy("Укажите ID записи по умолчанию"),
       };
     }
     return null;
@@ -222,23 +227,15 @@ export function useRelationEditor(
         break;
     }
     try {
-      const response = await fetch(
+      await requestJson(
         `/api/collections/${encodeURIComponent(collection)}/relations`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        },
+        "POST",
+        payload,
       );
-      if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
-        setMessage(result.message ?? "Не удалось создать связь");
-        return;
-      }
       onSaved();
       router.refresh();
-    } catch {
-      setMessage("Не удалось связаться с сервером");
+    } catch (cause) {
+      setMessage(copy(requestErrorMessage(cause)));
     } finally {
       setPending(false);
     }

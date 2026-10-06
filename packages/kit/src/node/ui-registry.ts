@@ -62,7 +62,7 @@ export async function generateUiRegistry(
       `@source ${JSON.stringify(cssPath.startsWith(".") ? cssPath : `./${cssPath}`)};`,
     );
   }
-  const content = `// Generated from enabled package exports. Do not edit.\n"use client";\nimport type { UiPluginDefinition } from "@asmblyr/kit/ui";\n${imports.join("\n")}\nexport const uiPlugins: { packageName: string; namespace: string; definition: UiPluginDefinition }[] = [${entries.join(",\n")}];\n`;
+  const content = `// Generated from enabled package exports. Do not edit.\n"use client";\nimport type { UiPluginDefinition } from "@asmblyr-collaborative/kit/ui";\n${imports.join("\n")}\nexport const uiPlugins: { packageName: string; namespace: string; definition: UiPluginDefinition }[] = [${entries.join(",\n")}];\n`;
   await mkdir(path.dirname(output), { recursive: true });
   const previous = await readFile(output, "utf8").catch(() => "");
   if (previous !== content) await writeFile(output, content);

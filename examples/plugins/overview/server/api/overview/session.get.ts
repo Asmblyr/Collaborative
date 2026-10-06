@@ -1,4 +1,4 @@
-import { defineHandler, useAsmblyr } from "@asmblyr/kit";
+import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
 import type { Overview } from "../../../shared/overview.js";
 
 export default defineHandler((event): Overview => {

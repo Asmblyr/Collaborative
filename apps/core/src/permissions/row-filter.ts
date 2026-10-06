@@ -2,7 +2,7 @@ import {
   permissionContextParameters,
   type PermissionFilter,
   type PermissionContextPath,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { Knex } from "knex";
 import type { Principal } from "../auth/principal.js";
 import { parseItemFilters, type FilterGroup } from "../items/filter-input.js";

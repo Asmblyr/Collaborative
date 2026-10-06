@@ -17,12 +17,15 @@ test("loads a built local workspace plugin through its package exports", async (
     new URL("../../../package.json", import.meta.url),
   );
   const comments = plugins.find(
-    (plugin) => plugin.name === "@asmblyr/plugin-comments",
+    (plugin) => plugin.name === "@asmblyr-collaborative/plugin-comments",
   );
   assert.ok(comments);
   assert.deepEqual(
     plugins.map((plugin) => plugin.name),
-    ["@asmblyr/plugin-comments"],
+    [
+      "@asmblyr-collaborative/plugin-comments",
+      "@asmblyr-collaborative/plugin-google-workspace",
+    ],
   );
   assert.deepEqual(comments.definition, {});
   assert.ok(
@@ -42,6 +45,9 @@ test("loads a built local workspace plugin through its package exports", async (
     ["collections.delete", "items.delete"],
   );
   assert.equal(comments.settings?.fields.maxLength.default, 10000);
+  const google = plugins.find((plugin) => plugin.namespace === "google")!;
+  assert.equal(google.translations?.ru?.["settings.title"], "Google Workspace");
+  assert.equal(google.translations?.en?.["settings.title"], "Google Workspace");
   const source = (
     await loadPlugins(new URL("../../../package.json", import.meta.url), {
       sourcePlugins: true,

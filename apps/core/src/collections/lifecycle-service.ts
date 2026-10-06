@@ -1,4 +1,5 @@
 import type { Knex } from "knex";
+import { assertCollectionWritable } from "./source-access.js";
 import {
   findCollectionSettings,
   lockedCollectionSettings,
@@ -163,6 +164,10 @@ export async function deleteCollectionField(
           .withSchema("public")
           .where({ collection_name: collection, field_name: field })
           .delete();
+        await transaction("asmblyr_field_metadata")
+          .withSchema("public")
+          .where({ collection_name: collection, field_name: field })
+          .delete();
         await removeFieldGrants(transaction, settings.internalId, field);
         return;
       }
@@ -203,6 +208,13 @@ export async function deleteCollectionField(
         )
         .delete();
       for (const affected of affectedAliases) {
+        await transaction("asmblyr_field_metadata")
+          .withSchema("public")
+          .where({
+            collection_name: affected.collection_name,
+            field_name: affected.field_name,
+          })
+          .delete();
         const parent = await requireCollection(
           transaction,
           affected.collection_name,
@@ -254,6 +266,7 @@ export async function deleteCollection(
     await database.transaction(async (transaction) => {
       await lockCollectionOrder(transaction);
       const settings = await requireCollection(transaction, name);
+      assertCollectionWritable(settings);
       await transaction.raw("LOCK TABLE ?? IN ACCESS EXCLUSIVE MODE", [
         `public.${name}`,
       ]);
@@ -266,6 +279,13 @@ export async function deleteCollection(
         >("collection_name", "field_name");
       await transaction.raw("DROP TABLE ?? RESTRICT", [`public.${name}`]);
       for (const affected of affectedAliases) {
+        await transaction("asmblyr_field_metadata")
+          .withSchema("public")
+          .where({
+            collection_name: affected.collection_name,
+            field_name: affected.field_name,
+          })
+          .delete();
         if (affected.collection_name === name) {
           continue;
         }

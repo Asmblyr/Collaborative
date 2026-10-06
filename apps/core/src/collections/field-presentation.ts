@@ -1,3 +1,5 @@
+import { validateFieldBehavior } from "./field-behavior-validation.js";
+import { redactExistingFieldHistory } from "../items/sensitive-history.js";
 import type { Knex } from "knex";
 import { readEditableField } from "./editable-field.js";
 import { parseFieldPresentation } from "./field-presentation-validation.js";
@@ -24,10 +26,16 @@ export async function updateFieldPresentation(
   const column = parseMutableFieldName(field);
   try {
     return await database.transaction(async (transaction) => {
+      // Cross-collection computation/sensitivity checks must see serialized metadata changes.
+      await transaction.raw(
+        "SELECT pg_advisory_xact_lock(hashtextextended(?::text, 0))",
+        ["asmblyr:field-behavior"],
+      );
       const settings = await lockedCollectionSettings(
         transaction,
         name,
-        "ACCESS SHARE",
+        "ACCESS EXCLUSIVE",
+        true,
       );
       if (isManagedColumn(settings, column))
         throw new CollectionInputError(`Field is managed by Core: ${column}`);
@@ -38,6 +46,15 @@ export async function updateFieldPresentation(
         .first("field_name", "related_collection");
       if (alias) {
         const presentation = parseFieldPresentation(body, "alias");
+        if (
+          presentation.rules?.computed ||
+          presentation.rules?.requiredWhen ||
+          presentation.rules?.readonly
+        ) {
+          throw new CollectionInputError(
+            "Alias fields support visibility rules only",
+          );
+        }
         if (presentation.relation)
           await validateRelationPresentation(
             transaction,
@@ -55,6 +72,26 @@ export async function updateFieldPresentation(
         ? "relation"
         : (row.type ?? row.data_type);
       const presentation = parseFieldPresentation(body, type);
+      if (
+        settings.sourceKind === "materialized-view" &&
+        (presentation.rules || presentation.relationFilter)
+      ) {
+        throw new CollectionInputError(
+          "Materialized view fields support presentation settings only",
+        );
+      }
+      await validateFieldBehavior(transaction, name, column, presentation);
+      if (presentation.sensitive) {
+        if (row.default_value !== null)
+          throw new CollectionInputError(
+            "Clear the default before marking this field sensitive",
+          );
+        await redactExistingFieldHistory(
+          transaction,
+          settings.internalId,
+          column,
+        );
+      }
       if (row.default_value !== null) {
         try {
           parsePresentedValue(row.default_value, presentation, row.required);

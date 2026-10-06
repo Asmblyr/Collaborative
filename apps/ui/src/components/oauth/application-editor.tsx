@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-request";
 import { ApplicationFields } from "./application-fields";
 import type { ApplicationDraft, OAuthApplication, OAuthUser } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ApplicationEditor({
   readOnly = false,
@@ -27,6 +28,8 @@ export function ApplicationEditor({
   onBusy: (busy: boolean) => void;
   onDirty: (dirty: boolean) => void;
 }) {
+  const copy = useUiCopy();
+
   const [draft, setDraft] = useState<ApplicationDraft>(
     initial ?? {
       name: "",
@@ -67,7 +70,7 @@ export function ApplicationEditor({
         .filter(Boolean);
       if (draft.accessMode === "domains" && !emailDomains.length) {
         throw new Error(
-          "Добавьте хотя бы один домен почты во вкладке «Доступ»",
+          copy("Добавьте хотя бы один домен почты во вкладке «Доступ»"),
         );
       }
       const payload = {
@@ -102,7 +105,7 @@ export function ApplicationEditor({
       setError(
         error instanceof Error
           ? error.message
-          : "Не удалось сохранить приложение",
+          : copy("Не удалось сохранить приложение"),
       );
     } finally {
       pending(false);
@@ -124,7 +127,9 @@ export function ApplicationEditor({
       onDirty(true);
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Не удалось заменить секрет",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось заменить секрет"),
       );
     } finally {
       pending(false);
@@ -152,7 +157,7 @@ export function ApplicationEditor({
         />
         {id && (
           <section className="space-y-4 rounded-xl border p-4">
-            <h3 className="text-sm font-medium">Подключение</h3>
+            <h3 className="text-sm font-medium">{copy("Подключение")}</h3>
             <div className="space-y-2">
               <Label htmlFor="oauth-client-id">Client ID</Label>
               <Input
@@ -175,7 +180,7 @@ export function ApplicationEditor({
               Discovery: {issuer}/.well-known/openid-configuration
             </p>
             <p className="text-xs text-muted-foreground">
-              Scopes профиля: openid profile email
+              {copy("Scopes профиля: openid profile email ")}
             </p>
             {!readOnly && draft.clientType === "confidential" && (
               <Button
@@ -183,14 +188,16 @@ export function ApplicationEditor({
                 variant="outline"
                 onClick={rotate}
               >
-                Заменить секрет (старый перестанет работать)
+                {copy("Заменить секрет (старый перестанет работать) ")}
               </Button>
             )}
           </section>
         )}
         {secret && (
           <section className="space-y-3 rounded-xl border border-primary/40 bg-primary/5 p-4">
-            <Label htmlFor="oauth-secret">Секрет · показывается один раз</Label>
+            <Label htmlFor="oauth-secret">
+              {copy("Секрет · показывается один раз")}
+            </Label>
             <Input
               id="oauth-secret"
               value={secret}
@@ -199,8 +206,9 @@ export function ApplicationEditor({
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              Сохраните его в настройках сервиса. После закрытия прочитать
-              секрет снова нельзя.
+              {copy(
+                "Сохраните его в настройках сервиса. После закрытия прочитать секрет снова нельзя. ",
+              )}
             </p>
             <Button
               type="button"
@@ -210,7 +218,7 @@ export function ApplicationEditor({
                 onDirty(!saved);
               }}
             >
-              Я сохранил секрет
+              {copy("Я сохранил секрет ")}
             </Button>
           </section>
         )}
@@ -219,13 +227,17 @@ export function ApplicationEditor({
             role="alert"
             className="text-sm text-destructive"
           >
-            {error}
+            {copy(error)}
           </p>
         )}
         <div className="flex items-center gap-3">
           {!readOnly && (
             <Button type="submit">
-              {busy ? "Сохраняем…" : id ? "Сохранить" : "Создать приложение"}
+              {busy
+                ? copy("Сохраняем…")
+                : id
+                  ? copy("Сохранить")
+                  : copy("Создать приложение")}
             </Button>
           )}
           {saved && (
@@ -233,7 +245,7 @@ export function ApplicationEditor({
               role="status"
               className="text-sm text-muted-foreground"
             >
-              Сохранено
+              {copy("Сохранено ")}
             </p>
           )}
         </div>

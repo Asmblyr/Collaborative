@@ -7,8 +7,8 @@ import {
   defineHandler,
   definePlugin,
   type EndpointDefinition,
-} from "@asmblyr/kit";
-import { defineActionContract, z } from "@asmblyr/kit/actions";
+} from "@asmblyr-collaborative/kit";
+import { defineActionContract, z } from "@asmblyr-collaborative/kit/actions";
 import { PluginActions } from "../src/plugins/actions.js";
 import type { LoadedPlugin } from "../src/plugins/definition.js";
 import type { Access } from "../src/permissions/access.js";

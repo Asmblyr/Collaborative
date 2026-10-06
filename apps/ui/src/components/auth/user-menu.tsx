@@ -18,6 +18,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useLogout } from "./use-logout";
+import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
+import { useUiCopy } from "@/lib/ui-copy";
 
 function UserIdentity({ user }: { user: SessionUser }) {
   const name = user.displayName || user.email.split("@")[0] || user.email;
@@ -37,6 +39,9 @@ function UserIdentity({ user }: { user: SessionUser }) {
 }
 
 export function UserMenu({ user }: { user: SessionUser | null }) {
+  const copy = useUiCopy();
+
+  const { t } = useTranslations();
   const { isMobile } = useSidebar();
   const { logout, pending, error } = useLogout();
 
@@ -51,7 +56,9 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
               <SidebarMenuButton
                 size="lg"
                 tooltip={user.email}
-                aria-label={`Меню пользователя ${user.email}`}
+                aria-label={copy("Меню пользователя {{value0}}", {
+                  value0: user.email,
+                })}
                 className="h-auto min-h-12 bg-sidebar-accent/60 group-data-[collapsible=icon]:min-h-8! data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <UserIdentity user={user} />
@@ -74,7 +81,7 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
               <DropdownMenuItem asChild>
                 <Link href="/settings">
                   <Settings aria-hidden="true" />
-                  Настройки пользователя
+                  {t("nav.account")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -85,7 +92,7 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
                 }}
               >
                 <LogOut aria-hidden="true" />
-                Выйти
+                {t("nav.logout")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -96,7 +103,7 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
           role="alert"
           className="px-2 text-xs text-destructive group-data-[collapsible=icon]:hidden"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
     </>

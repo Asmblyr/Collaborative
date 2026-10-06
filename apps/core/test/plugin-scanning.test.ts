@@ -3,7 +3,10 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test, { type TestContext } from "node:test";
-import { scanApiRoutes, scanCollectionFiles } from "@asmblyr/kit/node";
+import {
+  scanApiRoutes,
+  scanCollectionFiles,
+} from "@asmblyr-collaborative/kit/node";
 
 async function fixture(t: TestContext, files: string[]) {
   const base = fileURLToPath(new URL("../../../.tmp/", import.meta.url));

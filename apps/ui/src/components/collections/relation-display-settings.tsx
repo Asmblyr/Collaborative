@@ -1,8 +1,8 @@
 "use client";
 
 import { ArrowDown, ArrowUp, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,13 +10,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import { availableColumns } from "@/components/items/item-columns";
 import type {
   Collection,
   FieldPresentation,
   RelationPresentation,
 } from "@/components/items/types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export const defaultRelationPresentation: RelationPresentation = {
   layout: "table",
@@ -42,6 +43,8 @@ export function RelationDisplaySettings({
   portalContainer?: HTMLElement | null;
   onChange: (value: FieldPresentation) => void;
 }) {
+  const copy = useUiCopy();
+
   const config = value.relation ?? defaultRelationPresentation;
   const fields = availableColumns(target);
   const set = <K extends keyof RelationPresentation>(
@@ -60,7 +63,9 @@ export function RelationDisplaySettings({
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="relation-layout">Вид связанных записей</Label>
+          <Label htmlFor="relation-layout">
+            {copy("Вид связанных записей")}
+          </Label>
           <Select
             value={config.layout}
             disabled={disabled}
@@ -73,13 +78,15 @@ export function RelationDisplaySettings({
               <SelectValue />
             </SelectTrigger>
             <SelectContent container={portalContainer}>
-              <SelectItem value="table">Таблица</SelectItem>
-              <SelectItem value="list">Список</SelectItem>
+              <SelectItem value="table">{copy("Таблица")}</SelectItem>
+              <SelectItem value="list">{copy("Список")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="relation-page-size">Записей на странице</Label>
+          <Label htmlFor="relation-page-size">
+            {copy("Записей на странице")}
+          </Label>
           <Select
             value={String(config.pageSize)}
             disabled={disabled}
@@ -106,7 +113,7 @@ export function RelationDisplaySettings({
       </div>
       {config.layout === "table" && (
         <div className="space-y-3">
-          <Label>Столбцы таблицы</Label>
+          <Label>{copy("Столбцы таблицы")}</Label>
           {config.columns.length > 0 && (
             <ol className="divide-y rounded-lg border">
               {config.columns.map((name, index) => (
@@ -116,13 +123,15 @@ export function RelationDisplaySettings({
                 >
                   <span className="min-w-0 flex-1 truncate text-sm">
                     {fields.find((f) => f.name === name)?.label ??
-                      `${name} (удалено)`}
+                      copy("{{value0}} (удалено)", { value0: name })}
                   </span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Переместить ${name} выше`}
+                    aria-label={copy("Переместить {{value0}} выше", {
+                      value0: name,
+                    })}
                     disabled={disabled || index === 0}
                     onClick={() => move(index, -1)}
                   >
@@ -132,7 +141,9 @@ export function RelationDisplaySettings({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Переместить ${name} ниже`}
+                    aria-label={copy("Переместить {{value0}} ниже", {
+                      value0: name,
+                    })}
                     disabled={disabled || index === config.columns.length - 1}
                     onClick={() => move(index, 1)}
                   >
@@ -142,7 +153,9 @@ export function RelationDisplaySettings({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Убрать столбец ${name}`}
+                    aria-label={copy("Убрать столбец {{value0}}", {
+                      value0: name,
+                    })}
                     disabled={disabled}
                     onClick={() =>
                       set(
@@ -163,10 +176,10 @@ export function RelationDisplaySettings({
             onValueChange={(v) => set("columns", [...config.columns, v])}
           >
             <SelectTrigger
-              aria-label="Добавить столбец связи"
+              aria-label={copy("Добавить столбец связи")}
               className="w-full"
             >
-              <SelectValue placeholder="Добавить столбец…" />
+              <SelectValue placeholder={copy("Добавить столбец…")} />
             </SelectTrigger>
             <SelectContent container={portalContainer}>
               {fields
@@ -182,13 +195,16 @@ export function RelationDisplaySettings({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            До 12 столбцов. Если список пуст, столбцы подбираются автоматически.
-            Пользователь увидит только доступные ему поля.
+            {copy(
+              "До 12 столбцов. Если список пуст, столбцы подбираются автоматически. Пользователь увидит только доступные ему поля. ",
+            )}
           </p>
         </div>
       )}
       <div className="space-y-2">
-        <Label htmlFor="relation-label">Подпись связанной записи</Label>
+        <Label htmlFor="relation-label">
+          {copy("Подпись связанной записи")}
+        </Label>
         <Select
           value={config.labelField ?? "__auto"}
           disabled={disabled}
@@ -201,7 +217,9 @@ export function RelationDisplaySettings({
             <SelectValue />
           </SelectTrigger>
           <SelectContent container={portalContainer}>
-            <SelectItem value="__auto">Из настроек коллекции</SelectItem>
+            <SelectItem value="__auto">
+              {copy("Из настроек коллекции")}
+            </SelectItem>
             {fields
               .filter(
                 (f) => !["json", "file", "files", "boolean"].includes(f.type),
@@ -219,7 +237,9 @@ export function RelationDisplaySettings({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="relation-sort">Сортировка по умолчанию</Label>
+          <Label htmlFor="relation-sort">
+            {copy("Сортировка по умолчанию")}
+          </Label>
           <Select
             value={config.sortField ?? "__auto"}
             disabled={disabled}
@@ -232,7 +252,9 @@ export function RelationDisplaySettings({
               <SelectValue />
             </SelectTrigger>
             <SelectContent container={portalContainer}>
-              <SelectItem value="__auto">По основному ключу</SelectItem>
+              <SelectItem value="__auto">
+                {copy("По основному ключу")}
+              </SelectItem>
               {fields.map((f) => (
                 <SelectItem
                   key={f.name}
@@ -245,7 +267,7 @@ export function RelationDisplaySettings({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="relation-direction">Направление</Label>
+          <Label htmlFor="relation-direction">{copy("Направление")}</Label>
           <Select
             value={config.direction}
             disabled={disabled}
@@ -258,8 +280,8 @@ export function RelationDisplaySettings({
               <SelectValue />
             </SelectTrigger>
             <SelectContent container={portalContainer}>
-              <SelectItem value="asc">По возрастанию</SelectItem>
-              <SelectItem value="desc">По убыванию</SelectItem>
+              <SelectItem value="asc">{copy("По возрастанию")}</SelectItem>
+              <SelectItem value="desc">{copy("По убыванию")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -278,13 +300,15 @@ export function RelationDisplaySettings({
             />
             <Label htmlFor={`relation-${key}`}>
               {key === "allowSelect"
-                ? "Показывать выбор существующих записей"
-                : "Показывать создание записей"}
+                ? copy("Показывать выбор существующих записей")
+                : copy("Показывать создание записей")}
             </Label>
           </div>
         ))}
         <p className="text-xs text-muted-foreground">
-          Кнопки доступны, если действие разрешено политиками пользователя.
+          {copy(
+            "Кнопки доступны, если действие разрешено политиками пользователя. ",
+          )}
         </p>
       </div>
     </div>

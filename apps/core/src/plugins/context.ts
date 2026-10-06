@@ -1,4 +1,7 @@
-import type { AsmblyrContext, EndpointLogger } from "@asmblyr/kit";
+import type {
+  AsmblyrContext,
+  EndpointLogger,
+} from "@asmblyr-collaborative/kit";
 import type { Knex } from "knex";
 import { requireGrant, type Access } from "../permissions/access.js";
 import type { MutationFactory } from "../items/mutation-context.js";
@@ -11,6 +14,7 @@ import { createPluginStorage } from "./storage.js";
 import { pluginSettingsValues } from "./settings-repository.js";
 import { pluginActor } from "./actor.js";
 import { pluginCollectionName, pluginItemId } from "./items-input.js";
+import { pluginNotifications } from "../notifications/plugin-context.js";
 
 export async function createPluginContext(
   database: Knex,
@@ -32,6 +36,7 @@ export async function createPluginContext(
     ),
     storage: createPluginStorage(database, access, plugin, runtime.requestId),
     settings: await pluginSettingsValues(database, plugin),
+    notifications: pluginNotifications(database, access, plugin),
     async withRecord<T>(
       collection: string,
       id: string | number,

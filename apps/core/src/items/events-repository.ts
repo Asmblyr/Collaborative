@@ -1,7 +1,8 @@
+import { sensitiveFields, redactItemValues } from "./sensitive-history.js";
 import type { Access } from "../permissions/access.js";
 import { isDeepStrictEqual } from "node:util";
 import type { Knex } from "knex";
-import type { HookEvents } from "@asmblyr/kit";
+import type { HookEvents } from "@asmblyr-collaborative/kit";
 import { findCollectionSettings } from "../collections/settings-repository.js";
 import { ItemError, parseCollectionName, parseItemId } from "./validation.js";
 
@@ -54,6 +55,7 @@ export async function recordItemEvent(
   after: Record<string, unknown> | null,
   context: MutationContext,
 ): Promise<void> {
+  const redacted = await sensitiveFields(transaction, collection.name);
   await transaction("asmblyr_item_events")
     .withSchema("public")
     .insert({
@@ -64,8 +66,10 @@ export async function recordItemEvent(
       actor_kind: context.actor.kind,
       actor_id: context.actor.id,
       request_id: context.requestId,
-      before: before === null ? null : jsonRow(before),
-      after: after === null ? null : jsonRow(after),
+      before:
+        before === null ? null : jsonRow(redactItemValues(before, redacted)!),
+      after:
+        after === null ? null : jsonRow(redactItemValues(after, redacted)!),
     });
   await context.onItemEvent?.(transaction, `items.${action}`, {
     collection: collection.name,
@@ -135,7 +139,20 @@ export async function listItemEvents(
     .orderBy("id", "desc")
     .limit(limit + 1);
   const hasMore = events.length > limit;
-  const data = events.slice(0, limit);
+  const redacted = await sensitiveFields(database, name);
+  const data = events
+    .slice(0, limit)
+    .map(
+      (event: {
+        id: string;
+        before: Record<string, unknown> | null;
+        after: Record<string, unknown> | null;
+      }) => ({
+        ...event,
+        before: redactItemValues(event.before, redacted),
+        after: redactItemValues(event.after, redacted),
+      }),
+    );
   return {
     data,
     nextCursor: hasMore ? String(data[data.length - 1].id) : null,

@@ -17,11 +17,14 @@ export async function toolReadContext(
   const allowed = requireGrant(access, name, "read");
   signal?.throwIfAborted();
   await trx.raw("SET LOCAL statement_timeout = '5s'");
-  await trx.raw("LOCK TABLE ?? IN ACCESS SHARE MODE", [`public.${name}`]);
+  // PostgreSQL rejects LOCK TABLE for materialized views. A zero-row SELECT
+  // acquires the same AccessShareLock for either source until the transaction ends.
+  await trx.raw("SELECT 1 FROM ?? LIMIT 0", [`public.${name}`]);
   const schema = await collectionSchema(trx, name);
   requireMcpCollection(schema.settings);
-  if (schema.settings.internalId !== collectionId)
+  if (schema.settings.internalId !== collectionId) {
     throw new ItemError("Collection changed", 409);
+  }
   signal?.throwIfAborted();
   return { schema, allowed };
 }

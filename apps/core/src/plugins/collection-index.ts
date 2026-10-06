@@ -1,7 +1,7 @@
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { scanCollectionFiles } from "@asmblyr/kit/node";
+import { scanCollectionFiles } from "@asmblyr-collaborative/kit/node";
 import {
   parsePluginCollection,
   type PluginCollection,

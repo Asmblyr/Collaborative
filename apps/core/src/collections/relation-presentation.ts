@@ -1,5 +1,5 @@
-import type { RelationPresentation } from "@asmblyr/contracts";
-export type { RelationPresentation } from "@asmblyr/contracts";
+import type { RelationPresentation } from "@asmblyr-collaborative/contracts";
+export type { RelationPresentation } from "@asmblyr-collaborative/contracts";
 import type { Knex } from "knex";
 import { collectionSchema } from "../items/schema-repository.js";
 import { CollectionInputError } from "./validation.js";

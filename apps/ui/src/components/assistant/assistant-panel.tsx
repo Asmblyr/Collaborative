@@ -8,10 +8,9 @@ import {
   type PointerEvent,
   type KeyboardEvent,
 } from "react";
-import { MoveDiagonal2 } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "@asmblyr/kit/ui/button";
 import { PopoverContent } from "@/components/ui/popover";
+import { useUiCopy } from "@/lib/ui-copy";
 
 const defaultSize = { width: 420, height: 660 };
 interface Drag {
@@ -30,6 +29,8 @@ export function AssistantPanel({
   style,
   ...props
 }: ComponentProps<typeof PopoverContent>) {
+  const copy = useUiCopy();
+
   const panel = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   const [size, setSize] = useState(defaultSize);
@@ -117,17 +118,15 @@ export function AssistantPanel({
       sideOffset={12}
       style={{ ...style, width: size.width, height: size.height }}
       className={cn(
-        "relative flex max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-6rem))] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl p-0 shadow-2xl shadow-black/15 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-bottom-2 motion-reduce:animate-none sm:max-w-[calc(100vw-2.5rem)] dark:shadow-black/50",
+        "assistant-panel relative flex max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-6rem))] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl p-0 shadow-2xl shadow-black/15 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-bottom-2 motion-reduce:animate-none sm:max-w-[calc(100vw-2.5rem)] dark:shadow-black/50",
         className,
       )}
     >
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Изменить размер панели общения"
+        aria-label={copy("Изменить размер панели общения")}
         aria-describedby={hintId}
-        className="absolute left-0.5 top-0.5 z-10 size-6 touch-none cursor-nwse-resize select-none rounded-sm text-muted-foreground/50 hover:bg-transparent hover:text-foreground focus-visible:text-foreground focus-visible:ring-inset"
+        className="absolute left-0.5 top-0.5 z-10 inline-flex size-6 touch-none cursor-nwse-resize select-none items-center justify-center border-0 bg-transparent p-0 text-muted-foreground/40 outline-none transition-colors hover:text-muted-foreground focus-visible:text-foreground focus-visible:[&_svg]:stroke-[2]"
         onPointerDown={start}
         onPointerMove={move}
         onPointerUp={end}
@@ -138,14 +137,26 @@ export function AssistantPanel({
         onKeyDown={keyboard}
         onDoubleClick={() => setSize(defaultSize)}
       >
-        <MoveDiagonal2 className="size-3" />
-      </Button>
+        <svg
+          viewBox="0 0 24 24"
+          className="size-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M5 14a9 9 0 0 1 9-9" />
+        </svg>
+      </button>
       <span
         id={hintId}
         className="sr-only"
       >
-        Потяните угол или используйте стрелки. Двойной щелчок или Home вернёт
-        исходный размер.
+        {copy(
+          "Потяните угол или используйте стрелки. Двойной щелчок или Home вернёт исходный размер. ",
+        )}
       </span>
       {children}
     </PopoverContent>

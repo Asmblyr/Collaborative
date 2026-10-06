@@ -1,3 +1,5 @@
+"use client";
+
 import { Paperclip, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { displayValue } from "./item-display";
@@ -8,7 +10,9 @@ import { decodeHTML } from "entities";
 import { safeContentUrl } from "./content-value";
 import Markdown from "react-markdown";
 import { PresentedValue } from "./presented-value";
+import { TagsValue } from "./tags-value";
 import { PluginFieldDisplay } from "@/components/plugins/field-display";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function compactKey(value: string): string {
   return /^[\da-f]{8}-[\da-f-]{27}$/i.test(value)
@@ -29,6 +33,15 @@ export function ItemTableValue({
   emphasized: boolean;
   relationLabel?: string;
 }) {
+  const copy = useUiCopy();
+
+  if (column.presentation?.sensitive) {
+    return (
+      <span aria-label={copy("Чувствительное значение")}>
+        {value == null || value === "" ? "—" : "••••••••"}
+      </span>
+    );
+  }
   const options = column.presentation?.options;
   const text =
     column.presentation?.interface === "richtext" && typeof value === "string"
@@ -43,10 +56,18 @@ export function ItemTableValue({
               )
               .join(", ")
           : options.find((o) => o.value === value)?.label ||
-            displayValue(value, column.type)
-        : displayValue(value, column.type);
+            displayValue(value, column.type, copy)
+        : displayValue(value, column.type, copy);
   if (value === null || value === undefined)
     return <span className="text-muted-foreground/70">—</span>;
+  if (column.presentation?.interface === "tags") {
+    return (
+      <TagsValue
+        value={value}
+        limit={3}
+      />
+    );
+  }
   if (column.presentation?.extension) {
     return (
       <PluginFieldDisplay
@@ -74,7 +95,8 @@ export function ItemTableValue({
   if (column.presentation?.interface === "repeater" && Array.isArray(value))
     return (
       <span className="text-sm text-muted-foreground">
-        Элементов: {value.length}
+        {copy("Элементов: ")}
+        {value.length}
       </span>
     );
   if (
@@ -112,7 +134,9 @@ export function ItemTableValue({
     return (
       <span className="flex items-center gap-2 text-muted-foreground">
         <Paperclip className="size-3.5" />
-        {Array.isArray(value) ? `Файлов: ${value.length}` : "Файл"}
+        {Array.isArray(value)
+          ? copy("Файлов: {{value0}}", { value0: value.length })
+          : copy("Файл")}
       </span>
     );
   if (column.type === "boolean")

@@ -1,5 +1,5 @@
 {
-  "name": "@asmblyr/plugin-calculator",
+  "name": "@asmblyr-collaborative/plugin-calculator",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
     "build": "asmblyr-plugin build"
   },
   "dependencies": {
-    "@asmblyr/kit": "workspace:*",
+    "@asmblyr-collaborative/kit": "workspace:*",
     "h3": "2.0.1-rc.32"
   },
   "devDependencies": {

@@ -1,17 +1,20 @@
 "use client";
 
+import { useLocalizedCatalog } from "./use-localized-catalog";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { TablePreferences } from "@/lib/table-preferences";
 import { itemsPageHref } from "@/lib/item-location";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { ItemEditorDialog } from "./item-editor-dialog";
 import { ItemEmptyState } from "./item-empty-state";
 import { ItemFilterSummary } from "./item-filter-summary";
 import { ItemBulkDialog } from "./item-bulk-dialog";
 import { ItemSelectionBar } from "./item-selection-bar";
 import { ItemFilters } from "./item-filters";
+import { ItemSearchOrder } from "./item-search-order";
 import { ItemViewMenu } from "./item-table-controls";
 import { ItemPagination } from "./item-pagination";
 import { useRecordLocation } from "./use-record-location";
@@ -25,10 +28,12 @@ import { readFilter } from "./item-filter-options";
 import type { Collection, Item, ItemPage } from "./types";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import { AssistantTableContext } from "@/components/assistant/assistant-context";
+import { useUiCopy } from "@/lib/ui-copy";
+import { Badge } from "@/components/ui/badge";
 
 export function ItemsWorkspace({
-  collection,
-  catalog,
+  collection: sourceCollection,
+  catalog: sourceCatalog,
   userId,
   superuser,
   items,
@@ -49,6 +54,12 @@ export function ItemsWorkspace({
   preferences: TablePreferences | null;
   superuser: boolean;
 }) {
+  const copy = useUiCopy();
+
+  const catalog = useLocalizedCatalog(sourceCatalog);
+  const collection =
+    catalog.find((entry) => entry.name === sourceCollection.name) ??
+    sourceCollection;
   const router = useRouter();
   const workspaceId = useWorkspace()?.active?.id;
   const {
@@ -129,7 +140,9 @@ export function ItemsWorkspace({
       disabled={pending}
     >
       <Plus aria-hidden="true" />{" "}
-      {collection.mode === "single" ? "Создать объект" : "Новая запись"}
+      {collection.mode === "single"
+        ? copy("Создать объект")
+        : copy("Новая запись")}
     </Button>
   );
 
@@ -146,6 +159,7 @@ export function ItemsWorkspace({
                   page: page.number,
                   size: page.size,
                   sort: page.sort,
+                  order: page.order ?? "field",
                   direction: page.direction,
                   q,
                   filter,
@@ -166,7 +180,7 @@ export function ItemsWorkspace({
           role="status"
           className="shrink-0 rounded-lg bg-muted px-4 py-3 text-sm"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       {columns.error && (
@@ -180,25 +194,28 @@ export function ItemsWorkspace({
             variant="ghost"
             onClick={columns.retry}
           >
-            Повторить
+            {copy("Повторить ")}
           </Button>
         </p>
       )}
       {!collection.access.read ? (
         <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-          Просмотр записей недоступен для этой коллекции.
+          {copy("Просмотр записей недоступен для этой коллекции. ")}
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
           <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 py-3">
+            {collection.sourceKind === "materialized-view" && (
+              <Badge variant="secondary">{copy("Только просмотр")}</Badge>
+            )}
             {collection.mode === "single" && (
               <span className="text-sm text-muted-foreground">
-                Коллекция с одним объектом
+                {copy("Коллекция с одним объектом ")}
               </span>
             )}
             {items.length > 0 && (
               <span className="hidden text-xs text-muted-foreground lg:block">
-                Нажмите на строку, чтобы открыть запись
+                {copy("Нажмите на строку, чтобы открыть запись ")}
               </span>
             )}
             <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
@@ -211,6 +228,12 @@ export function ItemsWorkspace({
                   navigate({ number: 1 }, group ? JSON.stringify(group) : "")
                 }
               />
+              {q.trim() && (
+                <ItemSearchOrder
+                  value={page.order ?? "field"}
+                  onChange={(order) => navigate({ number: 1, order })}
+                />
+              )}
               <ItemViewMenu
                 all={columns.all}
                 visible={columns.visible}
@@ -226,6 +249,7 @@ export function ItemsWorkspace({
                       number: 1,
                       size: view.definition.pageSize,
                       sort: view.definition.sort.field,
+                      order: view.definition.sort.order ?? "field",
                       direction: view.definition.sort.direction,
                     },
                     view.definition.filter
@@ -280,6 +304,7 @@ export function ItemsWorkspace({
                 items={items}
                 recordLabels={labels}
                 columns={columns.visible}
+                widths={columns.snapshot.widths ?? {}}
                 page={page}
                 selected={selected}
                 disabled={pending || recordId !== null || creating}
@@ -294,13 +319,17 @@ export function ItemsWorkspace({
                   navigate({
                     number: 1,
                     sort: name,
+                    order: "field",
                     direction:
-                      page.sort === name && page.direction === "asc"
+                      page.order !== "relevance" &&
+                      page.sort === name &&
+                      page.direction === "asc"
                         ? "desc"
                         : "asc",
                   })
                 }
                 onMove={columns.move}
+                onResize={columns.resize}
               />
             )}
             <div
@@ -314,7 +343,7 @@ export function ItemsWorkspace({
             <div className="shrink-0 border-t py-3 pl-4 pr-20">
               {page.total === "0" ? (
                 <p className="text-sm text-muted-foreground">
-                  {q || filter ? "Найдено" : "Записей"}: 0
+                  {q || filter ? copy("Найдено") : copy("Записей")}: 0
                 </p>
               ) : (
                 <ItemPagination
@@ -367,7 +396,11 @@ export function ItemsWorkspace({
             columns: columns.snapshot,
             filter: filter ? readFilter(filter) : null,
             q,
-            sort: { field: page.sort, direction: page.direction },
+            sort: {
+              field: page.sort,
+              direction: page.direction,
+              order: page.order ?? "field",
+            },
             pageSize: page.size,
           }}
         />
@@ -376,7 +409,7 @@ export function ItemsWorkspace({
         <ItemEditorDialog
           request={{
             collection: collection.name,
-            onSaved: () => setMessage("Запись создана"),
+            onSaved: () => setMessage(copy("Запись создана")),
           }}
           catalog={catalog}
           onClose={() => setCreating(false)}
@@ -388,9 +421,13 @@ export function ItemsWorkspace({
           request={{
             collection: collection.name,
             id: recordId,
-            onSaved: () => setMessage("Запись обновлена"),
+            onSaved: () => setMessage(copy("Запись обновлена")),
           }}
-          catalog={catalog}
+          catalog={
+            collection.sourceKind === "materialized-view"
+              ? sourceCatalog
+              : catalog
+          }
           onClose={(reason) => {
             if (reason !== "navigation") closeRecord();
           }}

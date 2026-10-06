@@ -1,12 +1,14 @@
+"use client";
+
 import { X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import { ItemFilterCondition } from "./item-filter-condition";
 import { ItemFilterFieldPicker } from "./item-filter-field-picker";
 import type { FilterPath } from "./item-filter-model";
@@ -15,6 +17,7 @@ import type {
   FilterNode,
   FilterScope,
 } from "./item-filter-options";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface Props {
   group: FilterGroup;
@@ -39,6 +42,8 @@ export function ItemFilterGroup({
   onAdd,
   onRemove,
 }: Props) {
+  const copy = useUiCopy();
+
   const root = depth === 1;
   return (
     <section
@@ -47,11 +52,13 @@ export function ItemFilterGroup({
           ? "space-y-2"
           : "space-y-2 rounded-r-md border-l-2 border-primary/30 py-1 pl-3"
       }
-      aria-label={root ? "Фильтр записей" : "Группа условий"}
+      aria-label={root ? copy("Фильтр записей") : copy("Группа условий")}
     >
       {(!root || group.children.length > 1) && (
         <div className="flex items-center gap-1">
-          <span className="pl-1 text-xs text-muted-foreground">Совпадает</span>
+          <span className="pl-1 text-xs text-muted-foreground">
+            {copy("Совпадает")}
+          </span>
           <Select
             value={group.logic}
             onValueChange={(logic) =>
@@ -59,15 +66,17 @@ export function ItemFilterGroup({
             }
           >
             <SelectTrigger
-              aria-label="Логика группы"
+              aria-label={copy("Логика группы")}
               size="sm"
               className="h-7 border-0 bg-transparent px-1.5 text-xs shadow-none dark:bg-transparent"
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="and">всё перечисленное · И</SelectItem>
-              <SelectItem value="or">хотя бы одно · ИЛИ</SelectItem>
+              <SelectItem value="and">
+                {copy("всё перечисленное · И")}
+              </SelectItem>
+              <SelectItem value="or">{copy("хотя бы одно · ИЛИ")}</SelectItem>
             </SelectContent>
           </Select>
           {!root && (
@@ -76,7 +85,7 @@ export function ItemFilterGroup({
               variant="ghost"
               size="icon-sm"
               className="ml-auto h-7 w-7 text-muted-foreground/60"
-              aria-label="Удалить группу"
+              aria-label={copy("Удалить группу")}
               onClick={() => onRemove(path)}
             >
               <X
@@ -89,7 +98,7 @@ export function ItemFilterGroup({
       )}
       {root && group.children.length === 0 && (
         <p className="px-2 pb-2 pt-1 text-sm text-muted-foreground">
-          Выберите поле и задайте условие отбора.
+          {copy("Выберите поле и задайте условие отбора. ")}
         </p>
       )}
       <div className="space-y-2">
@@ -139,7 +148,7 @@ export function ItemFilterGroup({
       />
       {root && total >= 20 && (
         <p className="px-2 text-xs text-muted-foreground">
-          Можно добавить до 20 условий.
+          {copy("Можно добавить до 20 условий. ")}
         </p>
       )}
     </section>

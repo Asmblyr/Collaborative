@@ -1,7 +1,12 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { itemLabel, templateLabel } from "./item-label";
 import type { Item, ItemList } from "./types";
 import { useDraftPreviews } from "./record-draft-context";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
+
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface Option {
   id: string;
@@ -20,6 +25,7 @@ async function readItems(
   params: URLSearchParams,
   signal: AbortSignal,
   endpoint?: string,
+  copy: UiCopy = originalCopy,
 ): Promise<ItemList> {
   const response = await fetch(
     `${endpoint ?? `/api/items/${encodeURIComponent(collection)}`}?${params}`,
@@ -28,8 +34,8 @@ async function readItems(
   if (!response.ok)
     throw new Error(
       response.status === 403
-        ? "Нет доступа к записям этой коллекции"
-        : "Не удалось загрузить записи",
+        ? copy("Нет доступа к записям этой коллекции")
+        : copy("Не удалось загрузить записи"),
     );
   return response.json() as Promise<ItemList>;
 }
@@ -60,7 +66,18 @@ export function useRelationItems(
   template?: string | null,
   candidatesEndpoint?: string,
   canonicalLabels = true,
+  candidateFilter?:
+    | import("@asmblyr-collaborative/contracts").ItemFilterGroup
+    | null,
 ) {
+  const copy = useUiCopy();
+
+  const filterJson =
+    candidateFilter === null
+      ? "null"
+      : candidateFilter
+        ? JSON.stringify(candidateFilter)
+        : "";
   const previews = useDraftPreviews();
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -72,6 +89,7 @@ export function useRelationItems(
     labelField,
     template,
     canonicalLabels,
+    filterJson,
   ]);
   const [labelCache, setLabelCache] = useState(() => ({
     scope: scopeKey,
@@ -94,6 +112,7 @@ export function useRelationItems(
     page,
     revision,
     candidatesEndpoint,
+    filterJson,
   ]);
   const selectedIds = JSON.stringify(selected);
   const [selectedRecords, setSelectedRecords] = useState<{
@@ -102,7 +121,9 @@ export function useRelationItems(
   } | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || filterJson === "null") {
+      return;
+    }
     const controller = new AbortController();
     const timer = window.setTimeout(
       async () => {
@@ -112,13 +133,16 @@ export function useRelationItems(
             page: String(page),
             sort: key,
             direction: "asc",
+            order: query.trim() ? "relevance" : "field",
           });
           if (query.trim()) params.set("q", query.trim());
+          if (filterJson) params.set("filter", filterJson);
           const data = await readItems(
             collection,
             params,
             controller.signal,
             candidatesEndpoint,
+            copy,
           );
           if (controller.signal.aborted) return;
           const lastPage = Math.max(1, Math.ceil(Number(data.page.total) / 25));
@@ -179,6 +203,8 @@ export function useRelationItems(
     scopeKey,
     candidatesEndpoint,
     canonicalLabels,
+    filterJson,
+    copy,
   ]);
 
   useEffect(() => {
@@ -203,6 +229,8 @@ export function useRelationItems(
             }),
           }),
           controller.signal,
+          undefined,
+          copy,
         ),
       ),
     )
@@ -258,9 +286,12 @@ export function useRelationItems(
     revision,
     scopeKey,
     canonicalLabels,
+    filterJson,
+    copy,
   ]);
 
-  const current = result?.request === request ? result : null;
+  const current =
+    filterJson !== "null" && result?.request === request ? result : null;
   // Only the current page and selected records need related labels, not the whole collection.
   const records = useMemo(() => {
     const ids = new Set(JSON.parse(selectedIds) as string[]);
@@ -298,8 +329,11 @@ export function useRelationItems(
     records,
     options: current?.options ?? [],
     total: current?.total ?? 0,
-    error: current?.error ?? "",
-    loading: open && !current,
+    error:
+      filterJson === "null"
+        ? "Сначала заполните поле, от которого зависит выбор"
+        : (current?.error ?? ""),
+    loading: open && filterJson !== "null" && !current,
     setQuery: (value: string) => {
       setQuery(value);
       setPage(1);

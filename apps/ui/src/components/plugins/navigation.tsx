@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { usePluginPages } from "./registry";
+import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 
 export function PluginNavigation({
   pathname,
@@ -18,11 +19,12 @@ export function PluginNavigation({
   pathname: string;
   onNavigate(): void;
 }) {
+  const { t } = useTranslations();
   const pages = usePluginPages();
   if (pages.length === 0) return null;
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Приложения</SidebarGroupLabel>
+      <SidebarGroupLabel>{t("nav.apps")}</SidebarGroupLabel>
       <SidebarMenu>
         {pages.map((page) => (
           <SidebarMenuItem key={page.href}>

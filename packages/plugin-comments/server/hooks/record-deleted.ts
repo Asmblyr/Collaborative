@@ -1,4 +1,4 @@
-import { defineHook } from "@asmblyr/kit";
+import { defineHook } from "@asmblyr-collaborative/kit";
 import { deleteComments } from "../services/cleanup.js";
 
 export default defineHook("items.delete", async (event, context) => {

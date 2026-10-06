@@ -1,4 +1,4 @@
-import type { FieldPresentation } from "@asmblyr/contracts";
+import type { FieldPresentation } from "@asmblyr-collaborative/contracts";
 import { parseCreateCollection } from "../collections/create-validation.js";
 import { parseFieldPresentation } from "../collections/field-presentation-validation.js";
 import type { CreateCollectionInput } from "../collections/types.js";

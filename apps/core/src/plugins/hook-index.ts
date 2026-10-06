@@ -1,8 +1,8 @@
 import { access, lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { scanHookFiles } from "@asmblyr/kit/node";
-import type { HookDefinition } from "@asmblyr/kit";
+import { scanHookFiles } from "@asmblyr-collaborative/kit/node";
+import type { HookDefinition } from "@asmblyr-collaborative/kit";
 import { isRecord } from "./definition.js";
 import { parseSettingsDefinition } from "./settings-validation.js";
 

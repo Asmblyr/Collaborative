@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api-request";
 import type { Collection, ItemPage } from "./types";
 import type { TableView } from "./table-view-dialog";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function useTableViews({
   collection,
@@ -18,6 +19,8 @@ export function useTableViews({
   page: ItemPage;
   setMessage: (message: string) => void;
 }) {
+  const copy = useUiCopy();
+
   const [savingView, setSavingView] = useState(false);
   const [views, setViews] = useState<TableView[]>([]);
   const viewEndpoint = `/api/table-views/${encodeURIComponent(collection.name)}`;
@@ -44,12 +47,16 @@ export function useTableViews({
         "PATCH",
         {
           pageSize: page.size,
-          sort: { field: page.sort, direction: page.direction },
+          sort: {
+            field: page.sort,
+            direction: page.direction,
+            order: page.order ?? "field",
+          },
         },
       );
-      setMessage("Текущий вид сохранён в вашем профиле");
+      setMessage(copy("Текущий вид сохранён в вашем профиле"));
     } catch {
-      setMessage("Не удалось сохранить вид таблицы");
+      setMessage(copy("Не удалось сохранить вид таблицы"));
     } finally {
       setSavingView(false);
     }
@@ -58,7 +65,7 @@ export function useTableViews({
   function reloadViews() {
     void apiRequest<TableView[]>(viewEndpoint)
       .then(setViews)
-      .catch(() => setMessage("Не удалось обновить список видов"));
+      .catch(() => setMessage(copy("Не удалось обновить список видов")));
   }
   return { views, savingView, saveView, reloadViews };
 }

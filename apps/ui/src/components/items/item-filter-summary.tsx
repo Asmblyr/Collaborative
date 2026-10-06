@@ -2,10 +2,11 @@
 
 import { describeFilter } from "./item-filter-description";
 import { Search, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { removeFilterNode } from "./item-filter-model";
 import { filterFields, readFilter } from "./item-filter-options";
 import type { Collection } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemFilterSummary({
   collection,
@@ -20,6 +21,8 @@ export function ItemFilterSummary({
   filter: string;
   onChange: (filter: string, query: string) => void;
 }) {
+  const copy = useUiCopy();
+
   if (!q && !filter) return null;
   const group = readFilter(filter);
   const nodes =
@@ -31,7 +34,7 @@ export function ItemFilterSummary({
   );
   return (
     <div
-      aria-label="Применённые условия"
+      aria-label={copy("Применённые условия")}
       className="flex shrink-0 flex-wrap items-center gap-2 border-t px-4 py-3"
     >
       {q && (
@@ -39,8 +42,8 @@ export function ItemFilterSummary({
           size="sm"
           variant="secondary"
           className="h-7 max-w-full text-xs font-normal"
-          title={`Поиск: ${q}`}
-          aria-label={`Убрать поиск: ${q}`}
+          title={copy("Поиск: {{value0}}", { value0: q })}
+          aria-label={copy("Убрать поиск: {{value0}}", { value0: q })}
           onClick={() => onChange(filter, "")}
         >
           <Search
@@ -55,10 +58,12 @@ export function ItemFilterSummary({
         </Button>
       )}
       {q && group.children.length > 0 && (
-        <span className="text-[10px] font-medium text-muted-foreground">И</span>
+        <span className="text-[10px] font-medium text-muted-foreground">
+          {copy("И")}
+        </span>
       )}
       {nodes.map((node, index) => {
-        const label = describeFilter(node, labels, choices);
+        const label = describeFilter(node, labels, choices, copy);
         return (
           <span
             key={index}
@@ -66,7 +71,7 @@ export function ItemFilterSummary({
           >
             {index > 0 && (
               <span className="text-[10px] font-medium text-muted-foreground">
-                {group.logic === "and" ? "И" : "ИЛИ"}
+                {group.logic === "and" ? copy("И") : copy("ИЛИ")}
               </span>
             )}
             <Button
@@ -75,7 +80,7 @@ export function ItemFilterSummary({
               variant="secondary"
               className="h-7 min-w-0 max-w-md text-xs font-normal"
               title={label}
-              aria-label={`Убрать условие: ${label}`}
+              aria-label={copy("Убрать условие: {{value0}}", { value0: label })}
               onClick={() => {
                 const next =
                   group.logic === "or"
@@ -100,7 +105,7 @@ export function ItemFilterSummary({
         className="ml-auto h-7 text-xs text-muted-foreground"
         onClick={() => onChange("", "")}
       >
-        Сбросить всё
+        {copy("Сбросить всё ")}
       </Button>
     </div>
   );

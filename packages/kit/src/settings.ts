@@ -1,7 +1,7 @@
 import type {
   PluginSettingsDefinition,
   PluginSettingsValues,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 
 export type SettingsValues<D extends PluginSettingsDefinition> = {
   readonly [K in keyof D["fields"]]: D["fields"][K]["type"] extends "boolean"

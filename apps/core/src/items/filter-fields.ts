@@ -12,6 +12,8 @@ export type FilterFieldType =
   | "text"
   | "email"
   | "integer"
+  | "bigint"
+  | "date"
   | "decimal"
   | "boolean"
   | "datetime"
@@ -77,9 +79,16 @@ function catalogField(
       nullable: field.nullable,
     };
   if (
-    !["text", "email", "integer", "decimal", "boolean", "datetime"].includes(
-      field.type,
-    )
+    ![
+      "text",
+      "email",
+      "integer",
+      "bigint",
+      "date",
+      "decimal",
+      "boolean",
+      "datetime",
+    ].includes(field.type)
   ) {
     throw new ItemError(`Unsupported filter field: ${name}`, 400);
   }
@@ -196,9 +205,16 @@ export function resolveFilterField(
       nullable: field.nullable,
     };
   if (
-    !["text", "email", "integer", "decimal", "boolean", "datetime"].includes(
-      field.type ?? "",
-    )
+    ![
+      "text",
+      "email",
+      "integer",
+      "bigint",
+      "date",
+      "decimal",
+      "boolean",
+      "datetime",
+    ].includes(field.type ?? "")
   ) {
     throw new ItemError(`Unsupported filter field: ${root}`, 400);
   }

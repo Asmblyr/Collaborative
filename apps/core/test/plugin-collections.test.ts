@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parsePluginNamespace } from "@asmblyr/kit/node";
+import { parsePluginNamespace } from "@asmblyr-collaborative/kit/node";
 import { loadPlugins } from "../src/plugins/load.js";
 import { parsePluginCollection } from "../src/plugins/collection-definition.js";
 

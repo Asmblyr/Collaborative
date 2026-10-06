@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyReply } from "fastify";
-import type { AssistantStreamEvent } from "@asmblyr/contracts";
+import type { AssistantStreamEvent } from "@asmblyr-collaborative/contracts";
 
 /** Process-local, like AssistantService concurrency. Cancel requests must reach this Core. */
 export class AssistantRequests {

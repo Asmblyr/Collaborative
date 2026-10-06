@@ -1,5 +1,8 @@
-import { Button } from "@asmblyr/kit/ui/button";
+"use client";
+
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { LoginProvider } from "@/lib/sso";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function SsoProviders({
   providers,
@@ -8,11 +11,13 @@ export function SsoProviders({
   providers: LoginProvider[];
   next: string;
 }) {
+  const copy = useUiCopy();
+
   if (!providers.length) return null;
   return (
     <div className="space-y-3 border-t pt-5">
       <p className="text-center text-xs text-muted-foreground">
-        Или через подключённый аккаунт
+        {copy("Или через подключённый аккаунт ")}
       </p>
       {providers.map((provider) => (
         <form
@@ -35,7 +40,8 @@ export function SsoProviders({
             type="submit"
             className="w-full"
           >
-            Войти через {provider.label}
+            {copy("Войти через ")}
+            {provider.label}
           </Button>
         </form>
       ))}

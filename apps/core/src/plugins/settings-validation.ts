@@ -1,10 +1,10 @@
-import { z } from "@asmblyr/kit/actions";
+import { z } from "@asmblyr-collaborative/kit/actions";
 import type {
   PluginSettingField,
   PluginSettingsDefinition,
   PluginSettingsValues,
-} from "@asmblyr/contracts";
-import { EndpointError } from "@asmblyr/kit";
+} from "@asmblyr-collaborative/contracts";
+import { EndpointError } from "@asmblyr-collaborative/kit";
 
 const label = {
   label: z.string().trim().min(1).max(120),

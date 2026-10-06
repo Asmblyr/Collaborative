@@ -56,6 +56,7 @@ test("email fields retain their semantic type and validate item writes", async (
         nullable: true,
         searchable: true,
         searchIndexed: false,
+        searchPriority: null,
       },
       {
         name: "contact",
@@ -64,6 +65,7 @@ test("email fields retain their semantic type and validate item writes", async (
         nullable: false,
         searchable: true,
         searchIndexed: false,
+        searchPriority: null,
       },
     ]);
 

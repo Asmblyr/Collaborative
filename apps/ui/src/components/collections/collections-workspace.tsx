@@ -1,37 +1,29 @@
 "use client";
 
+import { CollectionEditorContent } from "./collection-editor-content";
+import {
+  collectionEditorTitle,
+  isRelationChoice,
+  type CollectionEditorSelection,
+} from "./collection-editor-selection";
+import { DatabaseZap } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { Collection, CollectionFolder } from "@/components/items/types";
-import { CollectionFormDesigner } from "./collection-form-designer";
-import { CollectionSettingsForm } from "./collection-settings-form";
 import { CollectionsTable } from "./collections-table";
-import { CreateCollectionForm } from "./create-collection-form";
-import { DeleteStructureForm } from "./delete-structure-form";
 import { EditorDialog } from "./editor-dialog";
-import { FieldEditorForm } from "./field-editor-form";
-import { FieldTypePicker, type FieldChoice } from "./field-type-picker";
-import { FolderForm } from "./folder-form";
-import { RelationCreateForm } from "./relation-create-form";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import type { CollectionLocation } from "@/lib/collection-tree";
-
-type Selection =
-  | { kind: "form"; collection: string }
-  | { kind: "display"; collection: string }
-  | { kind: "collection"; folderId?: string }
-  | { kind: "folder"; folder?: CollectionFolder }
-  | { kind: "field"; collection: string; field?: string; choice?: FieldChoice }
-  | { kind: "delete-field"; collection: string; field: string }
-  | { kind: "delete-collection"; collection: string };
-
-function isRelationChoice(
-  choice: FieldChoice,
-): choice is "m2o" | "o2m" | "m2m" {
-  return choice === "m2o" || choice === "o2m" || choice === "m2m";
-}
+import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
+import { useUiCopy } from "@/lib/ui-copy";
+import { requestErrorMessage, requestJson } from "@/lib/http-request";
 
 export function CollectionsWorkspace({
   collections,
@@ -44,17 +36,24 @@ export function CollectionsWorkspace({
   online: boolean;
   superuser: boolean;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const workspace = useWorkspace();
-  const visible = collections.filter(
+  const localized = useLocalizedCatalog(collections);
+  const visible = localized.filter(
     (c) =>
-      (superuser || !c.hidden) && (!workspace || workspace.includes(c.name)),
+      !/^plugin_/i.test(c.name) &&
+      (superuser || !c.hidden) &&
+      (!workspace || workspace.includes(c.name)),
   );
   const visibleFolders =
     workspace?.active || !superuser
       ? folders.filter((f) => visible.some((c) => c.folderId === f.id))
       : folders;
-  const [selection, setSelection] = useState<Selection | null>(null);
+  const [selection, setSelection] = useState<CollectionEditorSelection | null>(
+    null,
+  );
   const [settingsState, setSettingsState] = useState({
     dirty: false,
     busy: false,
@@ -70,25 +69,7 @@ export function CollectionsWorkspace({
     selection?.kind === "field"
       ? collection?.fields.find((entry) => entry.name === selection.field)
       : undefined;
-  const title =
-    selection?.kind === "form"
-      ? "Организация формы"
-      : selection?.kind === "display"
-        ? "Настройки коллекции"
-        : selection?.kind === "delete-field"
-          ? `Удалить поле ${selection.field}`
-          : selection?.kind === "delete-collection"
-            ? `Удалить коллекцию ${selection.collection}`
-            : selection?.kind === "collection"
-              ? "Новая коллекция"
-              : selection?.kind === "folder"
-                ? selection.folder
-                  ? `Папка ${selection.folder.name}`
-                  : "Новая папка"
-                : field
-                  ? `Настройка поля ${field.name}`
-                  : "Добавить поле";
-
+  const title = collectionEditorTitle(selection, collections, copy);
   function close() {
     setSelection(null);
     setSettingsState({ dirty: false, busy: false });
@@ -101,55 +82,46 @@ export function CollectionsWorkspace({
   ) {
     setMoveError("");
     try {
-      const response = await fetch(
+      await requestJson(
         `/api/collections/${encodeURIComponent(name)}/navigation`,
-        {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ...location, before }),
-        },
+        "PATCH",
+        { ...location, before },
       );
-      if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
-        setMoveError(result.message ?? "Не удалось переместить коллекцию");
-        return;
-      }
       router.refresh();
-    } catch {
-      setMoveError("Не удалось связаться с сервером");
+    } catch (cause) {
+      setMoveError(copy(requestErrorMessage(cause)));
     }
   }
 
   async function reorderFolder(id: string, before: string | null) {
     setMoveError("");
     try {
-      const response = await fetch(
+      await requestJson(
         `/api/folders/${encodeURIComponent(id)}/order`,
-        {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ before }),
-        },
+        "PATCH",
+        { before },
       );
-      if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
-        setMoveError(result.message ?? "Не удалось переместить папку");
-        return;
-      }
       router.refresh();
-    } catch {
-      setMoveError("Не удалось связаться с сервером");
+    } catch (cause) {
+      setMoveError(copy(requestErrorMessage(cause)));
     }
   }
 
   return (
     <section
       className="space-y-4"
-      aria-label="Редактор коллекций"
+      aria-label={copy("Редактор коллекций")}
     >
       <PageHeader
-        title="Коллекции"
-        description={`Коллекций: ${visible.length} · ${workspace?.active?.name || (superuser ? "Структура и поля ваших данных" : "Доступные вам данные")}`}
+        title={copy("Коллекции")}
+        description={copy("Коллекций: {{value0}} · {{value1}}", {
+          value0: visible.length,
+          value1:
+            workspace?.active?.name ||
+            (superuser
+              ? copy("Структура и поля ваших данных")
+              : copy("Доступные вам данные")),
+        })}
       >
         {superuser && (
           <div className="flex flex-wrap gap-2">
@@ -159,15 +131,32 @@ export function CollectionsWorkspace({
               disabled={!online}
               onClick={() => setSelection({ kind: "folder" })}
             >
-              Создать папку
+              {copy("Создать папку ")}
             </Button>
             <Button
               type="button"
               disabled={!online}
               onClick={() => setSelection({ kind: "collection" })}
             >
-              Создать коллекцию
+              {copy("Создать коллекцию ")}
             </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={copy("Подключить представление")}
+                  disabled={!online}
+                  onClick={() => setSelection({ kind: "materialized" })}
+                >
+                  <DatabaseZap aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {copy("Подключить представление")}
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
       </PageHeader>
@@ -183,14 +172,14 @@ export function CollectionsWorkspace({
         <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
           {online
             ? superuser
-              ? "Пока нет коллекций. Создайте первую."
-              : "Нет доступных коллекций."
-            : "Подключите Core, чтобы увидеть коллекции."}
+              ? copy("Пока нет коллекций. Создайте первую.")
+              : copy("Нет доступных коллекций.")
+            : copy("Подключите Core, чтобы увидеть коллекции.")}
         </div>
       ) : (
         <CollectionsTable
           collections={visible}
-          catalog={collections}
+          catalog={localized}
           folders={visibleFolders}
           superuser={superuser}
           onEditFolder={(folder) => setSelection({ kind: "folder", folder })}
@@ -250,119 +239,23 @@ export function CollectionsWorkspace({
         eyebrow={
           selection && "collection" in selection
             ? selection.collection
-            : "Структура данных"
+            : copy("Структура данных")
         }
         onClose={close}
       >
-        {(portalContainer, closeDialog, requestClose, requestLeave) =>
-          selection?.kind === "form" && collection ? (
-            <CollectionFormDesigner
-              collection={collection}
-              catalog={collections}
-              container={portalContainer}
-              onSaved={closeDialog}
-            />
-          ) : selection?.kind === "display" && collection ? (
-            <CollectionSettingsForm
-              catalog={collections}
-              key={collection.name}
-              collection={collection}
-              portalContainer={portalContainer}
-              onSaved={closeDialog}
-              onStateChange={(dirty, busy) => setSettingsState({ dirty, busy })}
-            />
-          ) : selection?.kind === "collection" ? (
-            <CreateCollectionForm
-              folders={folders}
-              collections={collections}
-              initialFolderId={selection.folderId}
-              portalContainer={portalContainer}
-              onSaved={closeDialog}
-              onCancel={requestClose}
-            />
-          ) : selection?.kind === "folder" ? (
-            <FolderForm
-              key={selection.folder?.id ?? "new"}
-              folder={selection.folder}
-              onSaved={closeDialog}
-              onCancel={requestClose}
-            />
-          ) : selection?.kind === "field" && collection && field ? (
-            <FieldEditorForm
-              collections={collections}
-              key={`${selection.collection}:${field.name}`}
-              collection={collection.name}
-              field={field}
-              portalContainer={portalContainer}
-              onSaved={closeDialog}
-              onCancel={requestClose}
-            />
-          ) : selection?.kind === "field" &&
-            collection &&
-            !selection.field &&
-            !selection.choice ? (
-            <FieldTypePicker
-              onSelect={(choice) =>
-                setSelection({
-                  kind: "field",
-                  collection: collection.name,
-                  choice,
-                })
-              }
-            />
-          ) : selection?.kind === "field" && collection && selection.choice ? (
-            isRelationChoice(selection.choice) ? (
-              <RelationCreateForm
-                key={`${collection.name}:${selection.choice}`}
-                collection={collection.name}
-                collections={collections}
-                kind={selection.choice}
-                portalContainer={portalContainer}
-                onSaved={closeDialog}
-                onCancel={requestClose}
-                onBack={() =>
-                  requestLeave(() =>
-                    setSelection({
-                      kind: "field",
-                      collection: collection.name,
-                    }),
-                  )
-                }
-              />
-            ) : (
-              <FieldEditorForm
-                collections={collections}
-                key={`${collection.name}:${selection.choice}`}
-                collection={collection.name}
-                type={selection.choice}
-                portalContainer={portalContainer}
-                onSaved={closeDialog}
-                onCancel={requestClose}
-                onBack={() =>
-                  requestLeave(() =>
-                    setSelection({
-                      kind: "field",
-                      collection: collection.name,
-                    }),
-                  )
-                }
-              />
-            )
-          ) : selection?.kind === "delete-field" ||
-            selection?.kind === "delete-collection" ? (
-            <DeleteStructureForm
-              key={`${selection.kind}:${selection.collection}:${
-                selection.kind === "delete-field" ? selection.field : ""
-              }`}
-              collection={selection.collection}
-              field={
-                selection.kind === "delete-field" ? selection.field : undefined
-              }
-              onDeleted={closeDialog}
-              onCancel={requestClose}
-            />
-          ) : null
-        }
+        {(portalContainer, closeDialog, requestClose, requestLeave) => (
+          <CollectionEditorContent
+            selection={selection}
+            collections={collections}
+            folders={folders}
+            container={portalContainer}
+            onSaved={closeDialog}
+            onCancel={requestClose}
+            onLeave={requestLeave}
+            onSelect={setSelection}
+            onSettingsState={(dirty, busy) => setSettingsState({ dirty, busy })}
+          />
+        )}
       </EditorDialog>
     </section>
   );

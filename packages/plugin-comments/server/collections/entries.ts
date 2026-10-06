@@ -1,4 +1,4 @@
-import { defineCollection } from "@asmblyr/kit";
+import { defineCollection } from "@asmblyr-collaborative/kit";
 
 export default defineCollection({
   name: "entries",

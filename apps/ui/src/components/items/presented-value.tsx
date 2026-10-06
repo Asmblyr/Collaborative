@@ -1,4 +1,7 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
+import { useUiCopy } from "@/lib/ui-copy";
 import { formattedValue } from "./value-format";
 import type { ValueDisplay } from "./presentation-types";
 
@@ -21,6 +24,7 @@ export function PresentedValue({
   value: unknown;
   display: ValueDisplay;
 }) {
+  const copy = useUiCopy();
   if (value == null) return <span className="text-muted-foreground">—</span>;
   if (display.kind === "status") {
     const status = display.statuses.find((s) => s.value === String(value));
@@ -33,7 +37,7 @@ export function PresentedValue({
       </Badge>
     );
   }
-  const text = formattedValue(value, display) ?? String(value);
+  const text = formattedValue(value, display, copy.locale) ?? String(value);
   return (
     <span
       title={text}

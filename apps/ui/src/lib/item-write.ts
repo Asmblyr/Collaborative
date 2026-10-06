@@ -1,4 +1,4 @@
-import { ApiError, type ItemCommitDraft } from "@asmblyr/sdk";
+import { ApiError, type ItemCommitDraft } from "@asmblyr-collaborative/sdk";
 import { asmblyr } from "./asmblyr";
 
 /** Keep the entire editor draft in the existing atomic commit operation. */

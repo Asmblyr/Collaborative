@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function useLogout() {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -18,7 +21,7 @@ export function useLogout() {
       router.replace("/login");
       router.refresh();
     } catch {
-      setError("Не удалось выйти. Попробуйте ещё раз.");
+      setError(copy("Не удалось выйти. Попробуйте ещё раз."));
       setPending(false);
     }
   }

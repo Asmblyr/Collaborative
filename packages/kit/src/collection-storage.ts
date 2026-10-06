@@ -2,7 +2,7 @@ import type {
   ItemListOptions,
   ItemListResult,
   JsonRecord,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { AsmblyrContext } from "./endpoint.js";
 import type { CollectionDefinition } from "./collection.js";
 import type {

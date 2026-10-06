@@ -4,7 +4,7 @@ import {
   defineCollection,
   useStorage,
   type AsmblyrContext,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 
 const entries = defineCollection({
   name: "entries",
@@ -14,6 +14,8 @@ const entries = defineCollection({
     body: { type: "text", required: true, nullable: false },
     amount: { type: "decimal", required: false, nullable: true },
     published: { type: "datetime", required: false, nullable: true },
+    day: { type: "date", required: false, nullable: true },
+    counter: { type: "bigint", required: false, nullable: true },
     files: { type: "files", required: false, nullable: true },
     extra: { type: "json", required: false, nullable: true },
   },
@@ -26,6 +28,8 @@ test("typed storage keeps precision, normalizes dates and delegates only to owne
     amount: "1.2345678901",
     created_at: new Date("2026-10-02T06:00:00.123Z"),
     published: null,
+    day: "2026-10-04",
+    counter: "9007199254740993",
     files: ["file-id"],
     extra: { answer: 42 },
   };
@@ -68,6 +72,8 @@ test("typed storage keeps precision, normalizes dates and delegates only to owne
   assert.equal(result.amount, row.amount);
   assert.equal(result.created_at, "2026-10-02T06:00:00.123Z");
   assert.equal(result.published, null);
+  assert.equal(result.day, "2026-10-04");
+  assert.equal(result.counter, "9007199254740993");
   assert.deepEqual(result.extra, { answer: 42 });
   assert.ok(
     row.created_at instanceof Date,

@@ -1,8 +1,10 @@
 import {
   permissionContextParameters,
+  parseCalendarDate,
+  parseBigintString,
   type PermissionCondition,
   type PermissionFilter,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import {
   fieldOperators,
   hasNoValue,
@@ -11,8 +13,12 @@ import {
   type FilterField,
 } from "../items/item-filter-options";
 import type { PolicyCollection } from "./types";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
-export function permissionFields(collection: PolicyCollection): FilterField[] {
+export function permissionFields(
+  collection: PolicyCollection,
+  copy: UiCopy = originalCopy,
+): FilterField[] {
   const key = collection.primaryKey;
   const fields: FilterField[] = [
     {
@@ -35,6 +41,8 @@ export function permissionFields(collection: PolicyCollection): FilterField[] {
         "text",
         "email",
         "integer",
+        "bigint",
+        "date",
         "decimal",
         "boolean",
         "datetime",
@@ -59,20 +67,23 @@ export function permissionFields(collection: PolicyCollection): FilterField[] {
               value,
               label,
             }))
-          : field.presentation?.options,
+          : field.presentation?.options?.map((option) => ({
+              ...option,
+              value: String(option.value),
+            })),
     });
   }
   if (collection.timestamps.createdAt)
     fields.push({
       name: "created_at",
-      label: "Дата создания",
+      label: copy("Дата создания"),
       type: "datetime",
       nullable: false,
     });
   if (collection.timestamps.updatedAt)
     fields.push({
       name: "updated_at",
-      label: "Дата изменения",
+      label: copy("Дата изменения"),
       type: "datetime",
       nullable: false,
     });
@@ -150,6 +161,15 @@ export function conditionIsValid(
       values.every((value) => {
         if (field.type === "boolean")
           return value === "true" || value === "false";
+        if (field.type === "date" || field.type === "bigint") {
+          try {
+            if (field.type === "date") parseCalendarDate(value);
+            else parseBigintString(value);
+            return true;
+          } catch {
+            return false;
+          }
+        }
         if (["integer", "decimal"].includes(field.type))
           return (
             /^-?\d+(?:\.\d+)?$/.test(value) &&
@@ -177,24 +197,32 @@ export function conditionIsValid(
 export function conditionSummary(
   group: PermissionFilter,
   fields: FilterField[],
+  copy: UiCopy = originalCopy,
 ): string {
   return group.children
     .map((child) => {
-      if ("logic" in child) return `(${conditionSummary(child, fields)})`;
+      if ("logic" in child) return `(${conditionSummary(child, fields, copy)})`;
       const field = fields.find((entry) => entry.name === child.field);
       const operand = child.value;
-      const value =
-        operand?.kind === "context"
-          ? permissionContextParameters.find(
-              (entry) => entry.path === operand.path,
-            )?.label
-          : operand?.kind === "literal"
-            ? Array.isArray(operand.value)
-              ? operand.value.join(", ")
-              : (field?.options?.find((entry) => entry.value === operand.value)
-                  ?.label ?? operand.value)
-            : "";
-      return `${field?.label ?? child.field} ${child.op === "eq" ? "=" : child.op === "neq" ? "≠" : operatorLabels[child.op]} ${value ?? ""}`.trim();
+      let value = "";
+      if (operand?.kind === "context") {
+        const parameter = permissionContextParameters.find(
+          (entry) => entry.path === operand.path,
+        );
+        value = parameter ? copy(parameter.label) : operand.path;
+      } else if (operand?.kind === "literal") {
+        value = Array.isArray(operand.value)
+          ? operand.value.join(", ")
+          : (field?.options?.find((entry) => entry.value === operand.value)
+              ?.label ?? operand.value);
+      }
+      let operator = copy(operatorLabels[child.op]);
+      if (child.op === "eq") {
+        operator = "=";
+      } else if (child.op === "neq") {
+        operator = "≠";
+      }
+      return `${field?.label ?? child.field} ${operator} ${value}`.trim();
     })
-    .join(group.logic === "and" ? " · И · " : " · ИЛИ · ");
+    .join(group.logic === "and" ? copy(" · И · ") : copy(" · ИЛИ · "));
 }

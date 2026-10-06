@@ -32,7 +32,7 @@ export async function listRelationCandidates(
     input.q !== undefined || input.filter !== undefined
       ? await listCollections(database)
       : [];
-  const { query, options } = itemReadQuery(
+  const { query, options, order } = itemReadQuery(
     database,
     name,
     target,
@@ -65,10 +65,7 @@ export async function listRelationCandidates(
       .modify((builder) =>
         selectRowPermissions(builder, database, access, name),
       )
-      .orderBy(sort, direction, "last")
-      .modify((builder) => {
-        if (sort !== key) builder.orderBy(key);
-      })
+      .modify(order)
       .limit(limit)
       .offset(offset),
     query.clone().count<{ total: string }>("* as total").first(),
@@ -87,6 +84,7 @@ export async function listRelationCandidates(
       number: page,
       size: limit,
       total: count?.total ?? "0",
+      order: options.order,
       sort,
       direction,
     },

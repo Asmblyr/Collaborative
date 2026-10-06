@@ -1,5 +1,5 @@
 {
-  "name": "@asmblyr/plugin-color",
+  "name": "@asmblyr-collaborative/plugin-color",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
     "build": "asmblyr-plugin build"
   },
   "dependencies": {
-    "@asmblyr/kit": "workspace:*"
+    "@asmblyr-collaborative/kit": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19",

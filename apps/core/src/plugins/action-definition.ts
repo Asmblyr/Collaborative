@@ -1,8 +1,12 @@
-import type { EndpointDefinition, PluginAction } from "@asmblyr/kit";
-import { z } from "@asmblyr/kit/actions";
+import type {
+  EndpointDefinition,
+  PluginAction,
+} from "@asmblyr-collaborative/kit";
+import { z } from "@asmblyr-collaborative/kit/actions";
 
 const actionId = z.string().regex(/^[a-z][a-z0-9-]{0,31}$/);
 const actionSchema = z.strictObject({
+  connection: z.literal("google").optional(),
   id: actionId,
   title: z.string().trim().min(1),
   description: z.string().trim().min(1),
@@ -19,6 +23,7 @@ const actionSchema = z.strictObject({
   parseInput: z.custom<PluginAction["parseInput"]>(
     (value) => typeof value === "function",
   ),
+  outputSchema: z.record(z.string(), z.unknown()).optional(),
   parseOutput: z.custom<PluginAction["parseOutput"]>(
     (value) => typeof value === "function",
   ),

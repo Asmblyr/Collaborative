@@ -12,7 +12,8 @@
     "jsx": "react-jsx",
     "rewriteRelativeImportExtensions": true,
     "noEmitOnError": true,
-    "types": []
+    "types": [],
+    "resolveJsonModule": true
   },
   "include": [
     "plugin.ts",

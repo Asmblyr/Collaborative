@@ -1,5 +1,7 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Table,
   TableBody,
@@ -9,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Collection } from "@/components/items/types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function CollectionFields({
   collection,
@@ -27,22 +30,28 @@ export function CollectionFields({
   onEditField: (name: string) => void;
   onDeleteField: (name: string) => void;
 }) {
+  const copy = useUiCopy();
+
+  const readonly = collection.sourceKind === "materialized-view";
   const canEdit = superuser && collection.access.structure;
   const managed = [
     {
       name: collection.primaryKey.name,
       type: collection.primaryKey.type,
-      role: "Основной ключ",
-      defaultValue:
-        collection.primaryKey.type === "text" ? "Вручную" : "Автоматически",
+      role: copy("Основной ключ"),
+      defaultValue: readonly
+        ? "—"
+        : collection.primaryKey.type === "text"
+          ? copy("Вручную")
+          : copy("Автоматически"),
     },
     ...(collection.timestamps.createdAt
       ? [
           {
             name: "created_at",
             type: "datetime",
-            role: "Системное",
-            defaultValue: "Текущее время",
+            role: copy("Системное"),
+            defaultValue: copy("Текущее время"),
           },
         ]
       : []),
@@ -51,8 +60,8 @@ export function CollectionFields({
           {
             name: "updated_at",
             type: "datetime",
-            role: "Системное",
-            defaultValue: "Текущее время",
+            role: copy("Системное"),
+            defaultValue: copy("Текущее время"),
           },
         ]
       : []),
@@ -63,12 +72,21 @@ export function CollectionFields({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">
-            Поля коллекции {collection.displayName || collection.name}
+            {copy("Поля коллекции ")}
+            {collection.displayName || collection.name}
           </h3>
           <p className="text-xs text-muted-foreground">
-            {superuser && !collection.access.structure
-              ? "Структура и настройки этой коллекции управляются плагином."
-              : "Структура системных полей защищена. Состояния настраиваются в параметрах коллекции."}
+            {readonly
+              ? copy(
+                  "Структура и данные управляются внешним процессом. Здесь настраивается отображение.",
+                )
+              : superuser && !collection.access.structure
+                ? copy(
+                    "Структура и настройки этой коллекции управляются плагином.",
+                  )
+                : copy(
+                    "Структура системных полей защищена. Состояния настраиваются в параметрах коллекции.",
+                  )}
           </p>
         </div>
         {canEdit && (
@@ -79,7 +97,7 @@ export function CollectionFields({
               variant="ghost"
               onClick={onForm}
             >
-              Форма
+              {copy("Форма ")}
             </Button>
             <Button
               type="button"
@@ -87,32 +105,38 @@ export function CollectionFields({
               variant="ghost"
               onClick={onDisplay}
             >
-              Настройки коллекции
+              {copy("Настройки коллекции ")}
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onAddField}
-            >
-              Добавить поле
-            </Button>
+            {!readonly && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onAddField}
+              >
+                {copy("Добавить поле ")}
+              </Button>
+            )}
           </div>
         )}
       </div>
       <div className="overflow-hidden rounded-lg border bg-background">
         <Table
-          aria-label={`Поля коллекции ${collection.name}`}
+          aria-label={copy("Поля коллекции {{value0}}", {
+            value0: collection.name,
+          })}
           className="min-w-[48rem]"
         >
           <TableHeader>
             <TableRow className="bg-muted/40">
-              <TableHead className="pl-4">Имя</TableHead>
-              <TableHead>Тип</TableHead>
-              <TableHead>Ограничения</TableHead>
-              <TableHead>По умолчанию</TableHead>
+              <TableHead className="pl-4">{copy("Имя")}</TableHead>
+              <TableHead>{copy("Тип")}</TableHead>
+              <TableHead>{copy("Ограничения")}</TableHead>
+              <TableHead>{copy("По умолчанию")}</TableHead>
               {canEdit && (
-                <TableHead className="pr-4 text-right">Действия</TableHead>
+                <TableHead className="pr-4 text-right">
+                  {copy("Действия")}
+                </TableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -147,7 +171,7 @@ export function CollectionFields({
                       variant="outline"
                       className="ml-2 font-sans"
                     >
-                      Системное
+                      {copy("Системное ")}
                     </Badge>
                   )}
                 </TableCell>
@@ -158,13 +182,14 @@ export function CollectionFields({
                 </TableCell>
                 <TableCell className="whitespace-normal text-xs text-muted-foreground">
                   {field.type === "alias" ? (
-                    "Виртуальное поле"
+                    copy("Виртуальное поле")
                   ) : (
                     <>
                       {field.required
-                        ? "API: обязательно"
-                        : "API: необязательно"}{" "}
-                      · {field.nullable ? "БД: NULL" : "БД: NOT NULL"}
+                        ? copy("API: обязательно")
+                        : copy("API: необязательно")}{" "}
+                      ·{" "}
+                      {field.nullable ? copy("БД: NULL") : copy("БД: NOT NULL")}
                     </>
                   )}
                 </TableCell>
@@ -187,25 +212,29 @@ export function CollectionFields({
                         type="button"
                         size="sm"
                         variant="ghost"
-                        aria-label={`Настроить поле ${field.name}`}
+                        aria-label={copy("Настроить поле {{value0}}", {
+                          value0: field.name,
+                        })}
                         onClick={() =>
                           field.name === collection.state?.field
                             ? onDisplay()
                             : onEditField(field.name)
                         }
                       >
-                        Настроить
+                        {copy("Настроить ")}
                       </Button>
-                      {field.name !== collection.state?.field && (
+                      {!readonly && field.name !== collection.state?.field && (
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
-                          aria-label={`Удалить поле ${field.name}`}
+                          aria-label={copy("Удалить поле {{value0}}", {
+                            value0: field.name,
+                          })}
                           className="text-destructive hover:text-destructive"
                           onClick={() => onDeleteField(field.name)}
                         >
-                          Удалить
+                          {copy("Удалить ")}
                         </Button>
                       )}
                     </div>

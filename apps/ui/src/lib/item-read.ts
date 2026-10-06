@@ -1,4 +1,8 @@
-import { ApiError, type ItemResult, type JsonRecord } from "@asmblyr/sdk";
+import {
+  ApiError,
+  type ItemResult,
+  type JsonRecord,
+} from "@asmblyr-collaborative/sdk";
 import { asmblyr } from "./asmblyr";
 import { requestJson } from "./http-request";
 

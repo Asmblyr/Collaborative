@@ -1,5 +1,8 @@
-import type { RepeaterSettings } from "@asmblyr/contracts";
-export type { RepeaterField, RepeaterSettings } from "@asmblyr/contracts";
+import type { RepeaterSettings } from "@asmblyr-collaborative/contracts";
+export type {
+  RepeaterField,
+  RepeaterSettings,
+} from "@asmblyr-collaborative/contracts";
 import { CollectionInputError } from "./validation.js";
 import { parseFieldValue } from "./field-values.js";
 import { parseContentValue } from "./content-values.js";

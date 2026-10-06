@@ -2,11 +2,11 @@ import type {
   FormLayout,
   FieldPresentation,
   CollectionState,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 export type {
   FieldPresentation,
   RelationPresentation,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 
 export interface CollectionField {
   name: string;
@@ -14,6 +14,9 @@ export interface CollectionField {
   required: boolean;
   nullable: boolean;
   defaultValue?: ItemValue;
+  searchPriority?:
+    | import("@asmblyr-collaborative/contracts").SearchPriority
+    | null;
   searchable?: boolean;
   searchIndexed?: boolean;
   presentation?: FieldPresentation;
@@ -34,8 +37,10 @@ export interface CollectionField {
 }
 
 export interface Collection {
+  sourceKind?: "table" | "materialized-view";
   name: string;
   displayName?: string | null;
+  translations?: import("@asmblyr-collaborative/contracts").LabelTranslations;
   hidden?: boolean;
   mcp?: { enabled: boolean; description: string | null };
   displayField?: string | null;
@@ -77,6 +82,7 @@ export interface ItemPage {
   total: string;
   sort: string;
   direction: "asc" | "desc";
+  order?: import("@asmblyr-collaborative/contracts").ItemOrder;
 }
 
 export interface ItemList {

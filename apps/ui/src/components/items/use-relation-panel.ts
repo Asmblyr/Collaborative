@@ -15,6 +15,7 @@ export interface RelationResult {
     total: string;
     sort: string;
     direction: "asc" | "desc";
+    order?: "field" | "relevance";
   };
   abilities: { attach: boolean; detach: boolean; create: boolean };
   display: RelationPresentation;
@@ -108,7 +109,9 @@ export function useRelationPanel(endpoint: string, settings: string) {
       setSort({
         sort: name,
         direction:
-          result?.page.sort === name && result.page.direction === "asc"
+          result?.page.order !== "relevance" &&
+          result?.page.sort === name &&
+          result.page.direction === "asc"
             ? "desc"
             : "asc",
       });

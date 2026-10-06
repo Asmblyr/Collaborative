@@ -8,14 +8,13 @@ import { collectionSchema } from "../items/schema-repository.js";
 import { AuthInputError } from "../auth/validation.js";
 import { objectInput } from "../shared/input.js";
 import { defaultTableView } from "./table-view-service.js";
+import type { ColumnPreferences as Columns } from "@asmblyr-collaborative/contracts";
+import { columnWidths } from "./column-widths.js";
 
-interface Columns {
-  order: string[];
-  hidden: string[];
-}
 interface Sort {
   field: string;
   direction: "asc" | "desc";
+  order?: import("@asmblyr-collaborative/contracts").ItemOrder;
 }
 const table = "asmblyr_table_preferences";
 
@@ -53,7 +52,11 @@ function reconcile(columns: Columns | null, names: string[]): Columns | null {
   const hidden = [
     ...new Set(columns.hidden.filter((name) => names.includes(name))),
   ];
-  return { order, hidden: hidden.length >= order.length ? [] : hidden };
+  return {
+    order,
+    hidden: hidden.length >= order.length ? [] : hidden,
+    ...columnWidths(columns.widths, names, true),
+  };
 }
 
 export async function getTablePreferences(
@@ -89,7 +92,7 @@ export async function saveTablePreferences(
   const ctx = await context(db, name, access);
   const update: Record<string, unknown> = {};
   if ("columns" in body) {
-    const columns = objectInput(body.columns, ["order", "hidden"]);
+    const columns = objectInput(body.columns, ["order", "hidden", "widths"]);
     for (const key of ["order", "hidden"]) {
       const list = columns[key];
       if (
@@ -100,6 +103,7 @@ export async function saveTablePreferences(
         throw new AuthInputError("Invalid or inaccessible table columns");
       }
     }
+    columnWidths(columns.widths, ctx.names);
     update.columns = JSON.stringify(
       reconcile(columns as unknown as Columns, ctx.names),
     );
@@ -113,7 +117,7 @@ export async function saveTablePreferences(
     update.page_size = body.pageSize;
   }
   if ("sort" in body) {
-    const sort = objectInput(body.sort, ["field", "direction"]);
+    const sort = objectInput(body.sort, ["field", "direction", "order"]);
     if (
       typeof sort.field !== "string" ||
       !ctx.names.includes(sort.field) ||
@@ -121,6 +125,13 @@ export async function saveTablePreferences(
       !["asc", "desc"].includes(sort.direction)
     ) {
       throw new AuthInputError("Invalid or inaccessible sort field");
+    }
+    if (
+      sort.order !== undefined &&
+      sort.order !== "field" &&
+      sort.order !== "relevance"
+    ) {
+      throw new AuthInputError("Invalid ordering mode");
     }
     update.sort = JSON.stringify(sort);
   }

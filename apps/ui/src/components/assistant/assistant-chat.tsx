@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { ArrowDown, ArrowUp, RotateCcw, Sparkles } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { ArrowDown, ArrowUp, RotateCcw } from "lucide-react";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
@@ -22,18 +22,25 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
-import { suggestions, type AssistantMessage } from "./assistant-types";
+import type { AssistantMessage } from "./assistant-types";
+import type { PageContext } from "./assistant-context-types";
+import { AssistantWelcome } from "./assistant-welcome";
 import { AssistantMessageContent } from "./assistant-message-content";
 import { AssistantFilterProposal } from "./assistant-filter-proposal";
 import type {
   AssistantProgress as Progress,
   AssistantTurnSummary,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import { AssistantProgress } from "./assistant-progress";
 import { AssistantSelectionCard } from "./assistant-selection";
 import { AssistantPluginResultCard } from "./assistant-plugin-result";
+import { AssistantConnectionWrite } from "./assistant-connection-write";
 import { AssistantUsageSummary } from "./assistant-usage-summary";
 import { AssistantScrollOnSend } from "./assistant-scroll-on-send";
+import { useUiCopy } from "@/lib/ui-copy";
+import { assistantContextBoundaries } from "./assistant-context-state";
+import { AssistantContextBoundary } from "./assistant-context-boundary";
+import { AssistantCopyAnswer } from "./assistant-copy-answer";
 
 export function AssistantChat({
   messages,
@@ -44,11 +51,13 @@ export function AssistantChat({
   onStop,
   onDraft,
   onSend,
+  sendEnabled,
   error,
   errorSummary,
   onRetry,
   maxLength,
   contextControl,
+  welcomeContext = null,
 }: {
   messages: AssistantMessage[];
   draft: string;
@@ -58,16 +67,24 @@ export function AssistantChat({
   onStop: () => void;
   onDraft: (value: string) => void;
   onSend: (value: string) => boolean;
+  sendEnabled: boolean;
   error: string | null;
   onRetry?: () => void;
   maxLength: number;
   contextControl?: React.ReactNode;
+  welcomeContext?: PageContext | null;
   errorSummary?: AssistantTurnSummary;
 }) {
+  const copy = useUiCopy();
+
   const input = useRef<HTMLTextAreaElement>(null);
+  const conversationMessages = messages.filter(
+    (message) => message.id !== "welcome",
+  );
   const lastUserMessage = messages.findLast(
     (message) => message.role === "user",
   );
+  const contextBoundaries = assistantContextBoundaries(conversationMessages);
   function submit() {
     if (onSend(draft)) {
       onDraft("");
@@ -75,32 +92,33 @@ export function AssistantChat({
     }
   }
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="min-h-0 min-w-0 flex-1">
         <MessageScrollerProvider autoScroll>
           <AssistantScrollOnSend messageId={lastUserMessage?.id} />
           <MessageScroller>
             <MessageScrollerViewport
-              aria-label="Сообщения чата"
+              aria-label={copy("Сообщения чата")}
               tabIndex={0}
             >
               <MessageScrollerContent className="gap-5 px-4 pb-5 pt-3">
-                <div className="mb-1 flex flex-col items-center gap-2 py-3 text-center">
-                  <div className="flex size-10 items-center justify-center rounded-2xl border bg-muted/50">
-                    <Sparkles className="size-5" />
-                  </div>
-                  <p className="text-sm font-medium">
-                    Помощь рядом с вашими данными
-                  </p>
-                  <p className="max-w-64 text-xs leading-5 text-muted-foreground">
-                    Вопросы, подсказки и важные события — в одном месте.
-                  </p>
-                </div>
-                {messages.map((message) => (
+                {conversationMessages.length === 0 && !pending && (
+                  <AssistantWelcome
+                    context={welcomeContext}
+                    onPrompt={(prompt) => {
+                      onDraft(prompt);
+                      input.current?.focus();
+                    }}
+                  />
+                )}
+                {conversationMessages.map((message) => (
                   <MessageScrollerItem
                     key={message.id}
                     messageId={message.id}
                   >
+                    {contextBoundaries.has(message.id) && (
+                      <AssistantContextBoundary label={message.contextLabel} />
+                    )}
                     <Message align={message.role === "user" ? "end" : "start"}>
                       <MessageContent
                         className={
@@ -108,41 +126,59 @@ export function AssistantChat({
                         }
                       >
                         <MessageHeader>
-                          {message.role === "user" ? "Вы" : "Asmblyr"}
+                          {message.role === "user" ? copy("Вы") : "Asmblyr"}
                         </MessageHeader>
                         {message.contextLabel && (
                           <p className="text-[10px] text-muted-foreground">
                             {message.contextLabel}
                           </p>
                         )}
-                        <div
-                          className={`rounded-2xl px-3 py-2.5 ${
-                            message.role === "user"
-                              ? "whitespace-pre-wrap rounded-br-md bg-primary text-sm leading-6 text-primary-foreground [overflow-wrap:anywhere]"
-                              : "rounded-bl-md bg-muted/60"
-                          }`}
-                        >
-                          {message.role === "user" ? (
-                            message.content
-                          ) : (
-                            <AssistantMessageContent
-                              content={message.content}
-                            />
-                          )}
-                        </div>
+                        {message.role === "assistant" && (
+                          <AssistantProgress
+                            activity={message.activity}
+                            draft={message.activityDraft}
+                            working={Boolean(message.streaming && pending)}
+                            startedAt={message.startedAt}
+                            progress={progress}
+                            summary={message.summary}
+                            stopping={stopping}
+                            onStop={onStop}
+                          />
+                        )}
+                        {message.content && (
+                          <div
+                            className={`min-w-0 rounded-2xl px-3 py-2.5 ${
+                              message.role === "user"
+                                ? "whitespace-pre-wrap rounded-br-md bg-primary text-sm leading-6 text-primary-foreground [overflow-wrap:anywhere]"
+                                : "rounded-bl-md bg-muted/60"
+                            }`}
+                          >
+                            {message.role === "user" ? (
+                              message.content
+                            ) : (
+                              <AssistantMessageContent
+                                content={message.content}
+                              />
+                            )}
+                          </div>
+                        )}
                         {message.truncated && (
                           <p className="text-xs text-muted-foreground">
-                            Ответ достиг ограничения длины. Можно попросить
-                            продолжить.
+                            {copy(
+                              "Ответ достиг ограничения длины. Можно попросить продолжить. ",
+                            )}
                           </p>
                         )}
                         {(message.cancelled || message.failed) && (
                           <p className="text-xs text-muted-foreground">
                             {message.cancelled
-                              ? "Ответ остановлен."
-                              : "Ответ не завершён: соединение прервалось или произошла ошибка."}
+                              ? copy("Ответ остановлен.")
+                              : copy(
+                                  "Ответ не завершён: соединение прервалось или произошла ошибка.",
+                                )}
                           </p>
                         )}
+                        <AssistantCopyAnswer message={message} />
                         {message.role === "assistant" &&
                           message.proposals?.map((proposal, index) => (
                             <AssistantFilterProposal
@@ -150,9 +186,13 @@ export function AssistantChat({
                               proposal={proposal}
                             />
                           ))}
-                        {message.role === "assistant" && message.summary && (
-                          <AssistantUsageSummary summary={message.summary} />
-                        )}
+                        {message.role === "assistant" &&
+                          message.connectionWrites?.map((proposal) => (
+                            <AssistantConnectionWrite
+                              key={proposal.id}
+                              proposal={proposal}
+                            />
+                          ))}
                         {message.role === "assistant" &&
                           message.selections?.map((selection) => (
                             <AssistantSelectionCard
@@ -171,40 +211,16 @@ export function AssistantChat({
                     </Message>
                   </MessageScrollerItem>
                 ))}
-                {pending && (
-                  <MessageScrollerItem>
-                    <AssistantProgress
-                      progress={progress}
-                      stopping={stopping}
-                      onStop={onStop}
-                    />
-                  </MessageScrollerItem>
-                )}
-                {messages.length === 1 && (
-                  <div className="flex flex-wrap gap-2">
-                    {suggestions.map((suggestion) => (
-                      <Button
-                        key={suggestion}
-                        variant="outline"
-                        size="sm"
-                        className="h-auto whitespace-normal py-1.5 text-left text-xs"
-                        onClick={() => onSend(suggestion)}
-                      >
-                        {suggestion}
-                      </Button>
-                    ))}
-                  </div>
-                )}
               </MessageScrollerContent>
             </MessageScrollerViewport>
-            <MessageScrollerButton aria-label="К последнему сообщению">
+            <MessageScrollerButton aria-label={copy("К последнему сообщению")}>
               <ArrowDown className="size-4" />
             </MessageScrollerButton>
           </MessageScroller>
         </MessageScrollerProvider>
       </div>
       <form
-        className="shrink-0 border-t bg-background/60 p-3"
+        className="assistant-composer shrink-0 border-t bg-background/60 p-3"
         onSubmit={(event) => {
           event.preventDefault();
           submit();
@@ -214,19 +230,19 @@ export function AssistantChat({
         {error && (
           <div
             role="alert"
-            className="mb-3 space-y-2 rounded-lg bg-destructive/10 p-3 text-xs leading-5 text-destructive"
+            className="mb-3 max-h-28 space-y-2 overflow-y-auto rounded-lg bg-destructive/10 p-3 text-xs leading-5 text-destructive"
           >
-            <p>{error}</p>
+            <p>{copy(error)}</p>
             {onRetry && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={pending}
+                disabled={pending || !sendEnabled}
                 onClick={onRetry}
               >
                 <RotateCcw />
-                Повторить
+                {copy("Повторить ")}
               </Button>
             )}
             {errorSummary && <AssistantUsageSummary summary={errorSummary} />}
@@ -237,12 +253,12 @@ export function AssistantChat({
             ref={input}
             value={draft}
             onChange={(event) => onDraft(event.target.value)}
-            aria-label="Сообщение ассистенту"
+            aria-label={copy("Сообщение ассистенту")}
             aria-describedby="assistant-input-hint"
-            placeholder="Спросите что-нибудь…"
+            placeholder={copy("Спросите что-нибудь…")}
             rows={2}
             maxLength={maxLength}
-            className="max-h-32 min-h-16 text-sm"
+            className="max-h-[min(8rem,20cqh)] min-h-12 text-sm"
             onKeyDown={(event) => {
               if (
                 event.key === "Enter" &&
@@ -256,28 +272,30 @@ export function AssistantChat({
           />
           <InputGroupAddon
             align="block-end"
-            className="justify-between"
+            className="assistant-composer-actions justify-between"
           >
             <span
               id="assistant-input-hint"
               className="text-[11px] font-normal text-muted-foreground"
             >
-              Shift + Enter — новая строка
+              {copy("Shift + Enter — новая строка ")}
             </span>
             <InputGroupButton
               type="submit"
               variant="default"
               size="icon-sm"
               className="rounded-full"
-              disabled={!draft.trim() || pending}
-              aria-label="Отправить сообщение"
+              disabled={!draft.trim() || pending || !sendEnabled}
+              aria-label={copy("Отправить сообщение")}
             >
               <ArrowUp />
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
-        <p className="mt-2 text-center text-[11px] leading-4 text-muted-foreground">
-          Запрошенные данные передаются AI-провайдеру · ответы стоит проверять
+        <p className="assistant-composer-notice mt-2 text-center text-[11px] leading-4 text-muted-foreground">
+          {copy(
+            "Запрошенные данные передаются AI-провайдеру · ответы стоит проверять ",
+          )}
         </p>
       </form>
     </div>

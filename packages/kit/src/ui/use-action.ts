@@ -7,7 +7,7 @@ import {
   type ModelDefinition,
 } from "../model-schema.js";
 import type { PluginPageProps } from "../ui.js";
-import type { PluginActionResult } from "@asmblyr/contracts";
+import type { PluginActionResult } from "@asmblyr-collaborative/contracts";
 
 /** Owns form values and calculation lifecycle; hosts remount it when accepting a new draft. */
 export function useAction<Input extends object, Output extends object>(

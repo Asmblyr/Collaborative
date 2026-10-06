@@ -2,12 +2,15 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasskeyLogin } from "./passkey-login";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function LoginForm({ next = "/" }: { next?: string }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,16 +30,16 @@ export function LoginForm({ next = "/" }: { next?: string }) {
       if (!response.ok) {
         setMessage(
           response.status === 401
-            ? "Неверная почта или пароль"
+            ? copy("Неверная почта или пароль")
             : (((await response.json()) as { message?: string }).message ??
-                "Не удалось войти"),
+                copy("Не удалось войти")),
         );
         return;
       }
       router.replace(next);
       router.refresh();
     } catch {
-      setMessage("Не удалось связаться с сервером");
+      setMessage(copy("Не удалось связаться с сервером"));
     } finally {
       setPending(false);
     }
@@ -48,7 +51,7 @@ export function LoginForm({ next = "/" }: { next?: string }) {
       className="space-y-5"
     >
       <div className="space-y-2">
-        <Label htmlFor="login-email">Электронная почта</Label>
+        <Label htmlFor="login-email">{copy("Электронная почта")}</Label>
         <Input
           id="login-email"
           type="email"
@@ -60,7 +63,7 @@ export function LoginForm({ next = "/" }: { next?: string }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="login-password">Пароль</Label>
+        <Label htmlFor="login-password">{copy("Пароль")}</Label>
         <Input
           id="login-password"
           type="password"
@@ -76,7 +79,7 @@ export function LoginForm({ next = "/" }: { next?: string }) {
           role="alert"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <Button
@@ -84,7 +87,7 @@ export function LoginForm({ next = "/" }: { next?: string }) {
         className="w-full"
         disabled={pending}
       >
-        {pending ? "Входим…" : "Войти"}
+        {pending ? copy("Входим…") : copy("Войти")}
       </Button>
       <PasskeyLogin next={next} />
     </form>

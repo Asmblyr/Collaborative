@@ -6,6 +6,7 @@ export interface FileStorage {
   put(key: string, content: Buffer, contentType: string): Promise<void>;
   get(key: string): Promise<Readable>;
   delete(key: string): Promise<void>;
+  check?(): Promise<void>;
   close?(): void;
 }
 

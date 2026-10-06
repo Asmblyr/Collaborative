@@ -175,6 +175,53 @@ test("relation search covers one hop, permissions, and stable pagination", async
     assert.equal(first.json().page.total, "2");
     assert.equal(second.json().page.total, "2");
     assert.notEqual(first.json().data[0].id, second.json().data[0].id);
+    // Exact related labels outrank prefixes, independently of source-key order.
+    await database(authors)
+      .where({ id: otherAuthor.json().data.id })
+      .update({ title: "Cobalt" });
+    const m2oRanked = await request("GET", `/items/${posts}?q=Cobalt`);
+    assert.equal(m2oRanked.statusCode, 200, m2oRanked.body);
+    assert.deepEqual(
+      m2oRanked.json().data.map((row: { id: unknown }) => String(row.id)),
+      [String(post2.json().data.id), String(post1.json().data.id)],
+    );
+    await database(authors)
+      .where({ id: otherAuthor.json().data.id })
+      .update({ title: "Other author" });
+    await database(tags)
+      .where({ id: tag2.json().data.id })
+      .update({ title: "Quartz" });
+    const m2mRanked = await request(
+      "GET",
+      `/items/${posts}?q=Quartz&order=relevance&sort=id&direction=desc`,
+    );
+    assert.equal(m2mRanked.statusCode, 200, m2mRanked.body);
+    assert.equal(m2mRanked.json().page.total, "2");
+    assert.deepEqual(
+      m2mRanked.json().data.map((row: { id: unknown }) => String(row.id)),
+      [String(post1.json().data.id), String(post2.json().data.id)],
+    );
+    await database(posts)
+      .where({ id: post1.json().data.id })
+      .update({ title: "First article draft" });
+    await database(posts)
+      .where({ id: post2.json().data.id })
+      .update({ title: "First article" });
+    const o2mRanked = await request(
+      "GET",
+      `/items/${authors}?q=First%20article`,
+    );
+    assert.equal(o2mRanked.statusCode, 200, o2mRanked.body);
+    assert.deepEqual(
+      o2mRanked.json().data.map((row: { id: unknown }) => String(row.id)),
+      [String(otherAuthor.json().data.id), String(author.json().data.id)],
+    );
+    await database(posts)
+      .where({ id: post1.json().data.id })
+      .update({ title: "First article" });
+    await database(posts)
+      .where({ id: post2.json().data.id })
+      .update({ title: "Second article" });
     const global = await request("GET", "/search?q=Cobalt");
     assert.ok(
       global

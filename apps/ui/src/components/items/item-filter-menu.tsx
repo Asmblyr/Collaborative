@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from "react";
 import { Search } from "lucide-react";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 
 export function ItemFilterMenu({
   query,

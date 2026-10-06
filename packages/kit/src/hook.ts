@@ -1,4 +1,4 @@
-import type { PluginSettingsValues } from "@asmblyr/contracts";
+import type { PluginSettingsValues } from "@asmblyr-collaborative/contracts";
 import type { EndpointActor, EndpointLogger } from "./endpoint.js";
 import type { ItemsReader } from "./items.js";
 import type { PluginStorage } from "./storage.js";

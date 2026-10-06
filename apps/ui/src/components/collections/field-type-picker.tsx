@@ -15,13 +15,17 @@ import {
   Paperclip,
   Images,
   List,
+  Tags,
 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export type DataFieldType =
   | "text"
   | "integer"
+  | "bigint"
+  | "date"
   | "boolean"
   | "datetime"
   | "email"
@@ -31,7 +35,8 @@ export type DataFieldType =
   | "file"
   | "files"
   | "select"
-  | "multiselect";
+  | "multiselect"
+  | "tags";
 export type FieldChoice = DataFieldType | "m2o" | "o2m" | "m2m";
 
 type Choice = {
@@ -55,10 +60,22 @@ const dataFields: Choice[] = [
     icon: Hash,
   },
   {
+    type: "bigint",
+    label: "Большое целое число",
+    description: "64-битное число, строка в API",
+    icon: Hash,
+  },
+  {
     type: "boolean",
     label: "Да / нет",
     description: "Логическое значение",
     icon: ToggleLeft,
+  },
+  {
+    type: "date",
+    label: "Дата",
+    description: "Календарная дата без времени и часового пояса",
+    icon: CalendarClock,
   },
   {
     type: "datetime",
@@ -95,6 +112,12 @@ const dataFields: Choice[] = [
     label: "JSON",
     description: "Структурированные данные",
     icon: Braces,
+  },
+  {
+    type: "tags",
+    label: "Теги",
+    description: "Свободный ввод нескольких меток",
+    icon: Tags,
   },
   {
     type: "uuid",
@@ -142,22 +165,30 @@ export function FieldTypePicker({
 }: {
   onSelect: (type: FieldChoice) => void;
 }) {
+  const copy = useUiCopy();
+
   const [query, setQuery] = useState("");
   const filter = (choices: Choice[]) =>
-    choices.filter((choice) =>
-      `${choice.label} ${choice.description} ${choice.type}`
-        .toLocaleLowerCase("ru")
-        .includes(query.trim().toLocaleLowerCase("ru")),
-    );
+    choices
+      .map((choice) => ({
+        ...choice,
+        label: copy(choice.label),
+        description: copy(choice.description),
+      }))
+      .filter((choice) =>
+        `${choice.label} ${choice.description} ${choice.type}`
+          .toLocaleLowerCase("ru")
+          .includes(query.trim().toLocaleLowerCase("ru")),
+      );
   const groups = [
-    { title: "Поля данных", choices: filter(dataFields) },
-    { title: "Связи", choices: filter(relations) },
+    { title: copy("Поля данных"), choices: filter(dataFields) },
+    { title: copy("Связи"), choices: filter(relations) },
   ];
 
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
-        Выберите, какое поле добавить в коллекцию.
+        {copy("Выберите, какое поле добавить в коллекцию. ")}
       </p>
       <div className="relative">
         <Search
@@ -165,8 +196,8 @@ export function FieldTypePicker({
           className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
         />
         <Input
-          aria-label="Поиск типа поля"
-          placeholder="Найти тип поля"
+          aria-label={copy("Поиск типа поля")}
+          placeholder={copy("Найти тип поля")}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           className="pl-9"
@@ -232,7 +263,7 @@ export function FieldTypePicker({
           role="status"
           className="py-8 text-center text-sm text-muted-foreground"
         >
-          Тип поля не найден
+          {copy("Тип поля не найден ")}
         </p>
       )}
     </div>

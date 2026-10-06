@@ -1,8 +1,8 @@
 "use client";
 
-import { Input } from "@asmblyr/kit/ui/input";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ApplicationAccess } from "./application-access";
 import {
@@ -11,9 +11,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+} from "@asmblyr-collaborative/kit/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import type { ApplicationDraft, OAuthUser } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface Props {
   readOnly?: boolean;
@@ -32,6 +38,8 @@ export function ApplicationFields({
   existing,
   portal,
 }: Props) {
+  const copy = useUiCopy();
+
   function change<K extends keyof ApplicationDraft>(
     key: K,
     value: ApplicationDraft[K],
@@ -44,9 +52,9 @@ export function ApplicationFields({
       className="space-y-5"
     >
       <TabsList>
-        <TabsTrigger value="general">Приложение</TabsTrigger>
-        <TabsTrigger value="access">Доступ</TabsTrigger>
-        <TabsTrigger value="service">Интеграция</TabsTrigger>
+        <TabsTrigger value="general">{copy("Приложение")}</TabsTrigger>
+        <TabsTrigger value="access">{copy("Доступ")}</TabsTrigger>
+        <TabsTrigger value="service">{copy("Интеграция")}</TabsTrigger>
       </TabsList>
       <TabsContent
         value="general"
@@ -58,7 +66,7 @@ export function ApplicationFields({
           className="space-y-5"
         >
           <div className="space-y-2">
-            <Label htmlFor="oauth-name">Название</Label>
+            <Label htmlFor="oauth-name">{copy("Название")}</Label>
             <Input
               id="oauth-name"
               required
@@ -68,17 +76,17 @@ export function ApplicationFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="oauth-description">Описание</Label>
+            <Label htmlFor="oauth-description">{copy("Описание")}</Label>
             <Input
               id="oauth-description"
               maxLength={1000}
               value={draft.description}
               onChange={(event) => change("description", event.target.value)}
-              placeholder="Покажем пользователю перед входом"
+              placeholder={copy("Покажем пользователю перед входом")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="oauth-kind">Тип приложения</Label>
+            <Label htmlFor="oauth-kind">{copy("Тип приложения")}</Label>
             <Select
               disabled={existing}
               value={draft.clientType}
@@ -94,19 +102,21 @@ export function ApplicationFields({
               </SelectTrigger>
               <SelectContent container={portal}>
                 <SelectItem value="confidential">
-                  Серверное · с секретом
+                  {copy("Серверное · с секретом ")}
                 </SelectItem>
                 <SelectItem value="public">
-                  Публичное · без секрета, PKCE
+                  {copy("Публичное · без секрета, PKCE ")}
                 </SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Для LavinMQ выберите публичное. PKCE обязателен для обоих типов.
+              {copy(
+                "Для LavinMQ выберите публичное. PKCE обязателен для обоих типов. ",
+              )}
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="oauth-redirects">Адреса возврата</Label>
+            <Label htmlFor="oauth-redirects">{copy("Адреса возврата")}</Label>
             <Textarea
               id="oauth-redirects"
               required
@@ -118,15 +128,18 @@ export function ApplicationFields({
               placeholder="https://service.example.com/oauth/callback"
             />
             <p className="text-xs text-muted-foreground">
-              По одному точному адресу на строку. HTTP разрешён только для
-              localhost.
+              {copy(
+                "По одному точному адресу на строку. HTTP разрешён только для localhost. ",
+              )}
             </p>
           </div>
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <Label htmlFor="oauth-enabled">Приложение включено</Label>
+              <Label htmlFor="oauth-enabled">
+                {copy("Приложение включено")}
+              </Label>
               <p className="mt-1 text-xs text-muted-foreground">
-                Отключение запрещает новые входы и обмен кодов.
+                {copy("Отключение запрещает новые входы и обмен кодов. ")}
               </p>
             </div>
             <Switch
@@ -146,10 +159,11 @@ export function ApplicationFields({
           className="space-y-5"
         >
           <div className="rounded-lg bg-muted/50 p-4 text-sm">
-            <p className="font-medium">Единый профиль</p>
+            <p className="font-medium">{copy("Единый профиль")}</p>
             <p className="mt-2 text-muted-foreground">
-              ID, почта, имя и изображение. Набор одинаков для всех приложений.
-              Пароль и доступ к данным Asmblyr не передаются.
+              {copy(
+                "ID, почта, имя и изображение. Набор одинаков для всех приложений. Пароль и доступ к данным Asmblyr не передаются. ",
+              )}
             </p>
           </div>
           <ApplicationAccess
@@ -169,21 +183,26 @@ export function ApplicationFields({
           className="space-y-5"
         >
           <p className="text-sm text-muted-foreground">
-            Для обычного входа оставьте пустым. Если сервис проверяет JWT и
-            права в нём, укажите его настройки ниже.
+            {copy(
+              "Для обычного входа оставьте пустым. Если сервис проверяет JWT и права в нём, укажите его настройки ниже. ",
+            )}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="oauth-audience">Аудитория токена (audience)</Label>
+            <Label htmlFor="oauth-audience">
+              {copy("Аудитория токена (audience)")}
+            </Label>
             <Input
               id="oauth-audience"
               maxLength={200}
               value={draft.audience}
               onChange={(event) => change("audience", event.target.value)}
-              placeholder="Например, lavinmq"
+              placeholder={copy("Например, lavinmq")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="oauth-scopes">Разрешённые scopes сервиса</Label>
+            <Label htmlFor="oauth-scopes">
+              {copy("Разрешённые scopes сервиса")}
+            </Label>
             <Textarea
               id="oauth-scopes"
               rows={5}
@@ -194,14 +213,15 @@ export function ApplicationFields({
               placeholder={"lavinmq.tag:monitoring\nlavinmq.read:%2F/*"}
             />
             <p className="text-xs text-muted-foreground">
-              По одному на строку. Сервис может запросить эти права для любого
-              пользователя из вкладки «Доступ». Это не настройка полей профиля.
+              {copy(
+                "По одному на строку. Сервис может запросить эти права для любого пользователя из вкладки «Доступ». Это не настройка полей профиля. ",
+              )}
             </p>
           </div>
           <p className="rounded-lg border p-4 text-xs leading-relaxed text-muted-foreground">
-            Токены действуют 5 минут. Уже выданный JWT может приниматься
-            сервисом до истечения этого срока. Для новых прав или отзыва доступа
-            повторный вход обязателен.
+            {copy(
+              "Токены действуют 5 минут. Уже выданный JWT может приниматься сервисом до истечения этого срока. Для новых прав или отзыва доступа повторный вход обязателен. ",
+            )}
           </p>
         </fieldset>
       </TabsContent>

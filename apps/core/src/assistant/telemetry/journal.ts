@@ -4,7 +4,7 @@ import type { AssistantConfig } from "../config.js";
 import type { AssistantInput } from "../validation.js";
 import { AssistantProviderError, type AssistantAnswer } from "../provider.js";
 import type { AssistantResponseMetadata } from "./usage.js";
-import type { AssistantTurnSummary } from "@asmblyr/contracts";
+import type { AssistantTurnSummary } from "@asmblyr-collaborative/contracts";
 import { createTurnJournal } from "./turn-journal.js";
 
 export interface AssistantJournal {

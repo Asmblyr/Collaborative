@@ -1,9 +1,13 @@
+import {
+  lockPermissionCollection,
+  validateSourcePermission,
+} from "../permissions/collection-lock.js";
 import { validateRowFilter } from "./row-filter.js";
 import type {
   PermissionFilter,
   SettingsPermissionInput,
   SettingsSection,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import { ensureSettingsPermission } from "./settings-permissions.js";
 import type { Knex } from "knex";
 import { findCollectionSettings } from "../collections/settings-repository.js";
@@ -101,10 +105,11 @@ async function validateFields(
   fields: string[],
   action: PermissionAction,
 ): Promise<void> {
+  await validateSourcePermission(transaction, collection, action);
   if (fields[0] === "*") {
     return;
   }
-  const columns = await transaction("information_schema.columns")
+  const columns = await transaction("public.asmblyr_columns")
     .where({ table_schema: "public", table_name: collection })
     .whereIn("column_name", fields)
     .pluck<string[]>("column_name");
@@ -183,9 +188,7 @@ export async function createPermission(
       if (!settings) {
         throw new PermissionNotFoundError();
       }
-      await transaction.raw("LOCK TABLE ?? IN ACCESS SHARE MODE", [
-        `public.${input.collection}`,
-      ]);
+      await lockPermissionCollection(transaction, input.collection);
       await validateFields(
         transaction,
         input.collection,
@@ -230,9 +233,7 @@ export async function updatePermission(
         }
         return permission;
       }
-      await transaction.raw("LOCK TABLE ?? IN ACCESS SHARE MODE", [
-        `public.${permission.collection}`,
-      ]);
+      await lockPermissionCollection(transaction, permission.collection);
       await validateFields(
         transaction,
         permission.collection,

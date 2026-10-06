@@ -4,10 +4,10 @@ import { useEditorDraft } from "./editor-lifecycle";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { defaultCollectionState } from "@asmblyr/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { defaultCollectionState } from "@asmblyr-collaborative/contracts";
 import { CollectionSystemFields } from "./collection-system-fields";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,20 +15,31 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type { Collection, CollectionFolder } from "@/components/items/types";
 import { CollectionLocationSelect } from "./collection-location-select";
 import type { CollectionLocation } from "@/lib/collection-tree";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@asmblyr/kit/ui/tabs";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import {
   CollectionNameField,
   CollectionMcpFields,
   CollectionVisibilityField,
 } from "./collection-metadata-fields";
+import { useUiCopy } from "@/lib/ui-copy";
+import { requestErrorMessage, requestJson } from "@/lib/http-request";
+
+import {
+  CollectionPrimaryKeyFields,
+  type PrimaryKeyType,
+} from "./collection-primary-key-fields";
 
 type CollectionMode = "multiple" | "single";
-type PrimaryKeyType = "uuid" | "serial" | "bigserial" | "text";
 
 interface CreateCollectionFormProps {
   portalContainer: HTMLElement | null;
@@ -47,6 +58,8 @@ export function CreateCollectionForm({
   onSaved,
   onCancel,
 }: CreateCollectionFormProps) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const workspace = useWorkspace();
   const [name, setName] = useState("");
@@ -96,33 +109,24 @@ export function CreateCollectionForm({
     setPending(true);
     setMessage("");
     try {
-      const response = await fetch("/api/collections", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name,
-          displayName,
-          hidden,
-          mcp: { enabled: mcpEnabled, description: mcpDescription },
-          ...(workspace?.active ? { workspaceId: workspace.active.id } : {}),
-          ...location,
-          mode,
-          primaryKey: { name: primaryKeyName, type: primaryKeyType },
-          timestamps: { createdAt, updatedAt },
-          state: stateEnabled ? defaultCollectionState() : null,
-          fields: [],
-        }),
+      await requestJson("/api/collections", "POST", {
+        name,
+        displayName,
+        hidden,
+        mcp: { enabled: mcpEnabled, description: mcpDescription },
+        ...(workspace?.active ? { workspaceId: workspace.active.id } : {}),
+        ...location,
+        mode,
+        primaryKey: { name: primaryKeyName, type: primaryKeyType },
+        timestamps: { createdAt, updatedAt },
+        state: stateEnabled ? defaultCollectionState() : null,
+        fields: [],
       });
-      if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
-        setMessage(result.message ?? "Не удалось создать коллекцию");
-        return;
-      }
       onSaved();
       void workspace?.reload().catch(() => {});
       router.refresh();
-    } catch {
-      setMessage("Не удалось связаться с сервером");
+    } catch (cause) {
+      setMessage(copy(requestErrorMessage(cause)));
     } finally {
       setPending(false);
     }
@@ -144,13 +148,13 @@ export function CreateCollectionForm({
             value="general"
             className="flex-1"
           >
-            Основное
+            {copy("Основное ")}
           </TabsTrigger>
           <TabsTrigger
             value="display"
             className="flex-1"
           >
-            Отображение
+            {copy("Отображение ")}
           </TabsTrigger>
           <TabsTrigger
             value="mcp"
@@ -166,11 +170,12 @@ export function CreateCollectionForm({
         >
           {workspace?.active && (
             <p className="rounded-lg bg-muted p-3 text-sm">
-              Коллекция появится в workspace «{workspace.active.name}».
+              {copy("Коллекция появится в workspace «")}
+              {workspace.active.name}».
             </p>
           )}
           <div className="space-y-2">
-            <Label htmlFor="collection-name">Техническое имя</Label>
+            <Label htmlFor="collection-name">{copy("Техническое имя")}</Label>
             <Input
               id="collection-name"
               value={name}
@@ -183,13 +188,14 @@ export function CreateCollectionForm({
               className="h-10 font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              Строчные латинские буквы, цифры и подчёркивание. Префиксы asmblyr_
-              и plugin_ зарезервированы.
+              {copy(
+                "Строчные латинские буквы, цифры и подчёркивание. Префиксы asmblyr_ и plugin_ зарезервированы. ",
+              )}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="collection-location">Расположение</Label>
+            <Label htmlFor="collection-location">{copy("Расположение")}</Label>
             <CollectionLocationSelect
               id="collection-location"
               name={name || undefined}
@@ -201,13 +207,14 @@ export function CreateCollectionForm({
               container={portalContainer}
             />
             <p className="text-xs text-muted-foreground">
-              Группировка в меню. Связи между записями и права настраиваются
-              отдельно.
+              {copy(
+                "Группировка в меню. Связи между записями и права настраиваются отдельно. ",
+              )}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="collection-mode">Данные коллекции</Label>
+            <Label htmlFor="collection-mode">{copy("Данные коллекции")}</Label>
             <Select
               value={mode}
               onValueChange={(value) => setMode(value as CollectionMode)}
@@ -220,56 +227,27 @@ export function CreateCollectionForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={portalContainer}>
-                <SelectItem value="multiple">Много записей</SelectItem>
-                <SelectItem value="single">Один объект</SelectItem>
+                <SelectItem value="multiple">
+                  {copy("Много записей")}
+                </SelectItem>
+                <SelectItem value="single">{copy("Один объект")}</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Для одного объекта Core разрешит создать только одну запись.
+              {copy(
+                "Для одного объекта Core разрешит создать только одну запись. ",
+              )}
             </p>
           </div>
 
-          <div className="space-y-4 rounded-xl border p-4">
-            <h3 className="text-sm font-medium">Основной ключ</h3>
-            <div className="space-y-2">
-              <Label htmlFor="collection-primary-name">Название поля</Label>
-              <Input
-                id="collection-primary-name"
-                value={primaryKeyName}
-                onChange={(event) => setPrimaryKeyName(event.target.value)}
-                required
-                maxLength={63}
-                pattern="[a-z][a-z0-9_]*"
-                disabled={pending}
-                className="h-10 font-mono"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="collection-primary-type">Тип ключа</Label>
-              <Select
-                value={primaryKeyType}
-                onValueChange={(value) =>
-                  setPrimaryKeyType(value as PrimaryKeyType)
-                }
-                disabled={pending}
-              >
-                <SelectTrigger
-                  id="collection-primary-type"
-                  className="h-10 w-full"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent container={portalContainer}>
-                  <SelectItem value="uuid">UUID (автоматически)</SelectItem>
-                  <SelectItem value="serial">Автоинкремент</SelectItem>
-                  <SelectItem value="bigserial">
-                    Большой автоинкремент
-                  </SelectItem>
-                  <SelectItem value="text">Строка (ввод вручную)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <CollectionPrimaryKeyFields
+            name={primaryKeyName}
+            type={primaryKeyType}
+            onNameChange={setPrimaryKeyName}
+            onTypeChange={setPrimaryKeyType}
+            disabled={pending}
+            portalContainer={portalContainer}
+          />
 
           <CollectionSystemFields
             createdAt={createdAt}
@@ -284,7 +262,9 @@ export function CreateCollectionForm({
           />
 
           <p className="text-sm text-muted-foreground">
-            Пользовательские поля можно добавить после создания коллекции.
+            {copy(
+              "Пользовательские поля можно добавить после создания коллекции. ",
+            )}
           </p>
         </TabsContent>
         <TabsContent
@@ -323,7 +303,7 @@ export function CreateCollectionForm({
           role="status"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <div className="flex flex-wrap gap-2">
@@ -331,7 +311,7 @@ export function CreateCollectionForm({
           type="submit"
           disabled={pending}
         >
-          {pending ? "Создаём…" : "Создать коллекцию"}
+          {pending ? copy("Создаём…") : copy("Создать коллекцию")}
         </Button>
         <Button
           type="button"
@@ -339,7 +319,7 @@ export function CreateCollectionForm({
           disabled={pending}
           onClick={onCancel}
         >
-          Отмена
+          {copy("Отмена ")}
         </Button>
       </div>
     </form>

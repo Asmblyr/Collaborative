@@ -1,10 +1,12 @@
+"use client";
+
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type {
   FilterCondition,
   FilterField,
@@ -15,6 +17,7 @@ import {
   isManyRelation,
   relationSelectionOperator,
 } from "./item-filter-relation";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemFilterRelationOperator({
   condition,
@@ -27,25 +30,27 @@ export function ItemFilterRelationOperator({
   field: FilterField;
   onChange: (condition: FilterCondition) => void;
 }) {
+  const copy = useUiCopy();
+
   const many = isManyRelation(scope);
   const options = many
     ? [
-        ["eq", "Включает запись"],
-        ["neq", "Не включает запись"],
-        ["in", "Включает любую из"],
-        ["notIn", "Не включает ни одну из"],
-        ["exists", "Есть связи"],
-        ["notExists", "Нет связей"],
+        ["eq", copy("Включает запись")],
+        ["neq", copy("Не включает запись")],
+        ["in", copy("Включает любую из")],
+        ["notIn", copy("Не включает ни одну из")],
+        ["exists", copy("Есть связи")],
+        ["notExists", copy("Нет связей")],
       ]
     : [
-        ["eq", "Равно"],
-        ["neq", "Не равно"],
-        ["in", "Одна из"],
-        ["notIn", "Ни одна из"],
+        ["eq", copy("Равно")],
+        ["neq", copy("Не равно")],
+        ["in", copy("Одна из")],
+        ["notIn", copy("Ни одна из")],
         ...(field.nullable
           ? [
-              ["isNull", "Не задана"],
-              ["notNull", "Задана"],
+              ["isNull", copy("Не задана")],
+              ["notNull", copy("Задана")],
             ]
           : []),
       ];
@@ -57,7 +62,7 @@ export function ItemFilterRelationOperator({
       }
     >
       <SelectTrigger
-        aria-label="Условие для связи"
+        aria-label={copy("Условие для связи")}
         size="sm"
         className="h-8 min-w-0 max-w-full gap-1 border-0 bg-transparent px-2 font-normal text-muted-foreground shadow-none dark:bg-transparent"
       >

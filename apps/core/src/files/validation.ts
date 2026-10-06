@@ -79,17 +79,29 @@ export function rasterType(content: Buffer): string | null {
 export function parseFilePatch(body: unknown): {
   title?: string;
   description?: string;
+  visibility?: "private" | "public";
 } {
   if (!body || typeof body !== "object" || Array.isArray(body))
     throw fileError("Ожидаются настройки файла");
   const values = body as Record<string, unknown>;
   if (
     !Object.keys(values).length ||
-    Object.keys(values).some((k) => !["title", "description"].includes(k))
+    Object.keys(values).some(
+      (k) => !["title", "description", "visibility"].includes(k),
+    )
   ) {
-    throw fileError("Можно изменить только название и описание файла");
+    throw fileError("Можно изменить только название, описание и доступ файла");
   }
-  const result: { title?: string; description?: string } = {};
+  const result: {
+    title?: string;
+    description?: string;
+    visibility?: "private" | "public";
+  } = {};
+  if (values.visibility !== undefined) {
+    if (values.visibility !== "private" && values.visibility !== "public")
+      throw fileError("Invalid file visibility");
+    result.visibility = values.visibility;
+  }
   for (const key of ["title", "description"] as const) {
     if (values[key] === undefined) continue;
     if (typeof values[key] !== "string")

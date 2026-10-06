@@ -13,6 +13,7 @@ export function itemsPageHref(
     size: number;
     sort: string;
     direction: "asc" | "desc";
+    order?: import("@asmblyr-collaborative/contracts").ItemOrder;
   },
   q: string,
   filter: string,
@@ -22,6 +23,7 @@ export function itemsPageHref(
     limit: String(page.size),
     sort: page.sort,
     direction: page.direction,
+    order: q ? (page.order ?? "field") : "field",
     // Keep an explicit reset distinct from an initial visit with no filter.
     filter,
   });

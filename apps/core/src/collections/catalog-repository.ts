@@ -7,8 +7,10 @@ import type { JsonValue } from "./structured-values.js";
 import { reconcileForm, type FormLayout } from "./form-layout.js";
 
 interface CollectionRow {
+  source_kind: "table" | "materialized-view";
   name: string;
   display_name: string | null;
+  translations: import("@asmblyr-collaborative/contracts").LabelTranslations;
   hidden: boolean;
   mcp_enabled: boolean;
   mcp_description: string | null;
@@ -31,6 +33,9 @@ interface CollectionRow {
   required: boolean | null;
   default_value: JsonValue;
   searchable: boolean | null;
+  search_priority:
+    | import("@asmblyr-collaborative/contracts").SearchPriority
+    | null;
   search_indexed: boolean;
   relation_target: string | null;
   relation_key_name: string | null;
@@ -49,14 +54,17 @@ interface AliasRow {
   through_field: string;
   related_field: string | null;
   searchable: boolean;
+  search_priority:
+    | import("@asmblyr-collaborative/contracts").SearchPriority
+    | null;
   presentation: FieldPresentation;
 }
 
 export async function listCollections(database: Knex): Promise<Collection[]> {
   const result = await database.raw<{ rows: CollectionRow[] }>(`
-    SELECT m.name, m.display_name, m.hidden, m.mcp_enabled, m.mcp_description, m.folder_id, m.parent_collection, m.created_at, m.mode, m.display_field, m.display_template, m.form_layout, m.primary_key_name, m.primary_key_type,
+    SELECT m.source_kind, m.name, m.display_name, m.translations, m.hidden, m.mcp_enabled, m.mcp_description, m.folder_id, m.parent_collection, m.created_at, m.mode, m.display_field, m.display_template, m.form_layout, m.primary_key_name, m.primary_key_type,
       m.created_at_enabled, m.updated_at_enabled, m.state, c.column_name, c.data_type, c.is_nullable,
-      fm.semantic_type, fm.required, fm.default_value, fm.searchable, fm.presentation,
+      fm.semantic_type, fm.required, fm.default_value, fm.searchable, fm.search_priority, fm.presentation,
       EXISTS (SELECT 1 FROM pg_class AS idx
         JOIN pg_namespace AS ns ON ns.oid = idx.relnamespace
         JOIN pg_index AS ix ON ix.indexrelid = idx.oid
@@ -68,7 +76,7 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
       target.primary_key_type AS relation_key_type, r.on_delete,
       r.searchable AS relation_searchable
     FROM public.asmblyr_collections AS m
-    LEFT JOIN information_schema.columns AS c
+    LEFT JOIN public.asmblyr_columns AS c
       ON c.table_schema = 'public'
       AND c.table_name = m.name
       AND c.column_name <> m.primary_key_name
@@ -106,6 +114,7 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
           : (fieldTypeFromDatabase(row.data_type, row.semantic_type) ??
             row.data_type),
         required: row.required ?? false,
+        searchPriority: row.search_priority,
         nullable: row.is_nullable === "YES",
         ...(row.presentation && Object.keys(row.presentation).length
           ? { presentation: row.presentation }
@@ -141,20 +150,28 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
       });
     }
   }
-  const aliases = await database<AliasRow>("asmblyr_relation_aliases")
-    .withSchema("public")
+  const aliases = await database<AliasRow>({
+    alias: "public.asmblyr_relation_aliases",
+  })
     .select(
-      "collection_name",
-      "field_name",
+      "alias.collection_name",
+      "alias.field_name",
       "kind",
       "related_collection",
       "through_collection",
       "through_field",
       "related_field",
-      "searchable",
-      "presentation",
+      "alias.searchable",
+      "alias.presentation",
+      "fm.search_priority",
     )
-    .orderBy("field_name");
+    .leftJoin({ fm: "public.asmblyr_field_metadata" }, function () {
+      this.on("fm.collection_name", "alias.collection_name").andOn(
+        "fm.field_name",
+        "alias.field_name",
+      );
+    })
+    .orderBy("alias.field_name");
   for (const alias of aliases) {
     collections.get(alias.collection_name)?.fields.push({
       name: alias.field_name,
@@ -162,6 +179,7 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
       required: false,
       nullable: true,
       searchable: alias.searchable,
+      searchPriority: alias.search_priority,
       ...(Object.keys(alias.presentation).length
         ? { presentation: alias.presentation }
         : {}),

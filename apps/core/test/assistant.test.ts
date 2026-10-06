@@ -200,6 +200,8 @@ test("both APIs receive current administrator instructions with fixed runtime fa
       await provider(input, undefined, custom);
       assert.equal(captured, buildAssistantInstructions(custom));
       assert.ok(captured.includes("У тебя нет доступа к базе данных"));
+      assert.ok(captured.includes("# Формат ответа"));
+      assert.ok(captured.includes("короткие пояснения хода работы"));
       assert.ok(captured.endsWith(custom ?? defaultAssistantInstructions));
       if (custom) assert.ok(!captured.includes(defaultAssistantInstructions));
     }

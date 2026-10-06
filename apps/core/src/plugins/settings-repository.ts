@@ -3,8 +3,8 @@ import type { Knex } from "knex";
 import type {
   PluginSettingsSnapshot,
   PluginSettingsValues,
-} from "@asmblyr/contracts";
-import { EndpointError } from "@asmblyr/kit";
+} from "@asmblyr-collaborative/contracts";
+import { EndpointError } from "@asmblyr-collaborative/kit";
 import { securityEvent } from "../auth/security-events.js";
 import type { LoadedPlugin } from "./definition.js";
 import {

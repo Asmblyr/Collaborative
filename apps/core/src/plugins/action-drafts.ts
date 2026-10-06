@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PluginPreparedAction } from "@asmblyr/contracts";
+import type { PluginPreparedAction } from "@asmblyr-collaborative/contracts";
 import { ItemError } from "../items/validation.js";
 
 interface StoredDraft {

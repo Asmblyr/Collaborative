@@ -1,0 +1,69 @@
+name: Publish beta packages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-beta-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-ephemeral-test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:ci-ephemeral-test@127.0.0.1:5432/postgres
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Install package managers
+        run: npm install --global npm@11.15.0 pnpm@11.13.1
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check
+        run: pnpm check
+      - name: Build
+        run: pnpm build
+      - name: Check release archives
+        run: pnpm packages:check
+      - name: Publish with trusted npm identity
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { execFileSync } from 'node:child_process';
+          const names = ['contracts', 'sdk', 'kit', 'cli'];
+          const metadata = await Promise.all(names.map(async name => JSON.parse(await readFile(`packages/${name}/package.json`))));
+          const version = metadata[0].version;
+          if (!/^\d+\.\d+\.\d+-beta\.\d+$/.test(version) || metadata.some(item => item.private || item.version !== version)) {
+            throw new Error('All release packages must share an explicit beta version');
+          }
+          for (const name of names) {
+            execFileSync('npm', ['publish', `.local-data/packages/asmblyr-collaborative-${name}-${version}.tgz`, '--access', 'public', '--tag', 'beta', '--provenance'], { stdio: 'inherit' });
+          }
+          NODE

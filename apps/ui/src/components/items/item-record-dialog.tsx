@@ -1,18 +1,25 @@
 "use client";
 
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useLocalizedCatalog } from "./use-localized-catalog";
+
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { recordIdFromPath } from "@/lib/item-location";
 import { LockKeyhole } from "lucide-react";
 import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Tabs, TabsContent } from "@asmblyr/kit/ui/tabs";
+import { Tabs, TabsContent } from "@asmblyr-collaborative/kit/ui/tabs";
 import { ItemRecordLoading } from "./item-record-loading";
 import { recordLabel } from "./item-label";
 import { ItemRecordNavigation } from "./item-record-navigation";
 import type { OpenRelated } from "./relation-picker";
 import type { RecordEditorRequest } from "./record-editor-types";
-import { displayValue } from "./item-display";
+import { RecordMetadata } from "./record-metadata";
 import { ItemForm } from "./item-form";
+import { MaterializedRecordCard } from "./materialized-record-card";
 import { ItemFormActions } from "./item-form-actions";
 import { ItemHistory } from "./item-history";
+import { ItemAliasField } from "./item-alias-field";
+import { fieldsInNodes } from "./form-layout-model";
 import { ItemRelations } from "./item-relations";
 import type { Collection, Item, ItemValue } from "./types";
 import { draftChanges, type RecordDraft } from "./record-draft-model";
@@ -22,10 +29,12 @@ import {
   RecordPanelTabs,
   RecordPanelContents,
 } from "@/components/plugins/record-panels";
+import { useUiCopy } from "@/lib/ui-copy";
+import { AssistantRecordHost } from "@/components/assistant/assistant-host";
 
 export function ItemRecordDialog({
-  collection,
-  catalog,
+  collection: sourceCollection,
+  catalog: sourceCatalog,
   item,
   pending,
   message,
@@ -65,6 +74,12 @@ export function ItemRecordDialog({
   formRevision?: number;
   conflictReview?: ReactNode;
 }) {
+  const copy = useUiCopy();
+
+  const catalog = useLocalizedCatalog(sourceCatalog);
+  const collection =
+    catalog.find((entry) => entry.name === sourceCollection.name) ??
+    sourceCollection;
   const [section, setSection] = useState<string>("data");
   const relationsRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -76,6 +91,24 @@ export function ItemRecordDialog({
     displayName: collection.displayName || collection.name,
   };
   const extensions = useRecordPanels(panelRecord);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const targetPanel = searchParams.get("panel");
+  const targetId = searchParams.get("target");
+  const addressedPanel =
+    recordIdFromPath(pathname, collection.name) === id
+      ? extensions.panels.find((panel) => panel.key === targetPanel)?.key
+      : undefined;
+  const visitPanel = extensions.visit;
+  const openedTarget = useRef("");
+  useEffect(() => {
+    if (!id || !addressedPanel) return;
+    const key = JSON.stringify([id, addressedPanel, targetId]);
+    if (openedTarget.current === key) return;
+    openedTarget.current = key;
+    visitPanel(addressedPanel);
+    setSection(addressedPanel);
+  }, [id, addressedPanel, targetId, visitPanel]);
   const busy = pending || uploading || extensions.busy;
   const relationChanges = draftChanges({ ...draft, values: {} });
   const recordDirty = changedCount > 0 || relationChanges > 0;
@@ -95,14 +128,13 @@ export function ItemRecordDialog({
   );
   const editFields = fields.filter((field) => editable(field.name));
   const readOnly = fields.filter((field) => !editable(field.name));
-  const managed = [
-    ...(collection.timestamps.createdAt && readable("created_at")
-      ? [{ name: "created_at", label: "Создана" }]
-      : []),
-    ...(collection.timestamps.updatedAt && readable("updated_at")
-      ? [{ name: "updated_at", label: "Обновлена" }]
-      : []),
-  ];
+  const placed = new Set(
+    collection.formLayout?.tabs.flatMap((tab) => fieldsInNodes(tab.children)) ??
+      [],
+  );
+  const aliasFields = collection.fields.filter(
+    (f) => f.type === "alias" && readable(f.name) && placed.has(f.name),
+  );
 
   // Keep one native dialog mounted through loading, failure and loaded states.
   // Replacing the dialog would restart both its entrance and backdrop animations.
@@ -123,7 +155,7 @@ export function ItemRecordDialog({
         size="record"
         contentKey={section}
         hasUnsavedChanges={dirty}
-        title={title ?? (item ? recordLabel(collection, item) : "Запись")}
+        title={title ?? (item ? recordLabel(collection, item) : copy("Запись"))}
         eyebrow={`${collection.displayName || collection.name}${item ? ` · ${collection.primaryKey.name}: ${id}` : ""}`}
         onClose={(reason) => {
           if (busy) return;
@@ -176,19 +208,19 @@ export function ItemRecordDialog({
                 className="flex items-center gap-2 text-xs text-muted-foreground"
               >
                 {extensions.dirty ? (
-                  "Есть несохранённый текст на другой вкладке"
+                  copy("Есть несохранённый текст на другой вкладке")
                 ) : !editFields.length && !relationChanges ? (
                   <>
                     <LockKeyhole className="size-3.5" />
-                    Только просмотр
+                    {copy("Только просмотр ")}
                   </>
                 ) : dirty ? (
                   <>
                     <span className="size-1.5 rounded-full bg-amber-500" />
-                    Есть несохранённые изменения
+                    {copy("Есть несохранённые изменения ")}
                   </>
                 ) : (
-                  "Нет изменений"
+                  copy("Нет изменений")
                 )}
               </p>
               {(editFields.length > 0 || relationChanges > 0) && (
@@ -203,8 +235,8 @@ export function ItemRecordDialog({
                   }
                   label={
                     draftMode
-                      ? "Применить к черновику"
-                      : "Сохранить всё и закрыть"
+                      ? copy("Применить к черновику")
+                      : copy("Сохранить всё и закрыть")
                   }
                 />
               )}
@@ -215,11 +247,16 @@ export function ItemRecordDialog({
         {(portalContainer, close) =>
           !item ? (
             <ItemRecordLoading
-              message={message}
+              message={copy(message)}
               onRetry={onRetry}
             />
           ) : (
             <>
+              <AssistantRecordHost
+                container={portalContainer}
+                collection={collection.name}
+                id={id}
+              />
               <TabsContent
                 value="data"
                 forceMount
@@ -227,38 +264,63 @@ export function ItemRecordDialog({
                 className="space-y-7"
               >
                 {conflictReview}
-                <ItemForm
-                  key={`${id}:${formRevision}`}
-                  id={formId}
-                  hideActions
-                  fields={fields}
-                  formLayout={collection.formLayout}
-                  readOnlyFields={readOnly.map((f) => f.name)}
-                  catalog={catalog}
-                  onOpenRelated={onOpenRelated}
-                  embedded
-                  primaryKey={collection.primaryKey}
-                  item={item}
-                  pending={pending || Boolean(conflictReview)}
-                  initialValues={draft.values}
-                  allowUnchanged={
-                    relationChanges > 0 ||
-                    Boolean(draftMode && draftChanges(draft))
-                  }
-                  onReferenceChange={onReferenceChange}
-                  portalContainer={portalContainer}
-                  onBusyChange={setUploading}
-                  onDirtyChange={setChangedCount}
-                  onSubmitAttempt={() => setSection("data")}
-                  onSave={(values) => onSave(values, close)}
-                  onCancel={close}
-                />
+                {collection.sourceKind === "materialized-view" ? (
+                  <MaterializedRecordCard
+                    collection={collection}
+                    fields={fields}
+                    sourceFields={sourceCollection.fields}
+                    item={item}
+                    catalog={catalog}
+                    onOpenRelated={onOpenRelated}
+                  />
+                ) : (
+                  <ItemForm
+                    key={`${id}:${formRevision}`}
+                    id={formId}
+                    hideActions
+                    fields={fields}
+                    aliasFields={aliasFields}
+                    renderAlias={(field) => (
+                      <ItemAliasField
+                        field={field}
+                        collection={collection}
+                        catalog={catalog}
+                        itemId={id}
+                        draft={draft}
+                        onDraftChange={onDraftChange}
+                        onEdit={onEditRelation}
+                        busy={busy || Boolean(conflictReview)}
+                        container={portalContainer}
+                      />
+                    )}
+                    formLayout={collection.formLayout}
+                    readOnlyFields={readOnly.map((f) => f.name)}
+                    catalog={catalog}
+                    onOpenRelated={onOpenRelated}
+                    embedded
+                    primaryKey={collection.primaryKey}
+                    item={item}
+                    pending={pending || Boolean(conflictReview)}
+                    initialValues={draft.values}
+                    allowUnchanged={
+                      relationChanges > 0 ||
+                      Boolean(draftMode && draftChanges(draft))
+                    }
+                    onReferenceChange={onReferenceChange}
+                    portalContainer={portalContainer}
+                    onBusyChange={setUploading}
+                    onDirtyChange={setChangedCount}
+                    onSubmitAttempt={() => setSection("data")}
+                    onSave={(values) => onSave(values, close)}
+                    onCancel={close}
+                  />
+                )}
                 {message && (
                   <p
                     role="alert"
                     className="text-sm text-destructive"
                   >
-                    {message}
+                    {copy(message)}
                   </p>
                 )}
                 <RecordDraftSummary
@@ -275,6 +337,7 @@ export function ItemRecordDialog({
                   <ItemRelations
                     key={id}
                     collection={collection}
+                    excludeAliases={[...placed]}
                     catalog={catalog}
                     itemId={id}
                     portalContainer={portalContainer}
@@ -284,28 +347,10 @@ export function ItemRecordDialog({
                     busy={busy || Boolean(conflictReview)}
                   />
                 </div>
-                {managed.length > 0 && (
-                  <section
-                    aria-label="Сведения о записи"
-                    className="grid gap-4 border-t pt-5 sm:grid-cols-2"
-                  >
-                    {managed.map((field) => (
-                      <div
-                        key={field.name}
-                        className="space-y-1"
-                      >
-                        <p className="text-xs text-muted-foreground">
-                          {field.label}
-                        </p>
-                        <p className="text-xs tabular-nums">
-                          {item[field.name] == null
-                            ? "Дата неизвестна"
-                            : displayValue(item[field.name], "datetime")}
-                        </p>
-                      </div>
-                    ))}
-                  </section>
-                )}
+                <RecordMetadata
+                  collection={collection}
+                  item={item}
+                />
               </TabsContent>
               <TabsContent value="history">
                 <ItemHistory
@@ -322,6 +367,11 @@ export function ItemRecordDialog({
                 section={section}
                 reportState={extensions.reportState}
                 visited={extensions.visited}
+                target={
+                  addressedPanel && targetId
+                    ? { panel: addressedPanel, id: targetId }
+                    : undefined
+                }
               />
             </>
           )

@@ -17,8 +17,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type { ItemPage } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 function visiblePages(current: bigint, total: bigint): (bigint | null)[] {
   if (total <= BigInt(7))
@@ -64,6 +65,8 @@ export function ItemPagination({
   onPage: (number: number) => void;
   onSize: (size: number) => void;
 }) {
+  const copy = useUiCopy();
+
   const total = BigInt(page.total);
   const size = BigInt(page.size);
   const pages =
@@ -98,17 +101,18 @@ export function ItemPagination({
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm">
       <div className="flex flex-wrap items-center gap-4">
         <span className="text-muted-foreground">
-          {start.toString()}–{end.toString()} из {page.total}
+          {start.toString()}–{end.toString()} {copy(" из ")}
+          {page.total}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">На странице</span>
+          <span className="text-muted-foreground">{copy("На странице")}</span>
           <Select
             value={String(page.size)}
             onValueChange={(value) => onSize(Number(value))}
           >
             <SelectTrigger
               size="sm"
-              aria-label="Записей на странице"
+              aria-label={copy("Записей на странице")}
               className="w-20"
             >
               <SelectValue />
@@ -147,7 +151,7 @@ export function ItemPagination({
                 <PaginationLink
                   href={href(number)}
                   isActive={number === current}
-                  aria-label={`Страница ${number}`}
+                  aria-label={copy("Страница {{value0}}", { value0: number })}
                   onClick={(event) => visit(event, number)}
                 >
                   {number.toString()}

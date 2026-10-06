@@ -27,6 +27,8 @@ export function normalizeFieldDefault(
       ? current.default_value
       : update.defaultValue;
   if (value === null) return null;
+  if (current.presentation?.sensitive)
+    throw new CollectionInputError("Sensitive fields do not support defaults");
 
   if (current.type === "file" || current.type === "files") {
     throw new CollectionInputError("File fields do not support defaults");
@@ -34,6 +36,13 @@ export function normalizeFieldDefault(
 
   const required = update.required ?? current.required;
   try {
+    if (
+      typeof value === "string" &&
+      current.character_maximum_length !== null &&
+      Array.from(value).length > current.character_maximum_length
+    ) {
+      throw new Error(`Default exceeds the database length limit: ${name}`);
+    }
     if (current.relation_key_type) {
       // FK values follow the target key contract, including bigint and manual text IDs.
       if (typeof value !== "string" && typeof value !== "number") {

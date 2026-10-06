@@ -1,5 +1,6 @@
 import type { AccessUser, Permission, Policy } from "@/components/access/types";
-import { coreAddress } from "./session";
+import { readCoreResource } from "./core-resource";
+import { requestErrorMessage } from "./http-request";
 
 export interface AccessData {
   users: AccessUser[];
@@ -11,16 +12,7 @@ export async function loadResource<T>(
   path: string,
   token: string,
 ): Promise<T[]> {
-  const response = await fetch(coreAddress(path), {
-    headers: { authorization: `Bearer ${token}` },
-    cache: "no-store",
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!response.ok) {
-    throw new Error("Core API недоступен");
-  }
-  const result = (await response.json()) as { data: T[] };
-  return result.data;
+  return readCoreResource<T[]>(token, path, 10000);
 }
 
 export async function loadAccessData(
@@ -42,10 +34,10 @@ export async function loadAccessData(
         : Promise.resolve([]),
     ]);
     return { data: { users, policies, permissions }, error: "" };
-  } catch {
+  } catch (cause) {
     return {
       data: { users: [], policies: [], permissions: [] },
-      error: "Core API недоступен",
+      error: requestErrorMessage(cause),
     };
   }
 }

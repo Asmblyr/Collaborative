@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { AssistantStreamEvent } from "@asmblyr/contracts";
+import type { AssistantStreamEvent } from "@asmblyr-collaborative/contracts";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
 import {
   createAssistantProvider,
@@ -113,6 +113,7 @@ test("fragmented tool calls execute only after completion, preserving private re
   const answer = await provider(input, undefined, null, {
     record: (call) => call(),
     onText: (event) => updates.push(event),
+    onActivity: (activity) => updates.push({ type: "activity", activity }),
     tools: {
       context: {},
       proposals: [],
@@ -136,11 +137,19 @@ test("fragmented tool calls execute only after completion, preserving private re
       },
     },
   });
-  assert.equal(answer.content, "Проверяю…\n\nГотово");
+  assert.equal(answer.content, "Готово");
   assert.equal(executed, 1);
   assert.deepEqual(
-    updates.map((event) => event.type === "text-delta" && event.reset),
-    [true, true],
+    updates
+      .filter((event) => event.type === "text-delta")
+      .map((event) => event.reset),
+    [true, true, true],
+  );
+  assert.ok(
+    updates.some(
+      (event) =>
+        event.type === "activity" && event.activity.text === "Проверяю…",
+    ),
   );
   assert.ok(!JSON.stringify(updates).includes("PRIVATE"));
 });

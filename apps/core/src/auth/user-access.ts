@@ -1,4 +1,4 @@
-import { settingsSections } from "@asmblyr/contracts";
+import { settingsSections } from "@asmblyr-collaborative/contracts";
 import { effectiveSettingsAccess } from "../settings/access.js";
 import type { Knex } from "knex";
 import { effectivePermissions } from "../permissions/repository.js";

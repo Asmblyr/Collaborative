@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { createClient, ApiError } from "@asmblyr/sdk";
+import { createClient, ApiError } from "@asmblyr-collaborative/sdk";
 import {
   useAsmblyr,
   type ItemCommitDraft,
   type JsonRecord,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import { readBody } from "h3";
 import type { LoadedPlugin } from "../../src/plugins/definition.js";
 import { pluginItemsFixture } from "./plugin-items-fixture.js";

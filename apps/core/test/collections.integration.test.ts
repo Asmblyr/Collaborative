@@ -52,8 +52,15 @@ test("collections are created atomically, listed, and protected from reserved na
           nullable: false,
           searchable: true,
           searchIndexed: false,
+          searchPriority: null,
         },
-        { name: "count", type: "integer", required: false, nullable: true },
+        {
+          name: "count",
+          type: "integer",
+          required: false,
+          nullable: true,
+          searchPriority: null,
+        },
       ],
     );
 
@@ -152,6 +159,7 @@ test("items use the collection fields and support CRUD", async () => {
       number: 1,
       size: 100,
       total: "1",
+      order: "field",
       sort: "id",
       direction: "asc",
     });
@@ -181,6 +189,7 @@ test("items use the collection fields and support CRUD", async () => {
       number: 2,
       size: 1,
       total: "3",
+      order: "field",
       sort: "count",
       direction: "desc",
     });
@@ -296,8 +305,15 @@ test("field changes protect Core tables and preserve existing items", async () =
         nullable: false,
         searchable: true,
         searchIndexed: false,
+        searchPriority: null,
       },
-      { name: "published", type: "boolean", required: false, nullable: true },
+      {
+        name: "published",
+        type: "boolean",
+        required: false,
+        nullable: true,
+        searchPriority: null,
+      },
     ]);
 
     const items = await app.inject({ method: "GET", url: `/items/${name}` });

@@ -10,7 +10,7 @@ import {
   SelectValue,
   SelectGroup,
   SelectLabel,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import {
   canNestCollection,
   locationValue,
@@ -18,6 +18,7 @@ import {
   type CollectionLocation,
   type NavigableCollection,
 } from "@/lib/collection-tree";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function CollectionLocationSelect({
   name,
@@ -40,6 +41,8 @@ export function CollectionLocationSelect({
   id?: string;
   compact?: boolean;
 }) {
+  const copy = useUiCopy();
+
   return (
     <Select
       value={locationValue(location)}
@@ -50,17 +53,32 @@ export function CollectionLocationSelect({
         id={id}
         size={compact ? "sm" : "default"}
         aria-label={
-          name ? `Расположение коллекции ${name}` : "Расположение коллекции"
+          name
+            ? copy("Расположение коллекции {{value0}}", { value0: name })
+            : copy("Расположение коллекции")
         }
-        className={compact ? "w-44 text-xs" : "w-full"}
+        className={
+          compact
+            ? "size-7 justify-center p-0 [&>svg:last-child]:hidden"
+            : "w-full"
+        }
       >
-        <SelectValue />
+        {compact ? (
+          <>
+            <Folder aria-hidden />
+            <span className="sr-only">
+              <SelectValue />
+            </span>
+          </>
+        ) : (
+          <SelectValue />
+        )}
       </SelectTrigger>
       <SelectContent container={container}>
-        <SelectItem value="root">В корне</SelectItem>
+        <SelectItem value="root">{copy("Без папки")}</SelectItem>
         {folders.length > 0 && (
           <SelectGroup>
-            <SelectLabel>Папки</SelectLabel>
+            <SelectLabel>{copy("Папки")}</SelectLabel>
             {folders.map((folder) => (
               <SelectItem
                 key={folder.id}
@@ -73,7 +91,7 @@ export function CollectionLocationSelect({
           </SelectGroup>
         )}
         <SelectGroup>
-          <SelectLabel>Внутри коллекции</SelectLabel>
+          <SelectLabel>{copy("Внутри коллекции")}</SelectLabel>
           {collections
             .filter(
               (c) => !name || canNestCollection(name, c.name, collections),

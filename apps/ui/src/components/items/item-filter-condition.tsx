@@ -1,13 +1,15 @@
+"use client";
+
 import { useRef } from "react";
 import { X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import { ItemFilterFieldPicker } from "./item-filter-field-picker";
 import { ItemFilterOperator } from "./item-filter-operator";
 import { changeFilterOperator } from "./item-filter-model";
@@ -24,6 +26,7 @@ import { ItemFilterValue } from "./item-filter-value";
 import { relationSelectionScope } from "./item-filter-relation";
 import { ItemFilterRelationOperator } from "./item-filter-relation-operator";
 import { ItemFilterRelationValue } from "./item-filter-relation-value";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemFilterCondition({
   condition,
@@ -38,6 +41,8 @@ export function ItemFilterCondition({
   onChange: (condition: FilterCondition) => void;
   onRemove: () => void;
 }) {
+  const copy = useUiCopy();
+
   const row = useRef<HTMLDivElement>(null);
   const scope = scopeForCondition(scopes, condition);
   const presence = presenceForCondition(scope, condition);
@@ -54,7 +59,7 @@ export function ItemFilterCondition({
     <div
       ref={row}
       role="group"
-      aria-label={"Условие " + condition.field}
+      aria-label={copy("Условие ") + condition.field}
       className="group flex items-start gap-0.5 rounded-lg border border-border/60 bg-muted/20 p-1 transition-colors focus-within:border-ring/50 focus-within:bg-muted/40"
     >
       <div className="min-w-0 flex-1">
@@ -69,15 +74,19 @@ export function ItemFilterCondition({
             }
           >
             <SelectTrigger
-              aria-label="Совпадение связанных записей"
+              aria-label={copy("Совпадение связанных записей")}
               size="sm"
               className="mb-0.5 h-6 max-w-full border-0 bg-transparent px-2 text-xs text-muted-foreground shadow-none dark:bg-transparent"
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="some">Есть связанная запись, где</SelectItem>
-              <SelectItem value="none">Нет связанных записей, где</SelectItem>
+              <SelectItem value="some">
+                {copy("Есть связанная запись, где")}
+              </SelectItem>
+              <SelectItem value="none">
+                {copy("Нет связанных записей, где")}
+              </SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -128,7 +137,7 @@ export function ItemFilterCondition({
             </>
           ) : (
             <span className="px-2 text-xs text-destructive">
-              Поле недоступно
+              {copy("Поле недоступно ")}
             </span>
           )}
         </div>
@@ -137,7 +146,7 @@ export function ItemFilterCondition({
         type="button"
         variant="ghost"
         size="icon-sm"
-        aria-label={"Удалить условие " + condition.field}
+        aria-label={copy("Удалить условие ") + condition.field}
         className="h-8 w-7 shrink-0 text-muted-foreground/60 hover:text-destructive"
         onClick={onRemove}
       >

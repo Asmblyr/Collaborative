@@ -2,7 +2,7 @@ import {
   presencePages,
   type PresenceInput,
   type PresenceScope,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import { ItemError, parseCollectionName } from "../items/validation.js";
 
 export function parsePresenceClient(value: unknown): string {

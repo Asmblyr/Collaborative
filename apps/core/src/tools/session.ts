@@ -15,11 +15,8 @@ import { validateToolFilter } from "./filter.js";
 import { toolDefinitions } from "./tool-definitions.js";
 import { describeTerms } from "../terms/filters.js";
 import { executeAggregateTool } from "./aggregate-tool.js";
-
-export const unavailableToolResult = {
-  error:
-    "Request unavailable, invalid or timed out. Access or schema may have changed. Use only readable fields and documented arguments; do not infer data or counts from this error.",
-};
+import { ToolArgumentError } from "./errors.js";
+export { unavailableToolResult } from "./errors.js";
 
 /** One server-created identity and schema snapshot map per assistant turn. */
 export function createToolSession(
@@ -51,18 +48,25 @@ export function createToolSession(
     const definition = toolDefinitions.find((tool) => tool.name === name);
     if (!definition) throw new ItemError("Tool unavailable", 400);
     const body = { ...objectInput(args, definition.parameters.required) };
-    // Older internal clients predate terms. The advertised strict schema still
-    // requires an explicit null when the model does not select any terms.
-    if (
-      Object.hasOwn(definition.parameters.properties, "terms") &&
-      !Object.hasOwn(body, "terms")
-    ) {
-      body.terms = null;
+    // Older internal clients predate terms/order. The advertised model schema
+    // still requires explicit null; omitted optional defaults stay compatible.
+    for (const key of ["terms", "order"]) {
+      if (
+        Object.hasOwn(definition.parameters.properties, key) &&
+        !Object.hasOwn(body, key)
+      ) {
+        body[key] = null;
+      }
     }
-    if (
-      definition.parameters.required.some((key) => !Object.hasOwn(body, key))
-    ) {
-      throw new ItemError("Missing tool arguments", 400);
+    const missing = definition.parameters.required.filter(
+      (key) => !Object.hasOwn(body, key),
+    );
+    if (missing.length) {
+      throw new ToolArgumentError(
+        "INVALID_ARGUMENTS",
+        "Provide the missing arguments; use null for nullable defaults.",
+        missing,
+      );
     }
     if (name === "list_collections") {
       const result = await discoverCollections(db, currentAccess, body);
@@ -75,8 +79,12 @@ export function createToolSession(
     delete parameters.collection;
     if (isDataTool(name) || name === "aggregate_items") {
       const id = identities.get(collection);
-      if (!described.has(collection) || !id)
-        throw new ItemError("Call describe_collection first", 400);
+      if (!described.has(collection) || !id) {
+        throw new ToolArgumentError(
+          "SCHEMA_REQUIRED",
+          "Call describe_collection for this collection before reading data or validating a filter.",
+        );
+      }
       if (name === "aggregate_items")
         return executeAggregateTool(
           db,
@@ -107,12 +115,16 @@ export function createToolSession(
       identities.set(collection, id);
       described.add(collection);
       return {
-        ...describeCollection(collection, data, currentAccess),
+        ...(await describeCollection(db, collection, data, currentAccess)),
         ...(await describeTerms(db, collection, data, currentAccess)),
       };
     }
-    if (!described.has(collection))
-      throw new ItemError("Call describe_collection first", 400);
+    if (!described.has(collection)) {
+      throw new ToolArgumentError(
+        "SCHEMA_REQUIRED",
+        "Call describe_collection for this collection before reading data or validating a filter.",
+      );
+    }
     return validateToolFilter(collection, body.filter, data, currentAccess);
   }
 

@@ -117,7 +117,7 @@ export async function executeDataTool(
         { schema, catalog, allowed },
         access,
       );
-      const { query, options } = itemReadQuery(
+      const { query, options, order } = itemReadQuery(
         trx,
         name,
         schema,
@@ -134,6 +134,7 @@ export async function executeDataTool(
       const selection = {
         collectionId,
         sort: options.sort,
+        order: options.order,
         direction: options.direction,
       };
       signal?.throwIfAborted();
@@ -155,10 +156,7 @@ export async function executeDataTool(
       const rows: PreviewRow[] = await query
         .select(columns)
         .modify((builder) => selectRowPermissions(builder, trx, access, name))
-        .orderBy(`${name}.${options.sort}`, options.direction, "last")
-        .modify((builder) => {
-          if (options.sort !== key.name) builder.orderBy(`${name}.${key.name}`);
-        })
+        .modify(order)
         .limit(options.limit + 1)
         .offset(options.offset);
       signal?.throwIfAborted();
@@ -179,6 +177,7 @@ export async function executeDataTool(
         page: options.page,
         size: options.limit,
         sort: options.sort,
+        order: options.order,
         direction: options.direction,
         hasMore: rows.length > options.limit,
         pageLimit: 50,

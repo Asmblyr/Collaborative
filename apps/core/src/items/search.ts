@@ -1,15 +1,13 @@
-import { applyRowAccess, rowPredicate } from "../permissions/row-access.js";
+import { applyRowAccess } from "../permissions/row-access.js";
 import type { Knex } from "knex";
 import type { Access } from "../permissions/access.js";
 import { grantFor } from "../permissions/access.js";
 import { listCollections } from "../collections/catalog-repository.js";
 import { ItemError } from "./validation.js";
 import { recordLabelPlan } from "./record-label.js";
-import {
-  applyRelationSearch,
-  relationSearchPaths,
-  type RelationSearchPath,
-} from "./relation-search.js";
+import { relationSearchPaths } from "./relation-search.js";
+import { prepareItemSearch, applySearchPlan } from "./search-plan.js";
+import { searchPriorities } from "../collections/search-priority.js";
 import { resolveRecordLabels } from "./record-labels.js";
 
 export function parseSearchQuery(value: unknown): string {
@@ -23,7 +21,12 @@ export function parseSearchQuery(value: unknown): string {
 
 export function searchableColumns(
   primaryKey: string,
-  fields: Iterable<{ name: string; type: string | null; searchable?: boolean }>,
+  fields: Iterable<{
+    name: string;
+    type: string | null;
+    searchable?: boolean;
+    presentation?: { sensitive?: boolean };
+  }>,
   allowed: string[],
 ): string[] {
   return [
@@ -33,71 +36,11 @@ export function searchableColumns(
         (field) =>
           (field.type === "text" || field.type === "email") &&
           field.searchable !== false &&
+          !field.presentation?.sensitive &&
           (allowed.includes("*") || allowed.includes(field.name)),
       )
       .map((field) => field.name),
   ];
-}
-
-export function applyItemSearch(
-  builder: Knex.QueryBuilder,
-  columns: string[],
-  query: string,
-  keyType: "uuid" | "serial" | "bigserial" | "text",
-  database: Knex,
-  relations: RelationSearchPath[] = [],
-  access?: Access,
-  collection?: string,
-): void {
-  if (!query) return;
-  const pattern = `%${query.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
-  const numericKey = /^\d+$/.test(query) ? BigInt(query) : null;
-  const keyMatches =
-    keyType === "text" ||
-    (keyType === "uuid" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        query,
-      )) ||
-    (keyType === "serial" &&
-      numericKey !== null &&
-      numericKey <= 2147483647n) ||
-    (keyType === "bigserial" &&
-      numericKey !== null &&
-      numericKey <= 9223372036854775807n);
-  if (!keyMatches && columns.length === 1 && relations.length === 0) {
-    builder.whereRaw("FALSE");
-    return;
-  }
-  builder.where((where) => {
-    for (const [index, column] of columns.entries()) {
-      if (index === 0 && keyMatches) {
-        if (keyType === "text")
-          where.orWhereRaw("strpos(lower(??::text), lower(?)) > 0", [
-            column,
-            query,
-          ]);
-        else where.orWhere(column, query);
-      } else if (index > 0)
-        where.orWhere((part) => {
-          if (access && collection)
-            part.where(
-              rowPredicate(
-                database,
-                access,
-                collection,
-                "read",
-                column.split(".").at(-1),
-                column.includes(".") ? column.split(".")[0] : collection,
-              ),
-            );
-          part.whereRaw("lower(??) LIKE lower(?) ESCAPE E'\\\\'", [
-            column,
-            pattern,
-          ]);
-        });
-    }
-    applyRelationSearch(where, database, relations, pattern);
-  });
 }
 
 export interface SearchResults {
@@ -151,24 +94,24 @@ export async function searchAll(
           access,
           allowed,
         );
+        const plan = prepareItemSearch(
+          database,
+          columns,
+          query,
+          collection.primaryKey.type,
+          relations,
+          access,
+          collection.name,
+          searchPriorities(collection, collection.fields),
+        );
         const rows = await database(collection.name)
           .withSchema("public")
           .select([...new Set([...columns, ...labels.columns])])
-          .modify((builder) =>
-            applyItemSearch(
-              builder,
-              columns,
-              query,
-              collection.primaryKey.type,
-              database,
-              relations,
-              access,
-              collection.name,
-            ),
-          )
+          .modify((builder) => applySearchPlan(builder, plan))
           .modify((builder) =>
             applyRowAccess(builder, database, access, collection.name),
           )
+          .orderByRaw("(?) ASC", [plan.rank])
           .orderBy(key)
           .limit(5);
         const resolved = await resolveRecordLabels(

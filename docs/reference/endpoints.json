@@ -1,4 +1,40 @@
 {
+  "GET /monitoring/browser": {
+    "access": "Активная человеческая сессия; только публичный браузерный DSN и разрешённые флаги, без серверного DSN. Сервисные токены не допускаются",
+    "public": false
+  },
+  "GET /settings/monitoring": {
+    "access": "Только human superuser; локальные метрики текущего экземпляра Core, без DSN и пользовательских данных",
+    "public": false
+  },
+  "GET /assistant/conversations": {
+    "access": "Активный человек с доступом к чату; только собственные сессии",
+    "public": false
+  },
+  "POST /assistant/conversations": {
+    "access": "Активный человек с доступом к чату; создаёт собственную сессию с пустым контекстом",
+    "public": false
+  },
+  "GET /assistant/conversations/:id": {
+    "access": "Активный человек с доступом к чату; только собственная история, включая superuser",
+    "public": false
+  },
+  "DELETE /assistant/conversations/:id": {
+    "access": "Активный человек с доступом к чату; только собственная неактивная сессия",
+    "public": false
+  },
+  "GET /notifications": {
+    "access": "Активная человеческая сессия; собственные уведомления включённых плагинов, доступ к каждой записи проверяется заново",
+    "public": false
+  },
+  "POST /notifications/:id/read": {
+    "access": "Активная человеческая сессия; собственное уведомление и текущий доступ к записи",
+    "public": false
+  },
+  "POST /notifications/read-all": {
+    "access": "Активная человеческая сессия; только собственные уведомления до границы снимка списка",
+    "public": false
+  },
   "POST /auth/invitations/claim": {
     "access": "Одноразовый invitation/recovery token; создаёт человеческую сессию. Recovery отзывает прежние сеансы и способы входа",
     "public": true
@@ -228,7 +264,7 @@
     "public": false
   },
   "PATCH /files/:id": {
-    "access": "Человек + files/update; superuser bypass. Загрузка до 25 MiB, валидация метаданных, защита используемых ссылок",
+    "access": "Человек + files/update; superuser bypass. Изменение title/description и visibility private/public одного ready-файла; публикация и отзыв ссылки записываются в историю.",
     "public": false
   },
   "GET /files/:id/content": {
@@ -646,5 +682,81 @@
   "PUT /policies/:id/users": {
     "access": "Человек: superuser ИЛИ policies/update + политика в разрешённом наборе; атомарная замена назначений без изменения себя и superuser",
     "public": false
+  },
+  "GET /public/files/:id/content": {
+    "access": "Без авторизации: только явно опубликованный ready-файл (visibility=public). Приватный/удалённый файл — 404; no-store/CSP/nosniff. Без списка и метаданных.",
+    "public": true
+  },
+  "GET /translations": {
+    "access": "Активный пользователь или сервисный аккаунт; схема ограничена доступными вызывающему коллекциями и полями, статические каталоги активных плагинов, без записей и defaults",
+    "public": false
+  },
+  "GET /schema": {
+    "access": "Активный пользователь или сервисный аккаунт: доступные коллекции, wire-типы и разрешения на поля. Без записей, defaults и условий политик; private/no-store; accepts scoped CLI schema:read access and includes permission-gated generated plugin model contracts",
+    "public": false
+  },
+  "GET /settings/integrations": {
+    "access": "Только активная человеческая сессия superuser; безопасные параметры и наличие ключей, без значений секретов",
+    "public": false
+  },
+  "PUT /settings/integrations/:section": {
+    "access": "Только superuser; полный запрет изменения env-группы, revision, атомарное перешифрование при смене защиты",
+    "public": false
+  },
+  "POST /settings/integrations/:section/test": {
+    "access": "Только superuser; credential rate limit, проверка соединения без сохранения настроек",
+    "public": false
+  },
+  "GET /connections/google": {
+    "access": "Активная человеческая сессия; состояние только собственного подключения, без токенов",
+    "public": false
+  },
+  "DELETE /connections/google": {
+    "access": "Активная человеческая сессия; удаляет собственные токены, flows и предложения, пытается отозвать Google grant",
+    "public": false
+  },
+  "POST /connections/google/start": {
+    "access": "Активная человеческая сессия; одноразовый OAuth flow владельца с browser proof и PKCE",
+    "public": false
+  },
+  "POST /connections/google/callback": {
+    "access": "Активная человеческая сессия; собственный flow, browser proof, state/nonce/PKCE и та же конфигурация клиента",
+    "public": false
+  },
+  "GET /connections/google/writes/:id": {
+    "access": "Активная человеческая сессия; собственное неистекшее предложение и то же активное подключение",
+    "public": false
+  },
+  "DELETE /connections/google/writes/:id": {
+    "access": "Активная человеческая сессия; отмена собственного ожидающего предложения",
+    "public": false
+  },
+  "POST /connections/google/writes/:id/confirm": {
+    "access": "Активная человеческая сессия; однократное подтверждение собственного предложения, перепроверка подключения и исходных данных; не MCP-инструмент",
+    "public": false
+  },
+  "GET /materialized-views": {
+    "access": "Человек-superuser; обнаружение существующих materialized views в public без регистрации/REFRESH; Core/plugin объекты исключены",
+    "public": false
+  },
+  "POST /materialized-views": {
+    "access": "Человек-superuser; атомарное подключение заполненного public MV с поддерживаемыми полями и устойчивым уникальным ключом. Только метаданные отображения/расположения, без SQL/DDL/REFRESH; права другим пользователям не выдаются",
+    "public": false
+  },
+  "DELETE /collections/:name/materialized-view": {
+    "access": "Человек-superuser; отключает MV из каталога с проверкой зависимостей, удаляет метаданные/права; сохраняет PostgreSQL объект и данные",
+    "public": false
+  },
+  "GET /auth/cli/config": {
+    "public": true,
+    "access": "Public CLI discovery; configured admin consent URL only. No credential."
+  },
+  "POST /auth/cli/authorize": {
+    "public": false,
+    "access": "Active human session approves a 60-second one-use PKCE S256 code for an exact loopback callback."
+  },
+  "POST /auth/cli/token": {
+    "public": true,
+    "access": "One-use code + PKCE verifier + exact callback. Issues 10-minute schema:read access only; rate-limited."
   }
 }

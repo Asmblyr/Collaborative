@@ -3,12 +3,13 @@
 import { useState, type FormEvent } from "react";
 import { apiRequest } from "@/lib/api-request";
 import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import type { Workspace } from "@/lib/workspaces";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function WorkspaceEditor({
   workspace,
@@ -21,6 +22,8 @@ export function WorkspaceEditor({
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
+  const copy = useUiCopy();
+
   const [name, setName] = useState(workspace?.name ?? ""),
     [description, setDescription] = useState(workspace?.description ?? "");
   const [selected, setSelected] = useState(
@@ -47,7 +50,7 @@ export function WorkspaceEditor({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Не удалось сохранить workspace",
+          : copy("Не удалось сохранить workspace"),
       );
     } finally {
       setPending(false);
@@ -64,7 +67,7 @@ export function WorkspaceEditor({
       setError(
         reason instanceof Error
           ? reason.message
-          : "Не удалось удалить workspace",
+          : copy("Не удалось удалить workspace"),
       );
     } finally {
       setPending(false);
@@ -74,8 +77,8 @@ export function WorkspaceEditor({
     <EditorDialog
       open
       busy={pending}
-      title={workspace ? "Настройки workspace" : "Новый workspace"}
-      eyebrow="Организация данных"
+      title={workspace ? copy("Настройки workspace") : copy("Новый workspace")}
+      eyebrow={copy("Организация данных")}
       onClose={onClose}
     >
       {(_, close) => (
@@ -84,23 +87,24 @@ export function WorkspaceEditor({
           className="space-y-5"
         >
           <p className="text-sm text-muted-foreground">
-            Объедините коллекции одного продукта или команды. Пользователи
-            увидят здесь только доступные им коллекции.
+            {copy(
+              "Объедините коллекции одного продукта или команды. Пользователи увидят здесь только доступные им коллекции. ",
+            )}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="workspace-name">Название</Label>
+            <Label htmlFor="workspace-name">{copy("Название")}</Label>
             <Input
               id="workspace-name"
               value={name}
               required
               maxLength={120}
               disabled={pending}
-              placeholder="Например, Каталог"
+              placeholder={copy("Например, Каталог")}
               onChange={(event) => setName(event.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="workspace-description">Описание</Label>
+            <Label htmlFor="workspace-description">{copy("Описание")}</Label>
             <Textarea
               id="workspace-description"
               value={description}
@@ -110,11 +114,14 @@ export function WorkspaceEditor({
             />
           </div>
           <div className="space-y-3">
-            <Label>Коллекции · {selected.size}</Label>
+            <Label>
+              {copy("Коллекции · ")}
+              {selected.size}
+            </Label>
             <Input
               value={query}
-              aria-label="Найти коллекцию"
-              placeholder="Найти коллекцию…"
+              aria-label={copy("Найти коллекцию")}
+              placeholder={copy("Найти коллекцию…")}
               onChange={(event) => setQuery(event.target.value)}
             />
             <div className="max-h-80 space-y-1 overflow-auto rounded-lg border p-2">
@@ -146,7 +153,7 @@ export function WorkspaceEditor({
                 ))}
               {!collections.length && (
                 <p className="p-3 text-sm text-muted-foreground">
-                  Сначала создайте коллекции
+                  {copy("Сначала создайте коллекции ")}
                 </p>
               )}
             </div>
@@ -156,12 +163,12 @@ export function WorkspaceEditor({
               role="alert"
               className="text-sm text-destructive"
             >
-              {error}
+              {copy(error)}
             </p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button disabled={pending || !name.trim()}>
-              {pending ? "Сохраняем…" : "Сохранить"}
+              {pending ? copy("Сохраняем…") : copy("Сохранить")}
             </Button>
             <Button
               type="button"
@@ -169,7 +176,7 @@ export function WorkspaceEditor({
               disabled={pending}
               onClick={close}
             >
-              Отмена
+              {copy("Отмена ")}
             </Button>
             {workspace && (
               <Button
@@ -181,14 +188,16 @@ export function WorkspaceEditor({
                 }
               >
                 {confirm
-                  ? "Подтвердить удаление workspace"
-                  : "Удалить workspace"}
+                  ? copy("Подтвердить удаление workspace")
+                  : copy("Удалить workspace")}
               </Button>
             )}
           </div>
           {confirm && (
             <p className="text-xs text-muted-foreground">
-              Коллекции и записи сохранятся. Удалится только workspace.
+              {copy(
+                "Коллекции и записи сохранятся. Удалится только workspace. ",
+              )}
             </p>
           )}
         </form>

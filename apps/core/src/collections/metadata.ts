@@ -1,3 +1,4 @@
+import { parseLabelTranslations } from "./translation-validation.js";
 import type { Knex } from "knex";
 import {
   CollectionInputError,
@@ -29,6 +30,7 @@ export async function updateCollectionMetadata(
       (key) =>
         ![
           "displayName",
+          "translations",
           "hidden",
           "mcp",
           "displayField",
@@ -44,6 +46,11 @@ export async function updateCollectionMetadata(
   const patch: Record<string, unknown> = {};
   if ("displayName" in body)
     patch.display_name = parseDisplayName(body.displayName);
+  if ("translations" in body) {
+    patch.translations = JSON.stringify(
+      parseLabelTranslations(body.translations, true),
+    );
+  }
   if ("hidden" in body) patch.hidden = parseCollectionHidden(body.hidden);
   if ("mcp" in body) {
     const mcp = parseCollectionMcp(body.mcp);

@@ -4,12 +4,14 @@ import {
   type ActionContract,
   type ActionInputSchema,
 } from "./action-contract.js";
-import type { PluginSettingsValues } from "@asmblyr/contracts";
+import type { PluginSettingsValues } from "@asmblyr-collaborative/contracts";
 import type { EndpointActor } from "./endpoint.js";
 import type { ItemsService } from "./items.js";
 import type { H3Event } from "h3";
+import type { PersonalConnections } from "./connections.js";
 
 export interface ActionContext {
+  readonly connections?: PersonalConnections;
   readonly actor: EndpointActor;
   readonly signal: AbortSignal;
   readonly superuser: boolean;
@@ -19,12 +21,14 @@ export interface ActionContext {
 
 /** Host-resolved contract for a JSON model handler. */
 export interface PluginAction {
+  readonly connection?: "google";
   readonly id: string;
   readonly title: string;
   readonly description: string;
   readonly page?: string;
   readonly access: "authenticated" | "superuser";
   readonly inputSchema: ActionInputSchema;
+  readonly outputSchema?: Record<string, unknown>;
   readonly mcp: boolean;
   readonly readOnly?: boolean;
   parseInput(value: unknown): object;

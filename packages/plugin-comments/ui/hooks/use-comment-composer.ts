@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { RecordPanelProps } from "@asmblyr/kit/ui";
+import type { RecordPanelProps } from "@asmblyr-collaborative/kit/ui";
 import { type Comment } from "../../shared/comments.ts";
 
 interface ComposerOptions {

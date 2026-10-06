@@ -3,6 +3,7 @@ import type {
   ColumnPreferences,
   TablePreferences,
 } from "@/lib/table-preferences";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 const cache = new Map<string, string>();
 const errors = new Map<string, string>();
@@ -29,6 +30,7 @@ export function saveColumns(
   key: string,
   path: string,
   columns: ColumnPreferences,
+  copy: UiCopy = originalCopy,
 ) {
   cache.set(key, JSON.stringify(columns));
   errors.delete(key);
@@ -41,7 +43,7 @@ export function saveColumns(
       if (versions.get(key) === version)
         errors.set(
           key,
-          "Не удалось сохранить столбцы в профиле. Повторите сохранение.",
+          copy("Не удалось сохранить столбцы в профиле. Повторите сохранение."),
         );
     } finally {
       notify();

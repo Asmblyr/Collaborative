@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-request";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PasswordForm() {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -20,7 +23,7 @@ export function PasswordForm() {
         const form = event.currentTarget;
         const data = new FormData(form);
         if (data.get("newPassword") !== data.get("confirm")) {
-          setError("Новые пароли не совпадают");
+          setError(copy("Новые пароли не совпадают"));
           return;
         }
         setPending(true);
@@ -37,12 +40,12 @@ export function PasswordForm() {
           const message =
             error instanceof Error
               ? error.message
-              : "Не удалось изменить пароль";
+              : copy("Не удалось изменить пароль");
           setError(
             message === "Invalid credentials"
-              ? "Текущий пароль неверен или сеанс истёк."
+              ? copy("Текущий пароль неверен или сеанс истёк.")
               : message === "Choose a different password"
-                ? "Новый пароль должен отличаться от текущего."
+                ? copy("Новый пароль должен отличаться от текущего.")
                 : message,
           );
           setPending(false);
@@ -54,7 +57,7 @@ export function PasswordForm() {
         className="space-y-5"
       >
         <div className="space-y-2">
-          <Label htmlFor="current-password">Текущий пароль</Label>
+          <Label htmlFor="current-password">{copy("Текущий пароль")}</Label>
           <Input
             id="current-password"
             name="currentPassword"
@@ -65,7 +68,7 @@ export function PasswordForm() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-password">Новый пароль</Label>
+          <Label htmlFor="new-password">{copy("Новый пароль")}</Label>
           <Input
             id="new-password"
             name="newPassword"
@@ -75,10 +78,14 @@ export function PasswordForm() {
             minLength={12}
             maxLength={1024}
           />
-          <p className="text-xs text-muted-foreground">Не менее 12 символов.</p>
+          <p className="text-xs text-muted-foreground">
+            {copy("Не менее 12 символов.")}
+          </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm-password">Повторите новый пароль</Label>
+          <Label htmlFor="confirm-password">
+            {copy("Повторите новый пароль")}
+          </Label>
           <Input
             id="confirm-password"
             name="confirm"
@@ -91,19 +98,20 @@ export function PasswordForm() {
         </div>
       </fieldset>
       <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-        После смены пароля все сеансы будут завершены. Войдите снова с новым
-        паролем.
+        {copy(
+          "После смены пароля все сеансы будут завершены. Войдите снова с новым паролем. ",
+        )}
       </p>
       {error && (
         <p
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       <Button disabled={pending}>
-        {pending ? "Меняем пароль…" : "Изменить пароль"}
+        {pending ? copy("Меняем пароль…") : copy("Изменить пароль")}
       </Button>
     </form>
   );

@@ -1,11 +1,11 @@
 "use client";
 
-import { SettingsReadOnlyNotice } from "@/components/system-settings/read-only-notice";
+import { SettingsReadOnlyNotice } from "@/components/admin/settings/read-only-notice";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, AppWindow } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ApplicationEditor } from "./application-editor";
 import { applicationAccessSummary } from "./access-summary";
 import type { OAuthApplication, OAuthUser } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ApplicationsWorkspace({
   readOnly = false,
@@ -32,6 +33,8 @@ export function ApplicationsWorkspace({
   users: OAuthUser[];
   issuer: string;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [selection, setSelection] = useState<OAuthApplication | "new" | null>(
     null,
@@ -41,13 +44,13 @@ export function ApplicationsWorkspace({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="OAuth-приложения"
-        description="Вход в другие сервисы через аккаунт Asmblyr."
+        title={copy("OAuth-приложения")}
+        description={copy("Вход в другие сервисы через аккаунт Asmblyr.")}
       >
         {!readOnly && (
           <Button onClick={() => setSelection("new")}>
             <Plus className="size-4" />
-            Создать приложение
+            {copy("Создать приложение ")}
           </Button>
         )}
       </PageHeader>
@@ -57,10 +60,10 @@ export function ApplicationsWorkspace({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Приложение</TableHead>
-                <TableHead>Тип</TableHead>
-                <TableHead>Доступ</TableHead>
-                <TableHead>Статус</TableHead>
+                <TableHead>{copy("Приложение")}</TableHead>
+                <TableHead>{copy("Тип")}</TableHead>
+                <TableHead>{copy("Доступ")}</TableHead>
+                <TableHead>{copy("Статус")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -87,17 +90,19 @@ export function ApplicationsWorkspace({
                   </TableCell>
                   <TableCell>
                     {application.clientType === "public"
-                      ? "Публичное · PKCE"
-                      : "Серверное"}
+                      ? copy("Публичное · PKCE")
+                      : copy("Серверное")}
                   </TableCell>
                   <TableCell className="max-w-sm whitespace-normal break-words">
-                    {applicationAccessSummary(application)}
+                    {applicationAccessSummary(application, copy)}
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant={application.enabled ? "secondary" : "outline"}
                     >
-                      {application.enabled ? "Включено" : "Отключено"}
+                      {application.enabled
+                        ? copy("Включено")
+                        : copy("Отключено")}
                     </Badge>
                   </TableCell>
                 </TableRow>
@@ -108,10 +113,13 @@ export function ApplicationsWorkspace({
       ) : (
         <section className="rounded-xl border border-dashed p-12 text-center">
           <AppWindow className="mx-auto mb-4 size-8 text-muted-foreground" />
-          <h2 className="font-medium">Один аккаунт для ваших сервисов</h2>
+          <h2 className="font-medium">
+            {copy("Один аккаунт для ваших сервисов")}
+          </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            Подключите приложение по OpenID Connect. Пользователь войдёт через
-            Asmblyr и подтвердит передачу своего профиля.
+            {copy(
+              "Подключите приложение по OpenID Connect. Пользователь войдёт через Asmblyr и подтвердит передачу своего профиля. ",
+            )}
           </p>
         </section>
       )}
@@ -119,10 +127,10 @@ export function ApplicationsWorkspace({
         open={selection !== null}
         title={
           selection === "new"
-            ? "Новое OAuth-приложение"
-            : (selection?.name ?? "OAuth-приложение")
+            ? copy("Новое OAuth-приложение")
+            : (selection?.name ?? copy("OAuth-приложение"))
         }
-        eyebrow={readOnly ? "Интеграции · просмотр" : "Интеграции"}
+        eyebrow={readOnly ? copy("Интеграции · просмотр") : copy("Интеграции")}
         busy={busy}
         hasUnsavedChanges={dirty}
         onClose={() => {

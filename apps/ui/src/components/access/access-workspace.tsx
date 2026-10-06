@@ -1,6 +1,6 @@
 "use client";
 
-import { SettingsReadOnlyNotice } from "@/components/system-settings/read-only-notice";
+import { SettingsReadOnlyNotice } from "@/components/admin/settings/read-only-notice";
 
 import { useCallback, useState } from "react";
 import type { PolicyCollection } from "./types";
@@ -10,13 +10,15 @@ import { PoliciesPanel } from "./policies-panel";
 import { UsersPanel } from "./users-panel";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Permission, type Policy } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
+import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
 
 export function AccessWorkspace({
   readOnly = false,
   canManagePolicies = false,
   delegatablePolicyIds = [],
   currentUserId,
-  collections,
+  collections: rawCollections,
   section,
   initialData,
   initialError,
@@ -30,6 +32,9 @@ export function AccessWorkspace({
   initialData: AccessData;
   initialError: string;
 }) {
+  const copy = useUiCopy();
+  const collections = useLocalizedCatalog(rawCollections);
+
   const [users, setUsers] = useState<AccessUser[]>(initialData.users);
   const [policies, setPolicies] = useState<Policy[]>(initialData.policies);
   const [permissions, setPermissions] = useState<Permission[]>(
@@ -64,11 +69,13 @@ export function AccessWorkspace({
   return (
     <div className="space-y-7">
       <PageHeader
-        title={section === "users" ? "Пользователи" : "Политики доступа"}
+        title={
+          section === "users" ? copy("Пользователи") : copy("Политики доступа")
+        }
         description={
           section === "users"
-            ? "Приглашения и доступ участников команды."
-            : "Разрешения на данные и разделы настроек."
+            ? copy("Приглашения и доступ участников команды.")
+            : copy("Разрешения на данные и разделы настроек.")
         }
       />
       <SettingsReadOnlyNotice readOnly={readOnly} />
@@ -77,7 +84,7 @@ export function AccessWorkspace({
           role="alert"
           className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       {section === "users" && (

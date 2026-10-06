@@ -1,4 +1,4 @@
-import type { PluginRequest } from "@asmblyr/kit/ui";
+import type { PluginRequest } from "@asmblyr-collaborative/kit/ui";
 import type {
   Comment,
   CommentPage,
@@ -20,6 +20,19 @@ export function createCommentsClient(
   }
 
   return {
+    async get(id: string, signal: AbortSignal): Promise<Comment> {
+      return (await request<{ data: Comment }>(path(id), { signal })).data;
+    },
+    following(signal: AbortSignal): Promise<{ enabled: boolean }> {
+      return request(`${base}/subscription`, { signal });
+    },
+    follow(enabled: boolean): Promise<{ enabled: boolean }> {
+      return request(`${base}/subscription`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+    },
     list(page: number, signal: AbortSignal): Promise<CommentPage> {
       return request(`${base}?page=${page}`, { signal });
     },

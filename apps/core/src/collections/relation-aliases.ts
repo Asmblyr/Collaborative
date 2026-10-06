@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Knex } from "knex";
+import { assertCollectionWritable } from "./source-access.js";
 import type { CreateRelationInput } from "./relation-input.js";
 import { lockCollectionOrder, nextSortOrder } from "./ordering.js";
 import { createForeignKey } from "./relations.js";
@@ -25,9 +26,11 @@ export async function createAlias(
   transaction: Knex.Transaction,
   input: AliasInput,
 ): Promise<void> {
-  if (!(await findCollectionSettings(transaction, input.collection))) {
+  const settings = await findCollectionSettings(transaction, input.collection);
+  if (!settings) {
     throw new CollectionNotFoundError(input.collection);
   }
+  assertCollectionWritable(settings);
   await transaction.raw("LOCK TABLE ?? IN ACCESS EXCLUSIVE MODE", [
     `public.${input.collection}`,
   ]);

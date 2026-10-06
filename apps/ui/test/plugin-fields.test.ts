@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { defineUiPlugin } from "@asmblyr/kit/ui";
+import { defineUiPlugin } from "@asmblyr-collaborative/kit/ui";
 import { PluginRegistryProvider } from "../src/components/plugins/registry";
 import { ItemFieldInput } from "../src/components/items/item-field-input";
 import { ContentValue } from "../src/components/items/content-value";
@@ -14,7 +14,7 @@ const installedPlugins = [...uiPlugins];
 test.before(() => {
   // This example is a test fixture; production enables only configured packages.
   uiPlugins.push({
-    packageName: "@asmblyr/plugin-color",
+    packageName: "@asmblyr-collaborative/plugin-color",
     namespace: "color",
     definition: colorPlugin,
   });
@@ -67,7 +67,7 @@ test("active color editor retains values outside the palette and honors disabled
   const input = renderToStaticMarkup(
     createElement(
       PluginRegistryProvider,
-      { enabled: ["@asmblyr/plugin-color"] },
+      { enabled: ["@asmblyr-collaborative/plugin-color"] },
       createElement(ItemFieldInput, {
         id: "color",
         field,
@@ -88,7 +88,7 @@ test("plugin display escapes arbitrary stored text instead of treating it as CSS
   const html = renderToStaticMarkup(
     createElement(
       PluginRegistryProvider,
-      { enabled: ["@asmblyr/plugin-color"] },
+      { enabled: ["@asmblyr-collaborative/plugin-color"] },
       createElement(ContentValue, {
         field,
         value: '<img src=x onerror="alert(1)">',

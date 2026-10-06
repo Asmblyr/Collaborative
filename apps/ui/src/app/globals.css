@@ -1,8 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@asmblyr/kit/ui/styles.css";
+@import "@asmblyr-collaborative/kit/ui/styles.css";
 @import "../generated/plugin-ui.css";
+@import "../styles/themes.css";
+@import "../styles/assistant.css";
+
+@source "../components";
 
 @custom-variant dark (&:is(.dark *));
 

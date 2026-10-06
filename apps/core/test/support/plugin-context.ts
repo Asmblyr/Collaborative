@@ -1,4 +1,4 @@
-import type { EndpointActor, ItemsService } from "@asmblyr/kit";
+import type { EndpointActor, ItemsService } from "@asmblyr-collaborative/kit";
 
 /** HTTP adapter tests do not use a database. Data access has separate integration tests. */
 export function pluginContext(actor: EndpointActor) {

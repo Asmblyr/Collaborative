@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiError } from "@asmblyr/sdk";
+import { ApiError } from "@asmblyr-collaborative/sdk";
 import { readEditorItem } from "@/lib/item-read";
 import { saveEditorDraft } from "@/lib/item-write";
 import { EditorDialog } from "@/components/collections/editor-dialog";
@@ -27,6 +27,7 @@ import type { Collection, Item } from "./types";
 import { DraftConflictReview } from "./draft-conflict-review";
 import { rebaseDraft, type ConflictChoices } from "./draft-conflicts";
 import { useDraftConflicts } from "./use-draft-conflicts";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemEditorDialog({
   request,
@@ -39,6 +40,8 @@ export function ItemEditorDialog({
   onClose: (reason?: "navigation") => void;
   onChanged?: () => void;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const inheritedPreviews = useDraftPreviews();
   const collection = catalog.find((entry) => entry.name === request.collection);
@@ -78,7 +81,7 @@ export function ItemEditorDialog({
       .catch((cause: unknown) => {
         if (!controller.signal.aborted)
           setError(
-            cause instanceof Error ? cause.message : "Ошибка соединения",
+            cause instanceof Error ? cause.message : copy("Ошибка соединения"),
           );
       });
     return () => controller.abort();
@@ -88,6 +91,7 @@ export function ItemEditorDialog({
     request.id,
     request.title,
     revision,
+    copy,
   ]);
 
   async function save(values: Item, close: () => void) {
@@ -137,7 +141,7 @@ export function ItemEditorDialog({
             }
           }
         }
-        if (next.label === next.key) next.label = "Новая запись";
+        if (next.label === next.key) next.label = copy("Новая запись");
         request.onDraft(next);
         close();
         return;
@@ -158,7 +162,9 @@ export function ItemEditorDialog({
           setError(
             readError instanceof Error
               ? readError.message
-              : "Не удалось загрузить актуальные значения. Черновик сохранён в этом окне.",
+              : copy(
+                  "Не удалось загрузить актуальные значения. Черновик сохранён в этом окне.",
+                ),
           );
         }
         return;
@@ -166,7 +172,7 @@ export function ItemEditorDialog({
       setError(
         cause instanceof Error
           ? cause.message
-          : "Ошибка соединения. Черновик остаётся в этом окне.",
+          : copy("Ошибка соединения. Черновик остаётся в этом окне."),
       );
     } finally {
       setPending(false);
@@ -185,8 +191,9 @@ export function ItemEditorDialog({
         const schema = catalog.find((entry) => entry.name === name);
         return schema
           ? recordLabel(schema, preview)
-          : String(preview.id ?? "Запись");
+          : String(preview.id ?? copy("Запись"));
       },
+      copy,
     );
     const root = review.snapshots.find((snapshot) => snapshot.path === "root");
     setDraft(next);
@@ -262,7 +269,7 @@ export function ItemEditorDialog({
           collection={collection}
           catalog={catalog}
           pending={pending}
-          message={error}
+          message={copy(error)}
           omitFields={request.omitFields}
           onSave={save}
           onClose={onClose}
@@ -286,8 +293,10 @@ export function ItemEditorDialog({
           description={
             request.description ??
             (request.onDraft
-              ? "Запись добавится в черновик. Все изменения сохранятся вместе с основной карточкой."
-              : "Запись и её связи сохранятся вместе.")
+              ? copy(
+                  "Запись добавится в черновик. Все изменения сохранятся вместе с основной карточкой.",
+                )
+              : copy("Запись и её связи сохранятся вместе."))
           }
         />
       ) : request.id && collection ? (
@@ -296,7 +305,7 @@ export function ItemEditorDialog({
           catalog={catalog}
           item={item}
           pending={pending}
-          message={error}
+          message={copy(error)}
           onClose={onClose}
           onSave={save}
           omitFields={request.omitFields}
@@ -326,11 +335,11 @@ export function ItemEditorDialog({
         <EditorDialog
           open
           busy={pending}
-          title="Запись"
+          title={copy("Запись")}
           eyebrow={request.collection}
           onClose={onClose}
         >
-          {() => <p role="alert">Коллекция недоступна.</p>}
+          {() => <p role="alert">{copy("Коллекция недоступна.")}</p>}
         </EditorDialog>
       )}
       {child && (

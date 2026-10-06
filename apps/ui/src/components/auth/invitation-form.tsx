@@ -1,10 +1,14 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUiCopy } from "@/lib/ui-copy";
+
 export function InvitationForm() {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [token, setToken] = useState("");
   const [fromLink, setFromLink] = useState(false);
@@ -37,7 +41,9 @@ export function InvitationForm() {
       });
       if (!response.ok) {
         setMessage(
-          "Ссылка недействительна или срок истёк. Попросите администратора выдать новую.",
+          copy(
+            "Ссылка недействительна или срок истёк. Попросите администратора выдать новую.",
+          ),
         );
         return;
       }
@@ -45,7 +51,7 @@ export function InvitationForm() {
       router.replace("/settings?tab=security");
       router.refresh();
     } catch {
-      setMessage("Не удалось связаться с сервером");
+      setMessage(copy("Не удалось связаться с сервером"));
     } finally {
       setPending(false);
     }
@@ -57,7 +63,7 @@ export function InvitationForm() {
     >
       {!fromLink && (
         <div className="space-y-2">
-          <Label htmlFor="invite-token">Код из ссылки</Label>
+          <Label htmlFor="invite-token">{copy("Код из ссылки")}</Label>
           <Input
             id="invite-token"
             type="password"
@@ -71,26 +77,29 @@ export function InvitationForm() {
       )}
       {token.startsWith("asm_rec_") && (
         <p className="text-sm text-muted-foreground">
-          Восстановление завершит старые сеансы и сбросит способы входа. После
-          входа добавьте новый passkey или пароль.
+          {copy(
+            "Восстановление завершит старые сеансы и сбросит способы входа. После входа добавьте новый passkey или пароль. ",
+          )}
         </p>
       )}
       <p className="text-sm text-muted-foreground">
-        После входа настройте passkey или пароль, чтобы возвращаться в аккаунт.
+        {copy(
+          "После входа настройте passkey или пароль, чтобы возвращаться в аккаунт. ",
+        )}
       </p>
       {message && (
         <p
           role="alert"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
       <Button
         type="submit"
         disabled={pending || !token}
       >
-        {pending ? "Входим…" : "Принять приглашение и войти"}
+        {pending ? copy("Входим…") : copy("Принять приглашение и войти")}
       </Button>
     </form>
   );

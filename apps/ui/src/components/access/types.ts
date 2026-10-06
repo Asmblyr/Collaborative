@@ -3,12 +3,18 @@ import type {
   PermissionRule,
   SettingsPermissionInput,
   SettingsSection,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { Collection } from "@/components/items/types";
 
 export type PolicyCollection = Pick<
   Collection,
-  "name" | "displayName" | "primaryKey" | "timestamps" | "state"
+  | "name"
+  | "sourceKind"
+  | "displayName"
+  | "translations"
+  | "primaryKey"
+  | "timestamps"
+  | "state"
 > & {
   fields: {
     name: string;

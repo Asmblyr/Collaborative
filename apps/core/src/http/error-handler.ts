@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import type { ApiErrorBody } from "@asmblyr/contracts";
+import type { ApiErrorBody } from "@asmblyr-collaborative/contracts";
+import { MaterializedViewNotPopulatedError } from "../collections/source-access.js";
 
 export function describeRequestError(
   error: unknown,
@@ -15,6 +16,9 @@ export function describeRequestError(
       ? proposedStatus
       : 500;
   const isClientError = status >= 400 && status < 500;
+  const isExpectedSourceState =
+    failure instanceof MaterializedViewNotPopulatedError;
+  const exposeMessage = isClientError || isExpectedSourceState;
 
   if (!isClientError) {
     request.log.error({ err: error, requestId: request.id }, "Request failed");
@@ -24,8 +28,8 @@ export function describeRequestError(
     "code" in failure && typeof failure.code === "string"
       ? failure.code
       : "INVALID_REQUEST";
-  const code = isClientError ? clientCode : "INTERNAL_ERROR";
-  const message = isClientError
+  const code = exposeMessage ? clientCode : "INTERNAL_ERROR";
+  const message = exposeMessage
     ? failure.message
     : "An internal error occurred";
   return { status, body: { code, message, requestId: request.id } };

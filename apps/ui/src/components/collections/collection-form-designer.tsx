@@ -5,8 +5,13 @@ import { useEditorDraft } from "./editor-lifecycle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, FolderPlus, PanelTop, Plus, Settings2 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +34,8 @@ import {
 } from "./form-designer-model";
 import { FormDesignerTree } from "./form-designer-tree";
 import { FormDesignerProperties } from "./form-designer-properties";
+import { useUiCopy } from "@/lib/ui-copy";
+import { requestErrorMessage, requestJson } from "@/lib/http-request";
 
 export function CollectionFormDesigner({
   collection,
@@ -41,10 +48,12 @@ export function CollectionFormDesigner({
   container: HTMLElement | null;
   onSaved: () => void;
 }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
-  const fields = collection.fields.filter((f) => f.type !== "alias");
+  const fields = collection.fields;
   const [layout, setLayout] = useState<FormLayout>(
-    () => collection.formLayout ?? automaticLayout(fields),
+    () => collection.formLayout ?? automaticLayout(fields, copy),
   );
   const [selected, setSelected] = useState(layout.tabs[0].id);
   const [pending, setPending] = useState(false),
@@ -62,22 +71,15 @@ export function CollectionFormDesigner({
     setPending(true);
     setError("");
     try {
-      const response = await fetch(
+      await requestJson(
         `/api/collections/${encodeURIComponent(collection.name)}/form`,
-        {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(value),
-        },
+        "PUT",
+        value,
       );
-      if (!response.ok)
-        throw new Error(
-          (await response.json()).message ?? "Не удалось сохранить форму",
-        );
       router.refresh();
       onSaved();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Ошибка соединения");
+      setError(copy(requestErrorMessage(cause)));
     } finally {
       setPending(false);
     }
@@ -85,9 +87,9 @@ export function CollectionFormDesigner({
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
-        Организуйте поля для создания, редактирования и просмотра записи.
-        Настройка общая для коллекции; каждый пользователь увидит только
-        доступные ему поля.
+        {copy(
+          "Организуйте поля для создания, редактирования и просмотра записи. Настройка общая для коллекции; каждый пользователь увидит только доступные ему поля. ",
+        )}
       </p>
       <Tabs
         value={section}
@@ -100,11 +102,11 @@ export function CollectionFormDesigner({
         <TabsList>
           <TabsTrigger value="structure">
             <Settings2 />
-            Организация
+            {copy("Организация ")}
           </TabsTrigger>
           <TabsTrigger value="preview">
             <Eye />
-            Предпросмотр
+            {copy("Предпросмотр ")}
           </TabsTrigger>
         </TabsList>
         <TabsContent
@@ -123,14 +125,14 @@ export function CollectionFormDesigner({
                   ...layout,
                   tabs: [
                     ...layout.tabs,
-                    { id, label: "Новая вкладка", children: [] },
+                    { id, label: copy("Новая вкладка"), children: [] },
                   ],
                 });
                 setSelected(id);
               }}
             >
               <PanelTop />
-              Вкладка
+              {copy("Вкладка ")}
             </Button>
             <Button
               type="button"
@@ -143,7 +145,7 @@ export function CollectionFormDesigner({
                   appendFormNode(layout, parent, {
                     id,
                     kind: "group",
-                    label: "Новая секция",
+                    label: copy("Новая секция"),
                     description: "",
                     collapsible: false,
                     collapsed: false,
@@ -154,7 +156,7 @@ export function CollectionFormDesigner({
               }}
             >
               <FolderPlus />
-              Секция
+              {copy("Секция ")}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -165,7 +167,7 @@ export function CollectionFormDesigner({
                   disabled={pending || !unplaced.length}
                 >
                   <Plus />
-                  Разместить поле
+                  {copy("Разместить поле ")}
                   {unplaced.length > 0 && ` (${unplaced.length})`}
                 </Button>
               </DropdownMenuTrigger>
@@ -209,11 +211,11 @@ export function CollectionFormDesigner({
               />
               {unplaced.length > 0 && (
                 <p className="border-t pt-3 text-xs text-muted-foreground">
-                  Не размещены:{" "}
+                  {copy("Не размещены:")}{" "}
                   {unplaced
                     .map((f) => f.presentation?.label || f.name)
                     .join(", ")}
-                  . Они появятся в «Других полях».
+                  {copy(". Они появятся в «Других полях». ")}
                 </p>
               )}
             </div>
@@ -235,12 +237,14 @@ export function CollectionFormDesigner({
           className="space-y-4"
         >
           <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-            Интерактивный пример создания записи. Можно вводить значения и
-            проверять условия. Данные не сохраняются.
+            {copy(
+              "Интерактивный пример создания записи. Можно вводить значения и проверять условия. Данные не сохраняются. ",
+            )}
           </p>
           <div className="mx-auto max-w-2xl rounded-xl border p-5">
             <ItemForm
-              fields={fields}
+              fields={fields.filter((f) => f.type !== "alias")}
+              aliasFields={fields.filter((f) => f.type === "alias")}
               catalog={catalog}
               primaryKey={collection.primaryKey}
               formLayout={layout}
@@ -250,7 +254,9 @@ export function CollectionFormDesigner({
               portalContainer={container}
               onSave={async () => {
                 setError(
-                  "Предпросмотр: форма прошла проверку, запись не создавалась.",
+                  copy(
+                    "Предпросмотр: форма прошла проверку, запись не создавалась.",
+                  ),
                 );
               }}
               onCancel={() => setSection("structure")}
@@ -263,7 +269,7 @@ export function CollectionFormDesigner({
           role="status"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       <div className="flex flex-wrap gap-2 border-t pt-4">
@@ -272,7 +278,7 @@ export function CollectionFormDesigner({
           disabled={pending}
           onClick={() => save(layout)}
         >
-          {pending ? "Сохранение…" : "Сохранить форму"}
+          {pending ? copy("Сохранение…") : copy("Сохранить форму")}
         </Button>
         <Button
           type="button"
@@ -280,7 +286,7 @@ export function CollectionFormDesigner({
           disabled={pending}
           onClick={() => save(null)}
         >
-          Автоматическая раскладка
+          {copy("Автоматическая раскладка ")}
         </Button>
       </div>
     </div>

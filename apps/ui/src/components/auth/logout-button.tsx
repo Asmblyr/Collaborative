@@ -1,10 +1,13 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { useLogout } from "./use-logout";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function LogoutButton() {
+  const copy = useUiCopy();
+
   const { logout, pending, error } = useLogout();
 
   return (
@@ -21,14 +24,14 @@ export function LogoutButton() {
           aria-hidden="true"
           className="size-4"
         />
-        {pending ? "Выходим…" : "Выйти"}
+        {pending ? copy("Выходим…") : copy("Выйти")}
       </Button>
       {error && (
         <p
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
     </div>

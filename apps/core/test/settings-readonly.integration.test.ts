@@ -5,7 +5,10 @@ import { randomBytes, randomUUID } from "node:crypto";
 import test from "node:test";
 import knex from "knex";
 import { exportJWK, generateKeyPair } from "jose";
-import { settingsSections, type SettingsSection } from "@asmblyr/contracts";
+import {
+  settingsSections,
+  type SettingsSection,
+} from "@asmblyr-collaborative/contracts";
 import { createApp } from "../src/app.js";
 import { issueUserTokens } from "../src/auth/tokens.js";
 

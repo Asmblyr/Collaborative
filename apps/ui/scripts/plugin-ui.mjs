@@ -1,4 +1,4 @@
-import { generateUiRegistry } from "@asmblyr/kit/node";
+import { generateUiRegistry } from "@asmblyr-collaborative/kit/node";
 import { fileURLToPath } from "node:url";
 
 await generateUiRegistry(

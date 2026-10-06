@@ -2,7 +2,7 @@ import { parseRowFilter } from "./row-filter.js";
 import type {
   PermissionFilter,
   SettingsPermissionInput,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import { parseSettingsPermission } from "./settings-permissions.js";
 import {
   parseMutableCollectionName,

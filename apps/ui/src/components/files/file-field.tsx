@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Download, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { apiRequest } from "@/lib/api-request";
 import { arrayDraft } from "@/components/items/item-input-values";
 import { FilePicker } from "./file-picker";
 import { FilePreview } from "./file-preview";
 import { fileSize, type StoredFile } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function FileField({
   value,
@@ -26,6 +27,8 @@ export function FileField({
   onChange?: (value: string) => void;
   onBusy?: (busy: boolean) => void;
 }) {
+  const copy = useUiCopy();
+
   const ids = multiple ? arrayDraft(value) : value ? [value] : [];
   const key = ids.join(",");
   const [metadata, setMetadata] = useState<Map<string, StoredFile>>(
@@ -54,7 +57,7 @@ export function FileField({
         }
       })
       .catch(() => {
-        if (active) setError("Не удалось загрузить сведения о вложениях");
+        if (active) setError(copy("Не удалось загрузить сведения о вложениях"));
       })
       .finally(() => {
         if (active) setSettledKey(key);
@@ -62,7 +65,7 @@ export function FileField({
     return () => {
       active = false;
     };
-  }, [key]);
+  }, [key, copy]);
   const update = (next: string[]) =>
     onChange?.(multiple ? JSON.stringify(next) : (next[0] ?? ""));
   const editable = Boolean(onChange) && !disabled && !uploading;
@@ -88,10 +91,10 @@ export function FileField({
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">
-                    {file?.title || "Вложение"}
+                    {file?.title || copy("Вложение")}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {file ? fileSize(file.size) : id}
+                    {file ? fileSize(file.size, copy) : id}
                   </p>
                 </div>
                 {file?.status === "ready" && (
@@ -104,7 +107,9 @@ export function FileField({
                     <a
                       href={`/api/files/${id}/content`}
                       download
-                      aria-label={`Скачать ${file.title}`}
+                      aria-label={copy("Скачать {{value0}}", {
+                        value0: file.title,
+                      })}
                     >
                       <Download />
                     </a>
@@ -117,7 +122,7 @@ export function FileField({
                       size="icon-sm"
                       variant="ghost"
                       disabled={index === 0}
-                      aria-label="Переместить файл выше"
+                      aria-label={copy("Переместить файл выше")}
                       onClick={() => {
                         const next = [...ids];
                         [next[index - 1], next[index]] = [
@@ -134,7 +139,7 @@ export function FileField({
                       size="icon-sm"
                       variant="ghost"
                       disabled={index === ids.length - 1}
-                      aria-label="Переместить файл ниже"
+                      aria-label={copy("Переместить файл ниже")}
                       onClick={() => {
                         const next = [...ids];
                         [next[index + 1], next[index]] = [
@@ -153,7 +158,7 @@ export function FileField({
                     type="button"
                     size="icon-sm"
                     variant="ghost"
-                    aria-label="Отвязать файл"
+                    aria-label={copy("Отвязать файл")}
                     onClick={() => update(ids.filter((entry) => entry !== id))}
                   >
                     <X />
@@ -165,7 +170,7 @@ export function FileField({
         </div>
       )}
       {!ids.length && (
-        <p className="text-sm text-muted-foreground">Нет вложений</p>
+        <p className="text-sm text-muted-foreground">{copy("Нет вложений")}</p>
       )}
       {canChoose && onChange && (
         <FilePicker
@@ -198,7 +203,7 @@ export function FileField({
           role="alert"
           className="text-xs text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       {ids.length === 1 && metadata.get(ids[0])?.previewable && (

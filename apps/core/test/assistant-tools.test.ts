@@ -84,6 +84,10 @@ for (const api of ["responses", "chat-completions"] as const) {
 
 test("context accepts only a bounded page snapshot, never rows, principal or tools", () => {
   assert.equal(parseAssistantContext(null), null);
+  assert.deepEqual(parseAssistantContext({ page: "home" }), {
+    page: "home",
+    workspaceId: null,
+  });
   const context = {
     page: "items",
     workspaceId: null,
@@ -133,7 +137,13 @@ for (const api of ["responses", "chat-completions"] as const)
     const provider = createAssistantProvider(config, async (_url, options) => {
       const sent = JSON.parse(options!.body as string);
       const i = calls++;
-      assert.equal(sent.tools.length, 9);
+      if (i === 7 && config.zai) {
+        assert.equal(sent.tools, undefined);
+        assert.equal(sent.tool_choice, undefined);
+      } else {
+        assert.equal(sent.tools.length, 9);
+        if (i === 7) assert.equal(sent.tool_choice, "none");
+      }
       if (i > 0) {
         const history = api === "responses" ? sent.input : sent.messages;
         assert.ok(
@@ -223,8 +233,10 @@ for (const api of ["responses", "chat-completions"] as const)
             },
       );
     });
+    const activity: object[] = [];
     const result = await provider(input, undefined, null, {
       tools,
+      onActivity: (entry) => activity.push(entry),
       record: async (fn) => {
         recorded++;
         const answer = await fn();
@@ -232,12 +244,13 @@ for (const api of ["responses", "chat-completions"] as const)
         return answer;
       },
     });
-    assert.equal(
-      result.content,
-      [
-        ...Array.from({ length: 7 }, (_, index) => `Step ${index}`),
-        "Ready",
-      ].join("\n\n"),
+    assert.equal(result.content, "Ready");
+    assert.deepEqual(
+      activity,
+      Array.from({ length: 7 }, (_, index) => ({
+        kind: "note",
+        text: `Step ${index}`,
+      })),
     );
     assert.equal(calls, 8);
     assert.equal(recorded, 8);
@@ -257,7 +270,7 @@ test("invalid arguments are never executed and cancellation stops repeated calls
     { ...base, api: "chat-completions" },
     async () => {
       calls++;
-      if (calls === 8) controller.abort();
+      if (calls === 3) controller.abort();
       return Response.json({
         choices: [
           {
@@ -296,7 +309,7 @@ test("invalid arguments are never executed and cancellation stops repeated calls
     }),
     { code: "assistant_cancelled" },
   );
-  assert.equal(calls, 8);
+  assert.equal(calls, 3);
   assert.equal(executed, 0);
 });
 

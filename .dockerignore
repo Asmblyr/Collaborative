@@ -38,5 +38,6 @@ docs/archive.md
 docs/public/history
 docs/security/*-20??-??-??.md
 .agents
+**/AGENTS.override.md
 .github
 design-qa.md

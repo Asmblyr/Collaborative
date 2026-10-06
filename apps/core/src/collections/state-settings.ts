@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import type { CollectionState } from "@asmblyr/contracts";
+import type { CollectionState } from "@asmblyr-collaborative/contracts";
 import { lockedCollectionSettings } from "./settings-repository.js";
 import { readEditableField } from "./editable-field.js";
 import { statePresentation } from "./state-presentation.js";

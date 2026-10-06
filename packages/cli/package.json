@@ -1,0 +1,34 @@
+{
+  "name": "@asmblyr-collaborative/cli",
+  "version": "0.1.0-beta.1",
+  "type": "module",
+  "bin": {
+    "asm": "./src/main.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:unit": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@asmblyr-collaborative/sdk": "workspace:*"
+  },
+  "license": "MIT",
+  "description": "Connect to Asmblyr and generate typed collection and plugin clients",
+  "files": [
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Asmblyr/Collaborative.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/Asmblyr/Collaborative/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

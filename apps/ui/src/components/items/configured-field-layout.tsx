@@ -2,8 +2,13 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import type { CollectionField } from "./types";
 import type { FormLayout, FormNode } from "./presentation-types";
 import {
@@ -11,6 +16,7 @@ import {
   fieldsInNodes,
   visibleLayout,
 } from "./form-layout-model";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ConfiguredFieldLayout({
   layout,
@@ -27,7 +33,13 @@ export function ConfiguredFieldLayout({
   reveal?: string;
   children: (field: CollectionField) => ReactNode;
 }) {
-  const form = visibleLayout(effectiveLayout(layout, fields), values, forced);
+  const copy = useUiCopy();
+
+  const form = visibleLayout(
+    effectiveLayout(layout, fields, copy),
+    values,
+    forced,
+  );
   const [selected, setSelected] = useState(
     () =>
       form.tabs.find(
@@ -66,7 +78,7 @@ export function ConfiguredFieldLayout({
   if (!form.tabs.length)
     return (
       <p className="text-sm text-muted-foreground">
-        Нет полей для отображения.
+        {copy("Нет полей для отображения. ")}
       </p>
     );
   return (
@@ -80,7 +92,7 @@ export function ConfiguredFieldLayout({
           className="space-y-5"
         >
           <TabsList
-            aria-label="Вкладки формы"
+            aria-label={copy("Вкладки формы")}
             className="h-auto max-w-full flex-wrap justify-start gap-1"
           >
             {form.tabs.map((tab) => (

@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { displayValue } from "./item-display";
 import type { Collection, ItemEvent } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 interface HistoryPage {
   data: ItemEvent[];
@@ -23,6 +25,7 @@ async function fetchHistory(
   itemId?: string,
   before?: string,
   signal?: AbortSignal,
+  copy: UiCopy = originalCopy,
 ): Promise<HistoryPage> {
   const url = new URL(
     `/api/item-events/${encodeURIComponent(collection)}`,
@@ -35,21 +38,25 @@ async function fetchHistory(
     const body = (await response.json().catch(() => null)) as {
       message?: string;
     } | null;
-    throw new Error(body?.message ?? "Не удалось загрузить историю");
+    throw new Error(body?.message ?? copy("Не удалось загрузить историю"));
   }
   return response.json() as Promise<HistoryPage>;
 }
 
-function valueText(value: unknown, type?: string): string {
+function valueText(
+  value: unknown,
+  type?: string,
+  copy: UiCopy = originalCopy,
+): string {
   if (value === undefined) return "—";
-  if (value === null) return "Не задано";
-  if (value === "") return "Пустая строка";
+  if (value === null) return copy("Не задано");
+  if (value === "") return copy("Пустая строка");
   if (
     typeof value === "string" ||
     typeof value === "number" ||
     typeof value === "boolean"
   ) {
-    return displayValue(value, type ?? typeof value);
+    return displayValue(value, type ?? typeof value, copy);
   }
   return JSON.stringify(value, null, 2);
 }
@@ -63,10 +70,18 @@ function EventCard({
   schema?: Collection;
   showItemId: boolean;
 }) {
+  const copy = useUiCopy();
+
   const fields = Object.keys(event.after ?? event.before ?? {});
   const actor = event.actor_id
-    ? `${event.actor_kind === "service" ? "Сервис" : "Пользователь"}: ${event.actor_id}`
-    : "Автор неизвестен";
+    ? copy("{{value0}}: {{value1}}", {
+        value0:
+          event.actor_kind === "service"
+            ? copy("Сервис")
+            : copy("Пользователь"),
+        value1: event.actor_id,
+      })
+    : copy("Автор неизвестен");
   return (
     <article className="space-y-3 rounded-xl border p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -74,7 +89,7 @@ function EventCard({
           <Badge
             variant={event.action === "delete" ? "destructive" : "secondary"}
           >
-            {actionLabels[event.action]}
+            {copy(actionLabels[event.action])}
           </Badge>
           {showItemId && (
             <span className="break-all font-mono text-xs">{event.item_id}</span>
@@ -84,15 +99,17 @@ function EventCard({
           className="text-xs text-muted-foreground"
           dateTime={event.occurred_at}
         >
-          {new Date(event.occurred_at).toLocaleString("ru-RU")}
+          {new Date(event.occurred_at).toLocaleString(
+            copy.locale === "en" ? "en-US" : "ru-RU",
+          )}
         </time>
       </div>
       <p className="text-xs text-muted-foreground">{actor}</p>
       <div className="divide-y rounded-lg border">
         <div className="hidden px-3 py-2 text-xs font-medium text-muted-foreground sm:grid sm:grid-cols-[minmax(6rem,1fr)_2fr_2fr] sm:gap-3">
-          <span>Поле</span>
-          <span>До</span>
-          <span>После</span>
+          <span>{copy("Поле")}</span>
+          <span>{copy("До")}</span>
+          <span>{copy("После")}</span>
         </div>
         {fields.map((field) => {
           const metadata = schema?.fields.find((entry) => entry.name === field);
@@ -111,17 +128,17 @@ function EventCard({
               </span>
               <span
                 className="min-w-0 whitespace-pre-wrap break-words text-muted-foreground"
-                title="До"
+                title={copy("До")}
               >
-                <span className="mr-1 sm:hidden">До:</span>
-                {valueText(event.before?.[field], type)}
+                <span className="mr-1 sm:hidden">{copy("До:")}</span>
+                {valueText(event.before?.[field], type, copy)}
               </span>
               <span
                 className="min-w-0 whitespace-pre-wrap break-words"
-                title="После"
+                title={copy("После")}
               >
-                <span className="mr-1 sm:hidden">После:</span>
-                {valueText(event.after?.[field], type)}
+                <span className="mr-1 sm:hidden">{copy("После:")}</span>
+                {valueText(event.after?.[field], type, copy)}
               </span>
             </div>
           );
@@ -140,6 +157,8 @@ export function ItemHistory({
   itemId?: string;
   schema?: Collection;
 }) {
+  const copy = useUiCopy();
+
   const [events, setEvents] = useState<ItemEvent[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [pending, setPending] = useState(true);
@@ -147,7 +166,7 @@ export function ItemHistory({
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchHistory(collection, itemId, undefined, controller.signal)
+    fetchHistory(collection, itemId, undefined, controller.signal, copy)
       .then((page) => {
         setEvents(page.data);
         setCursor(page.nextCursor);
@@ -157,28 +176,34 @@ export function ItemHistory({
           setError(
             reason instanceof Error
               ? reason.message
-              : "Не удалось загрузить историю",
+              : copy("Не удалось загрузить историю"),
           );
       })
       .finally(() => {
         if (!controller.signal.aborted) setPending(false);
       });
     return () => controller.abort();
-  }, [collection, itemId]);
+  }, [collection, itemId, copy]);
 
   async function loadMore() {
     if (!cursor || pending) return;
     setPending(true);
     setError("");
     try {
-      const page = await fetchHistory(collection, itemId, cursor);
+      const page = await fetchHistory(
+        collection,
+        itemId,
+        cursor,
+        undefined,
+        copy,
+      );
       setEvents((current) => [...current, ...page.data]);
       setCursor(page.nextCursor);
     } catch (reason) {
       setError(
         reason instanceof Error
           ? reason.message
-          : "Не удалось загрузить историю",
+          : copy("Не удалось загрузить историю"),
       );
     } finally {
       setPending(false);
@@ -190,11 +215,11 @@ export function ItemHistory({
       {events.length === 0 && !pending && !error && (
         <div className="rounded-xl border border-dashed px-5 py-10 text-center">
           <History className="mx-auto mb-3 size-6 text-muted-foreground" />
-          <h3 className="text-sm font-medium">История пока пуста</h3>
+          <h3 className="text-sm font-medium">{copy("История пока пуста")}</h3>
           <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-muted-foreground">
-            Здесь появятся изменения через Asmblyr: кто и когда изменил поля,
-            значения до и после. Изменения напрямую в базе и история из других
-            систем сюда не попадают.
+            {copy(
+              "Здесь появятся изменения через Asmblyr: кто и когда изменил поля, значения до и после. Изменения напрямую в базе и история из других систем сюда не попадают. ",
+            )}
           </p>
         </div>
       )}
@@ -211,7 +236,7 @@ export function ItemHistory({
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       {pending && (
@@ -219,7 +244,7 @@ export function ItemHistory({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          Загрузка…
+          {copy("Загрузка… ")}
         </p>
       )}
       {cursor && (
@@ -229,7 +254,7 @@ export function ItemHistory({
           disabled={pending}
           onClick={loadMore}
         >
-          Показать ещё
+          {copy("Показать ещё ")}
         </Button>
       )}
     </div>

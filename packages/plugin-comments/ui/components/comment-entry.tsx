@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { usePluginTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
+
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { Comment } from "../../shared/comments.js";
 
-function dateLabel(value: string) {
-  return new Intl.DateTimeFormat("ru", {
+function dateLabel(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -18,6 +20,7 @@ export function CommentEntry({
   pending,
   onEdit,
   onDelete,
+  highlighted = false,
 }: {
   comment: Comment;
   editDisabled: boolean;
@@ -25,24 +28,39 @@ export function CommentEntry({
   pending: boolean;
   onEdit(): void;
   onDelete(): Promise<boolean>;
+  highlighted?: boolean;
 }) {
+  const { t, locale } = usePluginTranslations("comments");
   const [confirmDelete, setConfirmDelete] = useState(false);
-  let author = "Автор неизвестен";
+  const element = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (highlighted) {
+      element.current?.scrollIntoView({ block: "nearest" });
+      element.current?.focus({ preventScroll: true });
+    }
+  }, [highlighted]);
+  let author = t("author.unknown");
   if (comment.author)
     author =
       comment.author.name ??
-      `${comment.author.kind === "service" ? "Сервис" : "Участник"} · ${comment.author.id.slice(0, 8)}`;
+      `${comment.author.kind === "service" ? t("author.service") : t("author.member")} · ${comment.author.id.slice(0, 8)}`;
   if (comment.isOwn)
-    author = comment.author?.name ? `${comment.author.name} · вы` : "Вы";
+    author = comment.author?.name
+      ? t("author.own", undefined, { name: comment.author.name })
+      : t("author.you");
   return (
-    <article className="rounded-xl border bg-card p-4">
+    <article
+      ref={element}
+      tabIndex={highlighted ? -1 : undefined}
+      className={`rounded-xl border bg-card p-4 outline-none ${highlighted ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20" : ""}`}
+    >
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
             className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium"
           >
-            {comment.isOwn ? "Я" : author.slice(0, 1)}
+            {comment.isOwn ? t("author.me") : author.slice(0, 1)}
           </span>
           <div>
             <p
@@ -55,14 +73,14 @@ export function CommentEntry({
               dateTime={comment.createdAt}
               className="text-xs text-muted-foreground"
             >
-              {dateLabel(comment.createdAt)}
+              {dateLabel(comment.createdAt, locale)}
             </time>
             {comment.updatedAt !== comment.createdAt && (
               <span
                 className="ml-1 text-xs text-muted-foreground"
-                title={dateLabel(comment.updatedAt)}
+                title={dateLabel(comment.updatedAt, locale)}
               >
-                · изменён
+                {t("edited")}
               </span>
             )}
           </div>
@@ -76,7 +94,7 @@ export function CommentEntry({
               disabled={editDisabled}
               onClick={onEdit}
             >
-              Изменить
+              {t("edit")}
             </Button>
           )}
           {comment.canDelete && !confirmDelete && (
@@ -87,7 +105,7 @@ export function CommentEntry({
               disabled={deleteDisabled}
               onClick={() => setConfirmDelete(true)}
             >
-              Удалить
+              {t("delete")}
             </Button>
           )}
         </div>
@@ -97,7 +115,7 @@ export function CommentEntry({
       </p>
       {confirmDelete && (
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
-          <p className="mr-auto text-sm">Удалить комментарий?</p>
+          <p className="mr-auto text-sm">{t("delete.confirm")}</p>
           <Button
             type="button"
             variant="outline"
@@ -105,7 +123,7 @@ export function CommentEntry({
             disabled={pending}
             onClick={() => setConfirmDelete(false)}
           >
-            Отмена
+            {t("cancel")}
           </Button>
           <Button
             type="button"
@@ -116,7 +134,7 @@ export function CommentEntry({
               if (await onDelete()) setConfirmDelete(false);
             }}
           >
-            Удалить
+            {t("delete")}
           </Button>
         </div>
       )}

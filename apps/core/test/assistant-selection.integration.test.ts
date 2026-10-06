@@ -5,6 +5,74 @@ import { randomUUID } from "node:crypto";
 import { createContextTools } from "../src/assistant/context-tools.js";
 import { mcpFixture } from "./support/assistant-mcp-fixture.js";
 
+test("assistant searches inherit relevance and carry it through selection validation", async (t) => {
+  const { db, app, access, reload, names, headers } = await mcpFixture(t);
+  const tools = (await createContextTools(
+    db,
+    access,
+    {
+      page: "items",
+      workspaceId: null,
+      collection: names.posts,
+      table: {
+        page: 1,
+        size: 25,
+        sort: "id",
+        direction: "asc",
+        order: "relevance",
+        q: "Al",
+        filter: "",
+        selectedCount: 0,
+        editorOpen: false,
+      },
+    },
+    reload,
+  ))!;
+  t.after(() => tools.close!());
+  await tools.execute("describe_collection", { collection: names.posts });
+  const args = {
+    collection: names.posts,
+    q: null,
+    filter: null,
+    sort: null,
+    direction: null,
+    order: null,
+    fields: ["title"],
+    limit: 10,
+    page: 1,
+  };
+  const result = (await tools.execute("search_items", args)) as {
+    order: string;
+    resultId: string;
+  };
+  assert.equal(result.order, "relevance", JSON.stringify(result));
+  await tools.execute("present_selection", { resultId: result.resultId });
+  const card = tools.selections![0];
+  assert.equal(card.order, "relevance");
+  const checked = await app.inject({
+    method: "POST",
+    url: "/assistant/selection/validate",
+    headers,
+    payload: {
+      collection: card.collection,
+      collectionId: card.collectionId,
+      q: card.q,
+      filter: card.filter,
+      sort: card.sort,
+      direction: card.direction,
+      order: card.order,
+    },
+  });
+  assert.equal(checked.statusCode, 200, checked.body);
+  assert.equal(checked.json().data.order, "relevance");
+  const manual = (await tools.execute("search_items", {
+    ...args,
+    sort: "title",
+    direction: "desc",
+  })) as { order: string };
+  assert.equal(manual.order, "field", JSON.stringify(manual));
+});
+
 test("selection cards preserve real query results across collections and recheck access on opening", async (t) => {
   const { db, app, access, reload, names, headers, permissions, suffix } =
     await mcpFixture(t);

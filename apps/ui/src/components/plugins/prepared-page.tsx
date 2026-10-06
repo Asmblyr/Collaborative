@@ -7,15 +7,16 @@ import {
   useState,
   type ComponentType,
 } from "react";
-import type { PluginPageProps } from "@asmblyr/kit/ui";
-import type { PluginPreparedAction } from "@asmblyr/contracts";
-import { Button } from "@asmblyr/kit/ui/button";
+import type { PluginPageProps } from "@asmblyr-collaborative/kit/ui";
+import type { PluginPreparedAction } from "@asmblyr-collaborative/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { loadPreparedAction } from "./action-client";
 import {
   clearPluginPageState,
   reportPluginPageState,
   type PluginPageState,
 } from "./page-state";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PreparedPluginPage({
   namespace,
@@ -30,6 +31,8 @@ export function PreparedPluginPage({
   component: ComponentType<PluginPageProps>;
   request: PluginPageProps["request"];
 }) {
+  const copy = useUiCopy();
+
   const [prepared, setPrepared] = useState<PluginPreparedAction>();
   const [candidate, setCandidate] = useState<PluginPreparedAction>();
   const [error, setError] = useState("");
@@ -51,11 +54,11 @@ export function PreparedPluginPage({
   useEffect(() => {
     if (!draftId) return;
     const controller = new AbortController();
-    void loadPreparedAction(namespace, draftId, controller.signal)
+    void loadPreparedAction(namespace, draftId, controller.signal, copy)
       .then((draft) => {
         if (controller.signal.aborted) return;
         if (draft.namespace !== namespace || draft.pageId !== pageId)
-          throw new Error("Эта форма предназначена для другой страницы.");
+          throw new Error(copy("Эта форма предназначена для другой страницы."));
         if (state.current.dirty || state.current.busy) setCandidate(draft);
         else setPrepared(draft);
         setStarted(true);
@@ -67,12 +70,12 @@ export function PreparedPluginPage({
         setError(
           failure instanceof Error
             ? failure.message
-            : "Не удалось открыть подготовленную форму.",
+            : copy("Не удалось открыть подготовленную форму."),
         );
         setResolved(draftId);
       });
     return () => controller.abort();
-  }, [namespace, pageId, draftId, retry]);
+  }, [namespace, pageId, draftId, retry, copy]);
   useEffect(() => {
     const unload = (event: BeforeUnloadEvent) => {
       if (state.current.dirty || state.current.busy) {
@@ -92,7 +95,7 @@ export function PreparedPluginPage({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          Открываем подготовленную форму…
+          {copy("Открываем подготовленную форму… ")}
         </p>
       )}
       {error && (
@@ -100,20 +103,21 @@ export function PreparedPluginPage({
           role="alert"
           className="space-y-3 rounded-xl border p-4"
         >
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">{copy(error)}</p>
           <Button
             variant="outline"
             onClick={() => setRetry((value) => value + 1)}
           >
-            Повторить
+            {copy("Повторить ")}
           </Button>
         </div>
       )}
       {candidate && (
         <div className="space-y-3 rounded-xl border p-4">
           <p className="text-sm">
-            Есть новый подготовленный расчёт. Открыть его вместо ваших текущих
-            значений?
+            {copy(
+              "Есть новый подготовленный расчёт. Открыть его вместо ваших текущих значений? ",
+            )}
           </p>
           <div className="flex gap-2">
             <Button
@@ -124,13 +128,13 @@ export function PreparedPluginPage({
                 setCandidate(undefined);
               }}
             >
-              Открыть новый расчёт
+              {copy("Открыть новый расчёт ")}
             </Button>
             <Button
               variant="outline"
               onClick={() => setCandidate(undefined)}
             >
-              Оставить текущий
+              {copy("Оставить текущий ")}
             </Button>
           </div>
         </div>

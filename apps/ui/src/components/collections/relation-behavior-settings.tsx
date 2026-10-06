@@ -1,5 +1,7 @@
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Input } from "@asmblyr/kit/ui/input";
+"use client";
+
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -7,9 +9,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
-import { TabsContent } from "@asmblyr/kit/ui/tabs";
+} from "@asmblyr-collaborative/kit/ui/select";
+import { TabsContent } from "@asmblyr-collaborative/kit/ui/tabs";
 import type { RelationEditor, Kind, DeleteAction } from "./use-relation-editor";
+import { useUiCopy } from "@/lib/ui-copy";
+
 export function RelationBehaviorSettings({
   editor,
   kind,
@@ -21,6 +25,8 @@ export function RelationBehaviorSettings({
   collection: string;
   portalContainer?: HTMLElement | null;
 }) {
+  const copy = useUiCopy();
+
   const {
     targetCollection,
     reuseExisting,
@@ -46,8 +52,9 @@ export function RelationBehaviorSettings({
     >
       {kind === "o2m" && reuseExisting && (
         <p className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-          Для существующего внешнего ключа правила обязательности и удаления уже
-          заданы в целевой коллекции.
+          {copy(
+            "Для существующего внешнего ключа правила обязательности и удаления уже заданы в целевой коллекции. ",
+          )}
         </p>
       )}
       {kind === "m2m" && (
@@ -55,7 +62,8 @@ export function RelationBehaviorSettings({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="relation-source-delete">
-                При удалении записи из {collection}
+                {copy("При удалении записи из ")}
+                {collection}
               </Label>
               <Select
                 value={sourceOnDelete}
@@ -71,17 +79,19 @@ export function RelationBehaviorSettings({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent container={portalContainer}>
-                  <SelectItem value="cascade">Удалить строки связи</SelectItem>
+                  <SelectItem value="cascade">
+                    {copy("Удалить строки связи")}
+                  </SelectItem>
                   <SelectItem value="restrict">
-                    Запретить удаление записи
+                    {copy("Запретить удаление записи ")}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="relation-target-delete">
-                При удалении записи из{" "}
-                {targetCollection || "связанной коллекции"}
+                {copy("При удалении записи из")}{" "}
+                {targetCollection || copy("связанной коллекции")}
               </Label>
               <Select
                 value={targetOnDelete}
@@ -97,9 +107,11 @@ export function RelationBehaviorSettings({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent container={portalContainer}>
-                  <SelectItem value="cascade">Удалить строки связи</SelectItem>
+                  <SelectItem value="cascade">
+                    {copy("Удалить строки связи")}
+                  </SelectItem>
                   <SelectItem value="restrict">
-                    Запретить удаление записи
+                    {copy("Запретить удаление записи ")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -107,8 +119,9 @@ export function RelationBehaviorSettings({
           </div>
           {(sourceOnDelete === "cascade" || targetOnDelete === "cascade") && (
             <p className="text-xs text-muted-foreground">
-              Удаление строк связи самой БД пока не записывается отдельно в
-              историю.
+              {copy(
+                "Удаление строк связи самой БД пока не записывается отдельно в историю. ",
+              )}
             </p>
           )}
         </div>
@@ -120,7 +133,7 @@ export function RelationBehaviorSettings({
               checked={required}
               onCheckedChange={(checked) => setRequired(checked === true)}
             />
-            Обязательно в API
+            {copy("Обязательно в API ")}
           </label>
           <label className="flex items-center gap-3 text-sm">
             <Checkbox
@@ -131,11 +144,11 @@ export function RelationBehaviorSettings({
                   setOnDelete("restrict");
               }}
             />
-            Разрешить NULL в БД
+            {copy("Разрешить NULL в БД ")}
           </label>
           <div className="space-y-2">
             <Label htmlFor="relation-delete">
-              При удалении связанной записи
+              {copy("При удалении связанной записи ")}
             </Label>
             <Select
               value={onDelete}
@@ -152,22 +165,28 @@ export function RelationBehaviorSettings({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={portalContainer}>
-                <SelectItem value="restrict">Запретить удаление</SelectItem>
+                <SelectItem value="restrict">
+                  {copy("Запретить удаление")}
+                </SelectItem>
                 {nullable && (
-                  <SelectItem value="setNull">Очистить внешний ключ</SelectItem>
+                  <SelectItem value="setNull">
+                    {copy("Очистить внешний ключ")}
+                  </SelectItem>
                 )}
                 <SelectItem value="setDefault">
-                  Установить значение по умолчанию
+                  {copy("Установить значение по умолчанию ")}
                 </SelectItem>
                 <SelectItem value="cascade">
-                  Удалить связанные записи
+                  {copy("Удалить связанные записи ")}
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
           {onDelete === "setDefault" && (
             <div className="space-y-2">
-              <Label htmlFor="relation-default">ID записи по умолчанию</Label>
+              <Label htmlFor="relation-default">
+                {copy("ID записи по умолчанию")}
+              </Label>
               <Input
                 id="relation-default"
                 value={defaultValue}
@@ -176,14 +195,15 @@ export function RelationBehaviorSettings({
                 className="h-10 font-mono"
               />
               <p className="text-xs text-muted-foreground">
-                Запись с этим ID должна уже существовать.
+                {copy("Запись с этим ID должна уже существовать. ")}
               </p>
             </div>
           )}
           {onDelete !== "restrict" && (
             <p className="text-xs text-muted-foreground">
-              Изменения других записей, выполненные самой БД при удалении, пока
-              не получают отдельные записи в истории.
+              {copy(
+                "Изменения других записей, выполненные самой БД при удалении, пока не получают отдельные записи в истории. ",
+              )}
             </p>
           )}
         </div>

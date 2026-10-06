@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { AppWindow, Unplug } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/api-request";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface ConnectedApplication {
   id: string;
@@ -24,6 +25,8 @@ const scopeLabels: Record<string, string> = {
 };
 
 export function ConnectedAppsPanel() {
+  const copy = useUiCopy();
+
   const [apps, setApps] = useState<ConnectedApplication[] | null>(null);
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -36,12 +39,12 @@ export function ConnectedAppsPanel() {
         if (active) setApps(data);
       })
       .catch(() => {
-        if (active) setError("Не удалось загрузить приложения");
+        if (active) setError(copy("Не удалось загрузить приложения"));
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [copy]);
 
   async function reload() {
     setError("");
@@ -50,7 +53,7 @@ export function ConnectedAppsPanel() {
         await apiRequest<ConnectedApplication[]>("/api/users/me/oauth-apps"),
       );
     } catch {
-      setError("Не удалось загрузить приложения");
+      setError(copy("Не удалось загрузить приложения"));
     }
   }
 
@@ -62,7 +65,7 @@ export function ConnectedAppsPanel() {
       setApps((current) => current?.filter((app) => app.id !== id) ?? null);
       setConfirm(null);
     } catch {
-      setError("Не удалось отозвать доступ. Попробуйте ещё раз.");
+      setError(copy("Не удалось отозвать доступ. Попробуйте ещё раз."));
     } finally {
       setPending(false);
     }
@@ -71,10 +74,11 @@ export function ConnectedAppsPanel() {
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="font-semibold">Подключённые приложения</h2>
+        <h2 className="font-semibold">{copy("Подключённые приложения")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Сервисы, которым вы разрешили вход через Asmblyr. Повторный вход
-          использует сохранённое согласие.
+          {copy(
+            "Сервисы, которым вы разрешили вход через Asmblyr. Повторный вход использует сохранённое согласие. ",
+          )}
         </p>
       </div>
       {error && (
@@ -82,14 +86,14 @@ export function ConnectedAppsPanel() {
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}{" "}
+          {copy(error)}{" "}
           <Button
             variant="ghost"
             size="sm"
             disabled={pending}
             onClick={reload}
           >
-            Повторить
+            {copy("Повторить ")}
           </Button>
         </div>
       )}
@@ -98,17 +102,17 @@ export function ConnectedAppsPanel() {
           role="status"
           className="text-sm text-muted-foreground"
         >
-          Загрузка…
+          {copy("Загрузка… ")}
         </p>
       )}
       {apps?.length === 0 && (
         <div className="rounded-xl border border-dashed p-7 text-center">
           <AppWindow className="mx-auto mb-3 size-6 text-muted-foreground" />
           <p className="text-sm font-medium">
-            Пока нет подключённых приложений
+            {copy("Пока нет подключённых приложений ")}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Они появятся после первого подтверждения входа.
+            {copy("Они появятся после первого подтверждения входа. ")}
           </p>
         </div>
       )}
@@ -136,7 +140,7 @@ export function ConnectedAppsPanel() {
                     variant="secondary"
                     className="mt-2"
                   >
-                    Отключено администратором
+                    {copy("Отключено администратором ")}
                   </Badge>
                 )}
               </div>
@@ -148,12 +152,12 @@ export function ConnectedAppsPanel() {
               onClick={() => setConfirm(app.id)}
             >
               <Unplug className="size-3.5" />
-              Отозвать доступ
+              {copy("Отозвать доступ ")}
             </Button>
           </div>
           <div
             className="flex flex-wrap gap-1.5"
-            aria-label="Предоставленные разрешения"
+            aria-label={copy("Предоставленные разрешения")}
           >
             {app.scopes.map((scope) => (
               <Badge
@@ -161,31 +165,36 @@ export function ConnectedAppsPanel() {
                 variant="secondary"
                 className="max-w-full whitespace-normal break-all font-normal"
               >
-                {scopeLabels[scope] ?? scope}
+                {copy(scopeLabels[scope] ?? scope)}
               </Badge>
             ))}
           </div>
           <div className="space-y-1 text-xs text-muted-foreground">
             {app.audience && (
-              <p className="break-all">Получатель: {app.audience}</p>
+              <p className="break-all">
+                {copy("Получатель: ")}
+                {app.audience}
+              </p>
             )}
             <p>
-              Доступ разрешён:{" "}
+              {copy("Доступ разрешён:")}{" "}
               {new Date(app.approvedAt).toLocaleString("ru-RU")}
             </p>
             <p>
-              Последний вход:{" "}
+              {copy("Последний вход:")}{" "}
               {app.lastUsedAt
                 ? new Date(app.lastUsedAt).toLocaleString("ru-RU")
-                : "ещё не завершён"}
+                : copy("ещё не завершён")}
             </p>
           </div>
           {confirm === app.id && (
             <div className="space-y-3 rounded-lg bg-muted p-3">
               <p className="text-sm">
-                При следующем входе {app.name} снова запросит разрешение. Уже
-                выданный токен может действовать ещё до 5 минут; собственная
-                сессия сервиса может завершиться позже.
+                {copy("При следующем входе ")}
+                {app.name}{" "}
+                {copy(
+                  " снова запросит разрешение. Уже выданный токен может действовать ещё до 5 минут; собственная сессия сервиса может завершиться позже. ",
+                )}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -194,7 +203,7 @@ export function ConnectedAppsPanel() {
                   disabled={pending}
                   onClick={() => revoke(app.id)}
                 >
-                  {pending ? "Отзываем…" : "Отозвать"}
+                  {pending ? copy("Отзываем…") : copy("Отозвать")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -202,7 +211,7 @@ export function ConnectedAppsPanel() {
                   disabled={pending}
                   onClick={() => setConfirm(null)}
                 >
-                  Отмена
+                  {copy("Отмена ")}
                 </Button>
               </div>
             </div>

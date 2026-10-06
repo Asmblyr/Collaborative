@@ -1,5 +1,6 @@
 import type { Item } from "./types";
 import type { RecordDraft } from "./record-draft-model";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 export interface DraftTarget {
   path: string;
@@ -146,6 +147,7 @@ function wantedValues(draft: RecordDraft): Item {
 
 export function findDraftConflicts(
   snapshots: DraftSnapshot[],
+  copy: UiCopy = originalCopy,
 ): DraftConflict[] {
   for (const target of snapshots) {
     if (
@@ -156,7 +158,9 @@ export function findDraftConflicts(
       )
     ) {
       throw new Error(
-        "Доступ к одному из изменённых полей изменился. Черновик остался в этом окне.",
+        copy(
+          "Доступ к одному из изменённых полей изменился. Черновик остался в этом окне.",
+        ),
       );
     }
   }
@@ -185,11 +189,14 @@ export function rebaseDraft(
   snapshots: DraftSnapshot[],
   choices: ConflictChoices,
   labelFor?: (collection: string, preview: Item) => string,
+  copy: UiCopy = originalCopy,
 ): RecordDraft {
   if (
-    findDraftConflicts(snapshots).some((conflict) => !choices[conflict.key])
+    findDraftConflicts(snapshots, copy).some(
+      (conflict) => !choices[conflict.key],
+    )
   ) {
-    throw new Error("Выберите значение для каждого совпавшего поля.");
+    throw new Error(copy("Выберите значение для каждого совпавшего поля."));
   }
   const current = new Map(
     snapshots.map((snapshot) => [snapshot.path, snapshot.current]),

@@ -113,6 +113,7 @@ await output(
 
 const guides = {
   "sdk-guide": "packages/sdk/README.md",
+  "cli-guide": "packages/cli/README.md",
   "kit-guide": "packages/kit/README.md",
   "kit-hooks": "packages/kit/HOOKS.md",
   "kit-fields": "packages/kit/FIELDS.md",
@@ -130,6 +131,8 @@ for (const [name, source] of Object.entries(guides)) {
     .replace(/\((?:\.\/)?CAPABILITIES\.md\)/g, "(./kit-capabilities.md)")
     .replace(/\((?:\.\/)?UI\.md\)/g, "(./kit-ui.md)")
     .replaceAll("../sdk/README.md", "./sdk-guide.md")
+    .replaceAll("../cli/README.md", "./cli-guide.md")
+    .replaceAll("../../docs/reference/packages.md", "./packages.md")
     .replaceAll(
       "../../docs/development/plugin-actions.md",
       "../development/plugin-actions.md",

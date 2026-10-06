@@ -5,7 +5,7 @@ import type {
   JsonValue,
   PrimaryKey,
   Timestamps,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 
 interface FieldDefinitionBase {
   readonly type: FieldType;
@@ -23,7 +23,10 @@ type TextFieldDefinition = {
 };
 
 type OtherFieldDefinition = { readonly searchable?: never } & (
-  | { readonly type: "uuid" | "datetime"; readonly defaultValue?: string }
+  | {
+      readonly type: "uuid" | "datetime" | "date" | "bigint";
+      readonly defaultValue?: string;
+    }
   | { readonly type: "integer"; readonly defaultValue?: number }
   | { readonly type: "decimal"; readonly defaultValue?: string | number }
   | { readonly type: "boolean"; readonly defaultValue?: boolean }

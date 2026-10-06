@@ -1,7 +1,5 @@
 import "dotenv/config";
 import { createApp } from "./app.js";
-import { storageFromEnv } from "./files/storage/config.js";
-import { assistantFromEnv } from "./assistant/service.js";
 import { ssoFromEnv } from "./auth/sso/config.js";
 import { SsoService } from "./auth/sso/service.js";
 import { SsoProtocol } from "./auth/sso/protocol.js";
@@ -24,9 +22,6 @@ if (setupToken && setupToken.length < 32) {
   throw new Error("ASMBLYR_SETUP_TOKEN must contain at least 32 characters");
 }
 
-const assistant = assistantFromEnv(process.env, (message) =>
-  console.warn(`Assistant disabled: ${message}`),
-);
 const sso = new SsoService(
   ssoFromEnv(process.env),
   new SsoProtocol(undefined, (diagnostic) => {
@@ -38,8 +33,7 @@ const app = createApp({
   passkeys: passkeysFromEnv(process.env),
   databaseUrl: process.env.DATABASE_URL,
   setupToken,
-  fileStorage: storageFromEnv(),
-  assistant,
+  integrations: { env: process.env },
   sso,
   oauth: await oauthFromEnv(process.env),
   plugins: await loadPlugins(

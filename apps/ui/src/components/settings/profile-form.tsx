@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-request";
 import type { SessionUser } from "@/lib/session";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ProfileForm({ user }: { user: SessionUser }) {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [name, setName] = useState(user.displayName ?? "");
   const [pictureUrl, setPictureUrl] = useState(user.pictureUrl ?? "");
@@ -29,13 +32,13 @@ export function ProfileForm({ user }: { user: SessionUser }) {
             displayName: name,
             pictureUrl,
           });
-          setMessage("Профиль сохранён");
+          setMessage(copy("Профиль сохранён"));
           router.refresh();
         } catch (error) {
           setError(
             error instanceof Error
               ? error.message
-              : "Не удалось сохранить профиль",
+              : copy("Не удалось сохранить профиль"),
           );
         } finally {
           setPending(false);
@@ -43,7 +46,7 @@ export function ProfileForm({ user }: { user: SessionUser }) {
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="profile-name">Имя</Label>
+        <Label htmlFor="profile-name">{copy("Имя")}</Label>
         <Input
           id="profile-name"
           autoComplete="name"
@@ -51,14 +54,14 @@ export function ProfileForm({ user }: { user: SessionUser }) {
           value={name}
           disabled={pending}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Как к вам обращаться"
+          placeholder={copy("Как к вам обращаться")}
         />
         <p className="text-xs text-muted-foreground">
-          Будет отображаться в меню пользователя.
+          {copy("Будет отображаться в меню пользователя. ")}
         </p>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="profile-email">Электронная почта</Label>
+        <Label htmlFor="profile-email">{copy("Электронная почта")}</Label>
         <Input
           id="profile-email"
           value={user.email}
@@ -67,11 +70,11 @@ export function ProfileForm({ user }: { user: SessionUser }) {
           className="bg-muted/40"
         />
         <p className="text-xs text-muted-foreground">
-          Используется для входа. Изменение почты пока недоступно.
+          {copy("Используется для входа. Изменение почты пока недоступно. ")}
         </p>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="profile-picture">Изображение профиля</Label>
+        <Label htmlFor="profile-picture">{copy("Изображение профиля")}</Label>
         <Input
           id="profile-picture"
           type="url"
@@ -82,20 +85,21 @@ export function ProfileForm({ user }: { user: SessionUser }) {
           placeholder="https://example.com/avatar.jpg"
         />
         <p className="text-xs text-muted-foreground">
-          Необязательная публичная HTTPS-ссылка. Передаётся приложениям при
-          входе через Asmblyr.
+          {copy(
+            "Необязательная публичная HTTPS-ссылка. Передаётся приложениям при входе через Asmblyr. ",
+          )}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Button disabled={pending}>
-          {pending ? "Сохраняем…" : "Сохранить изменения"}
+          {pending ? copy("Сохраняем…") : copy("Сохранить изменения")}
         </Button>
         {message && (
           <p
             role="status"
             className="text-sm text-muted-foreground"
           >
-            {message}
+            {copy(message)}
           </p>
         )}
       </div>
@@ -104,7 +108,7 @@ export function ProfileForm({ user }: { user: SessionUser }) {
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
     </form>

@@ -39,6 +39,41 @@ test("named views are personal and shared workspaces never grant data access", a
       { name: "Main", definition },
       201,
     );
+    const relevanceDefinition = {
+      ...definition,
+      sort: { ...definition.sort, order: "relevance" },
+    };
+    const relevanceView = await call(
+      "POST",
+      `/table-views/${name}`,
+      { name: "Search", definition: relevanceDefinition },
+      201,
+    );
+    assert.equal(relevanceView.definition.sort.order, "relevance");
+    assert.equal(
+      (await call("GET", `/table-views/${name}`)).find(
+        (view: { id: string }) => view.id === relevanceView.id,
+      ).definition.sort.order,
+      "relevance",
+    );
+    await call(
+      "POST",
+      `/table-views/${name}`,
+      {
+        name: "Invalid order",
+        definition: {
+          ...definition,
+          sort: { ...definition.sort, order: "unknown" },
+        },
+      },
+      400,
+    );
+    await call(
+      "DELETE",
+      `/table-views/${name}/${relevanceView.id}`,
+      undefined,
+      204,
+    );
     const policy = await f.grant(name, "read");
     await t.test(
       "complete definitions, ownership and invalid input",

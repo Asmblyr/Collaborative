@@ -2,8 +2,8 @@ import "./support/require-test-database.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { createClient } from "@asmblyr/sdk";
-import type { PresenceScope } from "@asmblyr/contracts";
+import { createClient } from "@asmblyr-collaborative/sdk";
+import type { PresenceScope } from "@asmblyr-collaborative/contracts";
 import { createApp } from "../src/app.js";
 import { authenticateAccess, issueUserTokens } from "../src/auth/tokens.js";
 import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
@@ -218,6 +218,26 @@ test("presence is human-only, validates scopes and mirrors protected page access
     400,
   );
   await touch(f, clientId, { kind: "page", page: "/settings" }, f.memberToken);
+  await touch(f, clientId, { kind: "page", page: "/" }, f.memberToken);
+  await touch(
+    f,
+    clientId,
+    { kind: "page", page: "/admin/collections" },
+    f.memberToken,
+    403,
+  );
+  await touch(f, clientId, { kind: "page", page: "/admin/collections" });
+  await touch(
+    f,
+    clientId,
+    { kind: "page", page: "/admin/settings/integrations" },
+    f.memberToken,
+    403,
+  );
+  await touch(f, clientId, {
+    kind: "page",
+    page: "/admin/settings/integrations",
+  });
   await touch(
     f,
     clientId,

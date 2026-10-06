@@ -1,22 +1,31 @@
 "use client";
 
 import { useLayoutEffect, useId, useState, type FormEvent } from "react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OpenRelated } from "./relation-picker";
-import { ItemFieldInput } from "./item-field-input";
-import { inputValue, payloadValue } from "./item-input-values";
+import { formDraftPayload, FieldDraftError } from "./form-draft-payload";
+import { ItemFormField } from "./item-form-field";
+import { inputValue } from "./item-input-values";
 import type { Collection, CollectionField, Item, ItemValue } from "./types";
 import { ConfiguredFieldLayout } from "./configured-field-layout";
 import { layoutHasConditions } from "./form-layout-model";
-import { ItemReadonlyField } from "./item-readonly-field";
 import type { FormLayout } from "./presentation-types";
 import { ItemFormActions } from "./item-form-actions";
-import { displayValue } from "./item-display";
+import type { ReactNode } from "react";
+import {
+  fieldIsRequired,
+  fieldIsReadonly,
+  changeFieldDraft,
+  effectiveFieldDraft,
+} from "./field-rule-draft";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface ItemFormProps {
   fields: CollectionField[];
+  aliasFields?: CollectionField[];
+  renderAlias?: (field: CollectionField) => ReactNode;
   formLayout?: FormLayout | null;
   readOnlyFields?: string[];
   preview?: boolean;
@@ -41,6 +50,8 @@ interface ItemFormProps {
 
 export function ItemForm({
   fields,
+  aliasFields = [],
+  renderAlias,
   formLayout,
   readOnlyFields = [],
   preview = false,
@@ -62,6 +73,8 @@ export function ItemForm({
   allowUnchanged = false,
   onReferenceChange,
 }: ItemFormProps) {
+  const copy = useUiCopy();
+
   const formId = useId();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -78,7 +91,9 @@ export function ItemForm({
   );
   const [issue, setIssue] = useState({ field: "", attempt: 0 });
   const [showHidden, setShowHidden] = useState(false);
-  const writable = fields.filter((f) => !readOnlyFields.includes(f.name));
+  const writable = fields.filter(
+    (f) => !readOnlyFields.includes(f.name) && !fieldIsReadonly(f),
+  );
   const changedCount =
     writable.filter((field) =>
       item
@@ -88,6 +103,12 @@ export function ItemForm({
   useLayoutEffect(() => {
     onDirtyChange?.(changedCount);
   }, [changedCount, onDirtyChange]);
+  const conditionValues = effectiveFieldDraft(
+    fields,
+    values,
+    Boolean(item),
+    initialValues,
+  );
   const forced = new Set(
     showHidden
       ? fields.map((f) => f.name)
@@ -95,21 +116,13 @@ export function ItemForm({
           .filter(
             (f) =>
               !item &&
-              (f.required || !f.nullable) &&
+              fieldIsRequired(f, conditionValues) &&
               f.defaultValue === undefined &&
               !values[f.name],
           )
           .map((f) => f.name),
   );
   if (issue.field) forced.add(issue.field);
-  const conditionValues = Object.fromEntries(
-    fields.map((f) => [
-      f.name,
-      !item && values[f.name] === "" && f.defaultValue !== undefined
-        ? inputValue(f, { [f.name]: f.defaultValue })
-        : values[f.name],
-    ]),
-  );
   function showError(form: HTMLFormElement, message: string, field: string) {
     setMessage(message);
     setIssue((v) => ({ field, attempt: v.attempt + 1 }));
@@ -134,21 +147,20 @@ export function ItemForm({
     onSubmitAttempt?.();
     if (pending) return;
     if (uploading) {
-      setMessage("Дождитесь загрузки файлов");
+      setMessage(copy("Дождитесь загрузки файлов"));
       return;
     }
-    const missingChoice =
-      !item &&
-      writable.find(
-        (field) =>
-          (field.required || !field.nullable) &&
-          field.defaultValue === undefined &&
-          values[field.name] === "",
-      );
+    const missingChoice = writable.find(
+      (field) =>
+        fieldIsRequired(field, conditionValues) &&
+        conditionValues[field.name]?.trim() === "",
+    );
     if (missingChoice) {
       showError(
         event.currentTarget,
-        `Заполните поле ${missingChoice.presentation?.label || missingChoice.name}`,
+        copy("Заполните поле {{value0}}", {
+          value0: missingChoice.presentation?.label || missingChoice.name,
+        }),
         missingChoice.name,
       );
       return;
@@ -181,61 +193,24 @@ export function ItemForm({
       return;
     }
     if (item && changed.length === 0 && !allowUnchanged) {
-      setMessage("Нет изменений");
+      setMessage(copy("Нет изменений"));
       return;
     }
     setMessage("");
     try {
-      const payload: Record<string, ItemValue> = {};
-      for (const field of changed) {
-        try {
-          payload[field.name] = payloadValue(field, values[field.name]);
-          const repeater = field.presentation?.repeater;
-          const rows = payload[field.name];
-          if (
-            field.presentation?.interface === "repeater" &&
-            repeater &&
-            rows !== null
-          ) {
-            if (
-              !Array.isArray(rows) ||
-              rows.length <
-                Math.max(repeater.minItems, field.required ? 1 : 0) ||
-              rows.length > repeater.maxItems
-            )
-              throw new Error(
-                `Нужно от ${Math.max(repeater.minItems, field.required ? 1 : 0)} до ${repeater.maxItems} элементов`,
-              );
-            for (const [index, row] of rows.entries()) {
-              if (!row || typeof row !== "object" || Array.isArray(row))
-                throw new Error(`Элемент ${index + 1} должен быть объектом`);
-              for (const child of repeater.fields)
-                if (
-                  child.required &&
-                  (row[child.name] == null ||
-                    (typeof row[child.name] === "string" &&
-                      !String(row[child.name]).trim()))
-                )
-                  throw new Error(
-                    `Элемент ${index + 1}: заполните ${child.label || child.name}`,
-                  );
-            }
-          }
-        } catch (cause) {
-          showError(
-            event.currentTarget,
-            `${field.presentation?.label || field.name}: ${cause instanceof Error ? cause.message : "Проверьте значение"}`,
-            field.name,
-          );
-          return;
-        }
-      }
+      const payload = formDraftPayload(changed, values, copy);
       if (!item && primaryKey.type === "text")
         payload[primaryKey.name] = manualKey;
       await onSave(payload);
     } catch (error) {
+      if (error instanceof FieldDraftError) {
+        showError(event.currentTarget, error.message, error.field);
+        return;
+      }
       setMessage(
-        error instanceof Error ? error.message : "Проверьте значения полей",
+        error instanceof Error
+          ? error.message
+          : copy("Проверьте значения полей"),
       );
     }
   }
@@ -251,7 +226,7 @@ export function ItemForm({
     >
       {!embedded && (
         <h2 className="text-lg font-semibold">
-          {item ? "Изменить запись" : "Новая запись"}
+          {item ? copy("Изменить запись") : copy("Новая запись")}
         </h2>
       )}
       {!item && primaryKey.type === "text" && (
@@ -272,7 +247,7 @@ export function ItemForm({
             className="h-9 font-mono"
           />
           <p className="text-xs text-muted-foreground">
-            Укажите уникальный строковый ключ записи.
+            {copy("Укажите уникальный строковый ключ записи. ")}
           </p>
         </div>
       )}
@@ -287,99 +262,76 @@ export function ItemForm({
             onClick={() => setShowHidden(!showHidden)}
           >
             {showHidden
-              ? "Применить условия видимости"
-              : "Показать все доступные поля"}
+              ? copy("Применить условия видимости")
+              : copy("Показать все доступные поля")}
           </Button>
         </div>
       )}
       <ConfiguredFieldLayout
         key={issue.attempt}
-        fields={fields}
+        fields={[
+          ...fields.filter(
+            (f) => !f.presentation?.rules?.hidden || forced.has(f.name),
+          ),
+          ...aliasFields.filter(
+            (f) => !f.presentation?.rules?.hidden || forced.has(f.name),
+          ),
+        ]}
         layout={formLayout}
         values={conditionValues}
         forced={forced}
         reveal={issue.field}
       >
-        {(field) => (
-          <>
-            <Label
-              htmlFor={`${formId}-${field.name}`}
-              className={field.presentation?.label ? undefined : "font-mono"}
-            >
-              {field.presentation?.label || field.name}
-              {!readOnlyFields.includes(field.name) &&
-                (field.required || !field.nullable) &&
-                field.defaultValue === undefined && (
-                  <span aria-label="значение необходимо"> *</span>
-                )}
-              {field.type === "datetime" &&
-                !readOnlyFields.includes(field.name) && (
-                  <span className="ml-2 font-sans text-xs text-muted-foreground">
-                    UTC
-                  </span>
-                )}
-            </Label>
-            {readOnlyFields.includes(field.name) && item ? (
-              <ItemReadonlyField
-                field={field}
-                item={item}
-                catalog={catalog}
-                onOpenRelated={onOpenRelated}
-              />
-            ) : (
-              <ItemFieldInput
-                field={field}
-                id={`${formId}-${field.name}`}
-                value={values[field.name]}
-                catalog={catalog}
-                creating={!item}
-                onChange={(value) => {
-                  setValues((current) => ({ ...current, [field.name]: value }));
-                  if (field.relation?.kind === "m2o")
-                    onReferenceChange?.(field.name, value);
-                }}
-                onOpenRelated={onOpenRelated}
-                onBusy={(busy) => {
-                  setUploading(busy);
-                  onBusyChange?.(busy);
-                }}
-                disabled={
-                  pending ||
-                  uploading ||
-                  (preview && ["file", "files"].includes(field.type))
-                }
-                container={portalContainer}
-                required={
-                  !item &&
-                  (field.required || !field.nullable) &&
-                  field.defaultValue === undefined
-                }
-              />
-            )}
-            {field.presentation?.description && (
-              <p
-                id={`${formId}-${field.name}-help`}
-                className="whitespace-pre-wrap text-xs text-muted-foreground"
-              >
-                {field.presentation.description}
-              </p>
-            )}
-            {field.type === "datetime" &&
-              !readOnlyFields.includes(field.name) && (
-                <p className="text-xs text-muted-foreground">
-                  Время UTC, без пересчёта из часового пояса устройства.
-                </p>
-              )}
-            {!item && field.defaultValue !== undefined && (
+        {(field) =>
+          field.type === "alias" ? (
+            (renderAlias?.(field) ?? (
               <p className="text-xs text-muted-foreground">
-                По умолчанию:{" "}
-                {field.presentation?.options?.find(
-                  (option) => option.value === field.defaultValue,
-                )?.label ?? displayValue(field.defaultValue, field.type)}
+                {copy("Связанные записи появятся после сохранения. ")}
               </p>
-            )}
-          </>
-        )}
+            ))
+          ) : (
+            <ItemFormField
+              field={field}
+              item={item}
+              formId={formId}
+              readonly={
+                readOnlyFields.includes(field.name) || fieldIsReadonly(field)
+              }
+              required={fieldIsRequired(field, conditionValues)}
+              value={values[field.name]}
+              draftValues={conditionValues}
+              catalog={catalog}
+              onOpenRelated={onOpenRelated}
+              container={portalContainer}
+              disabled={
+                pending ||
+                uploading ||
+                (preview && ["file", "files"].includes(field.type))
+              }
+              onBusy={(busy) => {
+                setUploading(busy);
+                onBusyChange?.(busy);
+              }}
+              onChange={(value) => {
+                const next = changeFieldDraft(
+                  fields,
+                  values,
+                  field.name,
+                  value,
+                );
+                setValues(next);
+                for (const candidate of fields) {
+                  if (
+                    candidate.relation?.kind === "m2o" &&
+                    next[candidate.name] !== values[candidate.name]
+                  ) {
+                    onReferenceChange?.(candidate.name, next[candidate.name]);
+                  }
+                }
+              }}
+            />
+          )
+        }
       </ConfiguredFieldLayout>
       {!hideActions && (
         <ItemFormActions
@@ -394,7 +346,7 @@ export function ItemForm({
           role="alert"
           className="text-sm text-destructive"
         >
-          {message}
+          {copy(message)}
         </p>
       )}
     </form>

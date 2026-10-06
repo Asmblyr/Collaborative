@@ -20,7 +20,7 @@ export async function removePresentationField(
     ? row.form_layout.tabs.flatMap((tab) => [...formFields(tab.children)])
     : [];
   // Conditions can refer to an unplaced field, so include all still-existing columns.
-  const columns = await database("information_schema.columns")
+  const columns = await database("public.asmblyr_columns")
     .where({ table_schema: "public", table_name: collection })
     .select<{ column_name: string }[]>("column_name");
   const form = reconcileForm(

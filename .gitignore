@@ -4,6 +4,7 @@ node_modules/
 dist/
 .asmblyr/
 .next/
+.next-visual/
 .turbo/
 *.tsbuildinfo
 apps/ui/src/generated/plugin-ui.ts

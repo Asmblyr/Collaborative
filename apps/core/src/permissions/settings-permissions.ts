@@ -2,7 +2,7 @@ import {
   settingsSections,
   type SettingsPermissionInput,
   type SettingsSection,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { Knex } from "knex";
 import { PermissionInputError } from "./validation.js";
 

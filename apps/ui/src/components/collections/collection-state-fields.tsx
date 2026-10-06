@@ -3,11 +3,11 @@
 import {
   defaultCollectionState,
   type CollectionState,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,8 +15,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type { Collection } from "@/components/items/types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 type StateOption = CollectionState["statuses"][number];
 const colors: {
@@ -45,6 +46,8 @@ export function CollectionStateFields({
   disabled: boolean;
   container: HTMLElement | null;
 }) {
+  const copy = useUiCopy();
+
   const existing = collection.fields.find((field) => field.name === "status");
   const incompatible =
     collection.primaryKey.name === "status" ||
@@ -72,7 +75,7 @@ export function CollectionStateFields({
         ...value.statuses,
         {
           value: `state_${number}`,
-          label: "Новое состояние",
+          label: copy("Новое состояние"),
           color: "blue",
           hidden: false,
         },
@@ -93,16 +96,24 @@ export function CollectionStateFields({
         />
         <div className="space-y-1">
           <Label htmlFor="system-state-enabled">
-            Системное поле «Состояние»
+            {copy("Системное поле «Состояние» ")}
           </Label>
           <p className="text-xs leading-relaxed text-muted-foreground">
             {incompatible
-              ? "Имя status уже занято несовместимым полем. Для состояния нужно обычное текстовое поле."
+              ? copy(
+                  "Имя status уже занято несовместимым полем. Для состояния нужно обычное текстовое поле.",
+                )
               : collection.state
-                ? "Структура status защищена. Значение можно менять в редакторе записи и через API при наличии прав."
+                ? copy(
+                    "Структура status защищена. Значение можно менять в редакторе записи и через API при наличии прав.",
+                  )
                 : existing
-                  ? "Используем существующее поле status, сохранив значения и пустые состояния. Все используемые коды должны быть в списке ниже."
-                  : "Добавим status. Существующие записи получат выбранное состояние по умолчанию."}
+                  ? copy(
+                      "Используем существующее поле status, сохранив значения и пустые состояния. Все используемые коды должны быть в списке ниже.",
+                    )
+                  : copy(
+                      "Добавим status. Существующие записи получат выбранное состояние по умолчанию.",
+                    )}
           </p>
         </div>
       </div>
@@ -110,10 +121,13 @@ export function CollectionStateFields({
         <>
           <div className="space-y-3">
             <div>
-              <h3 className="text-sm font-medium">Состояния записей</h3>
+              <h3 className="text-sm font-medium">
+                {copy("Состояния записей")}
+              </h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                «В списке» определяет начальный фильтр таблицы. Скрытые записи
-                можно показать, изменив фильтр.
+                {copy(
+                  "«В списке» определяет начальный фильтр таблицы. Скрытые записи можно показать, изменив фильтр. ",
+                )}
               </p>
             </div>
             {value.statuses.map((status, index) => (
@@ -127,7 +141,9 @@ export function CollectionStateFields({
                     className={`size-2.5 shrink-0 rounded-full ${colors.find((color) => color.value === status.color)?.className}`}
                   />
                   <Input
-                    aria-label={`Название состояния ${index + 1}`}
+                    aria-label={copy("Название состояния {{value0}}", {
+                      value0: index + 1,
+                    })}
                     value={status.label}
                     maxLength={100}
                     required
@@ -141,7 +157,9 @@ export function CollectionStateFields({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Удалить состояние ${status.label}`}
+                    aria-label={copy("Удалить состояние {{value0}}", {
+                      value0: status.label,
+                    })}
                     disabled={
                       disabled ||
                       value.statuses.length === 1 ||
@@ -163,7 +181,7 @@ export function CollectionStateFields({
                       htmlFor={`state-code-${index}`}
                       className="text-xs text-muted-foreground"
                     >
-                      Код в API
+                      {copy("Код в API ")}
                     </Label>
                     <Input
                       id={`state-code-${index}`}
@@ -183,7 +201,7 @@ export function CollectionStateFields({
                       htmlFor={`state-color-${index}`}
                       className="text-xs text-muted-foreground"
                     >
-                      Цвет
+                      {copy("Цвет ")}
                     </Label>
                     <Select
                       value={status.color}
@@ -229,7 +247,7 @@ export function CollectionStateFields({
                       htmlFor={`state-visible-${index}`}
                       className="whitespace-nowrap text-xs"
                     >
-                      В списке
+                      {copy("В списке ")}
                     </Label>
                   </div>
                 </div>
@@ -243,15 +261,18 @@ export function CollectionStateFields({
               onClick={addStatus}
             >
               <Plus className="size-4" />
-              Добавить состояние
+              {copy("Добавить состояние ")}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Код нельзя удалить или заменить, пока его используют записи.
-              Название и цвет можно менять свободно.
+              {copy(
+                "Код нельзя удалить или заменить, пока его используют записи. Название и цвет можно менять свободно. ",
+              )}
             </p>
           </div>
           <div className="space-y-2 border-t pt-4">
-            <Label htmlFor="state-default">Состояние новой записи</Label>
+            <Label htmlFor="state-default">
+              {copy("Состояние новой записи")}
+            </Label>
             <Select
               value={value.defaultValue}
               disabled={disabled}

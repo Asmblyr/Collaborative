@@ -1,4 +1,4 @@
-import type { AssistantSelection } from "@asmblyr/contracts";
+import type { AssistantSelection } from "@asmblyr-collaborative/contracts";
 import { captureSelection } from "./selections.js";
 import { aggregateGroupFilter } from "../tools/aggregate-filter.js";
 

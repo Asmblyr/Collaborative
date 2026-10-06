@@ -9,6 +9,7 @@ interface EditableFieldRow {
   is_nullable: "YES" | "NO";
   required: boolean;
   data_type: string;
+  character_maximum_length: number | null;
   semantic_type: string | null;
   default_value: JsonValue;
   presentation: FieldPresentation | null;
@@ -22,9 +23,9 @@ export async function readEditableField(
 ) {
   const result = await database.raw<{ rows: EditableFieldRow[] }>(
     `
-    SELECT c.is_nullable, c.data_type, fm.semantic_type, fm.default_value, fm.presentation,
+    SELECT c.is_nullable, c.data_type, c.character_maximum_length, fm.semantic_type, fm.default_value, fm.presentation,
       COALESCE(fm.required, FALSE) AS required, target.primary_key_type AS relation_key_type
-    FROM information_schema.columns AS c
+    FROM public.asmblyr_columns AS c
     LEFT JOIN public.asmblyr_field_metadata AS fm
       ON fm.collection_name = c.table_name AND fm.field_name = c.column_name
     LEFT JOIN public.asmblyr_relations AS r

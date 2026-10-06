@@ -1,26 +1,19 @@
-import { richTextSanitizerOptions } from "@asmblyr/contracts";
+"use client";
+
+import { safeContentUrl } from "./content-url";
+export { safeContentUrl } from "./content-url";
+import { richTextSanitizerOptions } from "@asmblyr-collaborative/contracts";
 import Markdown from "react-markdown";
 import sanitizeHtml from "sanitize-html";
 import type { CollectionField, ItemValue } from "./types";
 import { displayValue } from "./item-display";
 import { PresentedValue } from "./presented-value";
+import { TagsValue } from "./tags-value";
 import { PluginFieldDisplay } from "@/components/plugins/field-display";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function safeContentHtml(value: string) {
   return sanitizeHtml(value, richTextSanitizerOptions);
-}
-export function safeContentUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol) &&
-      !url.username &&
-      !url.password &&
-      !/\s/.test(value)
-      ? value
-      : undefined;
-  } catch {
-    return undefined;
-  }
 }
 export const contentClass =
   "break-words text-sm leading-relaxed [&_p]:my-2 [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-3 [&_h3]:font-semibold [&_ul]:list-disc [&_ol]:list-decimal [&_li]:ml-5 [&_a]:text-primary [&_a]:underline [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_blockquote]:border-l-2 [&_blockquote]:pl-3";
@@ -32,7 +25,18 @@ export function ContentValue({
   field: Pick<CollectionField, "type" | "presentation">;
   value: ItemValue;
 }) {
-  const text = displayValue(value, field.type);
+  const copy = useUiCopy();
+
+  if (field.presentation?.sensitive)
+    return (
+      <span aria-label={copy("Чувствительное значение")}>
+        {value == null || value === "" ? copy("Не задано") : "••••••••"}
+      </span>
+    );
+  const text = displayValue(value, field.type, copy);
+  if (field.presentation?.interface === "tags") {
+    return <TagsValue value={value} />;
+  }
   if (field.presentation?.extension) {
     return (
       <PluginFieldDisplay
@@ -64,7 +68,9 @@ export function ContentValue({
     return (
       <div className="space-y-3">
         {!value.length && (
-          <p className="text-sm text-muted-foreground">Нет элементов</p>
+          <p className="text-sm text-muted-foreground">
+            {copy("Нет элементов")}
+          </p>
         )}
         {value.map((row, index) => (
           <dl
@@ -72,7 +78,8 @@ export function ContentValue({
             className="space-y-3 rounded-xl border p-4"
           >
             <div className="text-xs text-muted-foreground">
-              Элемент {index + 1}
+              {copy("Элемент ")}
+              {index + 1}
             </div>
             {repeater.fields.map((child) => (
               <div key={child.name}>

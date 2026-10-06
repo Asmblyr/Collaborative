@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { ArrowDown, ArrowUp, Ellipsis, Settings2, Unlink } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +23,7 @@ import { useTableRelationLabels } from "./use-table-relation-labels";
 import type { RelationResult, RelationRow } from "./use-relation-panel";
 import type { Collection } from "./types";
 import { useDraftPreviews } from "./record-draft-context";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function RelationRows({
   result: source,
@@ -45,6 +46,8 @@ export function RelationRows({
   onDetach: (row: RelationRow) => void;
   onSort: (name: string) => void;
 }) {
+  const copy = useUiCopy();
+
   const previews = useDraftPreviews();
   const draftRows = useMemo(
     () =>
@@ -83,7 +86,9 @@ export function RelationRows({
           variant="ghost"
           size="icon-sm"
           disabled={pending}
-          aria-label={`Действия со связью ${row.label}`}
+          aria-label={copy("Действия со связью {{value0}}", {
+            value0: row.label,
+          })}
           onClick={(e) => e.stopPropagation()}
         >
           <Ellipsis />
@@ -97,13 +102,13 @@ export function RelationRows({
         {onLink && (
           <DropdownMenuItem onSelect={() => onLink(row)}>
             <Settings2 />
-            Параметры связи
+            {copy("Параметры связи ")}
           </DropdownMenuItem>
         )}
         {result.abilities.detach && (
           <DropdownMenuItem onSelect={() => onDetach(row)}>
             <Unlink />
-            Отвязать запись
+            {copy("Отвязать запись ")}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
@@ -150,6 +155,7 @@ export function RelationRows({
                     : undefined
               }
               aria-sort={
+                result.page.order !== "relevance" &&
                 result.page.sort === column.name
                   ? result.page.direction === "asc"
                     ? "ascending"
@@ -165,7 +171,8 @@ export function RelationRows({
                 onClick={() => onSort(column.name)}
               >
                 {column.label}
-                {result.page.sort === column.name &&
+                {result.page.order !== "relevance" &&
+                  result.page.sort === column.name &&
                   (result.page.direction === "asc" ? (
                     <ArrowUp className="size-3" />
                   ) : (
@@ -176,7 +183,7 @@ export function RelationRows({
           ))}
           {hasActions && (
             <TableHead className="sticky right-0 w-10 bg-card">
-              <span className="sr-only">Действия</span>
+              <span className="sr-only">{copy("Действия")}</span>
             </TableHead>
           )}
         </TableRow>
@@ -187,7 +194,9 @@ export function RelationRows({
             key={row.linkId}
             className="cursor-pointer focus-visible:outline focus-visible:outline-ring"
             tabIndex={0}
-            aria-label={`Открыть запись ${rowLabel(row)}`}
+            aria-label={copy("Открыть запись {{value0}}", {
+              value0: rowLabel(row),
+            })}
             onClick={() => open(row)}
             onKeyDown={(event) => {
               if (

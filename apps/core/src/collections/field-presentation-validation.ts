@@ -1,10 +1,13 @@
-import type { FieldPresentation } from "@asmblyr/contracts";
-export type { FieldPresentation } from "@asmblyr/contracts";
+import type { FieldPresentation } from "@asmblyr-collaborative/contracts";
+export type { FieldPresentation } from "@asmblyr-collaborative/contracts";
+import { parseLabelTranslations } from "./translation-validation.js";
 import { CollectionInputError } from "./validation.js";
 import { parseConstraints } from "./content-values.js";
 import { parseRelationPresentation } from "./relation-presentation.js";
 import { parseRepeater } from "./repeater.js";
 import { parseValueDisplay } from "./value-display.js";
+import { parseFieldChoices } from "./field-choices.js";
+import { parseFieldRules, parseRelationChoiceFilter } from "./field-rules.js";
 import { parseFieldExtension } from "./field-extension.js";
 
 export function parseFieldPresentation(
@@ -29,6 +32,10 @@ export function parseFieldPresentation(
     "repeater",
     "display",
     "extension",
+    "rules",
+    "relationFilter",
+    "sensitive",
+    "translations",
   ];
   if (Object.keys(value).some((key) => !allowed.includes(key))) {
     throw new CollectionInputError("Unknown field presentation setting");
@@ -66,6 +73,7 @@ export function parseFieldPresentation(
       "textarea",
       "select",
       "multiselect",
+      "tags",
       "markdown",
       "richtext",
       "url",
@@ -74,14 +82,25 @@ export function parseFieldPresentation(
     (["markdown", "richtext", "url"].includes(editor) && type !== "text") ||
     (editor === "textarea" && type !== "text") ||
     (editor === "input" &&
-      !["text", "email", "integer", "decimal"].includes(type)) ||
-    (editor === "select" && type !== "text") ||
-    (["multiselect", "repeater"].includes(editor) && type !== "json")
+      !["text", "email", "integer", "bigint", "date", "decimal"].includes(
+        type,
+      )) ||
+    (editor === "select" && !["text", "integer"].includes(type)) ||
+    (["multiselect", "repeater", "tags"].includes(editor) && type !== "json")
   ) {
     throw new CollectionInputError(
       "The selected interface is incompatible with this field type",
     );
   }
+  if (value.relationFilter !== undefined && type !== "relation")
+    throw new CollectionInputError("Choice filters require an M2O field");
+  if (
+    value.sensitive !== undefined &&
+    (typeof value.sensitive !== "boolean" || !["text", "email"].includes(type))
+  )
+    throw new CollectionInputError(
+      "Sensitive history requires a text or email field",
+    );
   const width = value.width ?? "full";
   if (width !== "full" && width !== "half")
     throw new CollectionInputError("Invalid field width");
@@ -98,36 +117,7 @@ export function parseFieldPresentation(
   }
   let options: FieldPresentation["options"];
   if (editor === "select" || editor === "multiselect") {
-    if (
-      !Array.isArray(value.options) ||
-      !value.options.length ||
-      value.options.length > 100 ||
-      value.options.some(
-        (v) =>
-          !v ||
-          typeof v !== "object" ||
-          Array.isArray(v) ||
-          Object.keys(v).some((key) => !["value", "label"].includes(key)) ||
-          typeof v.value !== "string" ||
-          !v.value.trim() ||
-          v.value.length > 120 ||
-          v.value.includes("\0") ||
-          typeof v.label !== "string" ||
-          !v.label.trim() ||
-          v.label.length > 120 ||
-          v.label.includes("\0"),
-      )
-    ) {
-      throw new CollectionInputError(
-        "Supply 1–100 distinct choices with value and label",
-      );
-    }
-    options = value.options.map((v: { value: string; label: string }) => ({
-      value: v.value,
-      label: v.label.trim(),
-    }));
-    if (new Set(options.map((o) => o.value)).size !== options.length)
-      throw new CollectionInputError("Duplicate choice values");
+    options = parseFieldChoices(value.options, type);
   } else if ("options" in value)
     throw new CollectionInputError("Choices require a select interface");
   if (value.repeater !== undefined && editor !== "repeater")
@@ -135,6 +125,16 @@ export function parseFieldPresentation(
       "Repeater settings require the repeater interface",
     );
   return {
+    ...(value.translations === undefined
+      ? {}
+      : { translations: parseLabelTranslations(value.translations) }),
+    ...(value.rules === undefined
+      ? {}
+      : { rules: parseFieldRules(value.rules) }),
+    ...(value.relationFilter === undefined
+      ? {}
+      : { relationFilter: parseRelationChoiceFilter(value.relationFilter) }),
+    ...(value.sensitive === undefined ? {} : { sensitive: value.sensitive }),
     label: text("label", 120),
     description: text("description", 1000),
     placeholder: text("placeholder", 255),

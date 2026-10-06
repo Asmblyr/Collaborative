@@ -2,8 +2,11 @@ import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
-import { scanMigrationFiles, migrationNamePattern } from "@asmblyr/kit/node";
-import type { MigrationDefinition } from "@asmblyr/kit";
+import {
+  scanMigrationFiles,
+  migrationNamePattern,
+} from "@asmblyr-collaborative/kit/node";
+import type { MigrationDefinition } from "@asmblyr-collaborative/kit";
 import { isRecord } from "./definition.js";
 
 export interface PluginMigration extends MigrationDefinition {

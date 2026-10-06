@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type { ApplicationDraft, OAuthUser } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ApplicationAccess({
   draft,
@@ -25,6 +26,8 @@ export function ApplicationAccess({
   users: OAuthUser[];
   portal: HTMLDialogElement | null;
 }) {
+  const copy = useUiCopy();
+
   const [search, setSearch] = useState("");
   const visibleUsers = users.filter((user) =>
     user.email.toLowerCase().includes(search.trim().toLowerCase()),
@@ -34,7 +37,7 @@ export function ApplicationAccess({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="oauth-access-mode">Кто может войти</Label>
+        <Label htmlFor="oauth-access-mode">{copy("Кто может войти")}</Label>
         <Select
           value={draft.accessMode}
           onValueChange={(value) =>
@@ -51,20 +54,30 @@ export function ApplicationAccess({
             <SelectValue />
           </SelectTrigger>
           <SelectContent container={portal}>
-            <SelectItem value="all">Все активные пользователи</SelectItem>
-            <SelectItem value="selected">Выбранные пользователи</SelectItem>
-            <SelectItem value="domains">По домену почты</SelectItem>
+            <SelectItem value="all">
+              {copy("Все активные пользователи")}
+            </SelectItem>
+            <SelectItem value="selected">
+              {copy("Выбранные пользователи")}
+            </SelectItem>
+            <SelectItem value="domains">{copy("По домену почты")}</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs leading-relaxed text-muted-foreground">
           {draft.accessMode === "all"
-            ? "Любой активный пользователь Asmblyr, включая тех, кто появится позже. Каждый подтверждает передачу профиля при входе."
-            : "Войти смогут только активные пользователи, которым разрешён доступ ниже."}
+            ? copy(
+                "Любой активный пользователь Asmblyr, включая тех, кто появится позже. Каждый подтверждает передачу профиля при входе.",
+              )
+            : copy(
+                "Войти смогут только активные пользователи, которым разрешён доступ ниже.",
+              )}
         </p>
       </div>
       {byDomain && (
         <div className="space-y-2">
-          <Label htmlFor="oauth-email-domains">Разрешённые домены почты</Label>
+          <Label htmlFor="oauth-email-domains">
+            {copy("Разрешённые домены почты")}
+          </Label>
           <Textarea
             id="oauth-email-domains"
             rows={3}
@@ -82,9 +95,9 @@ export function ApplicationAccess({
             id="oauth-domains-help"
             className="text-xs leading-relaxed text-muted-foreground"
           >
-            По одному домену на строку. Можно указать @company.ru. Поддомены
-            добавляйте отдельно: team.company.ru. Используется почта профиля
-            Asmblyr; правило не подтверждает владение адресом.
+            {copy(
+              "По одному домену на строку. Можно указать @company.ru. Поддомены добавляйте отдельно: team.company.ru. Используется почта профиля Asmblyr; правило не подтверждает владение адресом. ",
+            )}
           </p>
         </div>
       )}
@@ -92,17 +105,23 @@ export function ApplicationAccess({
         <div className="space-y-3">
           <div>
             <h3 className="text-sm font-medium">
-              {byDomain ? "Дополнительно разрешить" : "Пользователи"}
+              {byDomain
+                ? copy("Дополнительно разрешить")
+                : copy("Пользователи")}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {byDomain
-                ? "Эти пользователи смогут войти с любой почтой. Можно никого не выбирать."
-                : "Пустой список запрещает вход всем, включая суперпользователя."}
+                ? copy(
+                    "Эти пользователи смогут войти с любой почтой. Можно никого не выбирать.",
+                  )
+                : copy(
+                    "Пустой список запрещает вход всем, включая суперпользователя.",
+                  )}
             </p>
           </div>
           <Input
-            aria-label="Найти пользователя по почте"
-            placeholder="Найти пользователя по почте"
+            aria-label={copy("Найти пользователя по почте")}
+            placeholder={copy("Найти пользователя по почте")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -128,7 +147,7 @@ export function ApplicationAccess({
                   {user.email}
                   {user.status !== "active" && (
                     <span className="ml-2 text-xs text-muted-foreground">
-                      Неактивен · вход запрещён
+                      {copy("Неактивен · вход запрещён ")}
                     </span>
                   )}
                 </span>
@@ -136,12 +155,13 @@ export function ApplicationAccess({
             ))}
             {!visibleUsers.length && (
               <p className="p-3 text-sm text-muted-foreground">
-                Пользователи не найдены
+                {copy("Пользователи не найдены ")}
               </p>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Выбрано: {draft.userIds.length}
+            {copy("Выбрано: ")}
+            {draft.userIds.length}
           </p>
         </div>
       )}

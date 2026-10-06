@@ -1,7 +1,9 @@
+"use client";
+
 import { useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Link2, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -14,6 +16,7 @@ import {
   type FilterScope,
 } from "./item-filter-options";
 import { useFilterRelationItems } from "./use-filter-relation-items";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemFilterRelationValue({
   condition,
@@ -26,6 +29,8 @@ export function ItemFilterRelationValue({
   autoFocus: boolean;
   onChange: (value: string | string[]) => void;
 }) {
+  const copy = useUiCopy();
+
   const [open, setOpen] = useState(autoFocus);
   const multiple = hasMultipleValues(condition.op);
   const selected = Array.isArray(condition.value)
@@ -56,7 +61,7 @@ export function ItemFilterRelationValue({
           type="button"
           variant="ghost"
           size="sm"
-          aria-label={"Выбранные записи связи " + scope.id}
+          aria-label={copy("Выбранные записи связи ") + scope.id}
           className="h-8 min-w-0 max-w-full justify-start gap-1.5 px-2 font-normal"
         >
           <Link2
@@ -68,7 +73,8 @@ export function ItemFilterRelationValue({
               "truncate " + (!selected.length ? "text-muted-foreground" : "")
             }
           >
-            {summary[0] ?? (multiple ? "выбрать записи…" : "выбрать запись…")}
+            {summary[0] ??
+              (multiple ? copy("выбрать записи…") : copy("выбрать запись…"))}
           </span>
           {selected.length > 1 && (
             <span className="shrink-0 text-xs text-muted-foreground">
@@ -86,8 +92,8 @@ export function ItemFilterRelationValue({
           <p className="text-sm font-medium">{scope.collection}</p>
           <p className="text-xs text-muted-foreground">
             {multiple
-              ? `Выбрано ${selected.length} из 20`
-              : "Выберите одну запись"}
+              ? copy("Выбрано {{value0}} из 20", { value0: selected.length })
+              : copy("Выберите одну запись")}
           </p>
         </div>
         {multiple && selected.length > 0 && (
@@ -103,7 +109,9 @@ export function ItemFilterRelationValue({
                   variant="ghost"
                   size="icon-sm"
                   className="h-6 w-6 shrink-0"
-                  aria-label={"Убрать запись " + (items.labels.get(id) ?? id)}
+                  aria-label={
+                    copy("Убрать запись ") + (items.labels.get(id) ?? id)
+                  }
                   onClick={() => toggle(id)}
                 >
                   <X
@@ -119,14 +127,14 @@ export function ItemFilterRelationValue({
           query={items.query}
           onQueryChange={items.setQuery}
           maxLength={100}
-          placeholder={"Найти запись в " + scope.collection}
+          placeholder={copy("Найти запись в ") + scope.collection}
         >
           {items.loading ? (
             <p
               role="status"
               className="p-3 text-xs text-muted-foreground"
             >
-              Загрузка записей…
+              {copy("Загрузка записей… ")}
             </p>
           ) : items.error ? (
             <div
@@ -140,12 +148,14 @@ export function ItemFilterRelationValue({
                 size="sm"
                 onClick={items.retry}
               >
-                Повторить
+                {copy("Повторить ")}
               </Button>
             </div>
           ) : items.options.length === 0 ? (
             <p className="p-3 text-xs text-muted-foreground">
-              {items.query ? "Ничего не найдено" : "В коллекции нет записей"}
+              {items.query
+                ? copy("Ничего не найдено")
+                : copy("В коллекции нет записей")}
             </p>
           ) : (
             items.options.map(({ id, label }) => {
@@ -172,7 +182,7 @@ export function ItemFilterRelationValue({
                   <Checkbox
                     checked={checked}
                     disabled={disabled}
-                    aria-label={"Выбрать " + label}
+                    aria-label={copy("Выбрать ") + label}
                     onCheckedChange={() => toggle(id)}
                   />
                   {content}
@@ -211,7 +221,7 @@ export function ItemFilterRelationValue({
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label="Предыдущие записи"
+              aria-label={copy("Предыдущие записи")}
               disabled={items.loading || items.page === 1}
               onClick={() => items.setPage(items.page - 1)}
             >
@@ -224,7 +234,7 @@ export function ItemFilterRelationValue({
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label="Следующие записи"
+              aria-label={copy("Следующие записи")}
               disabled={items.loading || items.page * 25 >= items.total}
               onClick={() => items.setPage(items.page + 1)}
             >
@@ -239,14 +249,14 @@ export function ItemFilterRelationValue({
               disabled={!selected.length}
               onClick={() => onChange(multiple ? [] : "")}
             >
-              Очистить
+              {copy("Очистить ")}
             </Button>
             <Button
               type="button"
               size="sm"
               onClick={() => setOpen(false)}
             >
-              Готово
+              {copy("Готово ")}
             </Button>
           </div>
         </div>

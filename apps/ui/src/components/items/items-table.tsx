@@ -2,7 +2,7 @@
 
 import { useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -16,6 +16,9 @@ import { ItemTableValue } from "./item-table-value";
 import { useTableRelationLabels } from "./use-table-relation-labels";
 import type { Collection, Item, ItemPage } from "./types";
 import type { ItemColumn } from "./use-item-columns";
+import { useUiCopy } from "@/lib/ui-copy";
+import { defaultColumnWidth } from "./column-width";
+import { ColumnResizeHandle } from "./column-resize-handle";
 
 interface ItemsTableProps {
   collection: Collection;
@@ -23,6 +26,7 @@ interface ItemsTableProps {
   items: Item[];
   recordLabels?: Record<string, string>;
   columns: ItemColumn[];
+  widths: Record<string, number>;
   page: ItemPage;
   selected: Set<string>;
   disabled: boolean;
@@ -31,6 +35,7 @@ interface ItemsTableProps {
   onOpen: (item: Item) => void;
   onSort: (name: string) => void;
   onMove: (name: string, target: string, after?: boolean) => void;
+  onResize: (name: string, width: number | undefined) => void;
 }
 
 export function ItemsTable({
@@ -39,6 +44,7 @@ export function ItemsTable({
   items,
   recordLabels,
   columns,
+  widths,
   page,
   selected,
   disabled,
@@ -47,7 +53,10 @@ export function ItemsTable({
   onOpen,
   onSort,
   onMove,
+  onResize,
 }: ItemsTableProps) {
+  const copy = useUiCopy();
+
   const dragged = useRef<string | null>(null);
   const [drop, setDrop] = useState<{ name: string; after: boolean } | null>(
     null,
@@ -59,19 +68,8 @@ export function ItemsTable({
   const labelField = itemLabelField(collection);
   const labels = useTableRelationLabels(catalog, items, columns);
   const columnWidth = (column: ItemColumn) =>
-    column.name === labelField && column.name !== collection.primaryKey.name
-      ? 360
-      : column.name === collection.primaryKey.name
-        ? 148
-        : column.relation
-          ? 260
-          : column.type === "datetime"
-            ? 220
-            : column.type === "email"
-              ? 224
-              : column.type === "boolean"
-                ? 112
-                : 160;
+    (Object.hasOwn(widths, column.name) ? widths[column.name] : undefined) ??
+    defaultColumnWidth(column, labelField, collection.primaryKey.name);
 
   function over(event: DragEvent<HTMLTableCellElement>, name: string) {
     if (!dragged.current || dragged.current === name) return;
@@ -93,7 +91,9 @@ export function ItemsTable({
   return (
     <div className="min-h-0 flex-1 [&>[data-slot=table-container]]:h-full [&>[data-slot=table-container]]:overflow-auto">
       <Table
-        aria-label={`Записи коллекции ${collection.name}`}
+        aria-label={copy("Записи коллекции {{value0}}", {
+          value0: collection.name,
+        })}
         className="table-fixed"
         style={{
           minWidth:
@@ -106,14 +106,11 @@ export function ItemsTable({
           {columns.map((column) => (
             <col
               key={column.name}
-              style={
-                column.name === labelField &&
-                column.name !== collection.primaryKey.name
-                  ? undefined
-                  : { width: columnWidth(column) }
-              }
+              data-column-size={column.name}
+              style={{ width: columnWidth(column) }}
             />
           ))}
+          <col />
         </colgroup>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -122,7 +119,7 @@ export function ItemsTable({
               className="sticky top-0 left-0 z-30 bg-card px-4"
             >
               <Checkbox
-                aria-label="Выбрать все записи на странице"
+                aria-label={copy("Выбрать все записи на странице")}
                 checked={
                   selectedOnPage === items.length
                     ? true
@@ -141,6 +138,7 @@ export function ItemsTable({
                 draggable
                 data-column={column.name}
                 aria-sort={
+                  (page.order ?? "field") === "field" &&
                   page.sort === column.name
                     ? page.direction === "asc"
                       ? "ascending"
@@ -177,7 +175,10 @@ export function ItemsTable({
                   <button
                     type="button"
                     onKeyDown={(event) => keyboardMove(event, column.name)}
-                    aria-label={`Переместить столбец ${column.label}. Используйте стрелки влево и вправо.`}
+                    aria-label={copy(
+                      "Переместить столбец {{value0}}. Используйте стрелки влево и вправо.",
+                      { value0: column.label },
+                    )}
                     className="shrink-0 cursor-grab rounded p-1 text-muted-foreground opacity-40 hover:bg-muted group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
                   >
                     <GripVertical
@@ -189,11 +190,14 @@ export function ItemsTable({
                     type="button"
                     onClick={() => onSort(column.name)}
                     className="flex min-w-0 items-center gap-1 rounded px-1 py-1 text-left hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-                    aria-label={`Сортировать по ${column.label}`}
+                    aria-label={copy("Сортировать по {{value0}}", {
+                      value0: column.label,
+                    })}
                     title={column.name}
                   >
                     <span className="truncate">{column.label}</span>
-                    {page.sort === column.name &&
+                    {(page.order ?? "field") === "field" &&
+                      page.sort === column.name &&
                       (page.direction === "asc" ? (
                         <ArrowUp
                           className="size-3"
@@ -207,8 +211,18 @@ export function ItemsTable({
                       ))}
                   </button>
                 </div>
+                <ColumnResizeHandle
+                  name={column.name}
+                  label={column.label}
+                  width={columnWidth(column)}
+                  onResize={onResize}
+                />
               </TableHead>
             ))}
+            <TableHead
+              aria-hidden="true"
+              className="sticky top-0 bg-card p-0"
+            />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -219,7 +233,10 @@ export function ItemsTable({
                 key={id}
                 tabIndex={disabled ? -1 : 0}
                 data-state={selected.has(id) ? "selected" : undefined}
-                aria-label={`Открыть запись ${recordLabels?.[id] ?? recordLabel(collection, item)} (${id})`}
+                aria-label={copy("Открыть запись {{value0}} ({{value1}})", {
+                  value0: recordLabels?.[id] ?? recordLabel(collection, item),
+                  value1: id,
+                })}
                 className="cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
                 onClick={() => {
                   if (!disabled) onOpen(item);
@@ -237,7 +254,11 @@ export function ItemsTable({
                   onClick={(event) => event.stopPropagation()}
                 >
                   <Checkbox
-                    aria-label={`Выбрать запись ${recordLabels?.[id] ?? recordLabel(collection, item)} (${id})`}
+                    aria-label={copy("Выбрать запись {{value0}} ({{value1}})", {
+                      value0:
+                        recordLabels?.[id] ?? recordLabel(collection, item),
+                      value1: id,
+                    })}
                     checked={selected.has(id)}
                     disabled={disabled}
                     onCheckedChange={(checked) =>
@@ -269,6 +290,10 @@ export function ItemsTable({
                     />
                   </TableCell>
                 ))}
+                <TableCell
+                  aria-hidden="true"
+                  className="p-0"
+                />
               </TableRow>
             );
           })}

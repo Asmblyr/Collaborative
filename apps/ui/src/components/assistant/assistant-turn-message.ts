@@ -4,8 +4,9 @@ import type { AssistantMessage } from "./assistant-types";
 export function replaceTurnMessage(
   messages: AssistantMessage[],
   reply: AssistantMessage,
+  previousId = reply.id,
 ): AssistantMessage[] {
-  const index = messages.findIndex((message) => message.id === reply.id);
+  const index = messages.findIndex((message) => message.id === previousId);
   if (index < 0) {
     return [...messages, reply];
   }

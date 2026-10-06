@@ -129,8 +129,19 @@ async function main() {
     "core-presence",
     "core-beta",
     "core-settings",
+    "core-localization",
+    "core-schema",
+    "core-tags",
+    "core-tables",
+    "core-materialized",
+    "core-visual",
     "core-security",
+    "core-integrations",
+    "core-connections",
     "core-row-permissions",
+    "core-search",
+    "core-performance",
+    "core-monitoring",
     "ui-unit",
   ];
   if (!suites.includes(suite)) throw new Error(`Unknown suite: ${suite}`);
@@ -140,6 +151,84 @@ async function main() {
       (name) => !name.endsWith("-ui.integration.test.ts"),
     );
     const selected = files.filter((name) => {
+      if (suite === "core-tags") {
+        return [
+          "test/tags.integration.test.ts",
+          "test/field-configuration.integration.test.ts",
+          "test/field-presentation.integration.test.ts",
+          "test/extended-fields.integration.test.ts",
+          "test/schema-export.integration.test.ts",
+        ].includes(name);
+      }
+      if (suite === "core-tables") {
+        return [
+          "test/preferences.integration.test.ts",
+          "test/table-views-workspaces.integration.test.ts",
+          "test/table-column-widths.integration.test.ts",
+        ].includes(name);
+      }
+      if (suite === "core-monitoring") {
+        return (
+          name.startsWith("test/monitoring.") ||
+          name === "test/http-access-surface.integration.test.ts"
+        );
+      }
+      if (suite === "core-performance") {
+        return name === "test/performance.integration.test.ts";
+      }
+      if (suite === "core-search") {
+        return /test\/(?:search(?:-relevance)?|relation-search|row-permissions|preferences|table-views-workspaces|assistant-context|assistant-selection|assistant-data-tools)[-.]/.test(
+          name,
+        );
+      }
+      if (suite === "core-materialized") {
+        return (
+          name.startsWith("test/materialized-") ||
+          [
+            "test/collections.integration.test.ts",
+            "test/schema-export.integration.test.ts",
+            "test/field-presentation.integration.test.ts",
+            "test/forms-displays.integration.test.ts",
+            "test/policy-configuration.integration.test.ts",
+            "test/record-draft.integration.test.ts",
+            "test/row-permissions.integration.test.ts",
+          ].includes(name)
+        );
+      }
+      if (suite === "core-connections") {
+        return name.startsWith("test/google-workspace");
+      }
+      if (suite === "core-integrations") {
+        return [
+          "test/integrations.integration.test.ts",
+          "test/secret-cipher.test.ts",
+          "test/files.integration.test.ts",
+          "test/files-access.integration.test.ts",
+          "test/assistant-settings.integration.test.ts",
+          "test/http-access-surface.integration.test.ts",
+        ].includes(name);
+      }
+      if (suite === "core-visual") {
+        return name === "test/visual-preview.integration.test.ts";
+      }
+      if (suite === "core-schema") {
+        return [
+          "test/schema-export.integration.test.ts",
+          "test/sdk-cli.integration.test.ts",
+          "test/sdk-plugin-contracts.integration.test.ts",
+        ].includes(name);
+      }
+      if (suite === "core-localization") {
+        return [
+          "test/translations.integration.test.ts",
+          "test/localization-migration.integration.test.ts",
+          "test/preferences.integration.test.ts",
+          "test/plugin-translations.test.ts",
+          "test/plugin-build.test.ts",
+          "test/presence.integration.test.ts",
+          "test/http-access-surface.integration.test.ts",
+        ].includes(name);
+      }
       if (suite === "core-beta") {
         return /test\/(?:passkeys|beta|files-access|http-access-surface|auth)\./.test(
           name,
@@ -187,10 +276,21 @@ async function main() {
         );
       return true;
     });
+    const settingsIndex = selected.indexOf(
+      "test/integrations.integration.test.ts",
+    );
+    if (settingsIndex !== -1) {
+      // Connection settings are installation-wide; test them without files left by other suites.
+      const installationTests = selected.splice(settingsIndex, 1);
+      await withTestDatabase((environment) =>
+        executeTests("core", installationTests, environment),
+      );
+    }
     if (selected.some((name) => name.endsWith(".integration.test.ts"))) {
       await withTestDatabase((environment) =>
         executeTests("core", selected, {
           ...environment,
+          ...(suite === "core-visual" ? { ASMBLYR_VISUAL_TEST: "1" } : {}),
           ...(suite === "core-lavinmq" ? { ASMBLYR_LAVINMQ_TEST: "1" } : {}),
         }),
       );

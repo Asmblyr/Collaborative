@@ -53,7 +53,7 @@ export function registerCredentialLimits(
     if (
       !db ||
       request.method !== "POST" ||
-      !/^\/auth\/(?:login|setup|service-token|federation-token|invitations\/(?:accept|claim)|passkeys\/(?:options|login)|sso\/)/.test(
+      !/^\/auth\/(?:login|setup|service-token|federation-token|invitations\/(?:accept|claim)|passkeys\/(?:options|login)|cli\/(?:authorize|token)|sso\/)/.test(
         request.url,
       )
     ) {

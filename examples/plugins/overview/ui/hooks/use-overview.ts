@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { PluginRequest } from "@asmblyr/kit/ui";
+import type { PluginRequest } from "@asmblyr-collaborative/kit/ui";
 import type { Overview } from "../../shared/overview.ts";
 
 export function useOverview(request: PluginRequest) {

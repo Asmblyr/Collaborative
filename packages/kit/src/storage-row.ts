@@ -1,4 +1,8 @@
-import type { ItemRecord, JsonValue } from "@asmblyr/contracts";
+import type { ItemRecord, JsonValue } from "@asmblyr-collaborative/contracts";
+import {
+  parseCalendarDate,
+  parseBigintString,
+} from "@asmblyr-collaborative/contracts";
 import type { CollectionDefinition } from "./collection.js";
 import type { CollectionRow } from "./collection-types.js";
 
@@ -11,6 +15,10 @@ function fieldValue(
   if (value === null && nullable) return null;
 
   switch (type) {
+    case "date":
+      return parseCalendarDate(value);
+    case "bigint":
+      return parseBigintString(value);
     case "text":
     case "email":
     case "uuid":

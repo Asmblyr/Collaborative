@@ -1,12 +1,5 @@
-export interface ServiceKey {
-  id: string;
-  name: string;
-  prefix: string;
-  createdAt: string;
-  expiresAt: string;
-  lastUsedAt: string | null;
-  revokedAt: string | null;
-}
+export type { ServiceKey } from "@asmblyr-collaborative/contracts";
+import type { ServiceKey } from "@asmblyr-collaborative/contracts";
 export interface ServiceAccount {
   id: string;
   name: string;

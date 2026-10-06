@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Copy, KeyRound } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,12 +11,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
-import { Badge } from "@/components/ui/badge";
+} from "@asmblyr-collaborative/kit/ui/select";
+import { ServiceKeyCard } from "./service-key-card";
 import { apiRequest } from "@/lib/api-request";
 import type { ServiceKey } from "./types";
-
-const date = (value: string) => new Date(value).toLocaleDateString("ru-RU");
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ServiceKeys({
   readOnly = false,
@@ -33,6 +32,7 @@ export function ServiceKeys({
   portalContainer: HTMLDialogElement | null;
   onBusy: (busy: boolean) => void;
 }) {
+  const copy = useUiCopy();
   const [keys, setKeys] = useState(initialKeys);
   const [name, setName] = useState("");
   const [days, setDays] = useState("90");
@@ -64,7 +64,9 @@ export function ServiceKeys({
       // Keep the dialog open until the user acknowledges the one-time credential.
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Не удалось создать ключ",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось создать ключ"),
       );
       onBusy(false);
     } finally {
@@ -92,7 +94,9 @@ export function ServiceKeys({
       setConfirm(null);
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Не удалось отозвать ключ",
+        error instanceof Error
+          ? error.message
+          : copy("Не удалось отозвать ключ"),
       );
     } finally {
       setPending(false);
@@ -103,22 +107,23 @@ export function ServiceKeys({
   return (
     <div className="space-y-6">
       <p className="text-sm leading-6 text-muted-foreground">
-        Создайте ключ для приложения или автоматизации. Несколько ключей
-        позволяют заменить старый без перерыва в работе.
+        {copy(
+          "Создайте ключ для приложения или автоматизации. Несколько ключей позволяют заменить старый без перерыва в работе. ",
+        )}
       </p>
       {secret ? (
         <section
           className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4"
-          aria-label="Новый сервисный ключ"
+          aria-label={copy("Новый сервисный ключ")}
         >
-          <h3 className="font-semibold">Сохраните ключ сейчас</h3>
+          <h3 className="font-semibold">{copy("Сохраните ключ сейчас")}</h3>
           <p className="text-sm text-muted-foreground">
-            После закрытия этого блока увидеть его повторно нельзя.
+            {copy("После закрытия этого блока увидеть его повторно нельзя. ")}
           </p>
           <Input
             readOnly
             value={secret}
-            aria-label="Сервисный ключ"
+            aria-label={copy("Сервисный ключ")}
             className="font-mono text-xs"
             onFocus={(event) => event.target.select()}
           />
@@ -132,13 +137,15 @@ export function ServiceKeys({
                   setCopied(true);
                 } catch {
                   setError(
-                    "Не удалось скопировать. Выделите и сохраните ключ вручную.",
+                    copy(
+                      "Не удалось скопировать. Выделите и сохраните ключ вручную.",
+                    ),
                   );
                 }
               }}
             >
               <Copy className="size-4" />
-              {copied ? "Скопировано" : "Копировать"}
+              {copied ? copy("Скопировано") : copy("Копировать")}
             </Button>
             <Button
               type="button"
@@ -147,7 +154,7 @@ export function ServiceKeys({
                 onBusy(false);
               }}
             >
-              Ключ сохранён
+              {copy("Ключ сохранён ")}
             </Button>
           </div>
         </section>
@@ -158,13 +165,13 @@ export function ServiceKeys({
         >
           <h3 className="flex items-center gap-2 font-medium">
             <KeyRound className="size-4" />
-            Новый ключ
+            {copy("Новый ключ ")}
           </h3>
           <div className="space-y-2">
-            <Label htmlFor="key-name">Название ключа</Label>
+            <Label htmlFor="key-name">{copy("Название ключа")}</Label>
             <Input
               id="key-name"
-              placeholder="Например, production"
+              placeholder={copy("Например, production")}
               required
               maxLength={120}
               value={name}
@@ -174,7 +181,7 @@ export function ServiceKeys({
           </div>
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-2">
-              <Label htmlFor="key-expiry">Срок действия</Label>
+              <Label htmlFor="key-expiry">{copy("Срок действия")}</Label>
               <Select
                 value={days}
                 onValueChange={setDays}
@@ -189,20 +196,22 @@ export function ServiceKeys({
                       key={value}
                       value={String(value)}
                     >
-                      {value} дней
+                      {value} {copy(" дней ")}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <Button disabled={pending}>
-              {pending ? "Создаём…" : "Создать ключ"}
+              {pending ? copy("Создаём…") : copy("Создать ключ")}
             </Button>
           </div>
         </form>
       ) : !active && !readOnly ? (
         <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-          Аккаунт отключён. Включите его, чтобы выпускать новые ключи.
+          {copy(
+            "Аккаунт отключён. Включите его, чтобы выпускать новые ключи. ",
+          )}
         </p>
       ) : null}
       {error && (
@@ -210,100 +219,57 @@ export function ServiceKeys({
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       <div className="space-y-3">
         <h3 className="text-sm font-medium">
-          Ключи аккаунта{" "}
+          {copy("Ключи аккаунта")}{" "}
           <span className="text-muted-foreground">· {keys.length}</span>
         </h3>
         {keys.length === 0 && (
           <p className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-            Пока нет ключей
+            {copy("Пока нет ключей ")}
           </p>
         )}
-        {keys.map((key) => {
-          const expired = new Date(key.expiresAt) <= new Date();
-          return (
-            <section
-              key={key.id}
-              className="space-y-3 rounded-xl border p-4"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="break-all text-sm font-medium">{key.name}</h4>
-                <Badge variant="secondary">
-                  {key.revokedAt ? "Отозван" : expired ? "Истёк" : "Действует"}
-                </Badge>
-              </div>
-              <code className="text-xs text-muted-foreground">
-                {key.prefix}…
-              </code>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>
-                  Создан {date(key.createdAt)} · до {date(key.expiresAt)}
-                </p>
-                <p>
-                  Последний обмен на токен:{" "}
-                  {key.lastUsedAt ? date(key.lastUsedAt) : "ещё не использован"}
-                </p>
-              </div>
-              {!readOnly && !key.revokedAt && !expired && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {confirm === key.id ? (
-                    <>
-                      <p className="w-full text-xs text-destructive">
-                        Выданные по этому ключу токены сразу перестанут
-                        работать.
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={pending || Boolean(secret)}
-                        onClick={() => revoke(key.id)}
-                      >
-                        Подтвердить отзыв
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={pending}
-                        onClick={() => setConfirm(null)}
-                      >
-                        Отмена
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={pending || Boolean(secret)}
-                      onClick={() => setConfirm(key.id)}
-                    >
-                      Отозвать ключ
-                    </Button>
-                  )}
-                </div>
-              )}
-            </section>
-          );
-        })}
+        <p className="text-xs text-muted-foreground">
+          {copy(
+            "Счётчик учитывает запросы с токенами ключа с момента включения статистики. Получение токена не учитывается.",
+          )}
+        </p>
+        {keys.map((key) => (
+          <ServiceKeyCard
+            key={key.id}
+            serviceKey={key}
+            readOnly={readOnly}
+            pending={pending}
+            secretVisible={Boolean(secret)}
+            confirming={confirm === key.id}
+            onConfirm={(value) => setConfirm(value ? key.id : null)}
+            onRevoke={() => void revoke(key.id)}
+          />
+        ))}
       </div>
       <details className="rounded-lg border p-4 text-sm">
         <summary className="cursor-pointer font-medium">
-          Как подключить приложение
+          {copy("Как подключить приложение ")}
         </summary>
         <div className="mt-3 space-y-3 text-muted-foreground">
           <p>
-            Отправьте ключ в Core: <code>POST /auth/service-token</code>
+            {copy("Отправьте ключ в Core: ")}
+            <code>POST /auth/service-token</code>
           </p>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
-            {'{ "key": "<сервисный ключ>" }'}
+            {copy('{ "key": "<сервисный ключ>" }')}
           </pre>
           <p>
-            В ответе придёт <code>accessToken</code> со сроком до 15 минут.
-            Передавайте его в <code>Authorization: Bearer …</code>. По истечении
-            срока получите новый токен тем же способом.
+            {copy("В ответе придёт ")}
+            <code>accessToken</code>{" "}
+            {copy(" со сроком до 15 минут. Передавайте его в ")}
+            <code>Authorization: Bearer …</code>
+            {copy(
+              ". По истечении срока получите новый токен тем же способом. ",
+            )}
           </p>
         </div>
       </details>

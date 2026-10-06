@@ -1,4 +1,7 @@
-import type { AsmblyrContext, EndpointHandler } from "@asmblyr/kit";
+import type {
+  AsmblyrContext,
+  EndpointHandler,
+} from "@asmblyr-collaborative/kit";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { H3Event, HTTPError, toResponse } from "h3";
 import { describeRequestError } from "../http/error-handler.js";

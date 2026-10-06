@@ -1,5 +1,6 @@
 import type { CollectionField } from "./types";
 import type { FormCondition, FormLayout, FormNode } from "./presentation-types";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 export function fieldsInNodes(nodes: FormNode[]): string[] {
   return nodes.flatMap((n) =>
@@ -17,7 +18,10 @@ export function layoutHasConditions(layout: FormLayout): boolean {
   return layout.tabs.some((tab) => hasCondition(tab.children));
 }
 
-export function automaticLayout(fields: CollectionField[]): FormLayout {
+export function automaticLayout(
+  fields: CollectionField[],
+  copy: UiCopy = originalCopy,
+): FormLayout {
   const nodes: FormNode[] = [],
     groups = new Map<string, Extract<FormNode, { kind: "group" }>>();
   for (const field of [...fields]
@@ -54,15 +58,16 @@ export function automaticLayout(fields: CollectionField[]): FormLayout {
   }
   return {
     version: 1,
-    tabs: [{ id: "main", label: "Основное", children: nodes }],
+    tabs: [{ id: "main", label: copy("Основное"), children: nodes }],
   };
 }
 
 export function effectiveLayout(
   layout: FormLayout | null | undefined,
   fields: CollectionField[],
+  copy: UiCopy = originalCopy,
 ): FormLayout {
-  if (!layout) return automaticLayout(fields);
+  if (!layout) return automaticLayout(fields, copy);
   const available = new Set(fields.map((f) => f.name));
   const used = new Set(layout.tabs.flatMap((t) => fieldsInNodes(t.children)));
   const walk = (nodes: FormNode[]): FormNode[] =>
@@ -74,12 +79,14 @@ export function effectiveLayout(
   const tabs = layout.tabs
     .map((t) => ({ ...t, children: walk(t.children) }))
     .filter((t) => t.children.length);
-  const other = automaticLayout(fields.filter((f) => !used.has(f.name))).tabs[0]
-    .children;
+  const other = automaticLayout(
+    fields.filter((f) => !used.has(f.name)),
+    copy,
+  ).tabs[0].children;
   if (other.length) {
     if (tabs.length <= 1) {
       if (!tabs.length)
-        tabs.push({ id: "$main", label: "Основное", children: [] });
+        tabs.push({ id: "$main", label: copy("Основное"), children: [] });
       tabs[0] = {
         ...tabs[0],
         children: [
@@ -87,7 +94,7 @@ export function effectiveLayout(
           {
             id: "$other",
             kind: "group",
-            label: "Другие поля",
+            label: copy("Другие поля"),
             description: "",
             collapsible: false,
             collapsed: false,
@@ -95,7 +102,8 @@ export function effectiveLayout(
           },
         ],
       };
-    } else tabs.push({ id: "$other", label: "Другие поля", children: other });
+    } else
+      tabs.push({ id: "$other", label: copy("Другие поля"), children: other });
   }
   return { version: 1, tabs };
 }

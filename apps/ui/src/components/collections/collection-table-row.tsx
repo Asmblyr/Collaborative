@@ -1,26 +1,23 @@
 "use client";
 
 import { Fragment } from "react";
-import Link from "next/link";
 import { ChevronRight, GripVertical, Table2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { Collection, CollectionFolder } from "@/components/items/types";
-import { collectionLocation } from "@/lib/collection-tree";
 import { cn } from "@/lib/utils";
 import { CollectionFields } from "./collection-fields";
-import { CollectionLocationSelect } from "./collection-location-select";
-import type { useCollectionDrag, MoveCollection } from "./use-collection-drag";
+import type { useCollectionDrag } from "./use-collection-drag";
+import { useUiCopy } from "@/lib/ui-copy";
+import {
+  CollectionRowActions as CollectionActionsCell,
+  type CollectionActions,
+} from "./collection-row-actions";
 
-interface CollectionRowActions {
-  onForm: (collection: string) => void;
-  onDisplay: (collection: string) => void;
-  onAddField: (collection: string) => void;
+interface CollectionRowActions extends CollectionActions {
   onEditField: (collection: string, field: string) => void;
   onDeleteField: (collection: string, field: string) => void;
-  onDeleteCollection: (collection: string) => void;
-  onMoveCollection: MoveCollection;
 }
 
 export function CollectionTableRow({
@@ -50,6 +47,8 @@ export function CollectionTableRow({
   drag: ReturnType<typeof useCollectionDrag>;
   actions: CollectionRowActions;
 }) {
+  const copy = useUiCopy();
+
   const {
     dragged,
     setDragged,
@@ -59,15 +58,7 @@ export function CollectionTableRow({
     dragOverRow,
     dropOnRow,
   } = drag;
-  const {
-    onForm,
-    onDisplay,
-    onAddField,
-    onEditField,
-    onDeleteField,
-    onDeleteCollection,
-    onMoveCollection,
-  } = actions;
+  const { onForm, onDisplay, onAddField, onEditField, onDeleteField } = actions;
   const canEdit = superuser && collection.access.structure;
   const inside =
     dropTarget?.kind === "row" &&
@@ -78,10 +69,11 @@ export function CollectionTableRow({
     collection.fields.length +
     Number(collection.timestamps.createdAt) +
     Number(collection.timestamps.updatedAt);
-  const canOpenItems =
+  const canOpenItems = Boolean(
     collection.access.read ||
-    collection.access.create ||
-    collection.access.update;
+      collection.access.create ||
+      collection.access.update,
+  );
   const before =
     dropTarget?.kind === "row" &&
     dropTarget.name === collection.name &&
@@ -96,7 +88,10 @@ export function CollectionTableRow({
         draggable={canEdit}
         title={
           canEdit
-            ? `Перетащите ${collection.name} в центр коллекции для вложения, к краю для сортировки`
+            ? copy(
+                "Перетащите {{value0}} в центр коллекции для вложения, к краю для сортировки",
+                { value0: collection.name },
+              )
             : undefined
         }
         className={cn(
@@ -123,7 +118,7 @@ export function CollectionTableRow({
         }}
       >
         <TableCell style={{ paddingLeft: 12 + depth * 20 }}>
-          <div className="flex items-center">
+          <div className="flex min-w-0 items-center">
             {canEdit && (
               <GripVertical
                 aria-hidden="true"
@@ -134,7 +129,9 @@ export function CollectionTableRow({
               <Button
                 size="icon-sm"
                 variant="ghost"
-                aria-label={`Вложенные коллекции ${collection.name}`}
+                aria-label={copy("Вложенные коллекции {{value0}}", {
+                  value0: collection.name,
+                })}
                 aria-expanded={!childrenCollapsed}
                 onClick={onToggleChildren}
               >
@@ -152,7 +149,8 @@ export function CollectionTableRow({
               type="button"
               variant="ghost"
               size="sm"
-              className="max-w-full justify-start gap-2 font-mono font-medium"
+              className="min-w-0 justify-start gap-2 font-mono font-medium"
+              title={collection.name}
               aria-expanded={isExpanded}
               aria-controls={
                 isExpanded ? `collection-fields-${collection.name}` : undefined
@@ -163,30 +161,29 @@ export function CollectionTableRow({
               <span className="truncate">
                 {collection.displayName || collection.name}
               </span>
-              {collection.displayName && (
-                <span className="truncate font-mono text-xs text-muted-foreground">
-                  {collection.name}
-                </span>
-              )}
               {collection.hidden && (
                 <Badge
                   variant="outline"
                   className="font-sans font-normal text-muted-foreground"
                 >
-                  Скрыта
+                  {copy("Скрыта ")}
                 </Badge>
               )}
             </Button>
             {inside && (
               <span className="ml-2 shrink-0 text-xs text-primary">
-                Вложить сюда
+                {copy("Вложить сюда ")}
               </span>
             )}
           </div>
         </TableCell>
         <TableCell>
           <Badge variant="secondary">
-            {collection.mode === "single" ? "Один объект" : "Много записей"}
+            {collection.sourceKind === "materialized-view"
+              ? copy("Представление")
+              : collection.mode === "single"
+                ? copy("Один объект")
+                : copy("Много записей")}
           </Badge>
         </TableCell>
         <TableCell className="font-mono text-xs">
@@ -196,44 +193,15 @@ export function CollectionTableRow({
           </span>
         </TableCell>
         <TableCell className="tabular-nums">{fieldCount}</TableCell>
-        <TableCell className="pr-4 text-right">
-          <div className="flex justify-end gap-1">
-            {canEdit && (
-              <CollectionLocationSelect
-                compact
-                name={collection.name}
-                location={collectionLocation(collection)}
-                collections={catalog.filter((entry) => entry.access.structure)}
-                folders={folders}
-                onChange={(location) =>
-                  onMoveCollection(collection.name, location)
-                }
-              />
-            )}
-            {canOpenItems && (
-              <Button
-                asChild
-                size="sm"
-                variant="ghost"
-              >
-                <Link href={`/items/${encodeURIComponent(collection.name)}`}>
-                  Записи
-                </Link>
-              </Button>
-            )}
-            {canEdit && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                aria-label={`Удалить коллекцию ${collection.name}`}
-                className="text-destructive hover:text-destructive"
-                onClick={() => onDeleteCollection(collection.name)}
-              >
-                Удалить
-              </Button>
-            )}
-          </div>
+        <TableCell className="sticky right-0 z-10 bg-card pr-3 text-right shadow-[-1px_0_0_0_var(--border)]">
+          <CollectionActionsCell
+            collection={collection}
+            catalog={catalog}
+            folders={folders}
+            canEdit={canEdit}
+            canOpenItems={canOpenItems}
+            actions={actions}
+          />
         </TableCell>
       </TableRow>
       {isExpanded && (

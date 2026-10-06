@@ -1,4 +1,5 @@
 import type { Knex } from "knex";
+import { lockedCollectionSettings } from "./settings-repository.js";
 import { listCollections } from "./catalog-repository.js";
 import { parseFormLayout } from "./form-layout.js";
 import {
@@ -20,9 +21,7 @@ export async function updateCollectionForm(
         .first("id"))
     )
       throw new CollectionNotFoundError(name);
-    await transaction.raw("LOCK TABLE ?? IN ACCESS SHARE MODE", [
-      `public.${name}`,
-    ]);
+    await lockedCollectionSettings(transaction, name, "ACCESS SHARE", true);
     const collection = (await listCollections(transaction)).find(
       (c) => c.name === name,
     )!;

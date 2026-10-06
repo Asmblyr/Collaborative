@@ -3,7 +3,7 @@ import {
   settingsSections,
   type PresenceScope,
   type SettingsSection,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import {
   AccessDeniedError,
   requireGrant,
@@ -35,14 +35,26 @@ export async function presenceKey(
   scope: PresenceScope,
 ): Promise<string> {
   if (scope.kind === "page") {
-    const needed = sections[scope.page];
+    if (
+      ["/admin/collections", "/admin/settings/integrations"].includes(
+        scope.page,
+      ) &&
+      !access.principal.superuser
+    ) {
+      throw new AccessDeniedError();
+    }
+    const page = scope.page.replace(
+      /^\/admin\/settings(?=\/|$)/,
+      "/system-settings",
+    );
+    const needed = sections[page];
     if (needed && !access.principal.superuser) {
       const allowed = await effectiveSettingsAccess(db, access.principal.id);
       if (!needed.some((section) => allowed.sections.includes(section))) {
         throw new AccessDeniedError();
       }
     }
-    return JSON.stringify(["page", scope.page]);
+    return JSON.stringify(["page", page]);
   }
   const grant = requireGrant(access, scope.collection, "read");
   const settings = await findCollectionSettings(db, scope.collection);

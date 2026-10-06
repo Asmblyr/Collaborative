@@ -1,5 +1,5 @@
-import type { ValueDisplay } from "@asmblyr/contracts";
-export type { ValueDisplay } from "@asmblyr/contracts";
+import type { ValueDisplay } from "@asmblyr-collaborative/contracts";
+export type { ValueDisplay } from "@asmblyr-collaborative/contracts";
 import { CollectionInputError } from "./validation.js";
 
 export function parseValueDisplay(value: unknown, type: string): ValueDisplay {

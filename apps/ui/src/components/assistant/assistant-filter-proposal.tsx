@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import { Check, ListFilter, LoaderCircle } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { describeFilter } from "@/components/items/item-filter-description";
 import {
   canApplyProposal,
   type FilterProposal,
 } from "./assistant-context-types";
 import { useAssistantContext } from "./assistant-context";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function AssistantFilterProposal({
   proposal,
 }: {
   proposal: FilterProposal;
 }) {
+  const copy = useUiCopy();
+
   const page = useAssistantContext();
   const collectionName =
     page?.collectionDisplayName(proposal.collection) ||
@@ -35,7 +38,7 @@ export function AssistantFilterProposal({
       setError(
         failure instanceof Error
           ? failure.message
-          : "Не удалось применить фильтр",
+          : copy("Не удалось применить фильтр"),
       );
     } finally {
       setPending(false);
@@ -45,15 +48,16 @@ export function AssistantFilterProposal({
     <div className="space-y-2.5 rounded-xl border bg-background p-3 text-xs">
       <p className="flex items-center gap-2 font-medium">
         <ListFilter className="size-3.5" />
-        Фильтр · {collectionName}
+        {copy("Фильтр · ")}
+        {collectionName}
       </p>
       <p className="max-h-36 overflow-auto whitespace-pre-wrap break-words leading-5 text-muted-foreground">
         {proposal.filter.children.length
-          ? describeFilter(proposal.filter)
-          : "Все записи без фильтра"}
+          ? describeFilter(proposal.filter, undefined, undefined, copy)
+          : copy("Все записи без фильтра")}
       </p>
       <p className="text-[11px] leading-4 text-muted-foreground">
-        Заменит текущие фильтры. Поисковый запрос сохранится.
+        {copy("Заменит текущие фильтры. Поисковый запрос сохранится. ")}
       </p>
       <Button
         size="sm"
@@ -70,22 +74,23 @@ export function AssistantFilterProposal({
           <ListFilter />
         )}
         {pending
-          ? "Проверяем…"
+          ? copy("Проверяем…")
           : applied
-            ? "Применить ещё раз"
-            : "Применить фильтр"}
+            ? copy("Применить ещё раз")
+            : copy("Применить фильтр")}
       </Button>
       {applied && (
         <p
           role="status"
           className="text-muted-foreground"
         >
-          Фильтр применён
+          {copy("Фильтр применён ")}
         </p>
       )}
       {!available && (
         <p className="text-muted-foreground">
-          Откройте {collectionName} в исходном workspace и закройте редактор.
+          {copy("Откройте ")}
+          {collectionName} {copy(" в исходном workspace и закройте редактор. ")}
         </p>
       )}
       {error && (
@@ -93,7 +98,7 @@ export function AssistantFilterProposal({
           role="alert"
           className="text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
     </div>

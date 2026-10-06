@@ -53,3 +53,4 @@ export async function scanApiRoutes(
   assertUniqueRoutes(routes);
   return routes;
 }
+export { readPluginTranslations } from "./translations.js";

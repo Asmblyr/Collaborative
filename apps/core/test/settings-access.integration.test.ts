@@ -4,7 +4,10 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import knex from "knex";
-import { settingsSections, type SettingsSection } from "@asmblyr/contracts";
+import {
+  settingsSections,
+  type SettingsSection,
+} from "@asmblyr-collaborative/contracts";
 import { createApp } from "../src/app.js";
 import { issueUserTokens } from "../src/auth/tokens.js";
 

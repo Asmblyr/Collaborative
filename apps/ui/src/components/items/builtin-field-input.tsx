@@ -1,15 +1,15 @@
 "use client";
 
-import { Input } from "@asmblyr/kit/ui/input";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import { FileField } from "@/components/files/file-field";
 import { useFileLibraryAccess } from "@/components/files/file-access";
 import { RelationPicker, type OpenRelated } from "./relation-picker";
@@ -17,7 +17,10 @@ import { arrayDraft } from "./item-input-values";
 import type { Collection, CollectionField } from "./types";
 import { MarkdownEditor, RichTextEditor } from "./content-editor";
 import { RepeaterInput } from "./repeater-input";
+import { TagsInput } from "./tags-input";
+import { UrlFieldInput } from "./url-field-input";
 import { PresentedValue } from "./presented-value";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function BuiltinFieldInput({
   field,
@@ -31,6 +34,7 @@ export function BuiltinFieldInput({
   onOpenRelated,
   onBusy,
   creating = false,
+  draftValues = {},
 }: {
   field: CollectionField;
   value: string;
@@ -43,9 +47,25 @@ export function BuiltinFieldInput({
   onOpenRelated?: OpenRelated;
   onBusy?: (busy: boolean) => void;
   creating?: boolean;
+  draftValues?: Record<string, string>;
 }) {
+  const copy = useUiCopy();
+
   const presentation = field.presentation;
   const canChooseFiles = useFileLibraryAccess();
+  if (presentation?.sensitive)
+    return (
+      <Input
+        id={id}
+        type="password"
+        autoComplete="new-password"
+        value={value}
+        disabled={disabled}
+        required={required}
+        className="h-9"
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
   if (presentation?.interface === "repeater" && presentation.repeater)
     return (
       <RepeaterInput
@@ -57,6 +77,33 @@ export function BuiltinFieldInput({
         container={container}
       />
     );
+  if (presentation?.interface === "url") {
+    return (
+      <UrlFieldInput
+        id={id}
+        value={value}
+        disabled={disabled}
+        required={required}
+        placeholder={presentation.placeholder || undefined}
+        descriptionId={presentation.description ? `${id}-help` : undefined}
+        onChange={onChange}
+      />
+    );
+  }
+  if (presentation?.interface === "tags") {
+    return (
+      <TagsInput
+        id={id}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        required={required}
+        label={presentation.label || field.name}
+        placeholder={presentation.placeholder}
+        descriptionId={presentation.description ? `${id}-help` : undefined}
+      />
+    );
+  }
   if (presentation?.interface === "markdown")
     return (
       <MarkdownEditor
@@ -93,6 +140,7 @@ export function BuiltinFieldInput({
     return (
       <RelationPicker
         field={field}
+        draftValues={draftValues}
         catalog={catalog}
         onOpen={onOpenRelated}
         id={id}
@@ -118,7 +166,7 @@ export function BuiltinFieldInput({
             className="flex items-center gap-2 text-sm"
           >
             <Checkbox
-              checked={chosen.includes(option.value)}
+              checked={chosen.includes(String(option.value))}
               disabled={disabled}
               onCheckedChange={(checked) =>
                 onChange(
@@ -149,7 +197,7 @@ export function BuiltinFieldInput({
                   )
                 }
               />
-              {v} (архивный вариант)
+              {v} {copy(" (архивный вариант) ")}
             </label>
           ))}
       </div>
@@ -159,12 +207,14 @@ export function BuiltinFieldInput({
     const options =
       field.type === "boolean"
         ? [
-            { value: "true", label: "Да" },
-            { value: "false", label: "Нет" },
+            { value: "true", label: copy("Да") },
+            { value: "false", label: copy("Нет") },
           ]
         : (presentation?.options ?? []);
     const defaultOption = creating
-      ? options.find((option) => option.value === String(field.defaultValue))
+      ? options.find(
+          (option) => String(option.value) === String(field.defaultValue),
+        )
       : undefined;
     return (
       <Select
@@ -182,14 +232,16 @@ export function BuiltinFieldInput({
         <SelectContent container={container}>
           <SelectItem value="unset">
             {defaultOption
-              ? `${defaultOption.label} (по умолчанию)`
+              ? copy("{{value0}} (по умолчанию)", {
+                  value0: defaultOption.label,
+                })
               : required
-                ? "Выберите значение"
-                : "Не задано"}
+                ? copy("Выберите значение")
+                : copy("Не задано")}
           </SelectItem>
-          {value && !options.some((o) => o.value === value) && (
+          {value && !options.some((o) => String(o.value) === value) && (
             <SelectItem value={`v:${value}`}>
-              {value} (архивный вариант)
+              {value} {copy(" (архивный вариант) ")}
             </SelectItem>
           )}
           {options.map((o) => (
@@ -239,8 +291,8 @@ export function BuiltinFieldInput({
       placeholder={presentation?.placeholder}
       aria-describedby={presentation?.description ? `${id}-help` : undefined}
       type={
-        presentation?.interface === "url"
-          ? "url"
+        field.type === "date"
+          ? "date"
           : field.type === "datetime"
             ? "datetime-local"
             : field.type === "integer"
@@ -249,7 +301,13 @@ export function BuiltinFieldInput({
                 ? "email"
                 : "text"
       }
-      inputMode={field.type === "decimal" ? "decimal" : undefined}
+      inputMode={
+        field.type === "bigint"
+          ? "numeric"
+          : field.type === "decimal"
+            ? "decimal"
+            : undefined
+      }
       maxLength={
         field.type === "email" ? 254 : field.type === "uuid" ? 36 : undefined
       }

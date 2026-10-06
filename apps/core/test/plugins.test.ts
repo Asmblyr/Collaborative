@@ -6,7 +6,7 @@ import {
   EndpointError,
   useAsmblyr,
   type EndpointHandler,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import { getQuery, getRouterParam, readBody } from "h3";
 import { registerErrorHandler } from "../src/http/error-handler.js";
 import { registerPluginBoundary } from "../src/plugins/routing.js";

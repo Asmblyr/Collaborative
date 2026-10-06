@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { apiRequest } from "@/lib/api-request";
+import { useUiCopy } from "@/lib/ui-copy";
 
 const APPROVAL_DELAY_SECONDS = 2;
 
@@ -20,6 +21,8 @@ export interface ConsentDetails {
 }
 
 export function OAuthConsent({ details }: { details: ConsentDetails }) {
+  const copy = useUiCopy();
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [remainingSeconds, setRemainingSeconds] = useState(
@@ -50,7 +53,7 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
       window.location.assign(result.redirectTo);
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Не удалось продолжить",
+        error instanceof Error ? error.message : copy("Не удалось продолжить"),
       );
       setBusy(false);
     }
@@ -58,9 +61,12 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
   const serviceScopes = details.scopes
     .split(" ")
     .filter((scope) => !["openid", "profile", "email"].includes(scope));
-  let approvalLabel = "Разрешить и войти";
-  if (waitingForApproval) approvalLabel = `Разрешить (${remainingSeconds})`;
-  if (busy) approvalLabel = "Входим…";
+  let approvalLabel = copy("Разрешить и войти");
+  if (waitingForApproval)
+    approvalLabel = copy("Разрешить ({{value0}})", {
+      value0: remainingSeconds,
+    });
+  if (busy) approvalLabel = copy("Входим…");
 
   return (
     <main className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
@@ -71,7 +77,8 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Войти в {details.name}
+            {copy("Войти в ")}
+            {details.name}
           </h1>
           {details.description && (
             <p className="mt-2 text-sm text-muted-foreground">
@@ -80,26 +87,31 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
           )}
         </div>
         <div className="rounded-xl bg-muted/60 p-4">
-          <p className="text-xs text-muted-foreground">Ваш аккаунт</p>
+          <p className="text-xs text-muted-foreground">{copy("Ваш аккаунт")}</p>
           <p className="mt-1 break-all font-medium">{details.email}</p>
         </div>
         {details.allowed ? (
           <div className="space-y-3 text-sm">
             <p>
-              Приложение получит ваш ID, почту, имя и изображение профиля, если
-              они заполнены.
+              {copy(
+                "Приложение получит ваш ID, почту, имя и изображение профиля, если они заполнены. ",
+              )}
             </p>
             <p className="text-muted-foreground">
-              Это подтверждение личности. Доступ к коллекциям Asmblyr приложению
-              не предоставляется.
+              {copy(
+                "Это подтверждение личности. Доступ к коллекциям Asmblyr приложению не предоставляется. ",
+              )}
             </p>
             <p className="text-muted-foreground">
-              Разрешение сохранится для следующих входов. Отозвать его можно в
-              настройках профиля, на вкладке «Приложения».
+              {copy(
+                "Разрешение сохранится для следующих входов. Отозвать его можно в настройках профиля, на вкладке «Приложения». ",
+              )}
             </p>
             {serviceScopes.length > 0 && (
               <div>
-                <p className="mb-2 font-medium">Доступ внутри приложения</p>
+                <p className="mb-2 font-medium">
+                  {copy("Доступ внутри приложения")}
+                </p>
                 <ul className="space-y-1 text-xs text-muted-foreground">
                   {serviceScopes.map((scope) => (
                     <li
@@ -118,8 +130,9 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
             role="alert"
             className="text-sm"
           >
-            Вам пока не предоставлен доступ к этому приложению. Обратитесь к
-            администратору.
+            {copy(
+              "Вам пока не предоставлен доступ к этому приложению. Обратитесь к администратору. ",
+            )}
           </p>
         )}
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -133,7 +146,7 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
             role="alert"
             className="text-sm text-destructive"
           >
-            {error}
+            {copy(error)}
           </p>
         )}
         <div className="flex gap-3">
@@ -143,7 +156,7 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
             onClick={() => complete(false)}
             className="flex-1"
           >
-            Отмена
+            {copy("Отмена ")}
           </Button>
           {details.allowed && (
             <Button

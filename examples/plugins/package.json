@@ -3,26 +3,27 @@
   "type": "module",
   "asmblyr": {
     "plugins": [
-      "@asmblyr/plugin-comments",
-      "@asmblyr/plugin-overview",
-      "@asmblyr/plugin-calculator",
-      "@asmblyr/plugin-color"
+      "@asmblyr-collaborative/plugin-comments",
+      "@asmblyr-collaborative/plugin-overview",
+      "@asmblyr-collaborative/plugin-calculator",
+      "@asmblyr-collaborative/plugin-color"
     ],
     "pluginPermissions": {
-      "@asmblyr/plugin-comments": [
+      "@asmblyr-collaborative/plugin-comments": [
         "identity.profile",
         "items.read",
         "collections.manage",
         "storage.own",
         "hooks.items",
         "hooks.collections",
-        "settings"
+        "settings",
+        "notifications"
       ],
-      "@asmblyr/plugin-overview": [
+      "@asmblyr-collaborative/plugin-overview": [
         "identity.profile"
       ],
-      "@asmblyr/plugin-calculator": [],
-      "@asmblyr/plugin-color": []
+      "@asmblyr-collaborative/plugin-calculator": [],
+      "@asmblyr-collaborative/plugin-color": []
     }
   }
 }

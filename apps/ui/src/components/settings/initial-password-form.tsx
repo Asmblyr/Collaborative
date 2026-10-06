@@ -1,11 +1,15 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-request";
+import { useUiCopy } from "@/lib/ui-copy";
+
 export function InitialPasswordForm() {
+  const copy = useUiCopy();
+
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -20,7 +24,7 @@ export function InitialPasswordForm() {
         const form = event.currentTarget;
         const values = new FormData(form);
         if (values.get("password") !== values.get("confirm")) {
-          setError("Пароли не совпадают");
+          setError(copy("Пароли не совпадают"));
           return;
         }
         setPending(true);
@@ -35,7 +39,7 @@ export function InitialPasswordForm() {
           setError(
             failure instanceof Error
               ? failure.message
-              : "Не удалось задать пароль",
+              : copy("Не удалось задать пароль"),
           );
         } finally {
           setPending(false);
@@ -43,10 +47,10 @@ export function InitialPasswordForm() {
       }}
     >
       <p className="text-sm text-muted-foreground">
-        Пароль необязателен, если используете passkey или SSO.
+        {copy("Пароль необязателен, если используете passkey или SSO. ")}
       </p>
       <div className="space-y-2">
-        <Label htmlFor="initial-password">Пароль</Label>
+        <Label htmlFor="initial-password">{copy("Пароль")}</Label>
         <Input
           id="initial-password"
           name="password"
@@ -59,7 +63,7 @@ export function InitialPasswordForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="initial-confirm">Повторите пароль</Label>
+        <Label htmlFor="initial-confirm">{copy("Повторите пароль")}</Label>
         <Input
           id="initial-confirm"
           name="confirm"
@@ -76,14 +80,14 @@ export function InitialPasswordForm() {
           role="alert"
           className="text-sm text-destructive"
         >
-          {error}
+          {copy(error)}
         </p>
       )}
       <Button
         variant="outline"
         disabled={pending}
       >
-        Добавить пароль
+        {copy("Добавить пароль ")}
       </Button>
     </form>
   );

@@ -20,6 +20,8 @@ export interface FilterField {
     | "text"
     | "email"
     | "integer"
+    | "bigint"
+    | "date"
     | "decimal"
     | "boolean"
     | "datetime"
@@ -86,6 +88,8 @@ function fieldsOf(
         "text",
         "email",
         "integer",
+        "bigint",
+        "date",
         "decimal",
         "boolean",
         "datetime",
@@ -110,7 +114,12 @@ function fieldsOf(
             : undefined,
       ),
       ...(field.presentation?.interface === "select"
-        ? { options: field.presentation.options }
+        ? {
+            options: field.presentation.options?.map((option) => ({
+              ...option,
+              value: String(option.value),
+            })),
+          }
         : {}),
     });
   }
@@ -245,6 +254,8 @@ export function fieldOperators(field: FilterField): string[] {
   }
   if (
     field.type === "integer" ||
+    field.type === "bigint" ||
+    field.type === "date" ||
     field.type === "decimal" ||
     field.type === "datetime"
   ) {

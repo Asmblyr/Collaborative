@@ -1,4 +1,8 @@
 import {
+  parseCalendarDate,
+  parseBigintString,
+} from "@asmblyr-collaborative/contracts";
+import {
   fieldOperators,
   hasMultipleValues,
   hasNoValue,
@@ -8,6 +12,7 @@ import {
   type FilterNode,
   type FilterScope,
 } from "./item-filter-options";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 export type FilterPath = number[];
 
@@ -84,15 +89,32 @@ export function changeFilterOperator(
   return { ...condition, op, value };
 }
 
-function normalizedValue(value: string, field: FilterField): string {
+function normalizedValue(
+  value: string,
+  field: FilterField,
+  copy: UiCopy = originalCopy,
+): string {
   const invalid = (message: string): never => {
     throw new Error(field.label + ": " + message);
   };
-  if (value.length > 255) invalid("максимум 255 символов в значении");
+  if (value.length > 255) invalid(copy("максимум 255 символов в значении"));
+  if (field.type === "date" || field.type === "bigint") {
+    try {
+      return field.type === "date"
+        ? parseCalendarDate(value)
+        : parseBigintString(value);
+    } catch {
+      return invalid(
+        field.type === "date"
+          ? copy("введите корректную дату")
+          : copy("введите целое число в диапазоне bigint"),
+      );
+    }
+  }
   if (field.type === "datetime") {
     const date = new Date(value);
     if (!value || Number.isNaN(date.valueOf()))
-      invalid("выберите корректную дату и время");
+      invalid(copy("выберите корректную дату и время"));
     return date.toISOString();
   }
   if (
@@ -101,26 +123,29 @@ function normalizedValue(value: string, field: FilterField): string {
       Number(value) < -2147483648 ||
       Number(value) > 2147483647)
   )
-    invalid("введите целое число");
+    invalid(copy("введите целое число"));
   if (field.type === "boolean" && !["true", "false"].includes(value))
-    invalid("выберите Да или Нет");
+    invalid(copy("выберите Да или Нет"));
   if (field.type === "key") {
     if (
       field.keyType === "uuid" &&
       !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value)
     ) {
-      invalid("введите UUID, например 550e8400-e29b-41d4-a716-446655440000");
+      invalid(
+        copy("введите UUID, например 550e8400-e29b-41d4-a716-446655440000"),
+      );
     }
     if (field.keyType === "serial" || field.keyType === "bigserial") {
       if (!/^[1-9]\d{0,18}$/.test(value))
-        invalid("введите положительный целочисленный ID");
+        invalid(copy("введите положительный целочисленный ID"));
       const limit = BigInt(
         field.keyType === "serial" ? "2147483647" : "9223372036854775807",
       );
-      if (BigInt(value) > limit) invalid("ID выходит за допустимый диапазон");
+      if (BigInt(value) > limit)
+        invalid(copy("ID выходит за допустимый диапазон"));
     }
     if (field.keyType === "text" && !value.trim())
-      invalid("введите ключ записи");
+      invalid(copy("введите ключ записи"));
   }
   return value;
 }
@@ -128,6 +153,7 @@ function normalizedValue(value: string, field: FilterField): string {
 function normalizedCondition(
   condition: FilterCondition,
   scopes: FilterScope[],
+  copy: UiCopy = originalCopy,
 ): FilterCondition {
   const field = scopes
     .flatMap((scope) => scope.fields)
@@ -140,7 +166,9 @@ function normalizedCondition(
       : !fieldOperators(field).includes(condition.op))
   ) {
     throw new Error(
-      "Поле или оператор больше недоступны. Измените или удалите условие.",
+      copy(
+        "Поле или оператор больше недоступны. Измените или удалите условие.",
+      ),
     );
   }
   if (presence) return { field: field.name, op: condition.op };
@@ -162,14 +190,14 @@ function normalizedCondition(
       throw new Error(
         field.label +
           (between
-            ? ": заполните обе границы диапазона"
-            : ": введите от 1 до 20 значений"),
+            ? copy(": заполните обе границы диапазона")
+            : copy(": введите от 1 до 20 значений")),
       );
     }
     return {
       field: field.name,
       op: condition.op,
-      value: values.map((value) => normalizedValue(value, field)),
+      value: values.map((value) => normalizedValue(value, field, copy)),
       ...quantifier,
     };
   }
@@ -180,12 +208,12 @@ function normalizedCondition(
       !(field.type === "text" && ["eq", "neq"].includes(condition.op))) ||
     (!value.trim() && !["eq", "neq"].includes(condition.op))
   ) {
-    throw new Error(field.label + ": введите значение");
+    throw new Error(field.label + copy(": введите значение"));
   }
   return {
     field: field.name,
     op: condition.op,
-    value: normalizedValue(value, field),
+    value: normalizedValue(value, field, copy),
     ...quantifier,
   };
 }
@@ -193,34 +221,36 @@ function normalizedCondition(
 export function normalizeFilter(
   group: FilterGroup,
   scopes: FilterScope[],
+  copy: UiCopy = originalCopy,
 ): FilterGroup {
   let nodes = 0;
   let conditions = 0;
   function visit(current: FilterGroup, depth: number): FilterGroup {
     nodes += 1;
-    if (depth > 3) throw new Error("Можно вложить до 3 уровней групп.");
+    if (depth > 3) throw new Error(copy("Можно вложить до 3 уровней групп."));
     if (depth > 1 && current.children.length === 0) {
-      throw new Error("Добавьте условие в пустую группу или удалите её.");
+      throw new Error(copy("Добавьте условие в пустую группу или удалите её."));
     }
     if (current.children.length > 20)
-      throw new Error("В одной группе может быть до 20 условий и групп.");
+      throw new Error(copy("В одной группе может быть до 20 условий и групп."));
     return {
       logic: current.logic,
       children: current.children.map((child) => {
         if ("logic" in child) return visit(child, depth + 1);
         nodes += 1;
         conditions += 1;
-        if (conditions > 20) throw new Error("Можно добавить до 20 условий.");
-        return normalizedCondition(child, scopes);
+        if (conditions > 20)
+          throw new Error(copy("Можно добавить до 20 условий."));
+        return normalizedCondition(child, scopes, copy);
       }),
     };
   }
   const result = visit(group, 1);
   if (nodes > 30)
-    throw new Error("Слишком много групп: упростите структуру фильтра.");
+    throw new Error(copy("Слишком много групп: упростите структуру фильтра."));
   if (JSON.stringify(result).length > 8192)
     throw new Error(
-      "Фильтр слишком большой: сократите количество или длину значений.",
+      copy("Фильтр слишком большой: сократите количество или длину значений."),
     );
   return result;
 }

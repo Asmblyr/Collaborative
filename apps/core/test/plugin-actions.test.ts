@@ -6,10 +6,10 @@ import {
   defineHandler,
   definePlugin,
   useActionContext,
-} from "@asmblyr/kit";
+} from "@asmblyr-collaborative/kit";
 import { readValidatedBody } from "h3";
-import { defineActionContract, z } from "@asmblyr/kit/actions";
-import type { PluginPreparedAction } from "@asmblyr/contracts";
+import { defineActionContract, z } from "@asmblyr-collaborative/kit/actions";
+import type { PluginPreparedAction } from "@asmblyr-collaborative/contracts";
 import { loadPlugins } from "../src/plugins/load.js";
 import { PluginActions } from "../src/plugins/actions.js";
 import { ActionDrafts } from "../src/plugins/action-drafts.js";

@@ -2,6 +2,18 @@
 import { itemCommitBody } from "./item-commit-contract.mjs";
 import { presenceBody, presenceResult } from "./presence-contract.mjs";
 import { authBetaContract } from "./auth-beta-contract.mjs";
+import { localizationContract } from "./localization-contract.mjs";
+import { schemaContract } from "./schema-contract.mjs";
+import { integrationsContract } from "./integrations-contract.mjs";
+import { serviceKeyContract } from "./service-key-contract.mjs";
+import { connectionsContract } from "./connections-contract.mjs";
+import { materializedContract } from "./materialized-contract.mjs";
+import { cliAuthContract } from "./cli-auth-contract.mjs";
+import { notificationsContract } from "./notifications-contract.mjs";
+import { assistantHistoryContract } from "./assistant-history-contract.mjs";
+import { searchContract } from "./search-contract.mjs";
+import { monitoringContract } from "./monitoring-contract.mjs";
+import { tablePreferencesContract } from "./table-preferences-contract.mjs";
 const object = { type: "object", additionalProperties: true };
 const json = (schema) => ({ "application/json": { schema } });
 const response = (schema, description = "Успех") => ({
@@ -56,6 +68,99 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const tablePreferences = tablePreferencesContract(key);
+  if (tablePreferences) {
+    return tablePreferences;
+  }
+  const monitoring = monitoringContract(key);
+  if (monitoring) {
+    return monitoring;
+  }
+  const search = searchContract(key);
+  if (search) {
+    return search;
+  }
+  const assistantHistory = assistantHistoryContract(key);
+  if (assistantHistory) {
+    return assistantHistory;
+  }
+  const notifications = notificationsContract(key);
+  if (notifications) {
+    return notifications;
+  }
+  const cliAuth = cliAuthContract(key);
+  if (cliAuth) {
+    return cliAuth;
+  }
+  const materialized = materializedContract(key);
+  if (materialized) {
+    return materialized;
+  }
+  const connections = connectionsContract(key);
+  if (connections) {
+    return connections;
+  }
+  const serviceKey = serviceKeyContract(key);
+  if (serviceKey) {
+    return serviceKey;
+  }
+  const integrations = integrationsContract(key);
+  if (integrations) {
+    return integrations;
+  }
+  const schema = schemaContract(key);
+  if (schema) {
+    return schema;
+  }
+  const localization = localizationContract(key);
+  if (localization) {
+    return localization;
+  }
+  if (key === "GET /public/files/:id/content") {
+    return {
+      parameters: [
+        query(
+          "preview",
+          { enum: ["1"] },
+          "Показать только поддержанное растровое превью",
+        ),
+      ],
+      responses: {
+        200: {
+          description:
+            "Байты явно опубликованного ready-файла; no-store, nosniff и ограничительная CSP. Attachment по умолчанию.",
+          content: {
+            "application/octet-stream": {
+              schema: { type: "string", format: "binary" },
+            },
+          },
+        },
+        404: error,
+        default: error,
+      },
+    };
+  }
+  if (key === "PATCH /files/:id") {
+    return {
+      requestBody: body({
+        type: "object",
+        additionalProperties: false,
+        minProperties: 1,
+        properties: {
+          title: { type: "string", minLength: 1, maxLength: 255 },
+          description: { type: "string", maxLength: 4000 },
+          visibility: { enum: ["private", "public"] },
+        },
+      }),
+      responses: {
+        200: response(
+          mutation,
+          "Обновлён ready-файл. visibility=private отзывает будущие публичные скачивания.",
+        ),
+        default: error,
+      },
+    };
+  }
   const auth = authBetaContract(key);
   if (auth) {
     return auth;
@@ -193,7 +298,16 @@ export function operationContract(key) {
         }),
         query("sort", string),
         query("direction", { enum: ["asc", "desc"] }),
-        query("q", string, "Поиск по настроенным полям и связям."),
+        query(
+          "q",
+          string,
+          "Буквальный поиск по читаемым настроенным полям и связям.",
+        ),
+        query(
+          "order",
+          { enum: ["field", "relevance"] },
+          "При q без явных sort/direction используется relevance; иначе field. Без q эффективный режим field. При relevance sort/direction разрешают равные совпадения.",
+        ),
         query(
           "filter",
           string,
@@ -211,6 +325,7 @@ export function operationContract(key) {
               total: string,
               sort: string,
               direction: { enum: ["asc", "desc"] },
+              order: { enum: ["field", "relevance"] },
             }),
           }),
         ),

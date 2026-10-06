@@ -24,7 +24,7 @@ export async function modelDataPlugin(t: TestContext): Promise<LoadedPlugin> {
     await fixture.write(
       `server/api/example/${id}.post.ts`,
       `
-      import { AccessGate, defineHandler, defineModelAnnotation, defineModelContext, useItems } from '@asmblyr/kit';
+      import { AccessGate, defineHandler, defineModelAnnotation, defineModelContext, useItems } from '@asmblyr-collaborative/kit';
       import type { Input } from '../../../shared/input.ts';
       const annotation = defineModelAnnotation({title:'Data',description:'Fixture data operation',middleware:AccessGate.${gate},readOnly:${readOnly}});
       export default defineModelContext<Input>(defineHandler(async event => {

@@ -79,6 +79,7 @@ test("selection navigation preserves exact conditions and overrides saved/defaul
     filter,
     sort: "title",
     direction: "desc",
+    order: "relevance",
   });
   const url = new URL(href, "https://test.invalid");
   assert.equal(url.pathname, "/items/other");
@@ -86,6 +87,7 @@ test("selection navigation preserves exact conditions and overrides saved/defaul
   assert.equal(url.searchParams.get("page"), "1");
   assert.deepEqual(JSON.parse(url.searchParams.get("filter")!), filter);
   assert.equal(url.searchParams.get("direction"), "desc");
+  assert.equal(url.searchParams.get("order"), "relevance");
 });
 
 test("cancelled turns remain visible but are excluded as complete pairs from model history", () => {

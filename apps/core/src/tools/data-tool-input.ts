@@ -1,6 +1,7 @@
 import { objectInput } from "../shared/input.js";
 import { ItemError } from "../items/validation.js";
 import { parseTermIds } from "../terms/validation.js";
+import { parseToolSearch } from "./search-input.js";
 
 export type DataTool = "search_items" | "read_item" | "count_items";
 
@@ -9,6 +10,7 @@ export interface QueryDefaults {
   filter: string;
   sort: string;
   direction: "asc" | "desc";
+  order?: import("@asmblyr-collaborative/contracts").ItemOrder;
 }
 
 interface FilterQuery {
@@ -22,6 +24,7 @@ interface SearchQuery extends FilterQuery {
   limit: string;
   sort: string;
   direction: "asc" | "desc";
+  order?: import("@asmblyr-collaborative/contracts").ItemOrder;
 }
 
 export type DataToolInput =
@@ -85,7 +88,7 @@ function parseFilterQuery(
   body: Record<string, unknown>,
   table: QueryDefaults,
 ): FilterQuery {
-  const q = parseInheritedText(body.q, table.q, 100);
+  const q = parseToolSearch(body.q, table.q);
   const filter = parseInheritedText(body.filter, table.filter, 8192);
   const terms = parseTermIds(body.terms);
   return { q, filter: filter || undefined, ...(terms.length ? { terms } : {}) };
@@ -100,6 +103,18 @@ function parseSearchQuery(
   const sort = parseInheritedText(body.sort, table.sort, 63);
   const direction = parseInheritedText(body.direction, table.direction, 4);
 
+  const q = parseToolSearch(body.q, table.q);
+  let order = body.order;
+  if (order === null || order === undefined) {
+    const inheritsSort = body.sort === null && body.direction === null;
+    order = inheritsSort
+      ? (table.order ?? (q ? "relevance" : "field"))
+      : "field";
+  }
+  if (order !== "field" && order !== "relevance") {
+    return invalidArguments();
+  }
+
   if (direction !== "asc" && direction !== "desc") {
     return invalidArguments();
   }
@@ -110,6 +125,7 @@ function parseSearchQuery(
     limit: String(limit),
     sort,
     direction,
+    order,
   };
 }
 
@@ -120,7 +136,13 @@ export function parseDataToolInput(
 ): DataToolInput {
   const requiredKeys = argumentNames[tool];
   const allowedKeys =
-    tool === "read_item" ? requiredKeys : [...requiredKeys, "terms"];
+    tool === "read_item"
+      ? requiredKeys
+      : [
+          ...requiredKeys,
+          "terms",
+          ...(tool === "search_items" ? ["order"] : []),
+        ];
   const body = objectInput(args, allowedKeys);
 
   if (requiredKeys.some((key) => !Object.hasOwn(body, key))) {

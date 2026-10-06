@@ -1,9 +1,11 @@
 "use client";
 
 import { ArrowUpRight, Unlink } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { resolveRelationChoiceFilter } from "@asmblyr-collaborative/contracts";
 import { RecordChooser } from "./record-chooser";
 import type { Collection, CollectionField } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export type OpenRelated = (
   collection: string,
@@ -21,6 +23,7 @@ export function RelationPicker({
   catalog,
   onOpen,
   id,
+  draftValues = {},
 }: {
   field: CollectionField;
   value: string;
@@ -30,7 +33,10 @@ export function RelationPicker({
   catalog: Collection[];
   onOpen?: OpenRelated;
   id?: string;
+  draftValues?: Record<string, string>;
 }) {
+  const copy = useUiCopy();
+
   const target = catalog.find(
     (entry) => entry.name === field.relation?.collection,
   );
@@ -38,7 +44,8 @@ export function RelationPicker({
     return (
       <div className="space-y-1.5">
         <p className="break-all text-sm text-muted-foreground">
-          {value || "Не задано"} · Нет доступа к связанной коллекции
+          {value || copy("Не задано")}{" "}
+          {copy(" · Нет доступа к связанной коллекции ")}
         </p>
         {value && field.nullable && !field.required && (
           <Button
@@ -48,11 +55,17 @@ export function RelationPicker({
             disabled={disabled}
             onClick={() => onChange("")}
           >
-            Отвязать
+            {copy("Отвязать ")}
           </Button>
         )}
       </div>
     );
+  const filter = field.presentation?.relationFilter
+    ? resolveRelationChoiceFilter(
+        field.presentation.relationFilter,
+        draftValues,
+      )
+    : undefined;
   return (
     <div className="space-y-1.5">
       <div className="flex min-w-0 items-center gap-1.5">
@@ -64,7 +77,8 @@ export function RelationPicker({
             selected={value ? [value] : []}
             id={id}
             onChange={(ids) => onChange(ids[0] ?? "")}
-            disabled={disabled}
+            disabled={disabled || filter === null}
+            candidateFilter={filter}
             portalContainer={portalContainer}
             onCreate={
               target.access.create && onOpen
@@ -79,7 +93,9 @@ export function RelationPicker({
             variant="outline"
             size="icon"
             disabled={disabled}
-            aria-label={`Открыть связанную запись ${field.name}`}
+            aria-label={copy("Открыть связанную запись {{value0}}", {
+              value0: field.name,
+            })}
             onClick={() => onOpen(target.name, value, undefined, field.name)}
           >
             <ArrowUpRight />
@@ -91,7 +107,7 @@ export function RelationPicker({
             variant="ghost"
             size="icon"
             disabled={disabled}
-            aria-label={`Отвязать ${field.name}`}
+            aria-label={copy("Отвязать {{value0}}", { value0: field.name })}
             onClick={() => onChange("")}
           >
             <Unlink className="size-4" />

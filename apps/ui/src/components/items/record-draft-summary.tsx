@@ -1,9 +1,10 @@
 "use client";
 
 import { Undo2 } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { draftChanges, type RecordDraft } from "./record-draft-model";
 import type { RecordEditorRequest } from "./record-editor-types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function RecordDraftSummary({
   draft,
@@ -16,6 +17,8 @@ export function RecordDraftSummary({
   onChange: (value: RecordDraft) => void;
   onEdit: (request: RecordEditorRequest) => void;
 }) {
+  const copy = useUiCopy();
+
   const records = draft.records?.filter(
     (entry) => draftChanges(entry.record) > 0,
   );
@@ -24,12 +27,14 @@ export function RecordDraftSummary({
   }
   return (
     <section
-      aria-label="Изменённые связанные записи"
+      aria-label={copy("Изменённые связанные записи")}
       className="space-y-2 rounded-xl border bg-muted/20 p-4"
     >
-      <p className="text-sm font-medium">Изменённые связанные записи</p>
+      <p className="text-sm font-medium">
+        {copy("Изменённые связанные записи")}
+      </p>
       <p className="text-xs text-muted-foreground">
-        Сохранятся вместе с этой карточкой.
+        {copy("Сохранятся вместе с этой карточкой. ")}
       </p>
       {records.map(({ collection, record }) => (
         <div
@@ -51,7 +56,9 @@ export function RecordDraftSummary({
             variant="ghost"
             size="icon-sm"
             disabled={busy}
-            aria-label={`Отменить изменения: ${record.label ?? record.id}`}
+            aria-label={copy("Отменить изменения: {{value0}}", {
+              value0: record.label ?? record.id,
+            })}
             onClick={() =>
               onChange({
                 ...draft,

@@ -1,14 +1,28 @@
 import type { NextConfig } from "next";
-import { generateUiRegistry } from "@asmblyr/kit/node";
+import { generateUiRegistry } from "@asmblyr-collaborative/kit/node";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.ASMBLYR_VISUAL_TEST === "1" ? ".next-visual" : ".next",
+  async redirects() {
+    return [
+      {
+        source: "/system-settings/:path*",
+        destination: "/admin/settings/:path*",
+        permanent: true,
+      },
+    ];
+  },
   // Authorization codes must not enter the development access log.
   logging: {
     incomingRequests: {
-      ignore: [/^\/sign\/sso\/[a-z0-9_]+\/callback(?:\?|$)/, /^\/oauth\//],
+      ignore: [
+        /^\/sign\/sso\/[a-z0-9_]+\/callback(?:\?|$)/,
+        /^\/connections\/google\/callback(?:\?|$)/,
+        /^\/oauth\//,
+      ],
     },
   },
   async headers() {

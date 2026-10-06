@@ -1,12 +1,15 @@
-import { Input } from "@asmblyr/kit/ui/input";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
+"use client";
+
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
+import { useUiCopy } from "@/lib/ui-copy";
 
 interface FieldDefaultInputProps {
   type: string;
@@ -23,6 +26,8 @@ export function FieldDefaultInput({
   disabled,
   portalContainer,
 }: FieldDefaultInputProps) {
+  const copy = useUiCopy();
+
   if (type === "json")
     return (
       <Textarea
@@ -47,11 +52,11 @@ export function FieldDefaultInput({
           id="field-editor-default-value"
           className="h-10 w-full"
         >
-          <SelectValue placeholder="Выберите значение" />
+          <SelectValue placeholder={copy("Выберите значение")} />
         </SelectTrigger>
         <SelectContent container={portalContainer}>
-          <SelectItem value="true">Да</SelectItem>
-          <SelectItem value="false">Нет</SelectItem>
+          <SelectItem value="true">{copy("Да")}</SelectItem>
+          <SelectItem value="false">{copy("Нет")}</SelectItem>
         </SelectContent>
       </Select>
     );
@@ -63,11 +68,13 @@ export function FieldDefaultInput({
       type={
         type === "integer"
           ? "number"
-          : type === "datetime"
-            ? "datetime-local"
-            : type === "email"
-              ? "email"
-              : "text"
+          : type === "date"
+            ? "date"
+            : type === "datetime"
+              ? "datetime-local"
+              : type === "email"
+                ? "email"
+                : "text"
       }
       value={value}
       onChange={(event) => onChange(event.target.value)}

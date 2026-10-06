@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
-import type { PresenceScope } from "@asmblyr/contracts";
+import type { PresenceScope } from "@asmblyr-collaborative/contracts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -8,8 +8,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePresence } from "./use-presence";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
+  const copy = useUiCopy();
+
   const data = usePresence(scope);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
     null,
@@ -28,15 +31,20 @@ export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
     <div
       ref={mount}
       role="group"
-      aria-label={`Сейчас здесь: ${data.total}`}
+      aria-label={copy("Сейчас здесь: {{value0}}", { value0: data.total })}
       className="flex shrink-0 -space-x-1.5"
     >
       {visible.map((person) => {
         const name = person.self
-          ? `${person.displayName} (вы)`
+          ? copy("{{value0}} (вы)", { value0: person.displayName })
           : person.displayName;
         const label =
-          person.views > 1 ? `${name} · открыто окон: ${person.views}` : name;
+          person.views > 1
+            ? copy("{{value0}} · открыто окон: {{value1}}", {
+                value0: name,
+                value1: person.views,
+              })
+            : name;
         const initials = person.displayName
           .trim()
           .split(/\s+/)
@@ -60,7 +68,7 @@ export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
                     />
                   )}
                   <AvatarFallback className="bg-muted text-[10px] font-medium">
-                    {initials || "У"}
+                    {initials || copy("У")}
                   </AvatarFallback>
                 </Avatar>
               </button>
@@ -80,7 +88,9 @@ export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
           <TooltipTrigger asChild>
             <button
               type="button"
-              aria-label={`Ещё участников: ${remaining}`}
+              aria-label={copy("Ещё участников: {{value0}}", {
+                value0: remaining,
+              })}
               className="relative flex size-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-medium outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring"
             >
               +{remaining}
@@ -96,7 +106,10 @@ export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
               <p key={person.id}>{person.displayName}</p>
             ))}
             {data.total > data.participants.length && (
-              <p>И ещё {data.total - data.participants.length}</p>
+              <p>
+                {copy("И ещё ")}
+                {data.total - data.participants.length}
+              </p>
             )}
           </TooltipContent>
         </Tooltip>

@@ -2,12 +2,15 @@ import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { coreAddress, requireSession } from "@/lib/session";
 import { itemSearchHref, type SearchResults } from "@/lib/search";
+import { getUiCopy } from "@/lib/ui-copy-server";
 
 export default async function SearchPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const copy = await getUiCopy();
+
   const requested = (await searchParams).q;
   const q = typeof requested === "string" ? requested.trim() : "";
   const { token } = await requireSession(`/search?q=${encodeURIComponent(q)}`);
@@ -23,30 +26,30 @@ export default async function SearchPage({
           signal: AbortSignal.timeout(10000),
         },
       );
-      if (!response.ok) error = "Не удалось выполнить поиск";
+      if (!response.ok) error = copy("Не удалось выполнить поиск");
       else results = (await response.json()) as SearchResults;
     } catch {
-      error = "Не удалось выполнить поиск";
+      error = copy("Не удалось выполнить поиск");
     }
   }
 
   return (
     <div className="space-y-7">
       <PageHeader
-        title="Поиск"
+        title={copy("Поиск")}
         description={
           q
-            ? `Результаты по запросу «${q}»`
-            : "Введите запрос в поле поиска в шапке."
+            ? copy("Результаты по запросу «{{value0}}»", { value0: q })
+            : copy("Введите запрос в поле поиска в шапке.")
         }
       />
       {error ? (
-        <p role="alert">{error}</p>
+        <p role="alert">{copy(error)}</p>
       ) : (
         q && (
           <>
             <section className="space-y-3">
-              <h2 className="font-semibold">Коллекции</h2>
+              <h2 className="font-semibold">{copy("Коллекции")}</h2>
               {results.collections.length ? (
                 <div className="divide-y rounded-xl border bg-card">
                   {results.collections.map(({ name, displayName }) => (
@@ -60,11 +63,15 @@ export default async function SearchPage({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Совпадений нет</p>
+                <p className="text-sm text-muted-foreground">
+                  {copy("Совпадений нет")}
+                </p>
               )}
             </section>
             <section className="space-y-3">
-              <h2 className="font-semibold">Первые найденные записи</h2>
+              <h2 className="font-semibold">
+                {copy("Первые найденные записи")}
+              </h2>
               {results.items.length ? (
                 <div className="divide-y rounded-xl border bg-card">
                   {results.items.map((item) => (
@@ -81,7 +88,9 @@ export default async function SearchPage({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Совпадений нет</p>
+                <p className="text-sm text-muted-foreground">
+                  {copy("Совпадений нет")}
+                </p>
               )}
               {[...new Set(results.items.map((item) => item.collection))].map(
                 (collection) => (
@@ -90,7 +99,8 @@ export default async function SearchPage({
                     href={`/items/${encodeURIComponent(collection)}?q=${encodeURIComponent(q)}`}
                     className="mr-4 inline-block text-sm text-primary hover:underline"
                   >
-                    Все совпадения в {collection}
+                    {copy("Все совпадения в ")}
+                    {collection}
                   </Link>
                 ),
               )}

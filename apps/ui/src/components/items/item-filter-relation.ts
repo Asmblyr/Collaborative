@@ -1,5 +1,6 @@
 import { changeFilterOperator } from "./item-filter-model";
 import type { FilterCondition, FilterScope } from "./item-filter-options";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 export const isManyRelation = (scope: FilterScope) =>
   scope.kind === "o2m" || scope.kind === "m2m";
@@ -19,10 +20,11 @@ export function relationSelectionScope(
 
 export function relationSelectionCondition(
   scope: FilterScope,
+  copy: UiCopy = originalCopy,
 ): FilterCondition {
   if (scope.kind === "m2o") return { field: scope.id, op: "eq", value: "" };
   if (!scope.presenceField)
-    throw new Error("Для этой связи недоступен выбор записей");
+    throw new Error(copy("Для этой связи недоступен выбор записей"));
   return {
     field: scope.presenceField,
     op: "in",

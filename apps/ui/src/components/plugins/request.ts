@@ -1,6 +1,10 @@
-import type { PluginRequest } from "@asmblyr/kit/ui";
+import type { PluginRequest } from "@asmblyr-collaborative/kit/ui";
+import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
-export function pluginRequest(namespace: string): PluginRequest {
+export function pluginRequest(
+  namespace: string,
+  copy: UiCopy = originalCopy,
+): PluginRequest {
   const base = `/api/${namespace}`;
   return async <T>(path: string, init?: RequestInit): Promise<T> => {
     if (!path.startsWith("/") || path.startsWith("//"))
@@ -21,13 +25,13 @@ export function pluginRequest(namespace: string): PluginRequest {
     const result = await response.json().catch(() => null);
     if (!response.ok) {
       if (response.status === 401)
-        throw new Error("Сессия истекла. Войдите снова.");
+        throw new Error(copy("Сессия истекла. Войдите снова."));
       if (response.status === 403)
-        throw new Error("Нет доступа к этому действию или записи.");
+        throw new Error(copy("Нет доступа к этому действию или записи."));
       if (response.status === 404)
-        throw new Error("Запись или расширение больше недоступны.");
+        throw new Error(copy("Запись или расширение больше недоступны."));
       throw new Error(
-        result?.message ?? "Не удалось выполнить запрос расширения",
+        result?.message ?? copy("Не удалось выполнить запрос расширения"),
       );
     }
     return result as T;

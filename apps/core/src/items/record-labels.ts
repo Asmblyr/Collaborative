@@ -7,6 +7,7 @@ import type { Knex } from "knex";
 import type { Collection } from "../collections/types.js";
 import { listCollections } from "../collections/catalog-repository.js";
 import { grantFor, type Access } from "../permissions/access.js";
+import { resolveNestedLabels } from "./nested-labels.js";
 import { recordLabelPlan } from "./record-label.js";
 
 // One authoritative label for lists, search, direct links and relationship
@@ -23,6 +24,15 @@ export async function resolveRecordLabels(
   const collection = catalog.find((entry) => entry.name === name);
   const allowed = grantFor(access, name, "read");
   if (!collection || !allowed) return {};
+  if (collection.displayTemplate?.includes("."))
+    return resolveNestedLabels(
+      database,
+      collection,
+      ids,
+      catalog,
+      access,
+      allowed,
+    );
   const key = collection.primaryKey.name;
   const readable = (field: string) =>
     field === key || allowed.includes("*") || allowed.includes(field);

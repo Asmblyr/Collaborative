@@ -1,7 +1,7 @@
 import type {
   AssistantPluginResult,
   PluginPreparedAction,
-} from "@asmblyr/contracts";
+} from "@asmblyr-collaborative/contracts";
 import type { PluginActions } from "../plugins/actions.js";
 import type { Access } from "../permissions/access.js";
 import { ItemError } from "../items/validation.js";

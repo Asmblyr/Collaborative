@@ -4,10 +4,16 @@ import { useEffect, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Italic, List, ListOrdered, Undo, Redo } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Textarea } from "@asmblyr/kit/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@asmblyr/kit/ui/tabs";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@asmblyr-collaborative/kit/ui/tabs";
 import { ContentValue, contentClass, safeContentHtml } from "./content-value";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function MarkdownEditor({
   id,
@@ -24,6 +30,8 @@ export function MarkdownEditor({
   placeholder?: string;
   onChange: (value: string) => void;
 }) {
+  const copy = useUiCopy();
+
   const [tab, setTab] = useState("write");
   return (
     <Tabs
@@ -32,8 +40,8 @@ export function MarkdownEditor({
       className="rounded-lg border p-2"
     >
       <TabsList className="h-8">
-        <TabsTrigger value="write">Текст</TabsTrigger>
-        <TabsTrigger value="preview">Предпросмотр</TabsTrigger>
+        <TabsTrigger value="write">{copy("Текст")}</TabsTrigger>
+        <TabsTrigger value="preview">{copy("Предпросмотр")}</TabsTrigger>
       </TabsList>
       <TabsContent
         forceMount
@@ -45,7 +53,7 @@ export function MarkdownEditor({
           value={value}
           disabled={disabled}
           required={required && tab === "write"}
-          placeholder={placeholder || "Текст в формате Markdown"}
+          placeholder={placeholder || copy("Текст в формате Markdown")}
           rows={8}
           className="resize-y border-0 shadow-none font-mono text-sm"
           onChange={(e) => onChange(e.target.value)}
@@ -68,7 +76,7 @@ export function MarkdownEditor({
               group: "",
             },
           }}
-          value={value || "Пока нет текста"}
+          value={value || copy("Пока нет текста")}
         />
       </TabsContent>
     </Tabs>
@@ -86,6 +94,8 @@ export function RichTextEditor({
   disabled: boolean;
   onChange: (value: string) => void;
 }) {
+  const copy = useUiCopy();
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -101,7 +111,7 @@ export function RichTextEditor({
         id,
         role: "textbox",
         "aria-multiline": "true",
-        "aria-label": "Форматированный текст",
+        "aria-label": copy("Форматированный текст"),
         class: `${contentClass} min-h-48 px-3 py-2 outline-none`,
       },
     },
@@ -121,32 +131,32 @@ export function RichTextEditor({
   }, [editor, value]);
   const controls = [
     {
-      label: "Жирный",
+      label: copy("Жирный"),
       icon: Bold,
       run: () => editor?.chain().focus().toggleBold().run(),
     },
     {
-      label: "Курсив",
+      label: copy("Курсив"),
       icon: Italic,
       run: () => editor?.chain().focus().toggleItalic().run(),
     },
     {
-      label: "Список",
+      label: copy("Список"),
       icon: List,
       run: () => editor?.chain().focus().toggleBulletList().run(),
     },
     {
-      label: "Нумерованный список",
+      label: copy("Нумерованный список"),
       icon: ListOrdered,
       run: () => editor?.chain().focus().toggleOrderedList().run(),
     },
     {
-      label: "Отменить",
+      label: copy("Отменить"),
       icon: Undo,
       run: () => editor?.chain().focus().undo().run(),
     },
     {
-      label: "Повторить",
+      label: copy("Повторить"),
       icon: Redo,
       run: () => editor?.chain().focus().redo().run(),
     },
@@ -155,7 +165,7 @@ export function RichTextEditor({
     <div className="overflow-hidden rounded-lg border">
       <div
         role="toolbar"
-        aria-label="Форматирование"
+        aria-label={copy("Форматирование")}
         className="flex flex-wrap gap-1 border-b bg-muted/30 p-1"
       >
         {controls.map((control) => (

@@ -9,7 +9,8 @@ test("plugin settings validate, persist, reject conflicts and apply to the next 
     new URL("../../../package.json", import.meta.url),
   );
   const comments = plugins.find((plugin) => plugin.namespace === "comments")!;
-  const f = await pluginItemsFixture({ plugins: [comments] });
+  const google = plugins.find((plugin) => plugin.namespace === "google")!;
+  const f = await pluginItemsFixture({ plugins: [comments, google] });
   t.after(async () => {
     await f.db("asmblyr_settings").where({ key: "plugin:comments" }).delete();
     await f.close();
@@ -20,6 +21,18 @@ test("plugin settings validate, persist, reject conflicts and apply to the next 
   await f.call("GET", url, undefined, 401, null);
   await f.call("GET", url, undefined, 403, f.memberToken);
   await f.call("GET", "/settings/plugins", undefined, 403, f.memberToken);
+  const catalog = (await f.call("GET", "/settings/plugins")).data;
+  const googleEntry = catalog.find(
+    (entry: { namespace: string }) => entry.namespace === "google",
+  );
+  assert.equal(googleEntry.title, "Google Workspace");
+  assert.equal(googleEntry.settings, null);
+  assert.equal(
+    catalog.find(
+      (entry: { namespace: string }) => entry.namespace === "comments",
+    ).title,
+    "Комментарии",
+  );
   await f.call("GET", "/settings/plugins/missing", undefined, 404);
   const initial = (await f.call("GET", url)).data;
   assert.deepEqual(initial.values, {

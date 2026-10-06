@@ -1,4 +1,4 @@
-import type { PresenceResult } from "@asmblyr/contracts";
+import type { PresenceResult } from "@asmblyr-collaborative/contracts";
 
 /** Do not overlap heartbeats or let a late response resurrect a closed view. */
 export function createPresenceSession(

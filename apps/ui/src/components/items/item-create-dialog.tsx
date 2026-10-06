@@ -2,13 +2,15 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { relationFilterDependencies } from "@asmblyr-collaborative/contracts";
 import { RelationPicker } from "./relation-picker";
 import { EditorDialog } from "@/components/collections/editor-dialog";
 import { ItemForm } from "./item-form";
 import { ItemFormActions } from "./item-form-actions";
 import type { OpenRelated } from "./relation-picker";
 import type { Collection, Item, ItemValue } from "./types";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemCreateDialog({
   collection,
@@ -50,6 +52,8 @@ export function ItemCreateDialog({
   formRevision?: number;
   conflictReview?: ReactNode;
 }) {
+  const copy = useUiCopy();
+
   const formId = useId();
   const [uploading, setUploading] = useState(false);
   const [changedCount, setChangedCount] = useState(0);
@@ -71,7 +75,17 @@ export function ItemCreateDialog({
       field.name === leadField &&
       field.relation?.kind === "m2o" &&
       (field.required || !field.nullable) &&
-      field.defaultValue === undefined,
+      field.defaultValue === undefined &&
+      !fields.some(
+        (f) =>
+          f.presentation?.rules?.requiredWhen?.rules.some(
+            (r) => r.field === field.name,
+          ) ||
+          (f.presentation?.relationFilter &&
+            relationFilterDependencies(f.presentation.relationFilter).includes(
+              field.name,
+            )),
+      ),
   );
   const choosing = Boolean(lead && step === "choose");
 
@@ -87,7 +101,9 @@ export function ItemCreateDialog({
       busy={pending || uploading}
       title={
         title ??
-        (collection.mode === "single" ? "Создать объект" : "Новая запись")
+        (collection.mode === "single"
+          ? copy("Создать объект")
+          : copy("Новая запись"))
       }
       eyebrow={collection.displayName || collection.name}
       onClose={onClose}
@@ -99,7 +115,7 @@ export function ItemCreateDialog({
             className="ml-auto"
             onClick={() => setStep("details")}
           >
-            Далее
+            {copy("Далее ")}
             <ArrowRight />
           </Button>
         ) : (
@@ -109,7 +125,9 @@ export function ItemCreateDialog({
             pending={pending || uploading}
             creating
             disabled={Boolean(conflictReview) || Boolean(lead && !leadValue)}
-            label={draftMode ? "Добавить в черновик" : "Создать запись"}
+            label={
+              draftMode ? copy("Добавить в черновик") : copy("Создать запись")
+            }
           />
         )
       }
@@ -124,8 +142,8 @@ export function ItemCreateDialog({
             <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
               <p className="text-xs text-muted-foreground">
                 {choosing
-                  ? "Шаг 1 из 2 · Выбор записи"
-                  : "Шаг 2 из 2 · Параметры"}
+                  ? copy("Шаг 1 из 2 · Выбор записи")
+                  : copy("Шаг 2 из 2 · Параметры")}
               </p>
               <p className="text-sm font-medium">
                 {lead.presentation?.label || lead.name}
@@ -149,7 +167,8 @@ export function ItemCreateDialog({
                   variant="ghost"
                   onClick={() => setStep("choose")}
                 >
-                  <ArrowLeft />К выбору
+                  <ArrowLeft />
+                  {copy("К выбору ")}
                 </Button>
               )}
             </div>
@@ -161,6 +180,9 @@ export function ItemCreateDialog({
               embedded
               hideActions
               fields={fields.filter((field) => field !== lead)}
+              aliasFields={collection.fields.filter(
+                (field) => field.type === "alias",
+              )}
               catalog={catalog}
               primaryKey={collection.primaryKey}
               formLayout={collection.formLayout}
@@ -189,7 +211,7 @@ export function ItemCreateDialog({
               role="alert"
               className="text-sm text-destructive"
             >
-              {message}
+              {copy(message)}
             </p>
           )}
         </div>

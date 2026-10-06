@@ -1,22 +1,23 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
-import { Input } from "@asmblyr/kit/ui/input";
-import { Checkbox } from "@asmblyr/kit/ui/checkbox";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@asmblyr/kit/ui/select";
+} from "@asmblyr-collaborative/kit/ui/select";
 import type {
   RepeaterField,
   RepeaterSettings as Settings,
 } from "@/components/items/presentation-types";
 import { FieldChoiceSettings } from "./field-choice-settings";
 import { defaultPresentation } from "./field-presentation-defaults";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export const defaultRepeater: Settings = {
   fields: [
@@ -45,6 +46,8 @@ export function RepeaterSettings({
   container?: HTMLElement | null;
   onChange: (value: Settings) => void;
 }) {
+  const copy = useUiCopy();
+
   const setField = (index: number, field: RepeaterField) =>
     onChange({
       ...value,
@@ -65,10 +68,11 @@ export function RepeaterSettings({
   return (
     <section className="space-y-4 rounded-xl border p-4">
       <div>
-        <h3 className="text-sm font-medium">Поля каждого элемента</h3>
+        <h3 className="text-sm font-medium">{copy("Поля каждого элемента")}</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Список хранится в одном JSON-поле. Изменение настройки не переписывает
-          существующие данные.
+          {copy(
+            "Список хранится в одном JSON-поле. Изменение настройки не переписывает существующие данные. ",
+          )}
         </p>
       </div>
       {value.fields.map((field, index) => (
@@ -78,13 +82,16 @@ export function RepeaterSettings({
         >
           <div className="flex items-center gap-1">
             <span className="flex-1 text-xs font-medium text-muted-foreground">
-              Поле {index + 1}
+              {copy("Поле ")}
+              {index + 1}
             </span>
             <Button
               type="button"
               size="icon-sm"
               variant="ghost"
-              aria-label={`Поднять JSON-поле ${index + 1}`}
+              aria-label={copy("Поднять JSON-поле {{value0}}", {
+                value0: index + 1,
+              })}
               disabled={disabled || index === 0}
               onClick={() => move(index, -1)}
             >
@@ -94,7 +101,9 @@ export function RepeaterSettings({
               type="button"
               size="icon-sm"
               variant="ghost"
-              aria-label={`Опустить JSON-поле ${index + 1}`}
+              aria-label={copy("Опустить JSON-поле {{value0}}", {
+                value0: index + 1,
+              })}
               disabled={disabled || index === value.fields.length - 1}
               onClick={() => move(index, 1)}
             >
@@ -104,7 +113,9 @@ export function RepeaterSettings({
               type="button"
               size="icon-sm"
               variant="ghost"
-              aria-label={`Удалить JSON-поле ${index + 1}`}
+              aria-label={copy("Удалить JSON-поле {{value0}}", {
+                value0: index + 1,
+              })}
               disabled={disabled || value.fields.length === 1}
               onClick={() =>
                 onChange({
@@ -120,7 +131,7 @@ export function RepeaterSettings({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <label className="space-y-1 text-xs">
-              Ключ в JSON
+              {copy("Ключ в JSON ")}
               <Input
                 value={field.name}
                 disabled={disabled}
@@ -133,7 +144,7 @@ export function RepeaterSettings({
               />
             </label>
             <label className="space-y-1 text-xs">
-              Подпись
+              {copy("Подпись ")}
               <Input
                 value={field.label}
                 disabled={disabled}
@@ -157,19 +168,21 @@ export function RepeaterSettings({
               }}
             >
               <SelectTrigger
-                aria-label={`Тип JSON-поля ${index + 1}`}
+                aria-label={copy("Тип JSON-поля {{value0}}", {
+                  value0: index + 1,
+                })}
                 className="w-full"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={container}>
                 {Object.entries({
-                  text: "Текст",
+                  text: copy("Текст"),
                   email: "Email",
-                  integer: "Целое число",
-                  decimal: "Дробное число",
-                  boolean: "Да / нет",
-                  datetime: "Дата и время",
+                  integer: copy("Целое число"),
+                  decimal: copy("Дробное число"),
+                  boolean: copy("Да / нет"),
+                  datetime: copy("Дата и время"),
                 }).map(([k, label]) => (
                   <SelectItem
                     key={k}
@@ -191,14 +204,16 @@ export function RepeaterSettings({
               }
             >
               <SelectTrigger
-                aria-label={`Ширина JSON-поля ${index + 1}`}
+                aria-label={copy("Ширина JSON-поля {{value0}}", {
+                  value0: index + 1,
+                })}
                 className="w-full"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={container}>
-                <SelectItem value="full">Вся строка</SelectItem>
-                <SelectItem value="half">Половина строки</SelectItem>
+                <SelectItem value="full">{copy("Вся строка")}</SelectItem>
+                <SelectItem value="half">{copy("Половина строки")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -218,17 +233,25 @@ export function RepeaterSettings({
               }}
             >
               <SelectTrigger
-                aria-label={`Редактор JSON-поля ${index + 1}`}
+                aria-label={copy("Редактор JSON-поля {{value0}}", {
+                  value0: index + 1,
+                })}
                 className="w-full"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent container={container}>
-                <SelectItem value="auto">Однострочный текст</SelectItem>
-                <SelectItem value="textarea">Многострочный текст</SelectItem>
+                <SelectItem value="auto">
+                  {copy("Однострочный текст")}
+                </SelectItem>
+                <SelectItem value="textarea">
+                  {copy("Многострочный текст")}
+                </SelectItem>
                 <SelectItem value="markdown">Markdown</SelectItem>
-                <SelectItem value="url">Ссылка</SelectItem>
-                <SelectItem value="select">Список вариантов</SelectItem>
+                <SelectItem value="url">{copy("Ссылка")}</SelectItem>
+                <SelectItem value="select">
+                  {copy("Список вариантов")}
+                </SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -241,7 +264,13 @@ export function RepeaterSettings({
               }}
               disabled={disabled}
               onChange={(v) =>
-                setField(index, { ...field, options: v.options })
+                setField(index, {
+                  ...field,
+                  options: v.options?.map((option) => ({
+                    ...option,
+                    value: String(option.value),
+                  })),
+                })
               }
             />
           )}
@@ -253,7 +282,7 @@ export function RepeaterSettings({
                 setField(index, { ...field, required: v === true })
               }
             />
-            Обязательно
+            {copy("Обязательно ")}
           </label>
         </div>
       ))}
@@ -277,11 +306,11 @@ export function RepeaterSettings({
         }}
       >
         <Plus />
-        Поле элемента
+        {copy("Поле элемента ")}
       </Button>
       <div className="grid grid-cols-2 gap-3">
         <label className="space-y-1 text-xs">
-          Минимум элементов
+          {copy("Минимум элементов ")}
           <Input
             type="number"
             min={0}
@@ -294,7 +323,7 @@ export function RepeaterSettings({
           />
         </label>
         <label className="space-y-1 text-xs">
-          Максимум элементов
+          {copy("Максимум элементов ")}
           <Input
             type="number"
             min={1}
@@ -315,13 +344,15 @@ export function RepeaterSettings({
         }
       >
         <SelectTrigger
-          aria-label="Заголовок элемента"
+          aria-label={copy("Заголовок элемента")}
           className="w-full"
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent container={container}>
-          <SelectItem value="$none">Заголовок: номер элемента</SelectItem>
+          <SelectItem value="$none">
+            {copy("Заголовок: номер элемента")}
+          </SelectItem>
           {value.fields
             .filter(
               (f, i, all) =>

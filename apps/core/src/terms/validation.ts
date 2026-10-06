@@ -1,4 +1,4 @@
-import type { TermInput } from "@asmblyr/contracts";
+import type { TermInput } from "@asmblyr-collaborative/contracts";
 import { InputError, objectInput, textInput } from "../shared/input.js";
 
 export function parseTermId(value: unknown): string {

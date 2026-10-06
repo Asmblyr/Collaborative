@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
-import type { PluginPreparedAction } from "@asmblyr/contracts";
+import type { PluginPreparedAction } from "@asmblyr-collaborative/contracts";
+import type { TranslationCatalogs } from "@asmblyr-collaborative/contracts";
 import type { FieldInterfaceDefinition } from "./field-interface.js";
 export type {
   FieldInterfaceDefinition,
@@ -17,6 +18,10 @@ export interface RecordPanelProps {
   record: { collection: string; id: string; displayName: string };
   /** Same-origin authenticated proxy. Paths are relative to this plugin's HTTP namespace. */
   request: PluginRequest;
+  /** True while this tab is visible. Mounted inactive panels retain their drafts. */
+  active?: boolean;
+  /** Optional entity within this panel, e.g. a comment addressed by an inbox link. */
+  targetId?: string;
   /** Include panel drafts and requests in the editor's unsaved-change/busy protection. */
   onStateChange(state: { dirty: boolean; busy: boolean }): void;
 }
@@ -24,11 +29,13 @@ export interface RecordPanelProps {
 export interface RecordPanelDefinition {
   id: string;
   title: string;
+  titleKey?: string;
   component: ComponentType<RecordPanelProps>;
   supports?(record: RecordPanelProps["record"]): boolean;
 }
 
 export interface UiPluginDefinition {
+  translations?: TranslationCatalogs;
   fieldInterfaces?: readonly FieldInterfaceDefinition[];
   recordPanels?: readonly RecordPanelDefinition[];
   pages?: readonly PluginPageDefinition[];
@@ -44,6 +51,7 @@ export interface PluginPageDefinition {
   /** Unique within this plugin; forms /extensions/<namespace>/<id>. */
   id: string;
   title: string;
+  titleKey?: string;
   component: ComponentType<PluginPageProps>;
 }
 

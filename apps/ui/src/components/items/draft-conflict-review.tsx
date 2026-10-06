@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, GitCompareArrows } from "lucide-react";
-import { Button } from "@asmblyr/kit/ui/button";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { cn } from "@/lib/utils";
 import { displayValue } from "./item-display";
 import type { Collection } from "./types";
 import type { ConflictChoices, DraftConflict } from "./draft-conflicts";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function DraftConflictReview({
   conflicts,
@@ -17,6 +18,8 @@ export function DraftConflictReview({
   catalog: Collection[];
   onApply: (choices: ConflictChoices) => void;
 }) {
+  const copy = useUiCopy();
+
   const [choices, setChoices] = useState<ConflictChoices>({});
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -27,7 +30,7 @@ export function DraftConflictReview({
     <section
       ref={panel}
       tabIndex={-1}
-      aria-label="Конфликт изменений"
+      aria-label={copy("Конфликт изменений")}
       className="space-y-4 rounded-lg border p-4 outline-none"
     >
       <div className="space-y-1">
@@ -35,12 +38,17 @@ export function DraftConflictReview({
           role="alert"
           className="flex items-center gap-2 text-sm font-medium"
         >
-          <GitCompareArrows className="size-4 shrink-0" /> Запись изменилась
+          <GitCompareArrows className="size-4 shrink-0" />{" "}
+          {copy(" Запись изменилась ")}
         </p>
         <p className="text-xs text-muted-foreground">
           {conflicts.length
-            ? "Выберите значения для совпавших полей. Остальные изменения остались в черновике."
-            : "Актуальные значения загружены. Ваши изменения остались в черновике."}
+            ? copy(
+                "Выберите значения для совпавших полей. Остальные изменения остались в черновике.",
+              )
+            : copy(
+                "Актуальные значения загружены. Ваши изменения остались в черновике.",
+              )}
         </p>
       </div>
       {conflicts.map((conflict) => {
@@ -87,17 +95,20 @@ export function DraftConflictReview({
                   )}
                 >
                   <span className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
-                    {choice === "mine" ? "Ваше значение" : "Актуальное"}
+                    {choice === "mine"
+                      ? copy("Ваше значение")
+                      : copy("Актуальное")}
                     {choices[conflict.key] === choice && (
                       <Check className="size-3" />
                     )}
                   </span>
                   <span className="block max-h-24 overflow-auto whitespace-pre-wrap break-words">
                     {choice === "mine" && reference
-                      ? reference.label || "Новая запись"
+                      ? reference.label || copy("Новая запись")
                       : displayValue(
                           choice === "mine" ? conflict.mine : conflict.current,
                           field?.type ?? "text",
+                          copy,
                         )}
                   </span>
                 </Button>
@@ -112,7 +123,7 @@ export function DraftConflictReview({
         disabled={conflicts.some((conflict) => !choices[conflict.key])}
         onClick={() => onApply(choices)}
       >
-        Продолжить редактирование
+        {copy("Продолжить редактирование ")}
       </Button>
     </section>
   );
