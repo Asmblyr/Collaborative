@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { NoAccessLayout } from "@/components/layout/no-access-layout";
 import { loadCollections } from "@/lib/collections";
-import { ACCESS_COOKIE, loadSessionUser } from "@/lib/session";
+import { SESSION_COOKIE, loadSessionUser } from "@/lib/session";
 import { loadWorkspaces } from "@/lib/workspaces";
 import { loadPluginExtensions } from "@/lib/plugin-extensions";
 import { BrowserMonitoring } from "@/components/monitoring/browser-monitoring";
@@ -14,7 +14,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const jar = await cookies();
-  const token = jar.get(ACCESS_COOKIE)?.value;
+  const token = jar.get(SESSION_COOKIE)?.value;
   const user = token ? await loadSessionUser(token) : null;
   const [catalog, workspaces, settings, plugins] = await Promise.all([
     token ? loadCollections(token) : { data: [], folders: [], online: false },

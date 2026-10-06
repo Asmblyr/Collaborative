@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { credentialRateLimit } from "./rate-limit.js";
 
-// Account scope works both for direct API clients and for the Next BFF, where
-// many people share one upstream IP. Untrusted forwarded headers are not used.
+// Account scope works for API and browser logins, including deployments behind
+// a shared reverse proxy. Untrusted forwarded headers are not used.
 export function loginRateLimit() {
   const sourceLimit = credentialRateLimit(200);
   const accountLimit = credentialRateLimit(20, (request) => {

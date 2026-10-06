@@ -20,6 +20,7 @@ import {
 import { parseEndpointAction } from "./action-definition.js";
 import { runActionHandler } from "./action-handler.js";
 import { ActionDrafts } from "./action-drafts.js";
+import type { DatabaseActionDrafts } from "./database-drafts.js";
 import { runActionWithSignal } from "./action-execution.js";
 import type { ActionScope } from "./action-items.js";
 
@@ -43,7 +44,9 @@ export class PluginActions {
   constructor(
     plugins: readonly LoadedPlugin[],
     private readonly context: ContextFactory,
-    private readonly drafts = new ActionDrafts(),
+    private readonly drafts:
+      | ActionDrafts
+      | DatabaseActionDrafts = new ActionDrafts(),
     private readonly connectionAvailable?: (access: Access) => Promise<boolean>,
   ) {
     for (const plugin of plugins) {
@@ -236,7 +239,7 @@ export class PluginActions {
     if (!entry.action.page) {
       return result;
     }
-    const prepared = this.drafts.create(this.owner(access), {
+    const prepared = await this.drafts.create(this.owner(access), {
       ...result,
       title: entry.action.title,
       pageId: entry.action.page,
@@ -244,12 +247,12 @@ export class PluginActions {
     return { ...result, prepared };
   }
 
-  prepared(
+  async prepared(
     access: Access,
     namespace: string,
     id: string,
-  ): PluginPreparedAction {
-    const draft = this.drafts.get(this.owner(access), namespace, id);
+  ): Promise<PluginPreparedAction> {
+    const draft = await this.drafts.get(this.owner(access), namespace, id);
     this.find(access, namespace, draft.actionId);
     return draft;
   }

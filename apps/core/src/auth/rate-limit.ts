@@ -1,6 +1,13 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { createHash } from "node:crypto";
 
-// Per-process protection. request.ip ignores forwarded headers unless Fastify trusts the proxy.
+declare module "fastify" {
+  interface FastifyInstance {
+    credentialLimit?: (key: string, limit: number) => Promise<void>;
+  }
+}
+
+// Production limits are shared in PostgreSQL. The fallback supports database-free handlers/tests.
 export function credentialRateLimit(
   limit = 30,
   identify: (request: FastifyRequest) => string = (request) => request.ip,
@@ -8,6 +15,17 @@ export function credentialRateLimit(
   const buckets = new Map<string, { count: number; until: number }>();
   return async (request: FastifyRequest, reply: FastifyReply) => {
     reply.header("Cache-Control", "no-store");
+    if (request.server.credentialLimit) {
+      const key = createHash("sha256")
+        .update(
+          `${request.method}:${request.routeOptions.url}:${limit}:${identify(request)}`,
+        )
+        .digest("hex");
+      reply.header("Retry-After", "60");
+      await request.server.credentialLimit(key, limit);
+      reply.removeHeader("Retry-After");
+      return;
+    }
     const now = Date.now();
     for (const [key, bucket] of buckets)
       if (bucket.until <= now) buckets.delete(key);

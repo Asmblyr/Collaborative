@@ -9,6 +9,7 @@ import { passkeysFromEnv } from "./auth/passkeys/config.js";
 import { limitsFromEnv } from "./operations/limits.js";
 import { cleanupOperations } from "./operations/retention.js";
 import knex from "knex";
+import { createPublicServer } from "./http/public-server.js";
 
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST ?? "127.0.0.1";
@@ -29,6 +30,10 @@ const sso = new SsoService(
   }),
 );
 const app = createApp({
+  trustProxy: process.env.TRUST_PROXY?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
+  sessionCookiePrefix: process.env.SESSION_COOKIE_PREFIX,
   operationLimits: limitsFromEnv(process.env),
   passkeys: passkeysFromEnv(process.env),
   databaseUrl: process.env.DATABASE_URL,
@@ -42,6 +47,29 @@ const app = createApp({
       sourcePlugins: process.argv.includes("--plugin-sources"),
     },
   ),
+});
+const publicPort =
+  process.env.PUBLIC_PORT ??
+  (process.argv.includes("--with-ui") ? "3000" : undefined);
+const publicServer = publicPort
+  ? createPublicServer(app, process.env.UI_URL ?? "http://127.0.0.1:3002")
+  : undefined;
+if (
+  publicPort &&
+  (!/^\d+$/.test(publicPort) ||
+    Number(publicPort) < 1 ||
+    Number(publicPort) > 65535 ||
+    Number(publicPort) === port)
+) {
+  throw new Error("PUBLIC_PORT must be a valid port different from PORT");
+}
+app.addHook("preClose", async () => {
+  if (publicServer?.listening) {
+    publicServer.closePublicConnections();
+    await new Promise<void>((resolve, reject) =>
+      publicServer.close((error) => (error ? reject(error) : resolve())),
+    );
+  }
 });
 const historyDays = Number(process.env.HISTORY_RETENTION_DAYS ?? 0);
 if (!Number.isInteger(historyDays) || historyDays < 0 || historyDays > 3650) {
@@ -86,6 +114,12 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 try {
   await app.listen({ port, host });
+  if (publicServer && publicPort) {
+    await new Promise<void>((resolve, reject) => {
+      publicServer.once("error", reject);
+      publicServer.listen(Number(publicPort), host, resolve);
+    });
+  }
 } catch (error) {
   app.log.error(error);
   process.exitCode = 1;

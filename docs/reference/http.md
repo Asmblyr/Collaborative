@@ -1,6 +1,9 @@
 # HTTP API и OpenAPI
 
-Core: `http://localhost:3001`. Админский BFF: `http://localhost:3000/api`. Префикс `/api` добавляет UI; Core его не использует. Роут плагина выглядит как `/<namespace>/...`.
+Публичный API: `http://localhost:3000/api`, обслуживается непосредственно Core.
+Самостоятельный Core на `http://localhost:3001` поддерживает те же маршруты как
+без префикса, так и с `/api`. Роут плагина: `/api/<namespace>/...` на общем домене.
+Браузер использует HttpOnly-сессию; SDK и внешние приложения — Bearer-токены.
 
 - <a href="/api/index.html" target="_blank" rel="noopener">Открыть интерактивный справочник</a>
 - [Скачать OpenAPI 3.1 JSON](/openapi.json)

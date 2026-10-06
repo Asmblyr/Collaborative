@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { LoginForm } from "@/components/auth/login-form";
-import { ACCESS_COOKIE, coreAddress, safeNext } from "@/lib/session";
+import { SESSION_COOKIE, coreAddress, safeNext } from "@/lib/session";
 import { loadSetupStatus } from "@/lib/setup-status";
 import { SsoProviders } from "@/components/auth/sso-providers";
 import { loadLoginProviders } from "@/lib/sso-server";
@@ -24,7 +24,7 @@ export default async function LoginPage({
   const next = safeNext(typeof requested === "string" ? requested : null);
   const setup = await loadSetupStatus();
   if (setup?.needsSetup) redirect("/setup");
-  const token = (await cookies()).get(ACCESS_COOKIE)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   let signedIn = false;
   if (token) {
     try {

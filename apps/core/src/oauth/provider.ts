@@ -31,7 +31,7 @@ export function createOAuthProvider(db: Knex, config: OAuthConfig) {
         interaction: "asmblyr_oidc_interaction",
         resume: "asmblyr_oidc_resume",
       },
-      short: { httpOnly: true, sameSite: "lax" },
+      short: { httpOnly: true, sameSite: "lax", path: "/oauth" },
       long: { httpOnly: true, sameSite: "lax" },
     },
     claims: { openid: ["sub"], email: ["email"], profile: ["name", "picture"] },

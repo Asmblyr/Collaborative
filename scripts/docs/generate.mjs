@@ -58,7 +58,7 @@ for (const route of routes) {
     operationId: `${route.method.toLowerCase()}_${route.path.replace(/[^A-Za-z0-9]+/g, "_")}`,
     summary: key,
     description: `${entry.access}. ${contract ? "" : "Схемы тела и ответа пока не детализированы; см. реализацию обработчика. "}Источник: ${route.source}`,
-    security: entry.public ? [] : [{ bearerAuth: [] }],
+    security: entry.public ? [] : [{ bearerAuth: [] }, { browserSession: [] }],
     parameters: [...address.matchAll(/\{([^}]+)\}/g)].map((match) => ({
       name: match[1],
       in: "path",
@@ -90,11 +90,24 @@ const spec = {
     description:
       "Все статические маршруты Core и их требования доступа. Часть операций имеет только route-only описание; спецификация не является полной схемой для генерации клиента. OAuth protocol и динамические маршруты плагинов описаны отдельно.",
   },
-  servers: [{ url: "http://localhost:3001", description: "Локальный Core" }],
+  servers: [
+    {
+      url: "http://localhost:3000/api",
+      description: "Публичный API на домене админки",
+    },
+    { url: "http://localhost:3001", description: "Самостоятельный Core" },
+  ],
   paths,
   components: {
     schemas: itemCommitSchemas,
     securitySchemes: {
+      browserSession: {
+        type: "apiKey",
+        in: "cookie",
+        name: "asmblyr_session",
+        description:
+          "HttpOnly browser session; префикс меняется SESSION_COOKIE_PREFIX. Записывающие запросы требуют Origin = AUTH_UI_URL. Cookie не отменяет права конкретной операции.",
+      },
       bearerAuth: {
         type: "http",
         scheme: "bearer",

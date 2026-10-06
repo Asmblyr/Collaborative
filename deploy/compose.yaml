@@ -1,23 +1,57 @@
+# Production Compose: external PostgreSQL/S3, two application containers.
 services:
   migrate:
-    image: ${ASMBLYR_IMAGE:?Set a verified application image digest}
-    env_file: ${ASMBLYR_ENV_FILE:?Set private application environment file}
+    image: ${ASMBLYR_CORE_IMAGE:?Set a verified Core image digest}
+    env_file: ${ASMBLYR_ENV_FILE:?Set private Core environment file}
     command: [node, scripts/container/migrate.mjs]
-    healthcheck:
-      disable: true
-  app:
-    image: ${ASMBLYR_IMAGE}
+  core:
+    image: ${ASMBLYR_CORE_IMAGE}
     env_file: ${ASMBLYR_ENV_FILE}
     environment:
-      PORT: "3000"
-      CORE_PORT: "3001"
+      PORT: "3001"
+      PUBLIC_PORT: "3000"
+      UI_URL: http://ui:3000
+      SESSION_COOKIE_PREFIX: ${SESSION_COOKIE_PREFIX:-asmblyr}
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${UI_PORT:-3000}:3000"
-      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-3001}:3001"
     depends_on:
       migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3001/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
-    stop_grace_period: 30s
-    logging:
+    stop_grace_period: 40s
+    logging: &logging
       driver: json-file
       options: { max-size: 10m, max-file: "3" }
+  ui:
+    image: ${ASMBLYR_UI_IMAGE:?Set a verified UI image digest from the same release}
+    environment:
+      CORE_URL: http://core:3001
+      SESSION_COOKIE_PREFIX: ${SESSION_COOKIE_PREFIX:-asmblyr}
+    depends_on:
+      core: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    stop_grace_period: 40s
+    logging: *logging

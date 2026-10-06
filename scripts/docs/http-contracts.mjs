@@ -2,6 +2,7 @@
 import { itemCommitBody } from "./item-commit-contract.mjs";
 import { presenceBody, presenceResult } from "./presence-contract.mjs";
 import { authBetaContract } from "./auth-beta-contract.mjs";
+import { browserAuthContract } from "./browser-auth-contract.mjs";
 import { localizationContract } from "./localization-contract.mjs";
 import { schemaContract } from "./schema-contract.mjs";
 import { integrationsContract } from "./integrations-contract.mjs";
@@ -70,6 +71,8 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const browser = browserAuthContract(key);
+  if (browser) return browser;
   const systemCollections = systemCollectionsContract(key);
   if (systemCollections) {
     return systemCollections;

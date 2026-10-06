@@ -13,6 +13,7 @@ import type { PasskeyConfig } from "./auth/passkeys/config.js";
 import { privateLogger } from "./operations/logging.js";
 import {
   registerCredentialLimits,
+  requestBucket,
   defaultOperationLimits,
   type OperationLimits,
 } from "./operations/limits.js";
@@ -60,6 +61,7 @@ import { installPluginCollections } from "./plugins/install-collections.js";
 import { registerPluginUiRoutes } from "./plugins/ui-routes.js";
 import { pluginActor } from "./plugins/actor.js";
 import { PluginActions } from "./plugins/actions.js";
+import { DatabaseActionDrafts } from "./plugins/database-drafts.js";
 import { createActionItems } from "./plugins/action-items.js";
 import { registerPluginDraftRoutes } from "./plugins/action-draft-routes.js";
 import { IntegrationService } from "./integrations/service.js";
@@ -73,8 +75,17 @@ import { registerConnectionRoutes } from "./connections/routes.js";
 import { MonitoringRuntime } from "./monitoring/runtime.js";
 import { registerMonitoringRoutes } from "./monitoring/routes.js";
 import type { MonitoringSinkFactory } from "./monitoring/sentry.js";
+import {
+  browserConfig,
+  registerBrowserCookies,
+} from "./auth/browser/cookies.js";
+import { registerBrowserRoutes } from "./auth/browser/routes.js";
+import { registerBrowserSso } from "./auth/browser/sso.js";
+import { registerBrowserGoogle } from "./auth/browser/google.js";
 
 interface AppOptions {
+  trustProxy?: string[];
+  sessionCookiePrefix?: string;
   monitoringSink?: MonitoringSinkFactory;
   operationLimits?: OperationLimits;
   passkeys?: PasskeyConfig;
@@ -91,6 +102,8 @@ interface AppOptions {
 }
 
 export function createApp({
+  trustProxy,
+  sessionCookiePrefix,
   monitoringSink,
   databaseUrl,
   logger = true,
@@ -110,15 +123,32 @@ export function createApp({
   },
 }: AppOptions = {}) {
   const app = Fastify({
+    trustProxy: trustProxy ?? false,
     logger: logger ? privateLogger : false,
     genReqId: () => randomUUID(),
+    // Both the public /api URL and the existing standalone Core URL reach the same routes.
+    rewriteUrl(request) {
+      const url = request.url ?? "/";
+      if (!/^\/api(?:\/|\?|$)/.test(url)) {
+        return url;
+      }
+      const path = url.slice(4);
+      return path.startsWith("/") ? path : `/${path}`;
+    },
   });
+  const browser = browserConfig(passkeys.origin, sessionCookiePrefix);
+  registerBrowserCookies(app, browser);
   registerErrorHandler(app);
   registerServiceActivity(app);
   registerPluginBoundary(app);
   const database = databaseUrl
     ? knex({ client: "pg", connection: postgresConnection(databaseUrl) })
     : null;
+  if (database) {
+    app.decorate("credentialLimit", (key: string, limit: number) =>
+      requestBucket(database, `credential-route:${key}`, 60000, limit),
+    );
+  }
   const hooks = new PluginHooks(plugins, endpointLogger(app.log));
   const integrationSettings =
     database && integrations
@@ -141,6 +171,9 @@ export function createApp({
   const storageSource = integrationRuntime?.storage ?? fileStorage;
   const assistantSource = integrationRuntime?.assistant ?? assistant;
   registerCredentialLimits(app, database);
+  registerBrowserRoutes(app, database, browser, passkeys);
+  registerBrowserSso(app, database, sso, browser);
+  registerBrowserGoogle(app, database, google, browser);
   registerCliRoutes(app, database, passkeys.origin);
   const actions = new PluginActions(
     plugins,
@@ -174,7 +207,7 @@ export function createApp({
           : {}),
       };
     },
-    undefined,
+    database ? new DatabaseActionDrafts(database) : undefined,
     async (access) =>
       Boolean(google && (await google.available(access.principal.id))),
   );

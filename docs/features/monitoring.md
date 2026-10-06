@@ -83,7 +83,7 @@ Sentry получает сетевое соединение от Core или б�
 Сбор Core исключает health/ready, auth, OAuth, личные подключения, конфигурацию
 мониторинга и неизвестные маршруты. Браузерные resource timings ограничены API
 items, collections, files, preferences, presence, notifications и assistant.
-Автоматического сбора Next.js SSR/BFF errors и React component boundaries нет.
+Автоматического сбора Next.js SSR errors и React component boundaries нет.
 Ошибки фона вне HTTP-запроса также не перехватываются этим подключением.
 
 ## Конфигурация через env

@@ -162,20 +162,23 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
     prepared: PluginPreparedAction;
   };
   const draft = result.prepared;
-  assert.deepEqual(actions.prepared(access, "example", draft.draftId).input, {
-    value: 3,
-  });
-  assert.throws(
+  assert.deepEqual(
+    (await actions.prepared(access, "example", draft.draftId)).input,
+    {
+      value: 3,
+    },
+  );
+  await assert.rejects(
     () => actions.prepared(viewer("another", true), "example", draft.draftId),
     {
       statusCode: 404,
     },
   );
-  assert.throws(() => actions.prepared(access, "other", draft.draftId), {
+  await assert.rejects(() => actions.prepared(access, "other", draft.draftId), {
     statusCode: 404,
   });
   const presentation = new PluginResults();
-  assert.throws(
+  await assert.rejects(
     () => presentation.present(actions, access, { resultId: draft.draftId }),
     {
       statusCode: 400,
@@ -183,7 +186,7 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
   );
   presentation.capture(result);
   assert.deepEqual(
-    presentation.present(actions, access, { resultId: draft.draftId }),
+    await presentation.present(actions, access, { resultId: draft.draftId }),
     {
       presented: true,
       requiresUserClick: true,
@@ -191,7 +194,7 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
   );
   // A stale model response cannot re-enable automatic navigation.
   assert.deepEqual(
-    presentation.present(actions, access, {
+    await presentation.present(actions, access, {
       resultId: draft.draftId,
       open: true,
     }),
@@ -209,9 +212,12 @@ test("MCP plugin actions reauthorize, isolate drafts, reject forged results and 
   });
   access = viewer();
   assert.ok("error" in (await mcp.call(advertised.name, { value: 4 })));
-  assert.throws(() => actions.prepared(access, "example", draft.draftId), {
-    statusCode: 403,
-  });
+  await assert.rejects(
+    () => actions.prepared(access, "example", draft.draftId),
+    {
+      statusCode: 403,
+    },
+  );
   access = viewer("another", true);
   assert.ok("error" in (await mcp.call(advertised.name, { value: 4 })));
 });

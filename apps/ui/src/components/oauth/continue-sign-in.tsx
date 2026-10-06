@@ -16,7 +16,7 @@ export function ContinueOAuthSignIn({ details }: { details: ConsentDetails }) {
     if (started.current) return;
     started.current = true;
     void apiRequest<{ redirectTo: string }>(
-      `/oauth/interaction/${details.uid}/complete`,
+      `/oauth/complete/${details.uid}`,
       "POST",
       {
         approve: true,

@@ -5,6 +5,7 @@ import type {
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { H3Event, HTTPError, toResponse } from "h3";
 import { describeRequestError } from "../http/error-handler.js";
+import { isPrivateCookie } from "../auth/browser/cookies.js";
 
 /** Fastify buffers bytes once, with its body limit; H3 owns their interpretation. */
 export function createPluginEvent(
@@ -14,6 +15,22 @@ export function createPluginEvent(
 ): H3Event {
   const headers = new Headers();
   for (const [name, value] of Object.entries(request.headers)) {
+    if (name === "cookie") {
+      const filtered = String(value ?? "")
+        .split(";")
+        .filter(
+          (cookie) =>
+            !isPrivateCookie(
+              cookie,
+              request.server.browserCookiePrefix ?? "asmblyr",
+            ),
+        )
+        .join(";");
+      if (filtered.trim()) {
+        headers.set("cookie", filtered);
+      }
+      continue;
+    }
     if (
       value === undefined ||
       [

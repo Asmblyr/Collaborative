@@ -46,7 +46,7 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
     setError("");
     try {
       const result = await apiRequest<{ redirectTo: string }>(
-        `/oauth/interaction/${details.uid}/complete`,
+        `/oauth/complete/${details.uid}`,
         "POST",
         { approve, userId: details.userId },
       );

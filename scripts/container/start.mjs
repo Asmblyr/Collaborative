@@ -9,15 +9,18 @@ const root = path.resolve(
 function port(value, fallback) {
   const number = Number(value ?? fallback);
   if (!Number.isInteger(number) || number < 1 || number > 65535) {
-    throw new Error("PORT and CORE_PORT must be valid TCP ports");
+    throw new Error(
+      "PORT, CORE_PORT and UI_INTERNAL_PORT must be valid TCP ports",
+    );
   }
   return String(number);
 }
 
 const uiPort = port(process.env.PORT, 3000);
 const corePort = port(process.env.CORE_PORT, 3001);
-if (uiPort === corePort) {
-  throw new Error("PORT and CORE_PORT must differ");
+const renderPort = port(process.env.UI_INTERNAL_PORT, 3002);
+if (new Set([uiPort, corePort, renderPort]).size !== 3) {
+  throw new Error("PORT, CORE_PORT and UI_INTERNAL_PORT must differ");
 }
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL must point to an external PostgreSQL database");
@@ -73,13 +76,15 @@ start("Core", "apps/core", "dist/server.js", {
   ...process.env,
   HOST: "0.0.0.0",
   PORT: corePort,
+  PUBLIC_PORT: uiPort,
+  UI_URL: `http://127.0.0.1:${renderPort}`,
 });
 // Core credentials are not needed by the UI process.
 start("UI", "ui/apps/ui", "server.js", {
   NODE_ENV: "production",
   NEXT_TELEMETRY_DISABLED: "1",
-  HOSTNAME: "0.0.0.0",
-  PORT: uiPort,
+  HOSTNAME: "127.0.0.1",
+  PORT: renderPort,
   CORE_URL: `http://127.0.0.1:${corePort}`,
   ...(process.env.SESSION_COOKIE_PREFIX
     ? { SESSION_COOKIE_PREFIX: process.env.SESSION_COOKIE_PREFIX }

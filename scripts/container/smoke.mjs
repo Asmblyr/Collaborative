@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
+import { verifyHttp } from "./verify-http.mjs";
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 
 const execute = promisify(execFile);
-async function docker(...args) {
+export async function docker(...args) {
   try {
     const result = await execute("docker", args, {
       windowsHide: true,
@@ -18,7 +19,7 @@ async function docker(...args) {
   }
 }
 
-async function until(check, message) {
+export async function until(check, message) {
   for (let attempt = 0; attempt < 90; attempt++) {
     try {
       if (await check()) {
@@ -38,7 +39,6 @@ export async function smokeContainer(image = "asmblyr-collaborative:verify") {
   const app = `${name}-app`;
   const secret = randomBytes(24).toString("hex");
   const databaseUrl = `postgresql://asmblyr:${secret}@${database}:5432/asmblyr_test`;
-  const credentials = { email: "container@example.test", password: secret };
   let networkCreated = false;
   let databaseCreated = false;
   let appCreated = false;
@@ -120,47 +120,7 @@ export async function smokeContainer(image = "asmblyr-collaborative:verify") {
       return true;
     }, "Application did not become healthy");
 
-    const html = await (await fetch(`${ui}/setup`)).text();
-    assert.match(html, /<html/);
-    const assets = [
-      ...new Set(html.match(/\/_next\/static\/[^"<>\s]+\.(?:js|css)/g)),
-    ];
-    assert.ok(assets.length > 0, "UI must contain production assets");
-    for (const asset of assets) {
-      assert.equal((await fetch(`${ui}${asset}`)).status, 200, asset);
-    }
-    assert.equal((await fetch(`${api}/collections`)).status, 401);
-    const setup = await fetch(`${ui}/api/auth/setup`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...credentials, setupToken: secret }),
-    });
-    assert.equal(setup.status, 201, "UI must reach Core for initial setup");
-    const login = await fetch(`${api}/auth/login`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
-    assert.equal(login.status, 200, "Direct API login must work");
-    const { accessToken } = await login.json();
-    const headers = { authorization: `Bearer ${accessToken}` };
-    assert.equal((await fetch(`${api}/collections`, { headers })).status, 200);
-    assert.equal(
-      (await fetch(`${api}/system-collections`, { headers })).status,
-      200,
-    );
-    const admin = await fetch(`${ui}/admin/collections`, {
-      headers: { cookie: `asmblyr_access=${accessToken}` },
-      redirect: "manual",
-    });
-    assert.equal(
-      admin.status,
-      200,
-      "Authenticated UI must render through its bundled SDK",
-    );
-    console.log(
-      "UI assets, setup, direct authenticated API and admin page: passed",
-    );
+    await verifyHttp({ ui, api, secret });
 
     await docker("stop", "--time", "30", app);
     assert.equal(

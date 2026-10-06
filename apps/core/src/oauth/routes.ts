@@ -118,6 +118,14 @@ export function registerOAuthRoutes(
       request.headers["x-forwarded-proto"] = issuer.protocol.slice(0, -1);
       request.headers["x-forwarded-host"] = issuer.host;
       delete request.headers["x-forwarded-for"];
+      request.headers.cookie = (request.headers.cookie ?? "")
+        .split(";")
+        .map((entry) => entry.trim())
+        .filter((entry) =>
+          /^asmblyr_oidc_(session|interaction|resume)(\.sig)?=/.test(entry),
+        )
+        .join("; ");
+      response.setHeader("Cache-Control", "no-store");
       response.setHeader("Referrer-Policy", "no-referrer");
       response.setHeader("X-Frame-Options", "DENY");
       void provider.callback()(request, response).catch(next);

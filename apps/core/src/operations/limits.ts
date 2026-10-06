@@ -53,7 +53,7 @@ export function registerCredentialLimits(
     if (
       !db ||
       request.method !== "POST" ||
-      !/^\/auth\/(?:login|setup|service-token|federation-token|invitations\/(?:accept|claim)|passkeys\/(?:options|login)|cli\/(?:authorize|token)|sso\/)/.test(
+      !/^\/auth\/(?:browser\/(?:login|invitations\/claim|passkeys\/)|login|setup|service-token|federation-token|invitations\/(?:accept|claim)|passkeys\/(?:options|login)|cli\/(?:authorize|token)|sso\/)/.test(
         request.url,
       )
     ) {
@@ -87,6 +87,7 @@ export async function acquireAssistantLease(
         { statusCode: 429, code: "ASSISTANT_CONCURRENT_LIMIT" },
       );
     }
+    await requestBucket(trx, `assistant-minute:${userId}`, 60000, 10);
     await requestBucket(
       trx,
       `assistant:${userId}:${new Date().toISOString().slice(0, 10)}`,

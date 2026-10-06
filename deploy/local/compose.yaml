@@ -23,6 +23,7 @@ services:
       MINIO_ROOT_USER: ${S3_USER:?Set S3_USER}
       MINIO_ROOT_PASSWORD: ${S3_PASSWORD:?Set S3_PASSWORD}
     volumes: [files_data:/data]
+    ports: ["127.0.0.1:${UI_PORT:-3300}:3000"]
     restart: unless-stopped
     logging: *logging
   migrate:
@@ -30,7 +31,7 @@ services:
     build: { context: ../.., target: core }
     image: asmblyr-core:local
     user: node
-    command: [node, ../../scripts/operations/migrate.mjs]
+    command: [node, scripts/operations/migrate.mjs]
     environment:
       DATABASE_URL: postgresql://asmblyr:${DB_PASSWORD}@db:5432/asmblyr
       FILES_S3_ENDPOINT: http://127.0.0.1:9000
@@ -49,6 +50,9 @@ services:
       DATABASE_URL: postgresql://asmblyr:${DB_PASSWORD}@db:5432/asmblyr
       ASMBLYR_SETUP_TOKEN: ${SETUP_TOKEN:?Set SETUP_TOKEN}
       AUTH_UI_URL: ${UI_ORIGIN:-http://localhost:3300}
+      PUBLIC_PORT: "3000"
+      UI_URL: http://ui:3000
+      SESSION_COOKIE_PREFIX: asmblyr_local
       FILES_STORAGE: s3
       FILES_BUCKET: asmblyr
       FILES_S3_ENDPOINT: http://127.0.0.1:9000
@@ -81,7 +85,6 @@ services:
     environment:
       CORE_URL: http://storage:3001
       SESSION_COOKIE_PREFIX: asmblyr_local
-    ports: ["127.0.0.1:${UI_PORT:-3300}:3000"]
     depends_on: { core: { condition: service_healthy } }
     healthcheck:
       test:

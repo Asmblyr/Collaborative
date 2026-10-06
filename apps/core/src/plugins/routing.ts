@@ -8,7 +8,7 @@ declare module "fastify" {
 
 /** Install before Core routes so namespace conflicts are independent of load order. */
 export function registerPluginBoundary(app: FastifyInstance): void {
-  const owners = new Map<string, string>();
+  const owners = new Map<string, string>([["api", "Core"]]);
 
   app.addHook("onRoute", (route) => {
     const namespace = route.url.split("/")[1].toLowerCase();
@@ -23,7 +23,7 @@ export function registerPluginBoundary(app: FastifyInstance): void {
   });
 
   app.addHook("onRequest", async (request, reply) => {
-    // The UI's fallback may reach only plugin endpoints, never additional Core routes.
+    // Keep the legacy plugin-only header restrictive for older clients.
     if (
       request.headers["x-asmblyr-plugin-route"] === "1" &&
       !request.routeOptions.config.asmblyrPlugin

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: collaborative
+description: Asmblyr Collaborative Core and UI with external PostgreSQL and S3
+type: application
+version: 0.1.0
+appVersion: "0.0.0"
+home: https://github.com/Asmblyr/Collaborative
+sources:
+  - https://github.com/Asmblyr/Collaborative

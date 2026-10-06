@@ -42,7 +42,7 @@
   Follow [HOOKS.md](../../packages/kit/HOOKS.md): hooks run before commit in the mutation
   transaction; all context operations must be awaited. Keep external effects out
   of transactional hooks. Settings are validated and scoped to the owning package.
-- Plugin UI uses the existing namespace HTTP proxy. Core-owned prepared-form
+- Plugin UI calls Core directly under `/api/<namespace>` with the browser session. Core-owned prepared-form
   retrieval remains separate; it is not another route for executing plugin logic.
 - Plugin field editors register through `defineUiPlugin({ fieldInterfaces })` in
   the browser entry. Follow [the field contract](../../packages/kit/FIELDS.md): preserve

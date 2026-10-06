@@ -35,3 +35,6 @@ docs/ideas
 # Versioned migrations retain their original source.
 apps/core/migrations/*.cjs
 packages/plugin-comments/server/migrations/*.ts
+
+# Go templates are formatted as Helm source, not plain YAML.
+deploy/helm/*/templates/

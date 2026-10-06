@@ -1,7 +1,7 @@
 import { coreAddress } from "./session";
 import { readJsonResponse } from "./http-request";
 
-/** Server-side reads with the caller's token; browser mutations use the BFF. */
+/** Server-side reads with the caller's session; browser requests go directly to Core. */
 export async function readCoreResource<T>(
   token: string,
   path: string,

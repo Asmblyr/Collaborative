@@ -30,11 +30,11 @@ export function PasskeyLogin({ next }: { next: string }) {
             const options = await apiRequest<{
               challengeId: string;
               options: PublicKeyCredentialRequestOptionsJSON;
-            }>("/api/auth/passkeys/options", "POST", {});
+            }>("/api/auth/browser/passkeys/options", "POST", {});
             const response = await startAuthentication({
               optionsJSON: options.options,
             });
-            await apiRequest("/api/auth/passkeys/login", "POST", {
+            await apiRequest("/api/auth/browser/passkeys/login", "POST", {
               challengeId: options.challengeId,
               response,
             });

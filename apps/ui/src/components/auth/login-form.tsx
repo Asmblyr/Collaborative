@@ -22,7 +22,7 @@ export function LoginForm({ next = "/" }: { next?: string }) {
     setPending(true);
     setMessage("");
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/browser/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, password }),

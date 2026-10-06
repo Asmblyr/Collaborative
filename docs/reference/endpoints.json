@@ -822,5 +822,45 @@
   "PATCH /system-collections/:name/records/:id": {
     "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
     "public": false
+  },
+  "POST /auth/browser/login": {
+    "public": true,
+    "access": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию."
+  },
+  "POST /auth/browser/invitations/claim": {
+    "public": true,
+    "access": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию."
+  },
+  "POST /auth/browser/passkeys/options": {
+    "public": true,
+    "access": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию."
+  },
+  "POST /auth/browser/passkeys/login": {
+    "public": true,
+    "access": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию."
+  },
+  "POST /auth/browser/logout": {
+    "public": true,
+    "access": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию."
+  },
+  "POST /auth/browser/google/start": {
+    "public": false,
+    "access": "Активный пользователь, точный Origin AUTH_UI_URL; proof в HttpOnly cookie."
+  },
+  "GET /connections/google/callback": {
+    "public": true,
+    "access": "Редирект результата; подключение требует активную сессию, одноразовые state и browser proof, совпадение владельца."
+  },
+  "POST /sign/sso/:provider": {
+    "public": true,
+    "access": "Точный Origin AUTH_UI_URL; настроенный провайдер; для link необходима активная сессия."
+  },
+  "GET /sign/sso/:provider/callback": {
+    "public": true,
+    "access": "Одноразовые state/PKCE и browser proof; для link проверяется сессия владельца."
+  },
+  "POST /oauth/complete/:uid": {
+    "public": false,
+    "access": "Текущий пользователь, подписанные cookies взаимодействия OAuth и совпадающий Origin; идентификатор пользователя должен совпадать с сессией"
   }
 }

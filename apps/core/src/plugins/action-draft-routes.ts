@@ -20,7 +20,7 @@ export function registerPluginDraftRoutes(
     async (request, reply) => {
       reply.header("Cache-Control", "no-store");
       return {
-        data: actions.prepared(
+        data: await actions.prepared(
           await access(request.headers.authorization),
           request.params.namespace,
           request.params.id,

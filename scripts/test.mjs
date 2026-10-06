@@ -115,6 +115,11 @@ async function testFiles(app) {
 
 async function main() {
   const suite = process.argv[2] ?? "all";
+  if (suite === "container-split") {
+    const { smokeSplit } = await import("./container/split-smoke.mjs");
+    await smokeSplit(process.argv[3], process.argv[4]);
+    return;
+  }
   if (suite === "container") {
     const { smokeContainer } = await import("./container/smoke.mjs");
     await smokeContainer(process.argv[3]);
@@ -127,6 +132,8 @@ async function main() {
     "core-integration",
     "core-assistant",
     "core-sso",
+    "core-browser",
+    "core-deployment",
     "core-oauth",
     "core-lavinmq",
     "core-plugins",
@@ -154,10 +161,14 @@ async function main() {
   if (!suites.includes(suite)) throw new Error(`Unknown suite: ${suite}`);
 
   if (suite !== "ui-unit") {
-    const files = (await testFiles("core")).filter(
-      (name) => !name.endsWith("-ui.integration.test.ts"),
-    );
+    const files = await testFiles("core");
     const selected = files.filter((name) => {
+      if (suite === "core-deployment")
+        return /test\/(?:browser-|public-server|replica-state|assistant-stream|plugin-actions)/.test(
+          name,
+        );
+      if (suite === "core-browser")
+        return /test\/(?:browser-|public-server)/.test(name);
       if (suite === "core-system-collections") {
         return /test\/(?:system-collections|user-profiles|profile-avatar|files-access|collections|field-configuration|http-access-surface)[-.]/.test(
           name,
