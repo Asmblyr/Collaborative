@@ -1,0 +1,34 @@
+name: Сообщить об ошибке
+description: Воспроизводимая ошибка в Asmblyr Collaborative
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: Для уязвимостей используйте порядок из SECURITY.md. Не публикуйте токены, персональные данные и дампы.
+  - type: input
+    id: version
+    attributes:
+      label: Версия или commit
+      description: Укажите commit установки или ветку, на которой воспроизводится ошибка.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      description: Укажите настройку, входные данные на вымышленных примерах и шаги.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Фактический и ожидаемый результат
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Диагностика
+      description: Сообщения об ошибках и журналы без секретов и данных пользователей.
+    validations:
+      required: false

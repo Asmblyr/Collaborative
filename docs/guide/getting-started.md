@@ -2,10 +2,13 @@
 
 Нужны Node.js 22+, pnpm 11.13.1, Docker Compose. Команды выполняются из корня репозитория.
 
+На Unix shell используйте `cp -n apps/core/.env.example apps/core/.env` вместо
+`Copy-Item` ниже. Существующий файл окружения сохраняйте.
+
 ```powershell
 pnpm install --frozen-lockfile
 pnpm db:up
-Copy-Item apps/core/.env.example apps/core/.env
+if (!(Test-Path apps/core/.env)) { Copy-Item apps/core/.env.example apps/core/.env }
 pnpm db:migrate
 pnpm dev
 ```
@@ -21,9 +24,12 @@ pnpm dev
 
 В `/setup` введите setup secret, email и пароль от 12 символов. Создаётся первый superuser. После появления пользователя endpoint закрывается; секрет можно удалить из конфигурации. Публичной регистрации по паролю нет.
 
-`pnpm dev` предварительно собирает SDK, Kit и встроенные комментарии. `CORE_URL` в серверной конфигурации UI по умолчанию указывает на локальный Core. `GET /health` проверяет процесс, `/ready` — БД и обязательные миграции.
+`pnpm dev` предварительно собирает SDK, Kit и встроенные плагины. `CORE_URL` в серверной конфигурации UI по умолчанию указывает на локальный Core. `GET /health` проверяет процесс, `/ready` — БД и обязательные миграции.
 
 `pnpm db:down` останавливает PostgreSQL без удаления volume. Не добавляйте `-v`, если данные нужно сохранить. Перед обновлением существующего проекта выполняйте `pnpm db:migrate`; откат DDL может уничтожить данные.
+
+Установка Docker Compose, внешние PostgreSQL/S3 и порядок production-обновлений —
+в [руководстве по развёртыванию](./deployment.md).
 
 ## Документация
 
