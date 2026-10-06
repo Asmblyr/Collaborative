@@ -154,6 +154,7 @@ export function projectSchema(
       return [
         {
           name: collection.name,
+          ...(collection.profileExtension ? { profileExtension: true } : {}),
           ...(readonlySource
             ? { sourceKind: "materialized-view" as const }
             : {}),
@@ -161,7 +162,7 @@ export function projectSchema(
           primaryKey: { name: key.name, type: key.type },
           actions: {
             read: Boolean(grants.read),
-            create: Boolean(grants.create),
+            create: Boolean(grants.create) && !collection.profileExtension,
             update: Boolean(grants.update),
             delete: Boolean(grants.delete),
           },

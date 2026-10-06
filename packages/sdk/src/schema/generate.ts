@@ -75,11 +75,27 @@ export function generateSchemaTypes(input: unknown): string {
     }
     lines.push("}", "");
   }
+  const profiles = snapshot.collections.filter(
+    (collection) => collection.profileExtension,
+  );
+  if (profiles.length) {
+    lines.push("export interface ProfileCreate {");
+    for (const collection of profiles) {
+      lines.push(`  ${JSON.stringify(collection.name)}: {`);
+      for (const field of collection.fields.filter((entry) => entry.create)) {
+        lines.push(
+          `    ${JSON.stringify(field.name)}${field.requiredOnCreate ? "" : "?"}: ${valueType(field, true)};`,
+        );
+      }
+      lines.push("  };");
+    }
+    lines.push("}", "");
+  }
   lines.push("export interface Schema {");
   for (const collection of snapshot.collections) {
     const key = JSON.stringify(collection.name);
     lines.push(
-      `  ${key}: CollectionSchema<Read[${key}], Create[${key}], Update[${key}], ${collection.actions.delete}>;`,
+      `  ${key}: CollectionSchema<Read[${key}], Create[${key}], Update[${key}], ${collection.actions.delete}${collection.profileExtension ? `, ProfileCreate[${key}]` : ""}>;`,
     );
   }
   lines.push(

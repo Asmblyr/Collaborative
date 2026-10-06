@@ -14,6 +14,8 @@ import { assistantHistoryContract } from "./assistant-history-contract.mjs";
 import { searchContract } from "./search-contract.mjs";
 import { monitoringContract } from "./monitoring-contract.mjs";
 import { tablePreferencesContract } from "./table-preferences-contract.mjs";
+import { userProfileContract } from "./user-profile-contract.mjs";
+import { systemCollectionsContract } from "./system-collections-contract.mjs";
 const object = { type: "object", additionalProperties: true };
 const json = (schema) => ({ "application/json": { schema } });
 const response = (schema, description = "Успех") => ({
@@ -68,6 +70,14 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const systemCollections = systemCollectionsContract(key);
+  if (systemCollections) {
+    return systemCollections;
+  }
+  const profile = userProfileContract(key);
+  if (profile) {
+    return profile;
+  }
   const tablePreferences = tablePreferencesContract(key);
   if (tablePreferences) {
     return tablePreferences;

@@ -1,44 +1,23 @@
 services:
   migrate:
-    image: ${CORE_IMAGE:?Set a verified Core image digest}
-    env_file: ${CORE_ENV_FILE:?Set private Core environment file}
-    command: [pnpm, db:migrate]
-  core:
-    image: ${CORE_IMAGE}
-    env_file: ${CORE_ENV_FILE}
-    depends_on: { migrate: { condition: service_completed_successfully } }
+    image: ${ASMBLYR_IMAGE:?Set a verified application image digest}
+    env_file: ${ASMBLYR_ENV_FILE:?Set private application environment file}
+    command: [node, scripts/container/migrate.mjs]
+    healthcheck:
+      disable: true
+  app:
+    image: ${ASMBLYR_IMAGE}
+    env_file: ${ASMBLYR_ENV_FILE}
+    environment:
+      PORT: "3000"
+      CORE_PORT: "3001"
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${UI_PORT:-3000}:3000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-3001}:3001"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
     restart: unless-stopped
     stop_grace_period: 30s
-    healthcheck:
-      test:
-        [
-          CMD,
-          node,
-          -e,
-          "fetch('http://127.0.0.1:3001/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-    logging: &logging
+    logging:
       driver: json-file
       options: { max-size: 10m, max-file: "3" }
-  ui:
-    image: ${UI_IMAGE:?Set a verified UI image digest}
-    environment:
-      CORE_URL: http://core:3001
-    ports: ["127.0.0.1:${UI_PORT:-3000}:3000"]
-    depends_on: { core: { condition: service_healthy } }
-    restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          CMD,
-          node,
-          -e,
-          "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-    logging: *logging

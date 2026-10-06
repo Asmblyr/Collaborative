@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 import type { SessionUser } from "@/lib/session";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { userDisplayName, userAvatarUrl } from "@/lib/user-profile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,10 +23,15 @@ import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 import { useUiCopy } from "@/lib/ui-copy";
 
 function UserIdentity({ user }: { user: SessionUser }) {
-  const name = user.displayName || user.email.split("@")[0] || user.email;
+  const name = userDisplayName(user);
   return (
     <>
       <Avatar className="size-9 group-data-[collapsible=icon]:size-8!">
+        <AvatarImage
+          src={userAvatarUrl(user)}
+          alt=""
+          referrerPolicy="no-referrer"
+        />
         <AvatarFallback>{name.slice(0, 1).toLocaleUpperCase()}</AvatarFallback>
       </Avatar>
       <span className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">

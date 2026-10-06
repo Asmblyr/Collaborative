@@ -59,13 +59,20 @@ test("HTTP SDK and local kit read the same Core data and permissions", async (t)
   assert.equal(me.superuser, false);
   assert.equal(typeof me.createdAt, "string");
   assert.deepEqual(Object.keys(me).sort(), [
+    "avatarId",
     "createdAt",
+    "description",
     "displayName",
     "email",
+    "firstName",
     "hasPassword",
     "id",
+    "lastActiveAt",
+    "lastLoginAt",
+    "lastName",
     "pictureUrl",
     "superuser",
+    "updatedAt",
   ]);
   await assert.rejects(
     client.items.get(collection, 1, { fields: ["secret"] }),

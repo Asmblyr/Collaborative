@@ -15,6 +15,8 @@ const Context = createContext<{
   saveTheme: (theme: Theme) => void;
   saveStyle: (style: ThemeStyle) => void;
   saveLocale: (locale: UiLocale) => void;
+  timezone: string | null;
+  saveTimezone: (timezone: string | null) => Promise<boolean>;
   error: string;
   ready: boolean;
 } | null>(null);
@@ -24,8 +26,9 @@ export function AccountTheme({ children }: { children: React.ReactNode }) {
   const { setStyle, setLocale } = useAppearance();
   const { t } = useTranslations();
   const [ready, setReady] = useState(false);
+  const [timezone, setTimezone] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const queue = useRef(Promise.resolve());
+  const queue = useRef(Promise.resolve(true));
   useEffect(() => {
     let active = true;
     void apiRequest<UserPreferences>("/api/users/me/preferences")
@@ -34,6 +37,7 @@ export function AccountTheme({ children }: { children: React.ReactNode }) {
           setTheme(result.theme ?? "system");
           setStyle(result.style);
           setLocale(result.locale);
+          setTimezone(result.timezone);
           setReady(true);
         }
       })
@@ -53,14 +57,25 @@ export function AccountTheme({ children }: { children: React.ReactNode }) {
       try {
         await apiRequest("/api/users/me/preferences", "PATCH", patch);
         setError("");
+        return true;
       } catch {
         setError("appearance.saveError");
+        return false;
       }
     });
+    return queue.current;
   }
   return (
     <Context.Provider
       value={{
+        timezone,
+        saveTimezone: async (value) => {
+          const result = await save({ timezone: value });
+          if (result) {
+            setTimezone(value);
+          }
+          return result;
+        },
         saveTheme: (theme) => {
           setTheme(theme);
           save({ theme });

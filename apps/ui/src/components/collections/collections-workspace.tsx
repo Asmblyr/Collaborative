@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { Collection, CollectionFolder } from "@/components/items/types";
 import { CollectionsTable } from "./collections-table";
+import { SystemCollections } from "./system-collections";
 import { EditorDialog } from "./editor-dialog";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import type { CollectionLocation } from "@/lib/collection-tree";
@@ -207,6 +208,12 @@ export function CollectionsWorkspace({
         />
       )}
 
+      {superuser && (
+        <SystemCollections
+          catalog={localized}
+          online={online}
+        />
+      )}
       <EditorDialog
         open={selection !== null}
         title={title}

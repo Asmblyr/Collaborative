@@ -7,7 +7,39 @@
 компилятора TypeScript или загрузчика плагинов во время исполнения.
 Для разработки расширений используется отдельный `@asmblyr-collaborative/kit`.
 
-## Подключение
+## Профиль пользователя
+
+Собственный профиль доступен с пользовательским access token. Статус, права,
+пароли и системные даты нельзя менять через профиль. Все новые поля необязательны.
+
+```ts
+await client.users.updateMe({
+  firstName: "Ivan",
+  lastName: "Example",
+  description: "About me",
+});
+await client.users.updatePreferences({ timezone: "Asia/Yekaterinburg" });
+const { data: me } = await client.users.me();
+```
+
+Дополнительные поля потребитель настраивает в обычной UUID-коллекции и выбирает
+её в настройках пользователей. `asm connect` / `asm generate` включает её поля
+в схему проекта. Для клиента с этой схемой:
+
+```ts
+const { data: profile } = await client.users.extension("user_profiles");
+await client.users.saveExtension("user_profiles", { bio: "Hello" });
+```
+
+`saveExtension` создаёт запись с ID текущего пользователя или обновляет её.
+Для первого сохранения нужны `create` и `read`, затем `update` и `read`.
+Действуют обычные правила полей и строк, права на связи и файлы. Передайте только
+поля сгенерированной схемы; имя коллекции должно совпадать с выбранным расширением.
+Скрытые поля могут отсутствовать в результате, а `data` — быть `null`.
+После первого сохранения запись и её связи доступны через обычный `client.items`
+и fluent API; произвольное создание профиля через `items.create` запрещено.
+
+## Подключение клиента
 
 Личные уведомления доступны через `client.notifications.list()`, `.read(id)` и
 `.readAll(result.readBefore)`. Они требуют человеческой сессии; сервисные ключи

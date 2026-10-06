@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import type { Collection } from "@/components/items/types";
 import { useUiCopy } from "@/lib/ui-copy";
+import { LockKeyhole } from "lucide-react";
 
 export function CollectionFields({
   collection,
@@ -34,38 +35,40 @@ export function CollectionFields({
 
   const readonly = collection.sourceKind === "materialized-view";
   const canEdit = superuser && collection.access.structure;
-  const managed = [
-    {
-      name: collection.primaryKey.name,
-      type: collection.primaryKey.type,
-      role: copy("Основной ключ"),
-      defaultValue: readonly
-        ? "—"
-        : collection.primaryKey.type === "text"
-          ? copy("Вручную")
-          : copy("Автоматически"),
-    },
-    ...(collection.timestamps.createdAt
-      ? [
-          {
-            name: "created_at",
-            type: "datetime",
-            role: copy("Системное"),
-            defaultValue: copy("Текущее время"),
-          },
-        ]
-      : []),
-    ...(collection.timestamps.updatedAt
-      ? [
-          {
-            name: "updated_at",
-            type: "datetime",
-            role: copy("Системное"),
-            defaultValue: copy("Текущее время"),
-          },
-        ]
-      : []),
-  ];
+  const managed = collection.system
+    ? []
+    : [
+        {
+          name: collection.primaryKey.name,
+          type: collection.primaryKey.type,
+          role: copy("Основной ключ"),
+          defaultValue: readonly
+            ? "—"
+            : collection.primaryKey.type === "text"
+              ? copy("Вручную")
+              : copy("Автоматически"),
+        },
+        ...(collection.timestamps.createdAt
+          ? [
+              {
+                name: "created_at",
+                type: "datetime",
+                role: copy("Системное"),
+                defaultValue: copy("Текущее время"),
+              },
+            ]
+          : []),
+        ...(collection.timestamps.updatedAt
+          ? [
+              {
+                name: "updated_at",
+                type: "datetime",
+                role: copy("Системное"),
+                defaultValue: copy("Текущее время"),
+              },
+            ]
+          : []),
+      ];
 
   return (
     <div className="space-y-3 px-4 py-4 sm:px-6">
@@ -76,37 +79,45 @@ export function CollectionFields({
             {collection.displayName || collection.name}
           </h3>
           <p className="text-xs text-muted-foreground">
-            {readonly
+            {collection.system
               ? copy(
-                  "Структура и данные управляются внешним процессом. Здесь настраивается отображение.",
+                  "Встроенные поля защищены. Можно добавлять и настраивать свои поля.",
                 )
-              : superuser && !collection.access.structure
+              : readonly
                 ? copy(
-                    "Структура и настройки этой коллекции управляются плагином.",
+                    "Структура и данные управляются внешним процессом. Здесь настраивается отображение.",
                   )
-                : copy(
-                    "Структура системных полей защищена. Состояния настраиваются в параметрах коллекции.",
-                  )}
+                : superuser && !collection.access.structure
+                  ? copy(
+                      "Структура и настройки этой коллекции управляются плагином.",
+                    )
+                  : copy(
+                      "Структура системных полей защищена. Состояния настраиваются в параметрах коллекции.",
+                    )}
           </p>
         </div>
         {canEdit && (
           <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={onForm}
-            >
-              {copy("Форма ")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={onDisplay}
-            >
-              {copy("Настройки коллекции ")}
-            </Button>
+            {!collection.system && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={onForm}
+              >
+                {copy("Форма ")}
+              </Button>
+            )}
+            {!collection.system && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={onDisplay}
+              >
+                {copy("Настройки коллекции ")}
+              </Button>
+            )}
             {!readonly && (
               <Button
                 type="button"
@@ -166,6 +177,12 @@ export function CollectionFields({
               <TableRow key={field.name}>
                 <TableCell className="pl-4 font-mono text-xs">
                   {field.name}
+                  {field.managed && (
+                    <LockKeyhole
+                      className="ml-2 inline size-3 text-muted-foreground"
+                      aria-label={copy("Системное поле")}
+                    />
+                  )}
                   {field.name === collection.state?.field && (
                     <Badge
                       variant="outline"
@@ -207,37 +224,44 @@ export function CollectionFields({
                 </TableCell>
                 {canEdit && (
                   <TableCell className="pr-4 text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        aria-label={copy("Настроить поле {{value0}}", {
-                          value0: field.name,
-                        })}
-                        onClick={() =>
-                          field.name === collection.state?.field
-                            ? onDisplay()
-                            : onEditField(field.name)
-                        }
-                      >
-                        {copy("Настроить ")}
-                      </Button>
-                      {!readonly && field.name !== collection.state?.field && (
+                    {field.managed ? (
+                      <span className="text-xs text-muted-foreground">
+                        {copy("Системное поле")}
+                      </span>
+                    ) : (
+                      <div className="flex justify-end gap-1">
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
-                          aria-label={copy("Удалить поле {{value0}}", {
+                          aria-label={copy("Настроить поле {{value0}}", {
                             value0: field.name,
                           })}
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => onDeleteField(field.name)}
+                          onClick={() =>
+                            field.name === collection.state?.field
+                              ? onDisplay()
+                              : onEditField(field.name)
+                          }
                         >
-                          {copy("Удалить ")}
+                          {copy("Настроить ")}
                         </Button>
-                      )}
-                    </div>
+                        {!readonly &&
+                          field.name !== collection.state?.field && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              aria-label={copy("Удалить поле {{value0}}", {
+                                value0: field.name,
+                              })}
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => onDeleteField(field.name)}
+                            >
+                              {copy("Удалить ")}
+                            </Button>
+                          )}
+                      </div>
+                    )}
                   </TableCell>
                 )}
               </TableRow>

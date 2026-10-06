@@ -1,5 +1,4 @@
 import type {
-  CurrentUserResult,
   TranslationsResult,
   UiLocale,
   SchemaResult,
@@ -19,10 +18,11 @@ import {
 import type { ClientSchema, FieldDefinitions } from "./query/definition.js";
 import { createFluentClient, type FluentClient } from "./query/client.js";
 import { createPluginsClient, type PluginsClient } from "./plugins.js";
+import { createUsersClient, type UsersClient } from "./users.js";
 
 export interface AsmblyrClient<Schema extends object = DynamicSchema> {
   readonly items: ItemsClient<Schema>;
-  readonly users: { me(request?: RequestOptions): Promise<CurrentUserResult> };
+  readonly users: UsersClient<Schema>;
   readonly presence: PresenceClient;
   readonly notifications: NotificationsClient;
   readonly schema: { pull(request?: RequestOptions): Promise<SchemaResult> };
@@ -68,7 +68,7 @@ export function createClient<Schema extends object = DynamicSchema>(
       ? { plugins: createPluginsClient(options.schema.plugins, transport) }
       : {}),
     items,
-    users: { me: (request) => transport.get("/users/me", undefined, request) },
+    users: createUsersClient<Schema>(transport),
     presence: createPresenceClient(transport),
     notifications: createNotificationsClient(transport),
     schema: { pull: (request) => transport.get("/schema", undefined, request) },

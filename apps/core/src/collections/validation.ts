@@ -71,8 +71,8 @@ export class ProtectedFieldError extends Error {
 export class CollectionDependencyError extends Error {
   readonly statusCode = 409;
 
-  constructor() {
-    super("Structure has dependent database objects");
+  constructor(message = "Structure has dependent database objects") {
+    super(message);
     this.name = "CollectionDependencyError";
   }
 }

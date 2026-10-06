@@ -5,6 +5,7 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
+import { useAccountTheme } from "./account-theme";
 
 interface Session {
   id: string;
@@ -15,6 +16,11 @@ interface Session {
 }
 export function SessionsPanel() {
   const copy = useUiCopy();
+  const { timezone } = useAccountTheme();
+  const formatDate = (value: string) =>
+    new Date(value).toLocaleString(copy.locale, {
+      timeZone: timezone ?? undefined,
+    });
 
   const [sessions, setSessions] = useState<Session[] | null>(null);
   const [error, setError] = useState("");
@@ -102,12 +108,11 @@ export function SessionsPanel() {
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {copy("Вход: ")}
-                {new Date(session.createdAt).toLocaleString("ru-RU")}
+                {formatDate(session.createdAt)}
               </p>
               {session.refreshedAt && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {copy("Обновление сессии:")}{" "}
-                  {new Date(session.refreshedAt).toLocaleString("ru-RU")}
+                  {copy("Обновление сессии:")} {formatDate(session.refreshedAt)}
                 </p>
               )}
             </div>

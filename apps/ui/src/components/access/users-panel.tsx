@@ -14,6 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UserAccessDialog } from "./user-access-dialog";
+import { UserProfileDialog } from "./user-profile-dialog";
+import { userDisplayName } from "@/lib/user-profile";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -47,6 +49,7 @@ export function UsersPanel({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AccessUser | null>(null);
+  const [profileUser, setProfileUser] = useState<AccessUser | null>(null);
 
   function canRenew(user: AccessUser): boolean {
     if (
@@ -198,7 +201,20 @@ export function UsersPanel({
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.email}</TableCell>
+              <TableCell>
+                <button
+                  type="button"
+                  className="text-left font-medium hover:underline"
+                  onClick={() => setProfileUser(user)}
+                >
+                  {userDisplayName(user)}
+                </button>
+                {userDisplayName(user) !== user.email && (
+                  <div className="text-xs text-muted-foreground">
+                    {user.email}
+                  </div>
+                )}
+              </TableCell>
               <TableCell>
                 <Badge
                   variant={
@@ -301,6 +317,16 @@ export function UsersPanel({
           canManageDelegation={canManageDelegation}
           onDelegationSaved={onChange}
           onClose={() => setSelectedUser(null)}
+        />
+      )}
+      {profileUser && (
+        <UserProfileDialog
+          userId={profileUser.id}
+          email={profileUser.email}
+          readOnly={readOnly}
+          canChooseAvatar={canManageDelegation}
+          onClose={() => setProfileUser(null)}
+          onSaved={onChange}
         />
       )}
     </section>

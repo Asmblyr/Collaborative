@@ -31,6 +31,13 @@ export async function listUsers(database: Knex) {
         status: string;
         superuser: boolean;
         created_at: Date;
+        firstName: string | null;
+        lastName: string | null;
+        displayName: string | null;
+        avatarId: string | null;
+        pictureUrl: string | null;
+        lastLoginAt: Date | null;
+        lastActiveAt: Date | null;
         hasPassword: boolean;
         hasDelegation: boolean;
       }[]
@@ -40,6 +47,13 @@ export async function listUsers(database: Knex) {
       "usr.status",
       "usr.superuser",
       "usr.created_at",
+      "usr.first_name as firstName",
+      "usr.last_name as lastName",
+      "usr.display_name as displayName",
+      "usr.avatar_id as avatarId",
+      "usr.picture_url as pictureUrl",
+      "usr.last_login_at as lastLoginAt",
+      "usr.last_active_at as lastActiveAt",
       database.raw("credential.user_id IS NOT NULL AS ??", ["hasPassword"]),
       database.raw(
         "EXISTS (SELECT 1 FROM public.asmblyr_user_invitations WHERE user_id = usr.id AND consumed_at IS NULL) AS ??",

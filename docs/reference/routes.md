@@ -1,6 +1,6 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 190 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 206 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
@@ -161,6 +161,13 @@
 | `GET /settings/terms` | Человек: terms/read ИЛИ update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `POST /settings/terms` | Человек: terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `PUT /settings/terms/:id` | Человек: terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
+| `GET /system-collections` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
+| `DELETE /system-collections/:name/fields/:field` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
+| `POST /system-collections/:name/fields/:field/configuration` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
+| `PUT /system-collections/:name/fields/:field/configuration` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
+| `GET /system-collections/:name/records` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
+| `GET /system-collections/:name/records/:id` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
+| `PATCH /system-collections/:name/records/:id` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `GET /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `POST /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `DELETE /table-views/:collection/:id` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
@@ -171,10 +178,17 @@
 | `POST /users` | Человек: users/update; superuser bypass | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/access` | Человек: users/read ИЛИ update; superuser bypass | `apps/core/src/auth/user-routes.ts` |
 | `PUT /users/:id/delegation` | Только человек-superuser: явный набор готовых политик, которые пользователь вправе назначать | `apps/core/src/auth/user-routes.ts` |
+| `GET /users/:id/extension` | Активный пользователь с users/read и обычными read-правами коллекции | `apps/core/src/auth/profile-extension-routes.ts` |
+| `PATCH /users/:id/extension` | Активный пользователь с users/update и обычными read/create/update-правами коллекции | `apps/core/src/auth/profile-extension-routes.ts` |
 | `POST /users/:id/invitation` | Человек: superuser ИЛИ users/update; повторное приглашение только в пределах разрешённого набора, без доступа к аккаунтам с собственным делегированием | `apps/core/src/auth/user-routes.ts` |
+| `GET /users/:id/profile` | Активный пользователь с users/read; публичные сведения профиля без credentials | `apps/core/src/auth/profile-extension-routes.ts` |
+| `PATCH /users/:id/profile` | Активный пользователь с users/update; только поля профиля, без изменения статуса и привилегий | `apps/core/src/auth/profile-extension-routes.ts` |
 | `POST /users/:id/recovery` | Свежий человек-superuser; только другой активный обычный пользователь. Одноразовая ссылка на 30 минут, аудит; не делегируется | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
 | `PATCH /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
+| `POST /users/me/avatar` | Собственная человеческая сессия; приватное растровое изображение до 2 MiB, настроенное файловое хранилище и credential rate limit | `apps/core/src/auth/profile-avatar-routes.ts` |
+| `GET /users/me/extension` | Собственная человеческая сессия и обычные read-права коллекции; скрытые поля и строки не раскрываются | `apps/core/src/auth/profile-extension-routes.ts` |
+| `PATCH /users/me/extension` | Собственная человеческая сессия; read и create/update, обычные правила строк, полей, связей и файлов | `apps/core/src/auth/profile-extension-routes.ts` |
 | `GET /users/me/identities` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/sso/routes.ts` |
 | `DELETE /users/me/identities/:id` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/sso/routes.ts` |
 | `GET /users/me/oauth-apps` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/oauth/consent-routes.ts` |
@@ -192,6 +206,8 @@
 | `GET /users/me/table-preferences/:collection` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/preferences/routes.ts` |
 | `PATCH /users/me/table-preferences/:collection` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/preferences/routes.ts` |
 | `PUT /users/me/workspace` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/workspaces/routes.ts` |
+| `GET /users/profile-extension` | Активный пользователь с users/read; имя выбранной коллекции и ключа | `apps/core/src/auth/profile-extension-routes.ts` |
+| `PUT /users/profile-extension` | Только human superuser; связывает обычную UUID-коллекцию, не выдаёт права и не удаляет данные | `apps/core/src/auth/profile-extension-routes.ts` |
 | `GET /workspaces` | Человек; только пространства с доступными коллекциями (superuser видит все) | `apps/core/src/workspaces/routes.ts` |
 | `POST /workspaces` | Человек: superuser | `apps/core/src/workspaces/routes.ts` |
 | `DELETE /workspaces/:id` | Человек: superuser | `apps/core/src/workspaces/routes.ts` |

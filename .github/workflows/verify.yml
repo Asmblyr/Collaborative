@@ -1,8 +1,9 @@
-name: Verify
+name: Verify and publish container
 
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -16,7 +17,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:17-alpine
@@ -51,3 +52,55 @@ jobs:
         run: pnpm build
       - name: Check package archives and clean consumer
         run: pnpm packages:check
+
+  container:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Build UI and Core from this checkout
+        run: >-
+          docker build --target app
+          --label org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          --label org.opencontainers.image.revision=${{ github.sha }}
+          --label org.opencontainers.image.licenses=MIT
+          --tag asmblyr-collaborative:ci .
+      - name: Check container with disposable PostgreSQL
+        run: node scripts/test.mjs container asmblyr-collaborative:ci
+      - name: Publish verified image to GHCR
+        if: >-
+          github.repository == 'Asmblyr/Collaborative' &&
+          github.event_name != 'pull_request' &&
+          (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          tags=("sha-${GITHUB_SHA}")
+          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+            tags+=(edge)
+          elif [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            tags+=("${GITHUB_REF_NAME#v}")
+          else
+            echo "Release tags must use vMAJOR.MINOR.PATCH[-PRERELEASE]"
+            exit 1
+          fi
+          trap 'docker logout ghcr.io' EXIT
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          for tag in "${tags[@]}"; do
+            docker tag asmblyr-collaborative:ci "$image:$tag"
+            docker push "$image:$tag"
+            echo "Published: \`$image:$tag\`" >> "$GITHUB_STEP_SUMMARY"
+          done

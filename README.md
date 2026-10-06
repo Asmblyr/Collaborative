@@ -58,10 +58,13 @@ pnpm dev
 
 Откройте [localhost:3000/setup](http://localhost:3000/setup), чтобы создать первого
 администратора. Подробнее — [первый запуск](docs/guide/getting-started.md).
-Docker-установка и подключение внешних PostgreSQL/S3 описаны в [deploy](deploy/README.md).
+Для Docker есть единый образ с UI и Core API, собранными из исходников репозитория.
+PostgreSQL и S3 подключаются отдельно: [установка и настройка](deploy/README.md).
+Проверенные сборки `main` публикуются в `ghcr.io/asmblyr/collaborative:edge`;
+для установки закрепляйте образ по digest.
 SDK, CLI, Kit и общие контракты доступны в npm как `0.1.0-beta.1` под тегом
-`beta`: [установка и подключение](docs/reference/packages.md). Готовых release-образов
-сервиса пока нет; Core и админка собираются из этого репозитория.
+`beta`: [установка и подключение](docs/reference/packages.md). Docker-сборка
+не зависит от предварительной публикации этих пакетов.
 
 ## Устройство проекта
 

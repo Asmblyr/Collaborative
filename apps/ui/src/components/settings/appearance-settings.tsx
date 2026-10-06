@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useAppearance } from "./appearance-provider";
 import { useAccountTheme } from "./account-theme";
 import { useUiCopy } from "@/lib/ui-copy";
+import { TimezoneSetting } from "./timezone-setting";
 
 const subscribe = () => () => {};
 const swatches = {
@@ -122,6 +123,7 @@ export function AppearanceSettings() {
           </SelectContent>
         </Select>
       </div>
+      {ready && <TimezoneSetting />}
       <p className="text-sm text-muted-foreground">
         {t("appearance.profileHint")}
       </p>

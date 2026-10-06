@@ -18,6 +18,8 @@ import {
 } from "./operations/limits.js";
 import { registerUserRoutes } from "./auth/user-routes.js";
 import { registerProfileRoutes } from "./auth/profile-routes.js";
+import { registerProfileExtensionRoutes } from "./auth/profile-extension-routes.js";
+import { registerProfileAvatarRoutes } from "./auth/profile-avatar-routes.js";
 import { registerServiceRoutes } from "./services/routes.js";
 import { registerServiceActivity } from "./services/activity.js";
 import { registerFederationRoutes } from "./services/federation-routes.js";
@@ -25,6 +27,7 @@ import { registerPreferenceRoutes } from "./preferences/routes.js";
 import { registerTableViewRoutes } from "./preferences/table-view-routes.js";
 import { registerWorkspaceRoutes } from "./workspaces/routes.js";
 import { registerCollectionRoutes } from "./collections/routes.js";
+import { registerSystemCollectionRoutes } from "./system-collections/routes.js";
 import { registerTranslationRoutes } from "./translations/routes.js";
 import { registerSchemaRoutes } from "./schema/routes.js";
 import { registerItemRoutes } from "./items/routes.js";
@@ -190,6 +193,7 @@ export function createApp({
       hooks.emit(transaction, access, requestId, "collections.delete", target),
   );
   registerItemRoutes(app, database, hooks.mutation);
+  registerSystemCollectionRoutes(app, database);
   registerTranslationRoutes(app, database, plugins);
   registerSchemaRoutes(app, database, actions);
   registerItemRelationRoutes(app, database, hooks.mutation);
@@ -200,6 +204,8 @@ export function createApp({
   registerOAuthRoutes(app, database, oauth);
   registerUserRoutes(app, database);
   registerProfileRoutes(app, database);
+  registerProfileAvatarRoutes(app, database, storageSource);
+  registerProfileExtensionRoutes(app, database, hooks.mutation);
   registerPresenceRoutes(app, database);
   registerNotificationRoutes(app, database, plugins);
   registerServiceRoutes(app, database);

@@ -109,14 +109,25 @@ export function createOAuthProvider(db: Knex, config: OAuthConfig) {
         return undefined;
       const user = await db("public.asmblyr_users")
         .where({ id, status: "active" })
-        .first("id", "email", "display_name", "picture_url");
+        .first(
+          "id",
+          "email",
+          "display_name",
+          "first_name",
+          "last_name",
+          "picture_url",
+        );
       if (!user) return undefined;
+      const name =
+        user.display_name ||
+        [user.first_name, user.last_name].filter(Boolean).join(" ") ||
+        user.email;
       return {
         accountId: user.id,
         claims: () => ({
           sub: user.id,
           email: user.email,
-          ...(user.display_name ? { name: user.display_name } : {}),
+          name,
           ...(user.picture_url ? { picture: user.picture_url } : {}),
         }),
       };

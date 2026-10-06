@@ -1,6 +1,11 @@
 {
   "name": "@asmblyr-collaborative/core",
   "private": true,
+  "files": [
+    "dist",
+    "migrations",
+    "knexfile.mjs"
+  ],
   "version": "0.0.0",
   "type": "module",
   "scripts": {

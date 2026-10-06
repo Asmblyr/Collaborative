@@ -2,6 +2,10 @@
   "name": "@asmblyr-collaborative/plugin-google-workspace",
   "version": "0.0.0",
   "private": true,
+  "files": [
+    "dist",
+    "locales"
+  ],
   "type": "module",
   "exports": {
     ".": {

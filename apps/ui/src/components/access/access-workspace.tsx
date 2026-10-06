@@ -8,6 +8,7 @@ import type { AccessData } from "@/lib/access-data";
 import { PageHeader } from "@/components/layout/page-header";
 import { PoliciesPanel } from "./policies-panel";
 import { UsersPanel } from "./users-panel";
+import { ProfileExtensionSettings } from "./profile-extension-settings";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Permission, type Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -79,6 +80,9 @@ export function AccessWorkspace({
         }
       />
       <SettingsReadOnlyNotice readOnly={readOnly} />
+      {section === "users" && canManagePolicies && !readOnly && (
+        <ProfileExtensionSettings />
+      )}
       {message && (
         <p
           role="alert"

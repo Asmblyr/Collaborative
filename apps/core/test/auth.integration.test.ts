@@ -113,11 +113,25 @@ test("local login issues, rotates and revokes user tokens", async () => {
       email,
       superuser: true,
       displayName: null,
+      firstName: null,
+      lastName: null,
+      description: null,
+      avatarId: null,
       pictureUrl: null,
       hasPassword: true,
       createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+      lastLoginAt: profile.lastLoginAt,
+      lastActiveAt: profile.lastActiveAt,
     });
-    assert.ok(Number.isFinite(Date.parse(profile.createdAt)));
+    for (const timestamp of [
+      profile.createdAt,
+      profile.updatedAt,
+      profile.lastLoginAt,
+      profile.lastActiveAt,
+    ]) {
+      assert.ok(Number.isFinite(Date.parse(timestamp)));
+    }
 
     const refresh = await app.inject({
       method: "POST",

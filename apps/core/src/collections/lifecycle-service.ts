@@ -267,6 +267,16 @@ export async function deleteCollection(
       await lockCollectionOrder(transaction);
       const settings = await requireCollection(transaction, name);
       assertCollectionWritable(settings);
+      const profileBinding = await transaction(
+        "public.asmblyr_profile_extension",
+      )
+        .where({ collection_id: settings.internalId })
+        .first("id");
+      if (profileBinding) {
+        throw new CollectionDependencyError(
+          "Disconnect this collection from user profiles before deleting it",
+        );
+      }
       await transaction.raw("LOCK TABLE ?? IN ACCESS EXCLUSIVE MODE", [
         `public.${name}`,
       ]);
@@ -313,7 +323,7 @@ export async function deleteCollection(
     if (postgresCode(error) === "42P01") {
       throw new CollectionNotFoundError(name);
     }
-    if (postgresCode(error) === "2BP01") {
+    if (["2BP01", "23503"].includes(postgresCode(error) ?? "")) {
       throw new CollectionDependencyError();
     }
     throw error;

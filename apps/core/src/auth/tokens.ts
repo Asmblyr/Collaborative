@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Knex } from "knex";
 import { InvalidCredentialsError } from "./validation.js";
 import { clientLabel } from "./sessions.js";
+import { recordUserActivity } from "./user-activity.js";
 
 const accessLifetimeMs = 15 * 60 * 1000;
 const sessionLifetimeMs = 30 * 24 * 60 * 60 * 1000;
@@ -92,6 +93,10 @@ export async function issueUserTokens(
       .returning<{ id: string }[]>("id");
     const pair = tokenPair(expiresAt);
     await saveTokenPair(transaction, session.id, pair);
+    await transaction("public.asmblyr_users").where({ id: userId }).update({
+      last_login_at: transaction.fn.now(),
+      last_active_at: transaction.fn.now(),
+    });
     return pair;
   });
 }
@@ -121,6 +126,7 @@ export async function authenticateAccess(
       session_id: string;
     }>("usr.id", "usr.email", "usr.superuser", "session.id as session_id");
   if (!row) throw new InvalidCredentialsError();
+  await recordUserActivity(database, row.id);
   return {
     id: row.id,
     email: row.email,

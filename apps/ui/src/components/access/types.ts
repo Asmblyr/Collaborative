@@ -26,6 +26,13 @@ export type PolicyCollection = Pick<
 };
 
 export interface AccessUser {
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  avatarId: string | null;
+  pictureUrl: string | null;
+  lastLoginAt: string | null;
+  lastActiveAt: string | null;
   id: string;
   email: string;
   status: "active" | "disabled";

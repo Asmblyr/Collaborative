@@ -1652,7 +1652,7 @@
         ],
         "operationId": "get__auth_me",
         "summary": "GET /auth/me",
-        "description": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/auth/routes.ts",
+        "description": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость. Источник: apps/core/src/auth/routes.ts",
         "security": [
           {
             "bearerAuth": []
@@ -1660,11 +1660,175 @@
         ],
         "parameters": [],
         "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "email",
+                        "superuser",
+                        "hasPassword",
+                        "displayName",
+                        "firstName",
+                        "lastName",
+                        "description",
+                        "pictureUrl",
+                        "avatarId",
+                        "createdAt",
+                        "updatedAt",
+                        "lastLoginAt",
+                        "lastActiveAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "superuser": {
+                          "type": "boolean"
+                        },
+                        "hasPassword": {
+                          "type": "boolean"
+                        },
+                        "displayName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "firstName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "pictureUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "format": "uri",
+                              "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "avatarId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastActiveAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
           "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
           }
         },
-        "x-contract-level": "route-only",
+        "x-contract-level": "documented",
         "x-source": "apps/core/src/auth/routes.ts"
       }
     },
@@ -10063,6 +10227,871 @@
         "x-source": "apps/core/src/terms/routes.ts"
       }
     },
+    "/system-collections": {
+      "get": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "get__system_collections",
+        "summary": "GET /system-collections",
+        "description": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены. Источник: apps/core/src/system-collections/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "enum": [
+                              "users",
+                              "files",
+                              "policies",
+                              "workspaces",
+                              "service_accounts"
+                            ]
+                          },
+                          "fields": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                },
+                                "managed": {
+                                  "type": "boolean"
+                                },
+                                "required": {
+                                  "type": "boolean"
+                                },
+                                "nullable": {
+                                  "type": "boolean"
+                                },
+                                "defaultValue": {
+                                  "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                                },
+                                "presentation": {
+                                  "type": "object",
+                                  "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                  "additionalProperties": true
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "type",
+                                "managed",
+                                "required",
+                                "nullable"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "fields"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/system-collections/routes.ts"
+      }
+    },
+    "/system-collections/{name}/fields/{field}": {
+      "delete": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "delete__system_collections_name_fields_field",
+        "summary": "DELETE /system-collections/:name/fields/:field",
+        "description": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены. Источник: apps/core/src/system-collections/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Custom column and its values removed. Builtins and dependent views are protected."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/system-collections/routes.ts"
+      }
+    },
+    "/system-collections/{name}/fields/{field}/configuration": {
+      "post": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "post__system_collections_name_fields_field_configuration",
+        "summary": "POST /system-collections/:name/fields/:field/configuration",
+        "description": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены. Источник: apps/core/src/system-collections/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "enum": [
+                            "users",
+                            "files",
+                            "policies",
+                            "workspaces",
+                            "service_accounts"
+                          ]
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "fields"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/system-collections/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                      },
+                      "type": {
+                        "enum": [
+                          "text",
+                          "integer",
+                          "bigint",
+                          "boolean",
+                          "datetime",
+                          "date",
+                          "email",
+                          "decimal",
+                          "json",
+                          "uuid",
+                          "file",
+                          "files"
+                        ]
+                      },
+                      "required": {
+                        "const": false
+                      },
+                      "nullable": {
+                        "const": true
+                      },
+                      "defaultValue": {
+                        "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "type"
+                    ]
+                  },
+                  "presentation": {
+                    "type": "object",
+                    "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "field"
+                ],
+                "minProperties": 1
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "put__system_collections_name_fields_field_configuration",
+        "summary": "PUT /system-collections/:name/fields/:field/configuration",
+        "description": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены. Источник: apps/core/src/system-collections/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "enum": [
+                            "users",
+                            "files",
+                            "policies",
+                            "workspaces",
+                            "service_accounts"
+                          ]
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "fields"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/system-collections/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "required": {
+                        "const": false
+                      },
+                      "nullable": {
+                        "const": true
+                      },
+                      "defaultValue": {
+                        "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                      }
+                    },
+                    "required": []
+                  },
+                  "presentation": {
+                    "type": "object",
+                    "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                    "additionalProperties": true
+                  }
+                },
+                "required": [],
+                "minProperties": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system-collections/{name}/records": {
+      "get": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "get__system_collections_name_records",
+        "summary": "GET /system-collections/:name/records",
+        "description": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены. Источник: apps/core/src/system-collections/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Search builtin record labels. Custom values are omitted from this selector."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            },
+            "description": "25 records per page, stable order by label and ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "values": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                                },
+                                "description": "Only registered custom fields; builtin fields are always rejected on write and excluded on read."
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label",
+                              "values"
+                            ]
+                          }
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "records",
+                        "page",
+                        "hasMore"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/system-collections/routes.ts"
+      }
+    },
+    "/system-collections/{name}/records/{id}": {
+      "get": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "get__system_collections_name_records_id",
+        "summary": "GET /system-collections/:name/records/:id",
+        "description": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены. Источник: apps/core/src/system-collections/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "values": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                          },
+                          "description": "Only registered custom fields; builtin fields are always rejected on write and excluded on read."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "label",
+                        "values"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/system-collections/routes.ts"
+      },
+      "patch": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "patch__system_collections_name_records_id",
+        "summary": "PATCH /system-collections/:name/records/:id",
+        "description": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены. Источник: apps/core/src/system-collections/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "values": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                          },
+                          "description": "Only registered custom fields; builtin fields are always rejected on write and excluded on read."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "label",
+                        "values"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization, missing entity or dependency conflict."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/system-collections/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                    },
+                    "description": "Only registered custom fields; builtin fields are always rejected on write and excluded on read.",
+                    "minProperties": 1
+                  }
+                },
+                "required": [
+                  "values"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/table-views/{collection}": {
       "get": {
         "tags": [
@@ -10534,6 +11563,235 @@
         }
       }
     },
+    "/users/{id}/extension": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_id_extension",
+        "summary": "GET /users/:id/extension",
+        "description": "Активный пользователь с users/read и обычными read-правами коллекции. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "collection",
+                            "userId",
+                            "exists",
+                            "data"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "collection": {
+                              "type": "string"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "exists": {
+                              "type": "boolean"
+                            },
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": true,
+                                  "description": "Consumer fields filtered by current row and field permissions. Null when absent or no longer readable."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts"
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "patch__users_id_extension",
+        "summary": "PATCH /users/:id/extension",
+        "description": "Активный пользователь с users/update и обычными read/create/update-правами коллекции. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "collection",
+                            "userId",
+                            "exists",
+                            "data"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "collection": {
+                              "type": "string"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "exists": {
+                              "type": "boolean"
+                            },
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": true,
+                                  "description": "Consumer fields filtered by current row and field permissions. Null when absent or no longer readable."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "collection",
+                  "values"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "collection": {
+                    "type": "string"
+                  },
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Schema-validated create/update values. Primary key and account fields cannot be supplied."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/{id}/invitation": {
       "post": {
         "tags": [
@@ -10564,6 +11822,478 @@
         },
         "x-contract-level": "route-only",
         "x-source": "apps/core/src/auth/user-routes.ts"
+      }
+    },
+    "/users/{id}/profile": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_id_profile",
+        "summary": "GET /users/:id/profile",
+        "description": "Активный пользователь с users/read; публичные сведения профиля без credentials. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "email",
+                        "superuser",
+                        "hasPassword",
+                        "displayName",
+                        "firstName",
+                        "lastName",
+                        "description",
+                        "pictureUrl",
+                        "avatarId",
+                        "createdAt",
+                        "updatedAt",
+                        "lastLoginAt",
+                        "lastActiveAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "superuser": {
+                          "type": "boolean"
+                        },
+                        "hasPassword": {
+                          "type": "boolean"
+                        },
+                        "displayName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "firstName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "pictureUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "format": "uri",
+                              "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "avatarId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastActiveAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts"
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "patch__users_id_profile",
+        "summary": "PATCH /users/:id/profile",
+        "description": "Активный пользователь с users/update; только поля профиля, без изменения статуса и привилегий. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "email",
+                        "superuser",
+                        "hasPassword",
+                        "displayName",
+                        "firstName",
+                        "lastName",
+                        "description",
+                        "pictureUrl",
+                        "avatarId",
+                        "createdAt",
+                        "updatedAt",
+                        "lastLoginAt",
+                        "lastActiveAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "superuser": {
+                          "type": "boolean"
+                        },
+                        "hasPassword": {
+                          "type": "boolean"
+                        },
+                        "displayName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "firstName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "pictureUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "format": "uri",
+                              "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "avatarId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastActiveAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": false,
+                "properties": {
+                  "displayName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "firstName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lastName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "pictureUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "format": "uri",
+                        "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "avatarId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/users/{id}/recovery": {
@@ -10635,7 +12365,7 @@
         ],
         "operationId": "get__users_me",
         "summary": "GET /users/me",
-        "description": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/auth/profile-routes.ts",
+        "description": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость. Источник: apps/core/src/auth/profile-routes.ts",
         "security": [
           {
             "bearerAuth": []
@@ -10643,11 +12373,175 @@
         ],
         "parameters": [],
         "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "email",
+                        "superuser",
+                        "hasPassword",
+                        "displayName",
+                        "firstName",
+                        "lastName",
+                        "description",
+                        "pictureUrl",
+                        "avatarId",
+                        "createdAt",
+                        "updatedAt",
+                        "lastLoginAt",
+                        "lastActiveAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "superuser": {
+                          "type": "boolean"
+                        },
+                        "hasPassword": {
+                          "type": "boolean"
+                        },
+                        "displayName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "firstName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "pictureUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "format": "uri",
+                              "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "avatarId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastActiveAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
           "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
           }
         },
-        "x-contract-level": "route-only",
+        "x-contract-level": "documented",
         "x-source": "apps/core/src/auth/profile-routes.ts"
       },
       "patch": {
@@ -10656,7 +12550,7 @@
         ],
         "operationId": "patch__users_me",
         "summary": "PATCH /users/me",
-        "description": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/auth/profile-routes.ts",
+        "description": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость. Источник: apps/core/src/auth/profile-routes.ts",
         "security": [
           {
             "bearerAuth": []
@@ -10664,12 +12558,547 @@
         ],
         "parameters": [],
         "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "email",
+                        "superuser",
+                        "hasPassword",
+                        "displayName",
+                        "firstName",
+                        "lastName",
+                        "description",
+                        "pictureUrl",
+                        "avatarId",
+                        "createdAt",
+                        "updatedAt",
+                        "lastLoginAt",
+                        "lastActiveAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "superuser": {
+                          "type": "boolean"
+                        },
+                        "hasPassword": {
+                          "type": "boolean"
+                        },
+                        "displayName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "firstName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "pictureUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "format": "uri",
+                              "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "avatarId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastActiveAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
           "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
           }
         },
-        "x-contract-level": "route-only",
-        "x-source": "apps/core/src/auth/profile-routes.ts"
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": false,
+                "properties": {
+                  "displayName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "firstName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lastName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "pictureUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "format": "uri",
+                        "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "avatarId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/avatar": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "post__users_me_avatar",
+        "summary": "POST /users/me/avatar",
+        "description": "Собственная человеческая сессия; приватное растровое изображение до 2 MiB, настроенное файловое хранилище и credential rate limit. Источник: apps/core/src/auth/profile-avatar-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": true,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "413": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "429": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "503": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-avatar-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "description": "PNG, JPEG, GIF or WebP; maximum 2 MiB. Upload does not attach the avatar until profile save."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/extension": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_me_extension",
+        "summary": "GET /users/me/extension",
+        "description": "Собственная человеческая сессия и обычные read-права коллекции; скрытые поля и строки не раскрываются. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "collection",
+                            "userId",
+                            "exists",
+                            "data"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "collection": {
+                              "type": "string"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "exists": {
+                              "type": "boolean"
+                            },
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": true,
+                                  "description": "Consumer fields filtered by current row and field permissions. Null when absent or no longer readable."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts"
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "patch__users_me_extension",
+        "summary": "PATCH /users/me/extension",
+        "description": "Собственная человеческая сессия; read и create/update, обычные правила строк, полей, связей и файлов. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "collection",
+                            "userId",
+                            "exists",
+                            "data"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "collection": {
+                              "type": "string"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "exists": {
+                              "type": "boolean"
+                            },
+                            "data": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": true,
+                                  "description": "Consumer fields filtered by current row and field permissions. Null when absent or no longer readable."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "collection",
+                  "values"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "collection": {
+                    "type": "string"
+                  },
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Schema-validated create/update values. Primary key and account fields cannot be supplied."
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/users/me/identities": {
@@ -11292,7 +13721,8 @@
                       "required": [
                         "theme",
                         "style",
-                        "locale"
+                        "locale",
+                        "timezone"
                       ],
                       "additionalProperties": false,
                       "properties": {
@@ -11321,6 +13751,18 @@
                           "enum": [
                             "ru",
                             "en"
+                          ]
+                        },
+                        "timezone": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 100,
+                              "description": "Valid IANA timezone; null uses the device timezone."
+                            },
+                            {
+                              "type": "null"
+                            }
                           ]
                         }
                       }
@@ -11375,7 +13817,8 @@
                       "required": [
                         "theme",
                         "style",
-                        "locale"
+                        "locale",
+                        "timezone"
                       ],
                       "additionalProperties": false,
                       "properties": {
@@ -11404,6 +13847,18 @@
                           "enum": [
                             "ru",
                             "en"
+                          ]
+                        },
+                        "timezone": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 100,
+                              "description": "Valid IANA timezone; null uses the device timezone."
+                            },
+                            {
+                              "type": "null"
+                            }
                           ]
                         }
                       }
@@ -11455,6 +13910,18 @@
                     "enum": [
                       "ru",
                       "en"
+                    ]
+                  },
+                  "timezone": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100,
+                        "description": "Valid IANA timezone; null uses the device timezone."
+                      },
+                      {
+                        "type": "null"
+                      }
                     ]
                   }
                 }
@@ -11925,6 +14392,182 @@
         },
         "x-contract-level": "route-only",
         "x-source": "apps/core/src/workspaces/routes.ts"
+      }
+    },
+    "/users/profile-extension": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_profile_extension",
+        "summary": "GET /users/profile-extension",
+        "description": "Активный пользователь с users/read; имя выбранной коллекции и ключа. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "collection",
+                            "key"
+                          ],
+                          "properties": {
+                            "collection": {
+                              "type": "string"
+                            },
+                            "key": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts"
+      },
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "put__users_profile_extension",
+        "summary": "PUT /users/profile-extension",
+        "description": "Только human superuser; связывает обычную UUID-коллекцию, не выдаёт права и не удаляет данные. Источник: apps/core/src/auth/profile-extension-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "collection",
+                            "key"
+                          ],
+                          "properties": {
+                            "collection": {
+                              "type": "string"
+                            },
+                            "key": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "401": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "403": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "404": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "409": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          },
+          "default": {
+            "description": "Ошибка проверки, входа, доступа, конфликта или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-extension-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "collection"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "collection": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/workspaces": {

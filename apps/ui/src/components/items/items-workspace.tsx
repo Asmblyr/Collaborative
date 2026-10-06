@@ -106,6 +106,7 @@ export function ItemsWorkspace({
   const canRead = Boolean(collection.access.read);
   const itemKey = (item: Item) => String(item[collection.primaryKey.name]);
   const canCreate =
+    !collection.profileExtension &&
     Boolean(collection.access.create) &&
     (collection.mode === "multiple" || page.total === "0");
 

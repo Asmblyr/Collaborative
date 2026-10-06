@@ -1,6 +1,8 @@
 **/node_modules
 .pnpm-store
 **/.next
+**/.next-visual
+**/*.tsbuildinfo
 **/dist
 **/.asmblyr
 **/.env
@@ -27,6 +29,11 @@ work
 outputs
 backups
 **/*.log
+**/*.dump
+**/*.backup
+**/*.bak
+playwright-report
+test-results
 **/coverage
 infra
 plugins

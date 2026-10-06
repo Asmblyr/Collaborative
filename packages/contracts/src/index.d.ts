@@ -49,7 +49,13 @@ export type {
   UserDelegationInput,
   PolicyUsersInput,
 } from "./settings-access.js";
-export type { CurrentUser, CurrentUserResult } from "./users.js";
+export type {
+  CurrentUser,
+  CurrentUserResult,
+  UserProfilePatch,
+  UserProfileExtension,
+  UserProfileExtensionResult,
+} from "./users.js";
 export type { ApiErrorBody } from "./api-error.js";
 export type { NotificationItem, NotificationResult } from "./notifications.js";
 export type {
@@ -326,3 +332,10 @@ export type {
 } from "./connections.js";
 export * from "./monitoring.js";
 export * from "./tags.js";
+export type {
+  SystemCollectionName,
+  SystemCollectionField,
+  SystemCollection,
+  SystemCollectionRecord,
+  SystemRecordPage,
+} from "./system-collections.js";

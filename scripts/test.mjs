@@ -8,8 +8,6 @@ import { randomUUID } from "node:crypto";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const core = path.join(root, "apps/core");
 const require = createRequire(path.join(core, "package.json"));
-const knex = require("knex");
-const { parse } = require("dotenv");
 
 async function executeTests(app, files, environment = {}) {
   if (!files.length) return;
@@ -47,6 +45,8 @@ async function executeTests(app, files, environment = {}) {
 }
 
 async function withTestDatabase(run) {
+  const knex = require("knex");
+  const { parse } = require("dotenv");
   let local = {};
   try {
     local = parse(await readFile(path.join(core, ".env")));
@@ -115,6 +115,11 @@ async function testFiles(app) {
 
 async function main() {
   const suite = process.argv[2] ?? "all";
+  if (suite === "container") {
+    const { smokeContainer } = await import("./container/smoke.mjs");
+    await smokeContainer(process.argv[3]);
+    return;
+  }
   const suites = [
     "all",
     "core-all",
@@ -142,6 +147,8 @@ async function main() {
     "core-search",
     "core-performance",
     "core-monitoring",
+    "core-profile",
+    "core-system-collections",
     "ui-unit",
   ];
   if (!suites.includes(suite)) throw new Error(`Unknown suite: ${suite}`);
@@ -151,6 +158,16 @@ async function main() {
       (name) => !name.endsWith("-ui.integration.test.ts"),
     );
     const selected = files.filter((name) => {
+      if (suite === "core-system-collections") {
+        return /test\/(?:system-collections|user-profiles|profile-avatar|files-access|collections|field-configuration|http-access-surface)[-.]/.test(
+          name,
+        );
+      }
+      if (suite === "core-profile") {
+        return /test\/(?:user-profiles|profile|profile-avatar|profile-extension|preferences|translations|files-access|schema-export|http-access-surface)[-.]/.test(
+          name,
+        );
+      }
       if (suite === "core-tags") {
         return [
           "test/tags.integration.test.ts",

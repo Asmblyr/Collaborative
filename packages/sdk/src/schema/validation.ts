@@ -127,6 +127,7 @@ export function parseSchemaSnapshot(input: unknown): SchemaSnapshot {
       "name",
       "mode",
       "sourceKind",
+      "profileExtension",
       "primaryKey",
       "actions",
       "fields",
@@ -152,6 +153,15 @@ export function parseSchemaSnapshot(input: unknown): SchemaSnapshot {
     const actions = object(c.actions, ["read", "create", "update", "delete"]);
     const parsedFields = fields(c.fields);
     if (
+      c.profileExtension === true &&
+      (c.mode !== "multiple" ||
+        pk.type !== "uuid" ||
+        c.sourceKind === "materialized-view" ||
+        actions.create !== false)
+    ) {
+      throw new TypeError("Profile extension requires user-owned UUID records");
+    }
+    if (
       c.sourceKind === "materialized-view" &&
       (actions.create !== false ||
         actions.update !== false ||
@@ -165,6 +175,9 @@ export function parseSchemaSnapshot(input: unknown): SchemaSnapshot {
     }
     return {
       name: collectionName,
+      ...(c.profileExtension === undefined
+        ? {}
+        : { profileExtension: bool(c.profileExtension) }),
       ...(c.sourceKind === undefined
         ? {}
         : { sourceKind: c.sourceKind as SchemaCollection["sourceKind"] }),

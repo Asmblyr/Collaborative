@@ -13,6 +13,16 @@ const preferenceProperties = {
   theme: { enum: ["light", "dark", "system"] },
   style: { enum: ["neutral", "ocean", "coral"] },
   locale: { enum: ["ru", "en"] },
+  timezone: {
+    anyOf: [
+      {
+        type: "string",
+        maxLength: 100,
+        description: "Valid IANA timezone; null uses the device timezone.",
+      },
+      { type: "null" },
+    ],
+  },
 };
 const response = (data) => ({
   description: "Успех",
@@ -79,7 +89,7 @@ export function localizationContract(key) {
   ) {
     const result = {
       type: "object",
-      required: ["theme", "style", "locale"],
+      required: ["theme", "style", "locale", "timezone"],
       additionalProperties: false,
       properties: {
         ...preferenceProperties,

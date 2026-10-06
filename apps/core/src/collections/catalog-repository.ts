@@ -7,6 +7,7 @@ import type { JsonValue } from "./structured-values.js";
 import { reconcileForm, type FormLayout } from "./form-layout.js";
 
 interface CollectionRow {
+  profile_extension: boolean;
   source_kind: "table" | "materialized-view";
   name: string;
   display_name: string | null;
@@ -64,6 +65,7 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
   const result = await database.raw<{ rows: CollectionRow[] }>(`
     SELECT m.source_kind, m.name, m.display_name, m.translations, m.hidden, m.mcp_enabled, m.mcp_description, m.folder_id, m.parent_collection, m.created_at, m.mode, m.display_field, m.display_template, m.form_layout, m.primary_key_name, m.primary_key_type,
       m.created_at_enabled, m.updated_at_enabled, m.state, c.column_name, c.data_type, c.is_nullable,
+      EXISTS (SELECT 1 FROM pg_constraint AS pe WHERE pe.conname = 'asmblyr_user_profile_owner' AND pe.conrelid = to_regclass('public.' || m.name)) AS profile_extension,
       fm.semantic_type, fm.required, fm.default_value, fm.searchable, fm.search_priority, fm.presentation,
       EXISTS (SELECT 1 FROM pg_class AS idx
         JOIN pg_namespace AS ns ON ns.oid = idx.relnamespace
@@ -98,6 +100,7 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
     if (!collection) {
       collection = {
         name: row.name,
+        ...(row.profile_extension ? { profileExtension: true } : {}),
         folderId: row.folder_id,
         parentCollection: row.parent_collection,
         createdAt: row.created_at,

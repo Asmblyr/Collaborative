@@ -19,7 +19,10 @@
 - In every schema-changing API operation, reject user-created or renamed
   table names with the reserved prefix and block alter, rename, or drop of
   Core-owned tables before executing DDL. Treat the prefix case-insensitively.
-  Row operations are a separate concern.
+  The dedicated system-collections service is the narrow exception: it may add,
+  configure or remove explicitly registered custom columns on its allowlisted
+  product entities. Built-in columns and whole tables remain protected; ordinary
+  collection/item routes must not adopt these tables. Row operations are separate.
 - Plugin-owned collections use `public.plugin_<namespace>_<local_name>`. Reserve
   `plugin_` in user schema operations, including when the owning package is disabled.
   Ownership and installed declarations live in Core's plugin registry. Initial

@@ -22,6 +22,8 @@ export interface SchemaField {
   filterKind?: SchemaFilterKind;
 }
 export interface SchemaCollection {
+  /** User-owned records are initialized through /users/me/extension. */
+  profileExtension?: boolean;
   sourceKind?: "table" | "materialized-view";
   name: string;
   mode: CollectionMode;

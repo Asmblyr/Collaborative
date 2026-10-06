@@ -6,9 +6,11 @@ SMTP необязателен: администратор может вручн�
 
 ## Сборка и установка
 
-Dockerfile собирает Core/UI с закреплённым Node image digest, pnpm и lockfile;
-приложения работают от пользователя `node`. GitHub workflow проверяет типы,
-lint, тесты, документацию и production build с отдельным PostgreSQL.
+Dockerfile собирает единый образ Core/UI с закреплённым Node image digest, pnpm
+и lockfile; приложения работают от пользователя `node`. UI доступен на порту
+`3000`, Core API — на `3001`. PostgreSQL и S3 подключаются отдельно.
+GitHub workflow проверяет типы, lint, тесты, документацию, production build и
+запуск контейнера с одноразовым PostgreSQL перед публикацией образа в GHCR.
 
 [Шаблоны установки](https://github.com/Asmblyr/Collaborative/blob/main/deploy/README.md)
 включают локальную установку с S3 и вариант для внешних PostgreSQL/bucket.

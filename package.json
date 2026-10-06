@@ -1,6 +1,9 @@
 {
   "name": "asmblyr-collaborative",
   "private": true,
+  "files": [
+    "LICENSE"
+  ],
   "version": "0.0.0",
   "packageManager": "pnpm@11.13.1",
   "engines": {
@@ -22,6 +25,7 @@
     "test:all": "pnpm build:packages && pnpm build:examples && pnpm --filter @asmblyr-collaborative/sdk test && pnpm --filter @asmblyr-collaborative/cli test && node scripts/test.mjs all",
     "test": "pnpm test:all",
     "test:unit": "pnpm build:packages && pnpm build:examples && pnpm --filter @asmblyr-collaborative/sdk test && pnpm -r test:unit",
+    "container:smoke": "node scripts/test.mjs container",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:generate": "node scripts/docs/generate.mjs",

@@ -81,7 +81,7 @@ export function RelationPicker({
             candidateFilter={filter}
             portalContainer={portalContainer}
             onCreate={
-              target.access.create && onOpen
+              target.access.create && !target.profileExtension && onOpen
                 ? () => onOpen(target.name, undefined, onChange, field.name)
                 : undefined
             }

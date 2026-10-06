@@ -1,28 +1,60 @@
+import { objectInput } from "../shared/input.js";
 import { AuthInputError } from "./validation.js";
+import { parseFileId } from "../files/validation.js";
 
-export function parseProfile(value: unknown): {
-  display_name: string | null;
+export interface ProfileChanges {
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  description?: string | null;
   picture_url?: string | null;
-} {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new AuthInputError("Invalid profile");
-  const input = value as Record<string, unknown>;
-  if (
-    Object.keys(input).some(
-      (key) => !["displayName", "pictureUrl"].includes(key),
-    ) ||
-    typeof input.displayName !== "string" ||
-    input.displayName.trim().length > 120 ||
-    /[\u0000-\u001f\u007f]/.test(input.displayName)
-  )
-    throw new AuthInputError("Invalid display name");
-  const result: { display_name: string | null; picture_url?: string | null } = {
-    display_name: input.displayName.trim() || null,
-  };
-  if (input.pictureUrl === undefined) return result;
-  if (typeof input.pictureUrl !== "string" || input.pictureUrl.length > 2048)
-    throw new AuthInputError("Invalid profile image");
-  result.picture_url = input.pictureUrl.trim() || null;
+  avatar_id?: string | null;
+}
+
+export function parseProfile(value: unknown): ProfileChanges {
+  const input = objectInput(value, [
+    "displayName",
+    "firstName",
+    "lastName",
+    "description",
+    "pictureUrl",
+    "avatarId",
+  ]);
+  if (!Object.keys(input).length) {
+    throw new AuthInputError("No profile fields supplied");
+  }
+  const result: ProfileChanges = {};
+  for (const [key, column] of [
+    ["displayName", "display_name"],
+    ["firstName", "first_name"],
+    ["lastName", "last_name"],
+    ["description", "description"],
+    ["pictureUrl", "picture_url"],
+  ] as const) {
+    if (input[key] === undefined) {
+      continue;
+    }
+    const text = input[key];
+    const limits = {
+      displayName: 120,
+      firstName: 120,
+      lastName: 120,
+      description: 2000,
+      pictureUrl: 2048,
+    };
+    const limit = limits[key];
+    const controls =
+      key === "description"
+        ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/
+        : /[\u0000-\u001f\u007f]/;
+    if (
+      text !== null &&
+      (typeof text !== "string" || text.length > limit || controls.test(text))
+    ) {
+      throw new AuthInputError(`Invalid profile field: ${key}`);
+    }
+    result[column] = typeof text === "string" ? text.trim() || null : null;
+  }
   if (result.picture_url) {
     let url: URL;
     try {
@@ -30,8 +62,16 @@ export function parseProfile(value: unknown): {
     } catch {
       throw new AuthInputError("Profile image requires an HTTPS URL");
     }
-    if (url.protocol !== "https:" || url.username || url.password || url.hash)
+    if (url.protocol !== "https:" || url.username || url.password || url.hash) {
       throw new AuthInputError("Profile image requires an HTTPS URL");
+    }
+  }
+  if (input.avatarId !== undefined) {
+    if (input.avatarId !== null && typeof input.avatarId !== "string") {
+      throw new AuthInputError("Invalid avatar identifier");
+    }
+    result.avatar_id =
+      input.avatarId === null ? null : parseFileId(input.avatarId as string);
   }
   return result;
 }

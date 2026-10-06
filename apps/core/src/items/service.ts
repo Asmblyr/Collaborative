@@ -112,6 +112,7 @@ export async function createItem(
   body: unknown,
   context: MutationContext,
   allowed: string[],
+  assignedUuid?: string,
 ) {
   try {
     return await database.transaction(async (transaction) => {
@@ -119,6 +120,15 @@ export async function createItem(
         transaction,
         name,
       );
+      if (
+        !assignedUuid &&
+        (await transaction("pg_constraint")
+          .where({ conname: "asmblyr_user_profile_owner" })
+          .whereRaw("conrelid = ?::regclass", [`public.${name}`])
+          .first("oid"))
+      ) {
+        throw new ItemError("Create this record through the user profile", 409);
+      }
       assertWritableFields(
         body,
         allowed,
@@ -160,7 +170,12 @@ export async function createItem(
       }
       const [item] = await transaction(name)
         .withSchema("public")
-        .insert(databaseValues(values, fields))
+        .insert({
+          ...databaseValues(values, fields),
+          ...(assignedUuid && settings.primaryKey.type === "uuid"
+            ? { [settings.primaryKey.name]: parseItemId(assignedUuid, "uuid") }
+            : {}),
+        })
         .returning("*");
       await assertRowWrite(
         transaction,

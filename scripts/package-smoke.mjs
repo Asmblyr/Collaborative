@@ -10,18 +10,21 @@ import { promisify } from "node:util";
 const execute = promisify(execFile);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const archives = path.join(root, ".local-data/packages");
-const pnpm = process.env.npm_execpath;
+// Pnpm 11 may omit npm_execpath or expose a native executable instead of JS.
+const pnpm = process.env.npm_execpath ?? "pnpm";
+const scriptedPnpm = /\.(?:cjs|mjs|js)$/.test(pnpm);
 const registry = process.argv.includes("--registry");
 assert.ok(process.argv.slice(2).every((argument) => argument === "--registry"));
-if (!pnpm || !/pnpm\.(?:cjs|mjs|js)$/.test(pnpm)) {
-  throw new Error("Run this check with pnpm packages:check");
-}
 async function run(args, cwd = root) {
-  const result = await execute(process.execPath, [pnpm, ...args], {
-    cwd,
-    windowsHide: true,
-    maxBuffer: 4 * 1024 * 1024,
-  });
+  const result = await execute(
+    scriptedPnpm ? process.execPath : pnpm,
+    scriptedPnpm ? [pnpm, ...args] : args,
+    {
+      cwd,
+      windowsHide: true,
+      maxBuffer: 4 * 1024 * 1024,
+    },
+  );
   return result.stdout;
 }
 const allowed = {

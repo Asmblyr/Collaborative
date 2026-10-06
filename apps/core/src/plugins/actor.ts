@@ -8,12 +8,20 @@ export async function pluginActor(
 ): Promise<EndpointActor> {
   const table =
     principal.kind === "user" ? "asmblyr_users" : "asmblyr_service_accounts";
-  const column = principal.kind === "user" ? "display_name" : "name";
+  const columns =
+    principal.kind === "user"
+      ? ["display_name", "first_name", "last_name", "email"]
+      : ["name"];
   const row = await database(table)
     .withSchema("public")
     .where({ id: principal.id })
-    .first<Record<string, unknown>>(column);
-  const name = row?.[column];
+    .first<Record<string, string | null>>(...columns);
+  const name =
+    principal.kind === "user"
+      ? row?.display_name ||
+        [row?.first_name, row?.last_name].filter(Boolean).join(" ") ||
+        row?.email
+      : row?.name;
   return {
     id: principal.id,
     kind: principal.kind,

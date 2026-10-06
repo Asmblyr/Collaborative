@@ -22,11 +22,13 @@ export function useFieldEditor({
   field,
   type,
   onSaved,
+  system = false,
 }: {
   collection: string;
   field?: CollectionField;
   type?: DataFieldType;
   onSaved: () => void;
+  system?: boolean;
 }) {
   const copy = useUiCopy();
 
@@ -74,7 +76,8 @@ export function useFieldEditor({
   }
   if (!selectedType) throw new Error(copy("Тип нового поля не выбран"));
   const resolvedType: string = selectedType;
-  const textField = selectedType === "text" || selectedType === "email";
+  const textField =
+    !system && (selectedType === "text" || selectedType === "email");
   const relationField = Boolean(field?.relation);
   const defaultChanged =
     field &&
@@ -175,7 +178,8 @@ export function useFieldEditor({
           );
       }
       const fieldName = field?.name ?? name;
-      const path = `/api/collections/${encodeURIComponent(collection)}/fields/${encodeURIComponent(fieldName)}`;
+      const namespace = system ? "system-collections" : "collections";
+      const path = `/api/${namespace}/${encodeURIComponent(collection)}/fields/${encodeURIComponent(fieldName)}`;
       const definition =
         field || created
           ? {

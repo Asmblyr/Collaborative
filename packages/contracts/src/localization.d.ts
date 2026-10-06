@@ -18,6 +18,8 @@ export interface UserPreferences {
   theme: ThemeMode | null;
   style: ThemeStyle;
   locale: UiLocale;
+  /** IANA zone; null follows the device's zone. */
+  timezone: string | null;
 }
 export function resolveLocalizedText(
   translations: LabelTranslations | undefined,

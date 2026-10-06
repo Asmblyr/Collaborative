@@ -2,7 +2,6 @@
 
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,7 +12,7 @@ import {
 } from "@asmblyr-collaborative/kit/ui/tabs";
 import type { Collection, CollectionField } from "@/components/items/types";
 import { AliasFieldEditor } from "./alias-field-editor";
-import { FieldDefaultInput } from "./field-default-input";
+import { FieldBasicSettings } from "./field-basic-settings";
 import { FieldSearchSettings } from "./field-search-settings";
 import { RelationSearchSettings } from "./relation-search-settings";
 import type { DataFieldType } from "./field-type-picker";
@@ -24,6 +23,7 @@ import { FieldPresentationSettings } from "./field-presentation-settings";
 import { useUiCopy } from "@/lib/ui-copy";
 
 interface FieldEditorFormProps {
+  system?: boolean;
   collection: string;
   collections: Collection[];
   field?: CollectionField;
@@ -35,6 +35,7 @@ interface FieldEditorFormProps {
 }
 
 export function FieldEditorForm({
+  system = false,
   collection,
   collections,
   field,
@@ -46,18 +47,10 @@ export function FieldEditorForm({
 }: FieldEditorFormProps) {
   const copy = useUiCopy();
 
-  const editor = useFieldEditor({ collection, field, type, onSaved });
+  const editor = useFieldEditor({ collection, field, type, onSaved, system });
   const {
     name,
     setName,
-    required,
-    setRequired,
-    nullable,
-    setNullable,
-    hasDefault,
-    setHasDefault,
-    defaultValue,
-    setDefaultValue,
     searchable,
     setSearchable,
     indexed,
@@ -187,7 +180,9 @@ export function FieldEditorForm({
         <TabsList className="w-full justify-start">
           <TabsTrigger value="basic">{copy("Основное")}</TabsTrigger>
           <TabsTrigger value="presentation">{copy("Отображение")}</TabsTrigger>
-          <TabsTrigger value="rules">{copy("Правила")}</TabsTrigger>
+          {!system && (
+            <TabsTrigger value="rules">{copy("Правила")}</TabsTrigger>
+          )}
           {textField && (
             <TabsTrigger value="search">{copy("Поиск")}</TabsTrigger>
           )}
@@ -199,90 +194,11 @@ export function FieldEditorForm({
           value="basic"
           className="space-y-6"
         >
-          <div className="space-y-4 rounded-xl border p-4">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="field-editor-required"
-                checked={required}
-                onCheckedChange={(checked) => setRequired(checked === true)}
-                disabled={pending}
-                className="mt-1"
-              />
-              <div className="space-y-1">
-                <Label htmlFor="field-editor-required">
-                  {copy("Обязательно в API")}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {copy(
-                    "Требует значение в API. Default покрывает пропуск поля. ",
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="field-editor-nullable"
-                checked={nullable}
-                onCheckedChange={(checked) => setNullable(checked === true)}
-                disabled={pending}
-                className="mt-1"
-              />
-              <div className="space-y-1">
-                <Label htmlFor="field-editor-nullable">
-                  {copy("Разрешить NULL в БД ")}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {copy(
-                    "При отключении существующие пустые значения помешают сохранению. ",
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {!["relation", "file", "files"].includes(selectedType) && (
-            <div className="space-y-4 rounded-xl border p-4">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="field-editor-has-default"
-                  checked={hasDefault}
-                  onCheckedChange={(checked) => setHasDefault(checked === true)}
-                  disabled={pending}
-                  className="mt-1"
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="field-editor-has-default">
-                    {copy("Значение по умолчанию ")}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {copy(
-                      "Применяется при создании записи, если поле не передано. ",
-                    )}
-                  </p>
-                </div>
-              </div>
-              {hasDefault && (
-                <div className="space-y-2">
-                  <Label htmlFor="field-editor-default-value">
-                    {copy("Значение")}
-                    {selectedType === "datetime" ? " (UTC)" : ""}
-                  </Label>
-                  <FieldDefaultInput
-                    type={selectedType}
-                    value={defaultValue}
-                    onChange={setDefaultValue}
-                    disabled={pending}
-                    portalContainer={portalContainer}
-                  />
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {copy(
-                  "При добавлении поля default заполнит существующие строки. Изменение default позже их не меняет. ",
-                )}
-              </p>
-            </div>
-          )}
+          <FieldBasicSettings
+            editor={editor}
+            system={system}
+            portalContainer={portalContainer}
+          />
         </TabsContent>
         <TabsContent value="rules">
           <FieldRulesSettings

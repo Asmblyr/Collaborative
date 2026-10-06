@@ -44,6 +44,7 @@ export interface CreateCollectionInput {
 }
 
 export interface Collection {
+  profileExtension?: boolean;
   sourceKind?: "table" | "materialized-view";
   name: string;
   displayName?: string | null;

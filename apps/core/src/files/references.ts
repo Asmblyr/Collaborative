@@ -11,6 +11,7 @@ import type { MutationContext } from "../items/events-repository.js";
 import { ItemError } from "../items/validation.js";
 import { files } from "./repository.js";
 import { effectiveSettingsAccess } from "../settings/access.js";
+import { systemFileReferences } from "../system-collections/repository.js";
 
 const references = (db: Knex) =>
   db("asmblyr_file_references").withSchema("public");
@@ -100,7 +101,17 @@ export async function syncFileReferences(
 /** Check live rows as well: SQL edits/cascades can make the API reference index stale. */
 export async function actualFileReferences(db: Knex, id: string) {
   const catalog = await listCollections(db);
-  const result: { collection: string; field: string; itemId: string }[] = [];
+  const result = await systemFileReferences(db, id);
+  const profile = await db("public.asmblyr_users")
+    .where({ avatar_id: id })
+    .first("id");
+  if (profile) {
+    result.push({
+      collection: "user-profile",
+      field: "avatarId",
+      itemId: profile.id,
+    });
+  }
   for (const collection of catalog) {
     for (const field of collection.fields.filter(
       (f) => f.type === "file" || f.type === "files",
@@ -130,13 +141,23 @@ export async function requireFileRead(
   catalog?: Awaited<ReturnType<typeof listCollections>>,
 ) {
   if (access.principal.superuser) return;
-  if (
-    access.principal.kind === "user" &&
-    (await effectiveSettingsAccess(db, access.principal.id)).sections.includes(
-      "files",
-    )
-  ) {
-    return;
+  if (access.principal.kind === "user") {
+    const ownAvatar = await db("public.asmblyr_users")
+      .where({ id: access.principal.id, avatar_id: id })
+      .first("id");
+    if (ownAvatar) {
+      return;
+    }
+    const settings = await effectiveSettingsAccess(db, access.principal.id);
+    if (settings.sections.includes("files")) {
+      return;
+    }
+    if (
+      settings.sections.includes("users") &&
+      (await db("public.asmblyr_users").where({ avatar_id: id }).first("id"))
+    ) {
+      return;
+    }
   }
   const candidates = await references(db)
     .where({ file_id: id })

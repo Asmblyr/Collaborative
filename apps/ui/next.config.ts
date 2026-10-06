@@ -5,6 +5,8 @@ import { pathToFileURL } from "node:url";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
   distDir: process.env.ASMBLYR_VISUAL_TEST === "1" ? ".next-visual" : ".next",
   async redirects() {
     return [

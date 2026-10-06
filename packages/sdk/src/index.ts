@@ -1,4 +1,5 @@
 export { createClient, type AsmblyrClient } from "./client.js";
+export type { UsersClient } from "./users.js";
 export { ApiError } from "./error.js";
 export type { PluginsClient, PluginPaths } from "./plugins.js";
 export {
@@ -16,6 +17,7 @@ export type {
   ReadRow,
   CreateRow,
   UpdateRow,
+  ProfileCreateRow,
 } from "./collection-schema.js";
 export type { PresenceClient } from "./presence.js";
 export type { NotificationsClient } from "./notifications.js";
@@ -35,6 +37,9 @@ export type {
   PresenceResult,
   CurrentUser,
   CurrentUserResult,
+  UserProfilePatch,
+  UserProfileExtensionResult,
+  UserPreferences,
   ItemFilterCondition,
   ItemFilterGroup,
   ItemFilterOperator,

@@ -758,5 +758,69 @@
   "POST /auth/cli/token": {
     "public": true,
     "access": "One-use code + PKCE verifier + exact callback. Issues 10-minute schema:read access only; rate-limited."
+  },
+  "GET /users/profile-extension": {
+    "access": "Активный пользователь с users/read; имя выбранной коллекции и ключа",
+    "public": false
+  },
+  "PUT /users/profile-extension": {
+    "access": "Только human superuser; связывает обычную UUID-коллекцию, не выдаёт права и не удаляет данные",
+    "public": false
+  },
+  "GET /users/me/extension": {
+    "access": "Собственная человеческая сессия и обычные read-права коллекции; скрытые поля и строки не раскрываются",
+    "public": false
+  },
+  "PATCH /users/me/extension": {
+    "access": "Собственная человеческая сессия; read и create/update, обычные правила строк, полей, связей и файлов",
+    "public": false
+  },
+  "GET /users/:id/extension": {
+    "access": "Активный пользователь с users/read и обычными read-правами коллекции",
+    "public": false
+  },
+  "PATCH /users/:id/extension": {
+    "access": "Активный пользователь с users/update и обычными read/create/update-правами коллекции",
+    "public": false
+  },
+  "GET /users/:id/profile": {
+    "access": "Активный пользователь с users/read; публичные сведения профиля без credentials",
+    "public": false
+  },
+  "PATCH /users/:id/profile": {
+    "access": "Активный пользователь с users/update; только поля профиля, без изменения статуса и привилегий",
+    "public": false
+  },
+  "POST /users/me/avatar": {
+    "access": "Собственная человеческая сессия; приватное растровое изображение до 2 MiB, настроенное файловое хранилище и credential rate limit",
+    "public": false
+  },
+  "GET /system-collections": {
+    "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
+    "public": false
+  },
+  "POST /system-collections/:name/fields/:field/configuration": {
+    "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
+    "public": false
+  },
+  "PUT /system-collections/:name/fields/:field/configuration": {
+    "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
+    "public": false
+  },
+  "DELETE /system-collections/:name/fields/:field": {
+    "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
+    "public": false
+  },
+  "GET /system-collections/:name/records": {
+    "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
+    "public": false
+  },
+  "GET /system-collections/:name/records/:id": {
+    "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
+    "public": false
+  },
+  "PATCH /system-collections/:name/records/:id": {
+    "access": "Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены",
+    "public": false
   }
 }

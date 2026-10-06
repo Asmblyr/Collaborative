@@ -6,6 +6,13 @@ import {
 } from "../src/index.js";
 
 type Generated = {
+  user_profiles: CollectionSchema<
+    { id: string; bio: string },
+    never,
+    { bio?: string },
+    true,
+    { bio: string; creationOnly?: string }
+  >;
   articles: CollectionSchema<
     { id: string; title: string; price: string | null },
     { title: string; price?: string | null },
@@ -14,6 +21,25 @@ type Generated = {
 };
 async function generatedConsumer() {
   const client = createClient<Generated>({ baseUrl: "/api" });
+  await client.users.saveExtension("user_profiles", {
+    bio: "About",
+    creationOnly: "initial",
+  });
+  const custom = await client.users.extension("user_profiles");
+  const customBio: string | undefined = custom.data?.data?.bio;
+  void customBio;
+  // @ts-expect-error Ordinary creation is unavailable for user-owned rows.
+  await client.items.create("user_profiles", { bio: "orphan" });
+  await client.users.updateMe({ firstName: "Ivan", avatarId: null });
+  await client.users.updatePreferences({ timezone: "UTC" });
+  await client.users.saveExtension("articles", { title: "Bio" });
+  const extension = await client.users.extension("articles");
+  const bio: string | undefined = extension.data?.data?.title;
+  void bio;
+  // @ts-expect-error Consumer profile fields come from the generated schema.
+  await client.users.saveExtension("articles", { password: "bad" });
+  // @ts-expect-error System account fields cannot be edited as profile fields.
+  await client.users.updateMe({ superuser: true });
   await client.items.create("articles", { title: "Article" });
   // @ts-expect-error Generated required create field.
   await client.items.create("articles", {});

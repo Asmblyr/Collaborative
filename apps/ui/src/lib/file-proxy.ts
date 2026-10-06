@@ -6,10 +6,12 @@ import { hasForeignOrigin } from "./request-origin";
 import { SessionExpiredError } from "./renew-session";
 import { setSessionCookies } from "./session-cookies";
 
-const maxBytes = 25 * 1024 * 1024;
 class UploadLimitError extends Error {}
 
-async function boundedBody(request: Request): Promise<Uint8Array<ArrayBuffer>> {
+async function boundedBody(
+  request: Request,
+  maxBytes: number,
+): Promise<Uint8Array<ArrayBuffer>> {
   if (Number(request.headers.get("content-length")) > maxBytes)
     throw new UploadLimitError();
   const reader = request.body?.getReader();
@@ -43,6 +45,7 @@ export async function proxyFileContent(
   request: Request,
   path: string,
   upload = false,
+  maxBytes = 25 * 1024 * 1024,
 ) {
   if (upload && hasForeignOrigin(request))
     return Response.json({ message: "Forbidden origin" }, { status: 403 });
@@ -65,7 +68,7 @@ export async function proxyFileContent(
   let renewed: TokenPair | undefined;
   let response: NextResponse;
   try {
-    const body = upload ? await boundedBody(request) : undefined;
+    const body = upload ? await boundedBody(request, maxBytes) : undefined;
     const upstream = await requestCoreWithSession(
       path,
       {
@@ -108,7 +111,7 @@ export async function proxyFileContent(
     response = NextResponse.json(
       {
         message: tooLarge
-          ? "Максимальный размер файла — 25 МБ"
+          ? `Максимальный размер файла — ${maxBytes / 1024 / 1024} МБ`
           : expired
             ? "Требуется вход"
             : "Не удалось передать файл. Обновите список перед повторной загрузкой.",

@@ -9,6 +9,7 @@ export type {
 } from "@asmblyr-collaborative/contracts";
 
 export interface CollectionField {
+  managed?: boolean;
   name: string;
   type: string;
   required: boolean;
@@ -37,6 +38,8 @@ export interface CollectionField {
 }
 
 export interface Collection {
+  system?: boolean;
+  profileExtension?: boolean;
   sourceKind?: "table" | "materialized-view";
   name: string;
   displayName?: string | null;

@@ -10,46 +10,45 @@ import {
 import { parseProfile } from "./profile-input.js";
 import { securityEvent } from "./security-events.js";
 import type { CurrentUser } from "@asmblyr-collaborative/contracts";
+import { readUserProfile } from "./profile-repository.js";
+import { files } from "../files/repository.js";
+import { loadPrincipalAccess } from "../permissions/access.js";
+import { requireFileRead } from "../files/references.js";
 
 export async function getProfile(
   db: Knex,
   user: AuthenticatedUser,
 ): Promise<CurrentUser> {
-  const row = await db("asmblyr_users")
-    .withSchema("public")
-    .where({ id: user.id })
-    .first<{
-      display_name: string | null;
-      created_at: Date;
-      picture_url: string | null;
-    }>("display_name", "created_at", "picture_url");
-  if (!row) throw new InvalidCredentialsError();
-  const password = await db("asmblyr_password_credentials")
-    .withSchema("public")
-    .where({ user_id: user.id })
-    .first("user_id");
-  return {
-    id: user.id,
-    email: user.email,
-    superuser: user.superuser,
-    displayName: row.display_name,
-    pictureUrl: row.picture_url,
-    createdAt: row.created_at.toISOString(),
-    hasPassword: Boolean(password),
-  };
+  return readUserProfile(db, user.id);
 }
 
 export async function updateProfile(
   db: Knex,
   user: AuthenticatedUser,
   value: unknown,
+  targetId = user.id,
 ) {
   const changes = parseProfile(value);
-  await db("asmblyr_users")
-    .withSchema("public")
-    .where({ id: user.id })
-    .update(changes);
-  return getProfile(db, user);
+  return db.transaction(async (trx) => {
+    await readUserProfile(trx, targetId);
+    if (changes.avatar_id) {
+      const access = await loadPrincipalAccess(trx, { ...user, kind: "user" });
+      const avatar = await files(trx)
+        .where({ id: changes.avatar_id })
+        .forShare()
+        .first("status", "preview_type", "uploaded_by");
+      if (avatar?.uploaded_by !== user.id) {
+        await requireFileRead(trx, changes.avatar_id, access);
+      }
+      if (avatar?.status !== "ready" || !avatar.preview_type) {
+        throw new AuthInputError("Select a ready raster image for the avatar");
+      }
+    }
+    await trx("public.asmblyr_users")
+      .where({ id: targetId })
+      .update({ ...changes, updated_at: trx.fn.now() });
+    return readUserProfile(trx, targetId);
+  });
 }
 
 export async function changePassword(

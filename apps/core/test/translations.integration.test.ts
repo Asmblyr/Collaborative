@@ -240,6 +240,7 @@ test("appearance patches merge independently and preserve legacy theme updates",
     theme: null,
     style: "neutral",
     locale: "ru",
+    timezone: null,
   });
   await Promise.all([call({ style: "ocean" }), call({ locale: "en" })]);
   await call({ theme: "dark" });
@@ -247,11 +248,13 @@ test("appearance patches merge independently and preserve legacy theme updates",
     theme: "dark",
     style: "ocean",
     locale: "en",
+    timezone: null,
   });
   assert.deepEqual(await call(undefined, 1), {
     theme: null,
     style: "neutral",
     locale: "ru",
+    timezone: null,
   });
   for (const bad of [
     {},

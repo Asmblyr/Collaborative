@@ -106,6 +106,23 @@ test("generated source compiles with standard TypeScript and rejects invalid wri
       requiredOnCreate: false,
     })),
   });
+  generated.collections.push({
+    name: "user_profiles",
+    mode: "multiple",
+    profileExtension: true,
+    primaryKey: { name: "id", type: "uuid" },
+    actions: { read: true, create: false, update: false, delete: false },
+    fields: [
+      {
+        ...field,
+        name: "id",
+        create: false,
+        update: false,
+        requiredOnCreate: false,
+      },
+      { ...field, name: "bio", update: false },
+    ],
+  });
   generated.methods = [
     {
       namespace: "example",
@@ -143,6 +160,12 @@ import { createClient } from "@asmblyr-collaborative/sdk";
 import type { Schema } from "./schema";
 import { schema } from "./schema";
 const client = createClient<Schema>({ baseUrl: "https://example.test" });
+client.users.saveExtension("user_profiles", { bio: "Hello" });
+client.users.extension("user_profiles").then(result => { const bio: string | undefined = result.data?.data?.bio; void bio; });
+// @ts-expect-error Profile ownership forbids generic creation.
+client.items.create("user_profiles", {bio: "wrong"});
+// @ts-expect-error Consumer profile fields are closed by its generated schema.
+client.users.saveExtension("user_profiles", {wrong: "field"});
 const fluent = createClient({ baseUrl: "https://example.test", schema });
 fluent.Articles.select(a => [a.title]).where(a => a.status.eq("published")).exec();
 fluent.collection("reports").select(a => [a.title]).exec();

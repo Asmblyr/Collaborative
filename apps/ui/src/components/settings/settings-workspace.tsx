@@ -22,6 +22,9 @@ import { IdentitiesPanel } from "./identities-panel";
 import { ssoMessage, type LoginProvider } from "@/lib/sso";
 import { PasskeysPanel } from "./passkeys-panel";
 import { InitialPasswordForm } from "./initial-password-form";
+import { userDisplayName, userAvatarUrl } from "@/lib/user-profile";
+import { ProfileExtensionFields } from "./profile-extension-fields";
+import { ProfileDates } from "./profile-dates";
 
 export function SettingsWorkspace({
   user,
@@ -37,7 +40,7 @@ export function SettingsWorkspace({
   connectionStatus?: string;
 }) {
   const { t } = useTranslations();
-  const name = user.displayName || user.email.split("@")[0];
+  const name = userDisplayName(user);
   const message = ssoMessage(ssoStatus);
   return (
     <div className="mx-auto max-w-5xl space-y-7">
@@ -48,9 +51,9 @@ export function SettingsWorkspace({
       <div className="grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="rounded-xl border bg-card p-6">
           <Avatar className="mb-4 size-14">
-            {user.pictureUrl && (
+            {userAvatarUrl(user) && (
               <AvatarImage
-                src={user.pictureUrl}
+                src={userAvatarUrl(user)}
                 alt=""
                 referrerPolicy="no-referrer"
               />
@@ -69,6 +72,7 @@ export function SettingsWorkspace({
           >
             {t(user.superuser ? "settings.admin" : "settings.user")}
           </Badge>
+          <ProfileDates user={user} />
         </aside>
         <Tabs
           defaultValue={
@@ -118,6 +122,7 @@ export function SettingsWorkspace({
               {t("settings.personalHint")}
             </p>
             <ProfileForm user={user} />
+            <ProfileExtensionFields userId={user.id} />
           </TabsContent>
           <TabsContent
             value="security"
