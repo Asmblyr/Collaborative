@@ -37,6 +37,7 @@ export default defineConfig({
         items: [
           { text: "Обзор", link: "/" },
           { text: "Локальный запуск", link: "/guide/getting-started" },
+          { text: "Развёртывание", link: "/guide/deployment" },
           { text: "Карта возможностей", link: "/guide/features" },
         ],
       },
@@ -57,7 +58,16 @@ export default defineConfig({
       {
         text: "Разработка",
         items: [
+          {
+            text: "Локальная разработка",
+            link: "/development/local-development",
+          },
           { text: "Архитектура", link: "/development/architecture" },
+          { text: "Первое расширение", link: "/development/first-extension" },
+          {
+            text: "Архитектура ассистента",
+            link: "/development/assistant-architecture",
+          },
           {
             text: "Проверки и документация",
             link: "/development/documentation",
