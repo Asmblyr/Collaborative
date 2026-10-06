@@ -3,6 +3,20 @@
 Asmblyr состоит из HTTP API и отдельного приложения админки. PostgreSQL хранит
 структуру, данные и состояние авторизации; S3 хранит содержимое файлов.
 
+```mermaid
+flowchart LR
+  Browser[Браузер] --> UI[Next.js UI / BFF]
+  UI --> Core[Fastify Core API]
+  Client[Внешний клиент / SDK] --> Core
+  Core --> PG[(PostgreSQL)]
+  Core --> Objects[(S3-совместимое хранилище)]
+```
+
+Браузер обращается к Core через серверный прокси UI, который ведёт сессию.
+Внешний клиент обращается к Core напрямую с собственным access token.
+Файлы проходят через Core: метаданные находятся в PostgreSQL, содержимое —
+в настроенном объектном хранилище.
+
 ## Core и UI
 
 `apps/core` использует Fastify и Knex. Маршруты разбирают запрос, доменные сервисы
@@ -20,6 +34,20 @@ Asmblyr состоит из HTTP API и отдельного приложени�
 `packages/kit` — контексты, декларации и сборщик расширений. Встроенные комментарии
 находятся в `packages/plugin-comments`; опциональные примеры — в `examples/plugins`.
 Установленные пакеты включаются явно в `asmblyr.plugins` корневого manifest.
+
+```mermaid
+flowchart LR
+  Package[Пакет расширения / Kit] --> Routes[H3 file routes и handlers]
+  Routes --> Core[Core: HTTP и права]
+  Routes --> Context[defineModelContext]
+  Context --> MCP[Внутренний MCP]
+  MCP --> Assistant[Ассистент]
+```
+
+`defineModelContext` добавляется только к нужному handler: остальные маршруты
+остаются HTTP-only. Ассистент и внутренний MCP используют тот же обработчик;
+доступ к данным всё равно проверяет Core. [Пошаговый пример](./first-extension.md)
+и [архитектура ассистента](./assistant-architecture.md) раскрывают этот путь.
 
 Серверные обработчики расширений используют H3 file routing. UI импортирует
 отдельный браузерный entry. Объявленные model handlers используются HTTP,
