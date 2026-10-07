@@ -165,4 +165,7 @@ test("profile display discloses only explicitly configured rooted values without
     await call("GET", "/users/me/profile-display", undefined, 200, 1),
     { title: "", entries: [] },
   );
+  await call("DELETE", fieldPath("users", root), undefined, 204);
+  await call("DELETE", fieldPath("users", note), undefined, 204);
+  await call("DELETE", `/collections/${collection}`, undefined, 204);
 });
