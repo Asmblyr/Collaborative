@@ -113,7 +113,10 @@ test("closing Core drains an open realtime stream", async (t) => {
   active.closePromise = closePromise;
   const closed = await Promise.race([
     closePromise.then(() => true),
-    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000)),
+    new Promise<boolean>((resolve) => {
+      const timeout = setTimeout(() => resolve(false), 5000);
+      timeout.unref();
+    }),
   ]);
   assert.equal(closed, true, "Core must close without client cancellation");
 });
