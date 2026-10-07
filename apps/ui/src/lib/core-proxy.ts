@@ -27,7 +27,8 @@ export async function proxyCore(
   }
   if (
     !pluginOnly &&
-    (method === "POST" ||
+    ((method === "DELETE" && path === "/realtime/locks") ||
+      method === "POST" ||
       method === "PATCH" ||
       (method === "PUT" && request.headers.has("content-type"))) &&
     !request.headers.get("content-type")?.startsWith("application/json")
@@ -36,6 +37,7 @@ export async function proxyCore(
   }
   const jar = await cookies();
   const withBody =
+    (method === "DELETE" && path === "/realtime/locks") ||
     method === "POST" ||
     method === "PATCH" ||
     (method === "PUT" &&
