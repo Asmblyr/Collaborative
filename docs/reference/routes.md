@@ -1,6 +1,6 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 206 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 209 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
@@ -134,6 +134,9 @@
 | `DELETE /presence/:clientId` | Активная человеческая сессия; удаляет только собственное окно этой сессии, без требования сохраняющегося read | `apps/core/src/presence/routes.ts` |
 | `GET /public/files/:id/content` | Без авторизации: только явно опубликованный ready-файл (visibility=public). Приватный/удалённый файл — 404; no-store/CSP/nosniff. Без списка и метаданных. | `apps/core/src/files/public-routes.ts` |
 | `GET /ready` | Публичная проверка готовности, без секретов | `apps/core/src/health/readiness.ts` |
+| `DELETE /realtime/locks` | Активная человеческая сессия; освобождает только собственную lease с совпадающим clientId, даже после потери read/update | `apps/core/src/realtime/routes.ts` |
+| `POST /realtime/locks` | Активная человеческая сессия; read и update указанного поля и строки. Атомарная 30-секундная lease, конфликт 409 FIELD_LOCKED | `apps/core/src/realtime/routes.ts` |
+| `GET /realtime/stream` | Активная человеческая Bearer-сессия; scope проверяется теми же collection/row read правилами, что GET /items. Поток повторно проверяет доступ и закрывается при его потере. Presence только для этой сессии | `apps/core/src/realtime/stream.ts` |
 | `GET /schema` | Активный пользователь или сервисный аккаунт: доступные коллекции, wire-типы и разрешения на поля. Без записей, defaults и условий политик; private/no-store; accepts scoped CLI schema:read access and includes permission-gated generated plugin model contracts | `apps/core/src/schema/routes.ts` |
 | `GET /search` | Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно | `apps/core/src/items/routes.ts` |
 | `GET /service-accounts` | Человек: services/read ИЛИ update; superuser bypass | `apps/core/src/services/routes.ts` |

@@ -5673,6 +5673,10 @@
                     "message": {
                       "type": "string"
                     },
+                    "details": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
                     "requestId": {
                       "type": "string"
                     }
@@ -5680,6 +5684,7 @@
                   "required": [
                     "code",
                     "message",
+                    "details",
                     "requestId"
                   ]
                 }
@@ -7233,6 +7238,186 @@
         },
         "x-contract-level": "route-only",
         "x-source": "apps/core/src/health/readiness.ts"
+      }
+    },
+    "/realtime/locks": {
+      "delete": {
+        "tags": [
+          "realtime"
+        ],
+        "operationId": "delete__realtime_locks",
+        "summary": "DELETE /realtime/locks",
+        "description": "Активная человеческая сессия; освобождает только собственную lease с совпадающим clientId, даже после потери read/update. Источник: apps/core/src/realtime/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Собственная lease освобождена или уже отсутствует"
+          },
+          "default": {
+            "description": "Ошибка проверки, авторизации или исполнения; код HTTP определяет результат."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/realtime/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "collection": {
+                    "type": "string"
+                  },
+                  "recordId": {
+                    "type": "string"
+                  },
+                  "field": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "collection",
+                  "recordId",
+                  "field",
+                  "clientId"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "realtime"
+        ],
+        "operationId": "post__realtime_locks",
+        "summary": "POST /realtime/locks",
+        "description": "Активная человеческая сессия; read и update указанного поля и строки. Атомарная 30-секундная lease, конфликт 409 FIELD_LOCKED. Источник: apps/core/src/realtime/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Получена или продлена lease поля",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка проверки, авторизации или исполнения; код HTTP определяет результат."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/realtime/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "collection": {
+                    "type": "string"
+                  },
+                  "recordId": {
+                    "type": "string"
+                  },
+                  "field": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "collection",
+                  "recordId",
+                  "field",
+                  "clientId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/stream": {
+      "get": {
+        "tags": [
+          "realtime"
+        ],
+        "operationId": "get__realtime_stream",
+        "summary": "GET /realtime/stream",
+        "description": "Активная человеческая Bearer-сессия; scope проверяется теми же collection/row read правилами, что GET /items. Поток повторно проверяет доступ и закрывается при его потере. Presence только для этой сессии. Источник: apps/core/src/realtime/stream.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID открытого окна"
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "description": "JSON scope из PresenceInput"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE envelope; heartbeat-комментарии, событие presence.changed при подключении и изменении присутствия",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка проверки, авторизации или исполнения; код HTTP определяет результат."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/realtime/stream.ts"
       }
     },
     "/schema": {
