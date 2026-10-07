@@ -78,7 +78,10 @@ export function useFieldEditor({
   const resolvedType: string = selectedType;
   const textField =
     !system && (selectedType === "text" || selectedType === "email");
-  const relationField = !system && Boolean(field?.relation);
+  const relationField =
+    !system &&
+    Boolean(field?.relation) &&
+    field?.relation?.collection !== "@users";
   const defaultChanged =
     field &&
     field.type !== "relation" &&

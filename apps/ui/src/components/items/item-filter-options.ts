@@ -179,6 +179,19 @@ export function filterScopes(
   for (const relationField of collection.fields) {
     const relation = relationField.relation;
     if (!relation) continue;
+    if (
+      relation.collection === "@users" &&
+      visible(collection, relationField.name)
+    ) {
+      scopes.push({
+        id: relationField.name,
+        collection: "@users",
+        kind: "m2o",
+        fields: [],
+        displayField: "label",
+      });
+      continue;
+    }
     const related = fields.filter((field) =>
       field.name.startsWith(`${relationField.name}.`),
     );

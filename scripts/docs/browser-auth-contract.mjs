@@ -146,6 +146,13 @@ export function browserAuthContract(key) {
             approve: { type: "boolean" },
             userId: string,
             reuse: { type: "boolean" },
+            serviceScopes: {
+              type: "array",
+              maxItems: 30,
+              items: { type: "string", maxLength: 160 },
+              description:
+                "Displayed servicePermissions.scope values. Required for explicit approval of a policy-managed application. A changed permission set returns 409 and requires a new sign-in.",
+            },
           },
           required: ["approve", "userId"],
         }),

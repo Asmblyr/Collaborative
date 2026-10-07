@@ -10,6 +10,8 @@ import {
 import type { Collection, Item } from "./types";
 import type { ItemColumn } from "./use-item-columns";
 import { useDraftPreviews } from "./record-draft-context";
+import { userReferenceUrl } from "./user-reference";
+import type { ItemList } from "./types";
 
 export function useTableRelationLabels(
   catalog: Collection[],
@@ -43,6 +45,31 @@ export function useTableRelationLabels(
     void Promise.all(
       jobs.map(async (target) => {
         try {
+          if (target.collection === "@users") {
+            const response = await fetch(
+              userReferenceUrl(
+                new URLSearchParams({
+                  limit: "20",
+                  filter: JSON.stringify({
+                    logic: "and",
+                    children: [{ field: "id", op: "in", value: target.ids }],
+                  }),
+                }),
+              ),
+              { signal: controller.signal },
+            );
+            if (!response.ok) {
+              return [];
+            }
+            const data = (await response.json()) as ItemList;
+            return data.data.map(
+              (item) =>
+                [
+                  JSON.stringify([target.collection, String(item.id)]),
+                  String(item.label),
+                ] as const,
+            );
+          }
           const data = await asmblyr.items.list(
             target.collection,
             {

@@ -6,7 +6,8 @@ export function useFilterRelationItems(
   selected: string[],
   open: boolean,
 ) {
-  const key = scope.presenceField!.split(".")[1];
+  const key =
+    scope.collection === "@users" ? "id" : scope.presenceField!.split(".")[1];
   const label =
     scope.displayField ??
     scope.fields

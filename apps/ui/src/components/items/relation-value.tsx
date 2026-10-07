@@ -22,6 +22,9 @@ export function RelationValue({
     collection.displayTemplate,
   );
   if (!id) return <p className="text-sm text-muted-foreground">—</p>;
+  if (collection.system) {
+    return <p className="break-words text-sm">{items.labels.get(id) ?? id}</p>;
+  }
   return (
     <Button
       type="button"

@@ -214,7 +214,9 @@ export function ItemFilterFieldPicker({
             <div className="min-w-0 text-xs">
               <p className="truncate font-medium">{scope.id}</p>
               <p className="truncate text-muted-foreground">
-                {scope.collection}
+                {scope.collection === "@users"
+                  ? copy("Пользователи")
+                  : scope.collection}
               </p>
             </div>
           </div>

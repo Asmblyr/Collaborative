@@ -89,7 +89,11 @@ export function ItemFilterRelationValue({
         className="w-[min(26rem,calc(100vw-2rem))] overflow-hidden p-0"
       >
         <div className="border-b px-3 py-2.5">
-          <p className="text-sm font-medium">{scope.collection}</p>
+          <p className="text-sm font-medium">
+            {scope.collection === "@users"
+              ? copy("Пользователи")
+              : scope.collection}
+          </p>
           <p className="text-xs text-muted-foreground">
             {multiple
               ? copy("Выбрано {{value0}} из 20", { value0: selected.length })
@@ -127,7 +131,12 @@ export function ItemFilterRelationValue({
           query={items.query}
           onQueryChange={items.setQuery}
           maxLength={100}
-          placeholder={copy("Найти запись в ") + scope.collection}
+          placeholder={
+            copy("Найти запись в ") +
+            (scope.collection === "@users"
+              ? copy("Пользователи")
+              : scope.collection)
+          }
         >
           {items.loading ? (
             <p

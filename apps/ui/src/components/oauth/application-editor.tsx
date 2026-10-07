@@ -42,6 +42,8 @@ export function ApplicationEditor({
       emailDomains: [],
       audience: "",
       scopes: [],
+      policyManaged: false,
+      scopeLabels: {},
     },
   );
   const [id, setId] = useState(initial?.id);
@@ -68,10 +70,18 @@ export function ApplicationEditor({
       const emailDomains = draft.emailDomains
         .map((domain) => domain.trim())
         .filter(Boolean);
-      if (draft.accessMode === "domains" && !emailDomains.length) {
+      if (
+        !draft.policyManaged &&
+        draft.accessMode === "domains" &&
+        !emailDomains.length
+      ) {
         throw new Error(
           copy("Добавьте хотя бы один домен почты во вкладке «Доступ»"),
         );
+      }
+      const scopes = draft.scopes.map((scope) => scope.trim()).filter(Boolean);
+      if (new Set(scopes).size !== scopes.length) {
+        throw new Error(copy("Значения разрешений не должны повторяться"));
       }
       const payload = {
         name: draft.name,
@@ -82,10 +92,18 @@ export function ApplicationEditor({
         accessMode: draft.accessMode,
         emailDomains: draft.accessMode === "domains" ? emailDomains : [],
         audience: draft.audience,
+        policyManaged: draft.policyManaged,
+        scopeLabels: Object.fromEntries(
+          Object.entries(draft.scopeLabels)
+            .filter(
+              ([scope, label]) => scopes.includes(scope.trim()) && label.trim(),
+            )
+            .map(([scope, label]) => [scope.trim(), label.trim()]),
+        ),
         redirectUris: draft.redirectUris
           .map((uri) => uri.trim())
           .filter(Boolean),
-        scopes: draft.scopes.map((scope) => scope.trim()).filter(Boolean),
+        scopes,
       };
       const result = await apiRequest<{
         application: OAuthApplication;

@@ -5,6 +5,9 @@ export function applicationAccessSummary(
   application: OAuthApplication,
   copy: UiCopy = originalCopy,
 ): string {
+  if (application.policyManaged) {
+    return copy("Через политики");
+  }
   if (application.accessMode === "all")
     return copy("Все активные пользователи");
   if (application.accessMode === "domains") {

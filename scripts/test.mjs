@@ -170,7 +170,7 @@ async function main() {
       if (suite === "core-browser")
         return /test\/(?:browser-|public-server)/.test(name);
       if (suite === "core-system-collections") {
-        return /test\/(?:system-collections|user-profiles|profile-avatar|files-access|collections|field-configuration|http-access-surface)[-.]/.test(
+        return /test\/(?:system-collections|user-relations|user-profiles|profile-avatar|files-access|collections|field-configuration|http-access-surface)[-.]/.test(
           name,
         );
       }

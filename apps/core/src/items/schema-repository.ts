@@ -41,8 +41,9 @@ export async function collectionSchema(database: Knex, name: string) {
   const result = await database.raw<{ rows: ColumnRow[] }>(
     `
     SELECT c.column_name, c.data_type, c.character_maximum_length, c.is_nullable, fm.semantic_type, fm.required,
-      fm.default_value, fm.searchable, fm.search_priority, fm.presentation, r.target_collection AS relation_target,
-      target.primary_key_type AS relation_key_type
+      fm.default_value, fm.searchable, fm.search_priority, fm.presentation,
+      CASE WHEN r.target_system = 'users' THEN '@users' ELSE r.target_collection END AS relation_target,
+      CASE WHEN r.target_system = 'users' THEN 'uuid' ELSE target.primary_key_type END AS relation_key_type
     FROM public.asmblyr_columns AS c
     LEFT JOIN public.asmblyr_field_metadata AS fm
       ON fm.collection_name = ? AND fm.field_name = c.column_name

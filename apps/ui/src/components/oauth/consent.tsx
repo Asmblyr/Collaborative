@@ -18,6 +18,7 @@ export interface ConsentDetails {
   scopes: string;
   allowed: boolean;
   canReuseConsent: boolean;
+  servicePermissions?: { scope: string; name: string }[];
 }
 
 export function OAuthConsent({ details }: { details: ConsentDetails }) {
@@ -48,7 +49,13 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
       const result = await apiRequest<{ redirectTo: string }>(
         `/oauth/complete/${details.uid}`,
         "POST",
-        { approve, userId: details.userId },
+        {
+          approve,
+          userId: details.userId,
+          serviceScopes:
+            details.servicePermissions?.map((permission) => permission.scope) ??
+            [],
+        },
       );
       window.location.assign(result.redirectTo);
     } catch (error) {
@@ -58,9 +65,11 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
       setBusy(false);
     }
   }
-  const serviceScopes = details.scopes
-    .split(" ")
-    .filter((scope) => !["openid", "profile", "email"].includes(scope));
+  const serviceScopes = details.servicePermissions?.length
+    ? details.servicePermissions.map((permission) => permission.name)
+    : details.scopes
+        .split(" ")
+        .filter((scope) => !["openid", "profile", "email"].includes(scope));
   let approvalLabel = copy("Разрешить и войти");
   if (waitingForApproval)
     approvalLabel = copy("Разрешить ({{value0}})", {

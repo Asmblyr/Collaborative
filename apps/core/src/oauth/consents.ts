@@ -12,6 +12,7 @@ interface ConsentRow {
   scopes: string[];
   approved_at: Date;
   last_used_at: Date | null;
+  service_scopes: string[];
 }
 
 export interface ConsentRequest {
@@ -41,12 +42,14 @@ function covers(
   row: ConsentRow | undefined,
   audience: string,
   request: ConsentRequest,
+  serviceScopes: string[] = [],
 ): boolean {
   return Boolean(
     row &&
       !request.forceConsent &&
       row.audience === audience &&
-      request.scopes.every((scope) => row.scopes.includes(scope)),
+      request.scopes.every((scope) => row.scopes.includes(scope)) &&
+      serviceScopes.every((scope) => row.service_scopes.includes(scope)),
   );
 }
 
@@ -66,7 +69,12 @@ export class OAuthConsents {
     const row = await this.db<ConsentRow>("public.asmblyr_oauth_consents")
       .where({ app_id: appId, user_id: userId })
       .first();
-    return covers(row, app.audience, request);
+    return covers(
+      row,
+      app.audience,
+      request,
+      await this.apps!.serviceScopes(appId, userId),
+    );
   }
 
   async authorize(
@@ -74,22 +82,53 @@ export class OAuthConsents {
     userId: string,
     request: ConsentRequest,
     reuse: boolean,
+    expectedServiceScopes?: string[],
   ) {
     return this.db.transaction(async (trx) => {
       // Same lock order as application edits and personal revocation.
       const app = await trx("public.asmblyr_oauth_apps")
         .where({ id: appId })
         .forUpdate()
-        .first<{ id: string; audience: string }>("id", "audience");
+        .first<{
+          id: string;
+          audience: string;
+          policy_managed: boolean;
+        }>("id", "audience", "policy_managed");
       if (!app || !(await this.apps?.allowed(appId, userId, trx))) {
         throw Object.assign(new Error("Application access denied"), {
           statusCode: 403,
         });
       }
+      if (
+        app.policy_managed &&
+        request.scopes.some(
+          (scope) => !["openid", "profile", "email"].includes(scope),
+        )
+      ) {
+        throw Object.assign(
+          new Error("Policy-managed applications request profile scopes only"),
+          { statusCode: 400 },
+        );
+      }
+      const serviceScopes = await this.apps!.serviceScopes(appId, userId, trx);
+      if (
+        app.policy_managed &&
+        !reuse &&
+        (expectedServiceScopes === undefined ||
+          JSON.stringify([...new Set(expectedServiceScopes)].sort()) !==
+            JSON.stringify(serviceScopes))
+      ) {
+        throw Object.assign(
+          new Error(
+            "Разрешения изменились. Откройте вход в приложение заново.",
+          ),
+          { statusCode: 409 },
+        );
+      }
       let row = await trx<ConsentRow>("public.asmblyr_oauth_consents")
         .where({ app_id: appId, user_id: userId })
         .first();
-      if (reuse && !covers(row, app.audience, request)) {
+      if (reuse && !covers(row, app.audience, request, serviceScopes)) {
         throw Object.assign(
           new Error("Согласие изменилось. Подтвердите доступ заново."),
           {
@@ -110,6 +149,7 @@ export class OAuthConsents {
           audience: app.audience,
           scopes: trx.raw("?::jsonb", [JSON.stringify(scopes)]),
           approved_at: trx.fn.now(),
+          service_scopes: trx.raw("?::jsonb", [JSON.stringify(serviceScopes)]),
         };
         [row] = await trx<ConsentRow>("public.asmblyr_oauth_consents")
           .insert(values)
@@ -125,6 +165,7 @@ export class OAuthConsents {
         grant_hash: digest(grantId),
         consent_id: row!.id,
         expires_at: new Date(Date.now() + 600_000),
+        service_scopes: JSON.stringify(serviceScopes),
       });
       return { grantId, audience: app.audience };
     });
@@ -147,6 +188,7 @@ export class OAuthConsents {
       enabled: row.enabled,
       audience: row.audience,
       scopes: row.scopes,
+      serviceScopes: row.service_scopes,
       approvedAt: row.approved_at,
       lastUsedAt: row.last_used_at,
     }));

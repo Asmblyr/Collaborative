@@ -21,6 +21,10 @@ import { PolicyPermissionsMatrix } from "./policy-permissions-matrix";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Permission, type Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
+import {
+  PolicyApplications,
+  usePolicyApplications,
+} from "./policy-applications";
 
 export function PolicyEditorDialog({
   open,
@@ -46,6 +50,7 @@ export function PolicyEditorDialog({
   onChange: () => Promise<void>;
 }) {
   const copy = useUiCopy();
+  const applications = usePolicyApplications(open, policy?.id);
 
   const [name, setName] = useState(policy?.name ?? "");
   const [grants, setGrants] = useState(() =>
@@ -67,7 +72,11 @@ export function PolicyEditorDialog({
 
   async function save(event: FormEvent<HTMLFormElement>, close: () => void) {
     event.preventDefault();
-    if (busy || readOnly) {
+    if (
+      busy ||
+      readOnly ||
+      (!assignmentOnly && (applications.loading || applications.error))
+    ) {
       return;
     }
     setBusy(true);
@@ -86,6 +95,7 @@ export function PolicyEditorDialog({
               name: name.trim(),
               permissions: [...grants, ...sections],
               userIds,
+              applications: applications.selected,
             },
       );
       await onChange();
@@ -173,7 +183,8 @@ export function PolicyEditorDialog({
       }
       busy={busy}
       hasUnsavedChanges={
-        JSON.stringify({ name, grants, sections, userIds }) !== initialDraft
+        JSON.stringify({ name, grants, sections, userIds }) !== initialDraft ||
+        applications.dirty
       }
       onClose={onClose}
     >
@@ -190,6 +201,22 @@ export function PolicyEditorDialog({
               >
                 {copy(error)}
               </p>
+            )}
+            {applications.error && (
+              <div
+                role="alert"
+                className="flex items-center gap-3 text-sm text-destructive"
+              >
+                <span>{copy("Не удалось загрузить приложения")}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={applications.retry}
+                >
+                  {copy("Повторить")}
+                </Button>
+              </div>
             )}
             {assignmentOnly && !readOnly && (
               <p className="text-xs text-muted-foreground">
@@ -240,13 +267,42 @@ export function PolicyEditorDialog({
                   className="space-y-6 data-[state=inactive]:hidden"
                 >
                   {permissionFields}
+                  <PolicyApplications
+                    state={applications}
+                    disabled
+                  />
                 </TabsContent>
               </Tabs>
             ) : (
-              <>
-                {permissionFields}
-                {usersPicker}
-              </>
+              <Tabs
+                defaultValue="permissions"
+                className="space-y-5"
+              >
+                <TabsList>
+                  <TabsTrigger value="permissions">
+                    {copy("Права политики")}
+                  </TabsTrigger>
+                  <TabsTrigger value="applications">
+                    {copy("Приложения")}
+                  </TabsTrigger>
+                  <TabsTrigger value="users">
+                    {copy("Пользователи")}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent
+                  value="permissions"
+                  className="space-y-6"
+                >
+                  {permissionFields}
+                </TabsContent>
+                <TabsContent value="applications">
+                  <PolicyApplications
+                    state={applications}
+                    disabled={busy || readOnly}
+                  />
+                </TabsContent>
+                <TabsContent value="users">{usersPicker}</TabsContent>
+              </Tabs>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5">
               {policy && !readOnly && !assignmentOnly ? (
@@ -274,7 +330,12 @@ export function PolicyEditorDialog({
                 {!readOnly && (
                   <Button
                     type="submit"
-                    disabled={busy || !name.trim()}
+                    disabled={
+                      busy ||
+                      !name.trim() ||
+                      (!assignmentOnly &&
+                        (applications.loading || Boolean(applications.error)))
+                    }
                   >
                     {busy ? copy("Сохранение…") : copy("Сохранить")}
                   </Button>
