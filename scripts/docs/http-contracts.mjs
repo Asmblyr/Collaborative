@@ -16,6 +16,7 @@ import { searchContract } from "./search-contract.mjs";
 import { monitoringContract } from "./monitoring-contract.mjs";
 import { tablePreferencesContract } from "./table-preferences-contract.mjs";
 import { userProfileContract } from "./user-profile-contract.mjs";
+import { profileDisplayContract } from "./profile-display-contract.mjs";
 import { systemCollectionsContract } from "./system-collections-contract.mjs";
 import { oauthPolicyContract } from "./oauth-policy-contract.mjs";
 import { userReferenceContract } from "./user-reference-contract.mjs";
@@ -84,6 +85,8 @@ export function operationContract(key) {
     return systemCollections;
   }
   const profile = userProfileContract(key);
+  const display = profileDisplayContract(key);
+  if (display) return display;
   if (profile) {
     return profile;
   }
