@@ -70,32 +70,40 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Откройте `http://localhost:3000/setup` и создайте первого администратора
-локальной установки. Копируйте шаблон `.env` только если файла ещё нет.
-Подробности — в [первом запуске](docs/guide/getting-started.md).
+Откройте [localhost:3000/setup](http://localhost:3000/setup), чтобы создать первого
+администратора. Копируйте шаблон `.env` только если файла ещё нет. Подробнее —
+[первый запуск](docs/guide/getting-started.md).
+Для Docker и Kubernetes предусмотрены отдельные образы Core и UI, собранные из
+одного коммита, Docker Compose и Helm-чарт. PostgreSQL и S3 подключаются отдельно:
+[установка и настройка](deploy/README.md). CI публикует согласованную пару
+`ghcr.io/asmblyr/collaborative-core` и `ghcr.io/asmblyr/collaborative-ui`;
+для установки закрепляйте оба образа одной версии по digest.
+SDK, CLI, Kit и общие контракты доступны в npm как `0.1.0-beta.1` под тегом
+`beta`: [установка и подключение](docs/reference/packages.md). Docker-сборка
+не зависит от предварительной публикации этих пакетов.
 
 ## Развёртывание
 
-Основной Docker-образ содержит UI и Core API в одном контейнере; PostgreSQL и
-S3-совместимое хранилище подключаются отдельно. Сборки `main` публикуются в
-`ghcr.io/asmblyr/collaborative:edge`; для установки закрепляйте образ по digest.
-[Docker и обновления](docs/guide/deployment.md) описывают сборку из исходников,
-Compose и эксплуатационные границы. [Опубликованные пакеты](docs/reference/packages.md)
-и [CLI](docs/reference/cli-guide.md) предназначены для внешних клиентов.
+Основной способ установки использует отдельные образы Core и UI. Совместимый
+монолитный образ доступен для существующих установок. [Docker и обновления](docs/guide/deployment.md)
+описывают сборку из исходников, Compose и эксплуатационные границы.
+[Опубликованные пакеты](docs/reference/packages.md) и
+[CLI](docs/reference/cli-guide.md) предназначены для внешних клиентов.
 
 ## Как устроен проект
 
 ```mermaid
 flowchart LR
-  UI[Next.js UI и BFF] --> API[Fastify Core API]
+  Browser[Браузер] -->|страницы| UI[Next.js UI]
+  Browser -->|/api| API[Fastify Core API]
   SDK[TypeScript SDK и CLI] --> API
   API --> DB[(PostgreSQL)]
   API --> S3[(S3-совместимое хранилище)]
   Kit[Расширения через Kit] --> API
 ```
 
-Core отвечает за HTTP, авторизацию и данные; UI предоставляет админку и серверный
-прокси для сессии. Серверный код расширений исполняется внутри Core как доверенный
+Core отвечает за HTTP, авторизацию и данные; UI предоставляет админку.
+Браузерная сессия обрабатывается Core. Серверный код расширений исполняется внутри Core как доверенный
 код. [Архитектура](docs/development/architecture.md) и
 [структура репозитория](docs/development/local-development.md) раскрывают границы
 компонентов и хранения.

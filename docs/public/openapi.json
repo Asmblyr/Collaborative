@@ -7,8 +7,12 @@
   },
   "servers": [
     {
+      "url": "http://localhost:3000/api",
+      "description": "Публичный API на домене админки"
+    },
+    {
       "url": "http://localhost:3001",
-      "description": "Локальный Core"
+      "description": "Самостоятельный Core"
     }
   ],
   "paths": {
@@ -23,6 +27,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -138,6 +145,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -231,6 +241,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -268,6 +281,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -482,6 +498,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -505,6 +524,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -1143,6 +1165,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -1175,6 +1200,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -1198,6 +1226,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -1208,6 +1239,475 @@
         },
         "x-contract-level": "route-only",
         "x-source": "apps/core/src/assistant/routes.ts"
+      }
+    },
+    "/auth/browser/google/start": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "post__auth_browser_google_start",
+        "summary": "POST /auth/browser/google/start",
+        "description": "Активный пользователь, точный Origin AUTH_UI_URL; proof в HttpOnly cookie.. Источник: apps/core/src/auth/browser/google.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "URL для авторизации; browser proof хранится только в HttpOnly cookie",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        }
+                      },
+                      "required": [
+                        "url"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос"
+          },
+          "401": {
+            "description": "Данные входа или browser proof недействительны"
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          },
+          "429": {
+            "description": "Лимит попыток"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/google.ts"
+      }
+    },
+    "/auth/browser/invitations/claim": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "post__auth_browser_invitations_claim",
+        "summary": "POST /auth/browser/invitations/claim",
+        "description": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию.. Источник: apps/core/src/auth/browser/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Браузерная сессия создана. API tokens не возвращаются.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос"
+          },
+          "401": {
+            "description": "Данные входа или browser proof недействительны"
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          },
+          "429": {
+            "description": "Лимит попыток"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^asm_(inv|rec)_[A-Za-z0-9_-]{43}$"
+                  }
+                },
+                "required": [
+                  "token"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/browser/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "post__auth_browser_login",
+        "summary": "POST /auth/browser/login",
+        "description": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию.. Источник: apps/core/src/auth/browser/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Браузерная сессия создана. API tokens не возвращаются.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос"
+          },
+          "401": {
+            "description": "Данные входа или browser proof недействительны"
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          },
+          "429": {
+            "description": "Лимит попыток"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/browser/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "post__auth_browser_logout",
+        "summary": "POST /auth/browser/logout",
+        "description": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию.. Источник: apps/core/src/auth/browser/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Текущая сессия отозвана, cookies удалены",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/routes.ts"
+      }
+    },
+    "/auth/browser/passkeys/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "post__auth_browser_passkeys_login",
+        "summary": "POST /auth/browser/passkeys/login",
+        "description": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию.. Источник: apps/core/src/auth/browser/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Браузерная сессия создана. API tokens не возвращаются.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос"
+          },
+          "401": {
+            "description": "Данные входа или browser proof недействительны"
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          },
+          "429": {
+            "description": "Лимит попыток"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "response": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "rawId": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "const": "public-key"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "authenticatorData": {
+                            "type": "string"
+                          },
+                          "clientDataJSON": {
+                            "type": "string"
+                          },
+                          "signature": {
+                            "type": "string"
+                          },
+                          "userHandle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "authenticatorData",
+                          "clientDataJSON",
+                          "signature"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "clientExtensionResults": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "authenticatorAttachment": {
+                        "enum": [
+                          "platform",
+                          "cross-platform"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "rawId",
+                      "type",
+                      "response",
+                      "clientExtensionResults"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "challengeId",
+                  "response"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/browser/passkeys/options": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "post__auth_browser_passkeys_options",
+        "summary": "POST /auth/browser/passkeys/options",
+        "description": "Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию.. Источник: apps/core/src/auth/browser/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challengeId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "options": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "challenge": {
+                          "type": "string"
+                        },
+                        "timeout": {
+                          "type": "integer"
+                        },
+                        "rpId": {
+                          "type": "string"
+                        },
+                        "userVerification": {
+                          "const": "required"
+                        }
+                      },
+                      "required": [
+                        "challenge",
+                        "rpId",
+                        "userVerification"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "challengeId",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос"
+          },
+          "401": {
+            "description": "Данные входа или browser proof недействительны"
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          },
+          "429": {
+            "description": "Лимит попыток"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/routes.ts"
       }
     },
     "/auth/cli/authorize": {
@@ -1221,6 +1721,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -1656,6 +2159,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -2241,6 +2747,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -2262,6 +2771,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -2285,6 +2797,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2317,6 +2832,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2349,6 +2867,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2381,6 +2902,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2419,6 +2943,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2459,6 +2986,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2556,6 +3086,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2653,6 +3186,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2693,6 +3229,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2733,6 +3272,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2843,6 +3385,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2875,6 +3420,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2907,6 +3455,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2939,6 +3490,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -2980,6 +3534,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3012,6 +3569,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3044,6 +3604,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3146,6 +3709,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3178,6 +3744,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3208,6 +3777,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3240,6 +3812,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3278,6 +3853,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3318,6 +3896,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -3389,6 +3970,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -3478,6 +4062,64 @@
       }
     },
     "/connections/google/callback": {
+      "get": {
+        "tags": [
+          "connections"
+        ],
+        "operationId": "get__connections_google_callback",
+        "summary": "GET /connections/google/callback",
+        "description": "Редирект результата; подключение требует активную сессию, одноразовые state и browser proof, совпадение владельца.. Источник: apps/core/src/auth/browser/google.ts",
+        "security": [],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Проверены одноразовое состояние и browser proof; результат в перенаправлении. Для linking требуется текущая сессия.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/google.ts",
+        "servers": [
+          {
+            "url": "http://localhost:3000",
+            "description": "Публичный origin без /api; callback сохраняет зарегистрированный путь"
+          }
+        ]
+      },
       "post": {
         "tags": [
           "connections"
@@ -3488,6 +4130,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -3612,6 +4257,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -3699,6 +4347,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3775,6 +4426,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -3959,6 +4613,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4076,6 +4733,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -4099,6 +4759,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4139,6 +4802,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -4160,6 +4826,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -4183,6 +4852,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4213,6 +4885,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4243,6 +4918,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4330,6 +5008,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4362,6 +5043,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4394,6 +5078,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -4417,6 +5104,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4447,6 +5137,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4479,6 +5172,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4517,6 +5213,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4557,6 +5256,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -4580,6 +5282,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4610,6 +5315,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4642,6 +5350,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4693,6 +5404,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4725,6 +5439,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4893,6 +5610,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4923,6 +5643,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -4992,6 +5715,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5033,6 +5759,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5102,6 +5831,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5179,6 +5911,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5219,6 +5954,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5265,6 +6003,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5311,6 +6052,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5359,6 +6103,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5407,6 +6154,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5461,6 +6211,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5517,6 +6270,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5573,6 +6329,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5621,6 +6380,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -5720,6 +6482,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -5843,6 +6608,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -5958,6 +6726,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6039,6 +6810,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6169,6 +6943,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6205,6 +6982,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6252,6 +7032,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6273,6 +7056,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6296,6 +7082,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6328,6 +7117,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6360,6 +7152,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6383,6 +7178,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6413,6 +7211,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6434,6 +7235,109 @@
         "x-source": "apps/core/src/oauth/interactions.ts"
       }
     },
+    "/oauth/complete/{uid}": {
+      "post": {
+        "tags": [
+          "oauth"
+        ],
+        "operationId": "post__oauth_complete_uid",
+        "summary": "POST /oauth/complete/:uid",
+        "description": "Текущий пользователь, подписанные cookies взаимодействия OAuth и совпадающий Origin; идентификатор пользователя должен совпадать с сессией. Источник: apps/core/src/oauth/interactions.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Решение принято; перейти на redirectTo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "redirectTo": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "redirectTo"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос"
+          },
+          "401": {
+            "description": "Данные входа или browser proof недействительны"
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          },
+          "429": {
+            "description": "Лимит попыток"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/oauth/interactions.ts",
+        "servers": [
+          {
+            "url": "http://localhost:3000",
+            "description": "Публичный origin без /api; callback сохраняет зарегистрированный путь"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "approve": {
+                    "type": "boolean"
+                  },
+                  "userId": {
+                    "type": "string"
+                  },
+                  "reuse": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "approve",
+                  "userId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/permissions": {
       "get": {
         "tags": [
@@ -6445,6 +7349,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6466,6 +7373,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6489,6 +7399,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6519,6 +7432,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6549,6 +7465,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6581,6 +7500,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6604,6 +7526,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6625,6 +7550,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -6648,6 +7576,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6678,6 +7609,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6708,6 +7642,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6740,6 +7677,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6778,6 +7718,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6818,6 +7761,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6878,6 +7824,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6916,6 +7865,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -6956,6 +7908,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -7153,6 +8108,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -7251,6 +8209,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -7306,6 +8267,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -7375,10 +8339,13 @@
         ],
         "operationId": "get__realtime_stream",
         "summary": "GET /realtime/stream",
-        "description": "Активная человеческая Bearer-сессия; scope проверяется теми же collection/row read правилами, что GET /items. Поток повторно проверяет доступ и закрывается при его потере. Presence только для этой сессии. Источник: apps/core/src/realtime/stream.ts",
+        "description": "Активная человеческая сессия через Bearer token или браузерную HttpOnly cookie; scope проверяется теми же collection/row read правилами, что GET /items. Поток повторно проверяет доступ и закрывается при его потере. Presence только для этой сессии. Источник: apps/core/src/realtime/stream.ts",
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -7431,6 +8398,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -7682,6 +8652,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -7705,6 +8678,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -7726,6 +8702,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -7749,6 +8728,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -7944,6 +8926,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -7976,6 +8961,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -8008,6 +8996,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -8048,6 +9039,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -8188,6 +9182,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -8228,6 +9225,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -8319,6 +9319,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -8340,6 +9343,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -8363,6 +9369,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -8386,6 +9395,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -8839,6 +9851,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -9620,6 +10635,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -10020,6 +11038,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10193,6 +11214,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10216,6 +11240,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10239,6 +11266,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10262,6 +11292,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10285,6 +11318,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -10315,6 +11351,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -10347,6 +11386,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10368,6 +11410,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10391,6 +11436,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -10412,6 +11460,147 @@
         "x-source": "apps/core/src/terms/routes.ts"
       }
     },
+    "/sign/sso/{provider}": {
+      "post": {
+        "tags": [
+          "sign"
+        ],
+        "operationId": "post__sign_sso_provider",
+        "summary": "POST /sign/sso/:provider",
+        "description": "Точный Origin AUTH_UI_URL; настроенный провайдер; для link необходима активная сессия.. Источник: apps/core/src/auth/browser/sso.ts",
+        "security": [],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Перенаправление к провайдеру или на страницу ошибки; proof в HttpOnly cookie",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin не совпадает с AUTH_UI_URL"
+          },
+          "404": {
+            "description": "Провайдер не настроен"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/sso.ts",
+        "servers": [
+          {
+            "url": "http://localhost:3000",
+            "description": "Публичный origin без /api; callback сохраняет зарегистрированный путь"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "intent": {
+                    "enum": [
+                      "login",
+                      "link"
+                    ]
+                  },
+                  "next": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sign/sso/{provider}/callback": {
+      "get": {
+        "tags": [
+          "sign"
+        ],
+        "operationId": "get__sign_sso_provider_callback",
+        "summary": "GET /sign/sso/:provider/callback",
+        "description": "Одноразовые state/PKCE и browser proof; для link проверяется сессия владельца.. Источник: apps/core/src/auth/browser/sso.ts",
+        "security": [],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Проверены одноразовое состояние и browser proof; результат в перенаправлении. Для linking требуется текущая сессия.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; SameSite=Lax; Secure при HTTPS. Имя использует SESSION_COOKIE_PREFIX.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/browser/sso.ts",
+        "servers": [
+          {
+            "url": "http://localhost:3000",
+            "description": "Публичный origin без /api; callback сохраняет зарегистрированный путь"
+          }
+        ]
+      }
+    },
     "/system-collections": {
       "get": {
         "tags": [
@@ -10423,6 +11612,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -10538,6 +11730,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -10593,6 +11788,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -10781,6 +11979,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -10946,6 +12147,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11074,6 +12278,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11168,6 +12375,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11288,6 +12498,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11318,6 +12531,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11350,6 +12566,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11388,6 +12607,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11428,6 +12650,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11460,6 +12685,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11594,6 +12822,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -11615,6 +12846,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -11638,6 +12872,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11670,6 +12907,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11759,6 +12999,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11860,6 +13103,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -11988,6 +13234,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -12020,6 +13269,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -12214,6 +13466,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -12492,6 +13747,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -12554,6 +13812,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -12739,6 +14000,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13008,6 +14272,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13086,6 +14353,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13178,6 +14448,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13297,6 +14570,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13320,6 +14596,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -13352,6 +14631,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13375,6 +14657,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -13407,6 +14692,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13473,6 +14761,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13624,6 +14915,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -13659,6 +14953,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13817,6 +15114,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13840,6 +15140,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13887,6 +15190,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -13983,6 +15289,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -14127,6 +15436,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -14150,6 +15462,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -14182,6 +15497,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -14333,6 +15651,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -14567,6 +15888,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -14590,6 +15914,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -14664,6 +15991,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -14766,6 +16096,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -14787,6 +16120,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [],
@@ -14810,6 +16146,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -14840,6 +16179,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "browserSession": []
           }
         ],
         "parameters": [
@@ -14999,6 +16341,12 @@
       }
     },
     "securitySchemes": {
+      "browserSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "asmblyr_session",
+        "description": "HttpOnly browser session; префикс меняется SESSION_COOKIE_PREFIX. Записывающие запросы требуют Origin = AUTH_UI_URL. Cookie не отменяет права конкретной операции."
+      },
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",

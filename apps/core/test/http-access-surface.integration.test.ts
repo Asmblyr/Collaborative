@@ -30,6 +30,7 @@ test("every documented protected Core route rejects an anonymous request", async
       const result = await fixture.app.inject({
         method: method as HTTPMethods,
         url,
+        headers: { origin: "http://localhost:3000" },
         ...(["POST", "PUT", "PATCH"].includes(method) ? { payload: {} } : {}),
       });
       if (result.statusCode !== 401) {

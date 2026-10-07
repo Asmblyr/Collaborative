@@ -20,6 +20,8 @@ export async function cleanupOperations(
   await prune("public.asmblyr_passkey_challenges", "expires_at", now);
   await prune("public.asmblyr_request_buckets", "expires_at", now);
   await prune("public.asmblyr_assistant_leases", "expires_at", now);
+  await prune("public.asmblyr_assistant_cancellations", "expires_at", now);
+  await prune("public.asmblyr_action_drafts", "expires_at", now);
   await prune(
     "public.asmblyr_auth_sessions",
     "expires_at",

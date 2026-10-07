@@ -54,7 +54,7 @@ export class SsoService {
     const provider = this.provider(id);
     const pending = await findFlow(db, provider, input);
     if (pending.user_id) {
-      // Authenticate before consumption so a BFF can refresh an expired access token once.
+      // Authenticate before consuming the flow; revoked sessions must not complete linking.
       const user = await authenticateAccess(db, authorization);
       if (
         user.id !== pending.user_id ||

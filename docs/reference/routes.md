@@ -1,6 +1,6 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 209 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 219 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
@@ -15,6 +15,12 @@
 | `POST /assistant/messages/:id/cancel` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
 | `POST /assistant/selection/validate` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
 | `GET /assistant/status` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
+| `POST /auth/browser/google/start` | Активный пользователь, точный Origin AUTH_UI_URL; proof в HttpOnly cookie. | `apps/core/src/auth/browser/google.ts` |
+| `POST /auth/browser/invitations/claim` | Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию. | `apps/core/src/auth/browser/routes.ts` |
+| `POST /auth/browser/login` | Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию. | `apps/core/src/auth/browser/routes.ts` |
+| `POST /auth/browser/logout` | Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию. | `apps/core/src/auth/browser/routes.ts` |
+| `POST /auth/browser/passkeys/login` | Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию. | `apps/core/src/auth/browser/routes.ts` |
+| `POST /auth/browser/passkeys/options` | Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию. | `apps/core/src/auth/browser/routes.ts` |
 | `POST /auth/cli/authorize` | Active human session approves a 60-second one-use PKCE S256 code for an exact loopback callback. | `apps/core/src/auth/cli/routes.ts` |
 | `GET /auth/cli/config` | Public CLI discovery; configured admin consent URL only. No credential. | `apps/core/src/auth/cli/routes.ts` |
 | `POST /auth/cli/token` | One-use code + PKCE verifier + exact callback. Issues 10-minute schema:read access only; rate-limited. | `apps/core/src/auth/cli/routes.ts` |
@@ -59,6 +65,7 @@
 | `PUT /collections/:name/terms/:id` | Человек: superuser; системная и plugin-owned структура дополнительно защищена | `apps/core/src/terms/routes.ts` |
 | `DELETE /connections/google` | Активная человеческая сессия; удаляет собственные токены, flows и предложения, пытается отозвать Google grant | `apps/core/src/connections/routes.ts` |
 | `GET /connections/google` | Активная человеческая сессия; состояние только собственного подключения, без токенов | `apps/core/src/connections/routes.ts` |
+| `GET /connections/google/callback` | Редирект результата; подключение требует активную сессию, одноразовые state и browser proof, совпадение владельца. | `apps/core/src/auth/browser/google.ts` |
 | `POST /connections/google/callback` | Активная человеческая сессия; собственный flow, browser proof, state/nonce/PKCE и та же конфигурация клиента | `apps/core/src/connections/routes.ts` |
 | `POST /connections/google/start` | Активная человеческая сессия; одноразовый OAuth flow владельца с browser proof и PKCE | `apps/core/src/connections/routes.ts` |
 | `DELETE /connections/google/writes/:id` | Активная человеческая сессия; отмена собственного ожидающего предложения | `apps/core/src/connections/routes.ts` |
@@ -114,6 +121,7 @@
 | `GET /oauth-interactions/:uid` | Человек; UID, собственная сессия, правила приложения и согласие | `apps/core/src/oauth/interactions.ts` |
 | `POST /oauth-interactions/:uid` | Человек; UID, собственная сессия, правила приложения и согласие | `apps/core/src/oauth/interactions.ts` |
 | `ALL /oauth/*` | Протокольные endpoints oidc-provider: discovery/JWKS публичны, остальные используют проверки OAuth/OIDC | `apps/core/src/oauth/routes.ts` |
+| `POST /oauth/complete/:uid` | Текущий пользователь, подписанные cookies взаимодействия OAuth и совпадающий Origin; идентификатор пользователя должен совпадать с сессией | `apps/core/src/oauth/interactions.ts` |
 | `GET /permissions` | Человек: policies/read ИЛИ update; superuser bypass | `apps/core/src/permissions/routes.ts` |
 | `POST /permissions` | Только человек-superuser: изменение состава политик и permissions | `apps/core/src/permissions/routes.ts` |
 | `DELETE /permissions/:id` | Только человек-superuser: изменение состава политик и permissions | `apps/core/src/permissions/routes.ts` |
@@ -136,7 +144,7 @@
 | `GET /ready` | Публичная проверка готовности, без секретов | `apps/core/src/health/readiness.ts` |
 | `DELETE /realtime/locks` | Активная человеческая сессия; освобождает только собственную lease с совпадающим clientId, даже после потери read/update | `apps/core/src/realtime/routes.ts` |
 | `POST /realtime/locks` | Активная человеческая сессия; read и update указанного поля и строки. Атомарная 30-секундная lease, конфликт 409 FIELD_LOCKED | `apps/core/src/realtime/routes.ts` |
-| `GET /realtime/stream` | Активная человеческая Bearer-сессия; scope проверяется теми же collection/row read правилами, что GET /items. Поток повторно проверяет доступ и закрывается при его потере. Presence только для этой сессии | `apps/core/src/realtime/stream.ts` |
+| `GET /realtime/stream` | Активная человеческая сессия через Bearer token или браузерную HttpOnly cookie; scope проверяется теми же collection/row read правилами, что GET /items. Поток повторно проверяет доступ и закрывается при его потере. Presence только для этой сессии | `apps/core/src/realtime/stream.ts` |
 | `GET /schema` | Активный пользователь или сервисный аккаунт: доступные коллекции, wire-типы и разрешения на поля. Без записей, defaults и условий политик; private/no-store; accepts scoped CLI schema:read access and includes permission-gated generated plugin model contracts | `apps/core/src/schema/routes.ts` |
 | `GET /search` | Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно | `apps/core/src/items/routes.ts` |
 | `GET /service-accounts` | Человек: services/read ИЛИ update; superuser bypass | `apps/core/src/services/routes.ts` |
@@ -164,6 +172,8 @@
 | `GET /settings/terms` | Человек: terms/read ИЛИ update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `POST /settings/terms` | Человек: terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `PUT /settings/terms/:id` | Человек: terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
+| `POST /sign/sso/:provider` | Точный Origin AUTH_UI_URL; настроенный провайдер; для link необходима активная сессия. | `apps/core/src/auth/browser/sso.ts` |
+| `GET /sign/sso/:provider/callback` | Одноразовые state/PKCE и browser proof; для link проверяется сессия владельца. | `apps/core/src/auth/browser/sso.ts` |
 | `GET /system-collections` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `DELETE /system-collections/:name/fields/:field` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `POST /system-collections/:name/fields/:field/configuration` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |

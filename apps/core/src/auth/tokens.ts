@@ -3,6 +3,7 @@ import type { Knex } from "knex";
 import { InvalidCredentialsError } from "./validation.js";
 import { clientLabel } from "./sessions.js";
 import { recordUserActivity } from "./user-activity.js";
+import { authenticateBrowserToken } from "./browser/sessions.js";
 
 const accessLifetimeMs = 15 * 60 * 1000;
 const sessionLifetimeMs = 30 * 24 * 60 * 60 * 1000;
@@ -105,6 +106,12 @@ export async function authenticateAccess(
   database: Knex,
   authorization: string | undefined,
 ): Promise<AuthenticatedUser> {
+  const browser = /^Bearer (asm_bs_[A-Za-z0-9_-]{43})$/.exec(
+    authorization ?? "",
+  );
+  if (browser) {
+    return authenticateBrowserToken(database, browser[1]);
+  }
   const match = /^Bearer (asm_at_[A-Za-z0-9_-]{43})$/i.exec(
     authorization ?? "",
   );

@@ -1,0 +1,52 @@
+# Both images must come from the same release. Prefer immutable digests.
+image:
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+images:
+  core:
+    repository: ghcr.io/asmblyr/collaborative-core
+    digest: ""
+  ui:
+    repository: ghcr.io/asmblyr/collaborative-ui
+    digest: ""
+
+publicUrl: ""
+sessionCookiePrefix: asmblyr
+# Existing Secret in the release namespace: DATABASE_URL, SECRETS_LOCAL_KEY,
+# ASMBLYR_SETUP_TOKEN, optional provider/S3 credentials. Never passed to UI.
+existingSecret: ""
+# Non-secret Core configuration, e.g. AUTH_PROVIDERS or TRUST_PROXY CIDRs.
+coreEnv: {}
+# Existing Secrets mounted read-only at /run/secrets/<name> in Core and migrations.
+# Example: [{ name: oauth, secretName: collaborative-oauth }]
+coreSecretFiles: []
+
+core:
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+ui:
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 192Mi }
+    limits: { memory: 768Mi }
+
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+  tlsSecretName: ""
+
+migrations:
+  enabled: true
+  activeDeadlineSeconds: 300
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}

@@ -16,7 +16,9 @@ export function useLogout() {
     setPending(true);
     setError("");
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
+      const response = await fetch("/api/auth/browser/logout", {
+        method: "POST",
+      });
       if (!response.ok) throw new Error("Logout failed");
       router.replace("/login");
       router.refresh();

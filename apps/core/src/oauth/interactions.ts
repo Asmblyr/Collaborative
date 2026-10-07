@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { Knex } from "knex";
 import type { Provider } from "oidc-provider";
 import { authenticateAccess } from "../auth/tokens.js";
@@ -44,7 +44,10 @@ export function registerOAuthInteractions(
     });
   });
 
-  app.post<{ Params: { uid: string } }>(path, async (request, reply) => {
+  const complete = async (
+    request: FastifyRequest<{ Params: { uid: string } }>,
+    reply: FastifyReply,
+  ) => {
     const user = await authenticateAccess(db, request.headers.authorization);
     const input = request.body as Record<string, unknown> | null;
     if (
@@ -105,5 +108,8 @@ export function registerOAuthInteractions(
     return reply
       .header("Cache-Control", "no-store")
       .send({ data: { redirectTo } });
-  });
+  };
+  app.post(path, complete);
+  // /oauth/interaction belongs to UI; this separate prefix belongs to Core.
+  app.post("/oauth/complete/:uid", complete);
 }

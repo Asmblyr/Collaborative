@@ -1,13 +1,9 @@
 import { createRequire } from "node:module";
-import { spawnSync } from "node:child_process";
+import "../container/migrate.mjs";
 const require = createRequire(
   new URL("../../apps/core/package.json", import.meta.url),
 );
 const { S3Client, CreateBucketCommand } = require("@aws-sdk/client-s3");
-const migrate = spawnSync("pnpm", ["db:migrate"], { stdio: "inherit" });
-if (migrate.status !== 0) {
-  process.exit(migrate.status ?? 1);
-}
 const client = new S3Client({
   region: "us-east-1",
   endpoint: process.env.FILES_S3_ENDPOINT,

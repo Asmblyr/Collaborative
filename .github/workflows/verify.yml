@@ -1,4 +1,4 @@
-name: Verify and publish container
+name: Verify and publish containers
 
 on:
   push:
@@ -68,39 +68,36 @@ jobs:
         with:
           node-version: "22"
           package-manager-cache: false
-      - name: Build UI and Core from this checkout
-        run: >-
-          docker build --target app
-          --label org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          --label org.opencontainers.image.revision=${{ github.sha }}
-          --label org.opencontainers.image.licenses=MIT
-          --tag asmblyr-collaborative:ci .
-      - name: Check container with disposable PostgreSQL
-        run: node scripts/test.mjs container asmblyr-collaborative:ci
-      - name: Publish verified image to GHCR
+      - name: Install Helm
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -O https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz
+          curl --fail --silent --show-error -O https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz.sha256sum
+          sha256sum --check helm-v4.2.3-linux-amd64.tar.gz.sha256sum
+          tar -xzf helm-v4.2.3-linux-amd64.tar.gz
+          sudo install linux-amd64/helm /usr/local/bin/helm
+          rm -rf linux-amd64 helm-v4.2.3-linux-amd64.tar.gz*
+      - name: Build matching Core and UI images from source
+        shell: bash
+        run: |
+          set -euo pipefail
+          for component in core ui; do
+            docker build --target "$component" --build-arg DEPLOYMENT_VERSION="$GITHUB_SHA" \
+              --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
+              --label org.opencontainers.image.revision="$GITHUB_SHA" \
+              --label org.opencontainers.image.licenses=MIT \
+              --tag "asmblyr-collaborative-$component:ci" .
+          done
+      - name: Check split containers with disposable PostgreSQL
+        run: node scripts/test.mjs container-split asmblyr-collaborative-core:ci asmblyr-collaborative-ui:ci
+      - name: Validate chart and routing
+        run: node scripts/chart-check.mjs
+      - name: Publish verified image pair and chart
         if: >-
           github.repository == 'Asmblyr/Collaborative' &&
           github.event_name != 'pull_request' &&
           (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          image="ghcr.io/${GITHUB_REPOSITORY,,}"
-          tags=("sha-${GITHUB_SHA}")
-          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
-            tags+=(edge)
-          elif [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
-            tags+=("${GITHUB_REF_NAME#v}")
-          else
-            echo "Release tags must use vMAJOR.MINOR.PATCH[-PRERELEASE]"
-            exit 1
-          fi
-          trap 'docker logout ghcr.io' EXIT
-          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          for tag in "${tags[@]}"; do
-            docker tag asmblyr-collaborative:ci "$image:$tag"
-            docker push "$image:$tag"
-            echo "Published: \`$image:$tag\`" >> "$GITHUB_STEP_SUMMARY"
-          done
+        run: bash scripts/container/publish.sh

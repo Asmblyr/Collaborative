@@ -1,28 +1,30 @@
 # Развёртывание и обновление
 
 Для локальной разработки начните с [первого запуска](./getting-started.md).
-Основной Docker-образ содержит UI и Core API в одном контейнере; PostgreSQL 17+
-и S3-совместимое хранилище подключаются отдельно. Готовые сборки `main`
-публикуются в `ghcr.io/asmblyr/collaborative:edge`; для установки закрепляйте
-проверенный образ по digest. Также доступна [рабочая консоль](https://console.asmblyr.io/).
+Основная поставка использует отдельные образы Core и UI из одного коммита;
+PostgreSQL 17+ и S3-совместимое хранилище подключаются отдельно. Готовые сборки
+публикуются в `ghcr.io/asmblyr/collaborative-core` и
+`ghcr.io/asmblyr/collaborative-ui`; закрепляйте оба образа одной версии по digest.
+Также доступна [рабочая консоль](https://console.asmblyr.io/).
 Одна собственная установка предназначена для одной команды; workspace не создаёт
 отдельный tenant.
 
-| Сценарий                                                                 | Где начать                                                                                                                                                                                      |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Основной образ с внешними PostgreSQL/S3                                  | [`deploy/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/compose.yaml) и [`deploy/env.example`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/env.example) |
-| Дополнительный стенд разработки с отдельными UI/Core, PostgreSQL и MinIO | [`deploy/local/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/local/compose.yaml)                                                                                     |
+| Сценарий                                   | Где начать                                                                                                                                                                                      |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Основная поставка с внешними PostgreSQL/S3 | [`deploy/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/compose.yaml) и [`deploy/env.example`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/env.example) |
+| Локальный стенд с PostgreSQL и MinIO       | [`deploy/local/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/local/compose.yaml)                                                                                     |
+| Совместимый монолитный образ               | [`deploy/compose.monolith.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/compose.monolith.yaml)                                                                               |
 
 Точные команды сборки и запуска, настройки портов, GHCR и контейнерные проверки —
 в [руководстве `deploy`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/README.md).
-Основной Compose выполняет миграции отдельным коротким запуском того же образа
-перед стартом приложения. Он публикует UI и Core API на loopback-портах 3000 и
-3001 по умолчанию. Не переносите локальные секреты и HTTP origin в публичную
+Основной Compose выполняет миграции отдельным коротким запуском образа Core
+перед стартом приложения. Он публикует общий адрес на loopback-порту 3000
+по умолчанию. Не переносите локальные секреты и HTTP origin в публичную
 установку.
 
 ## Конфигурация
 
-Для основного образа скопируйте `deploy/env.example` в приватный файл вне
+Для основной поставки скопируйте `deploy/env.example` в приватный файл вне
 репозитория. Core читает `DATABASE_URL` и остальные параметры из окружения;
 полный шаблон с комментариями —
 [`apps/core/.env.example`](https://github.com/Asmblyr/Collaborative/blob/main/apps/core/.env.example).

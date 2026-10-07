@@ -17,7 +17,8 @@ import { loadAssistantDefaults } from "./settings-repository.js";
 import { createAssistantJournal } from "./telemetry/journal.js";
 import { createContextTools, validateFilterProposal } from "./context-tools.js";
 import { validateSelection } from "./selections.js";
-import { AssistantRequests, openResponseStream } from "./response-stream.js";
+import { openResponseStream } from "./response-stream.js";
+import { AssistantRequests } from "./requests.js";
 import { registerAssistantHistoryRoutes } from "./history-routes.js";
 import { parseConversationSubmission } from "./history-input.js";
 import {
@@ -41,7 +42,10 @@ export function registerAssistantRoutes(
   limits: OperationLimits = defaultOperationLimits,
   google: GoogleConnections | null = null,
 ) {
-  const requests = new AssistantRequests();
+  const requests = new AssistantRequests(database, () =>
+    app.log.warn("Assistant cancellation check failed"),
+  );
+  app.addHook("preClose", async () => requests.close());
   const journal = database
     ? createAssistantJournal(database, (id) =>
         app.log.warn(
@@ -126,7 +130,7 @@ export function registerAssistantRoutes(
           }
         }
         if (request.headers.accept?.includes("application/x-ndjson")) {
-          requestId = requests.add(access.principal.id, controller);
+          requestId = await requests.add(access.principal.id, controller);
           emit = openResponseStream(reply, controller);
           emit({ type: "started", requestId });
         }
@@ -262,7 +266,10 @@ export function registerAssistantRoutes(
         await release().catch(() =>
           app.log.warn("Assistant lease cleanup failed"),
         );
-        if (requestId) requests.remove(requestId);
+        if (requestId)
+          await requests
+            .remove(requestId)
+            .catch(() => app.log.warn("Assistant cancellation cleanup failed"));
         if (emit && !reply.raw.destroyed) reply.raw.end();
         reply.raw.off("close", disconnect);
       }
@@ -274,7 +281,7 @@ export function registerAssistantRoutes(
     async (request, reply) => {
       reply.header("Cache-Control", "no-store");
       const access = await authorize(request.headers.authorization);
-      if (!requests.cancel(request.params.id, access.principal.id)) {
+      if (!(await requests.cancel(request.params.id, access.principal.id))) {
         return reply
           .code(404)
           .send({ message: "Запрос уже завершён или недоступен" });

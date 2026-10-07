@@ -1,12 +1,12 @@
 # Архитектура Collaborative Live
 
-SSE выбран для односторонних уведомлений: существующий UI-прокси и SDK уже
-используют HTTP, а получение и освобождение locks остаётся обычным HTTP-запросом.
+SSE выбран для односторонних уведомлений: браузер обращается к Core через `/api`,
+а получение и освобождение locks остаётся обычным HTTP-запросом.
 Отдельный WebSocket transport не требуется для этого обмена.
 
 ```mermaid
 flowchart TD
-  UI[UI и SDK] -->|SSE через UI proxy или прямой Bearer| Gateway[Core realtime routes]
+  UI[UI и SDK] -->|SSE с cookie или Bearer| Gateway[Core realtime routes]
   Gateway --> Auth[Access и row permissions]
   Gateway --> Presence[(asmblyr_presence)]
   Gateway --> Locks[(asmblyr_field_locks)]

@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1",
+    "dev": "next dev --hostname 127.0.0.1 --port 3002",
     "build": "next build",
-    "start": "next start --hostname 127.0.0.1",
+    "start": "next start --hostname 127.0.0.1 --port 3002",
     "lint": "eslint",
     "typecheck": "node scripts/plugin-ui.mjs && tsc --noEmit",
     "test": "node ../../scripts/test.mjs ui-unit",

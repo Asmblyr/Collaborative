@@ -9,7 +9,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --include \"../../packages/plugin-*/**/*.ts\" --include \"../../packages/plugin-*/package.json\" --include \"../../packages/plugin-*/locales/*.json\" --include \"../../examples/plugins/**/*.ts\" --include \"../../examples/plugins/*/package.json\" --include \"../../package.json\" --exclude \"../../packages/plugin-*/dist/**\" --exclude \"../../examples/plugins/*/dist/**\" src/server.ts --plugin-sources",
+    "dev": "tsx watch --include \"../../packages/plugin-*/**/*.ts\" --include \"../../packages/plugin-*/package.json\" --include \"../../packages/plugin-*/locales/*.json\" --include \"../../examples/plugins/**/*.ts\" --include \"../../examples/plugins/*/package.json\" --include \"../../package.json\" --exclude \"../../packages/plugin-*/dist/**\" --exclude \"../../examples/plugins/*/dist/**\" src/server.ts --plugin-sources --with-ui",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "db:migrate": "knex --knexfile knexfile.mjs migrate:latest",

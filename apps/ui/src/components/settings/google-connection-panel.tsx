@@ -39,7 +39,7 @@ export function GoogleConnectionPanel({ feedback }: { feedback?: string }) {
     setMessage("");
     try {
       const result = await apiRequest<{ url: string }>(
-        "/connections/google/start",
+        "/api/auth/browser/google/start",
         "POST",
         {},
       );

@@ -144,7 +144,7 @@ await items.update("articles", id, { title });
 ## Вызов и транзакции
 
 - Core: `POST /calculator/calculate`.
-- UI: `POST /api/calculator/calculate` через существующий namespace proxy и сессию UI.
+- UI: `POST /api/calculator/calculate` напрямую в Core с браузерной сессией.
 - MCP: `plugin_calculator__calculate`, JSON text и structured content.
 - Ответ HTTP: `{ data: { namespace, actionId, input, output } }`.
 
@@ -165,8 +165,8 @@ Response, redirect, streaming, изменение заголовков или с
 ## Подготовленная форма и ответ ассистента
 
 Успешное действие с `page` создаёт приватный снимок входа и выхода на 20 минут:
-до 32 на пользователя, 256 на экземпляр Core. Перезапуск удаляет снимки; для
-нескольких экземпляров позднее потребуется общее хранилище. Значений формы в URL нет.
+до 32 на пользователя, 256 на установку. Снимки хранятся в PostgreSQL, доступны
+всем репликам Core и сохраняются при перезапуске до истечения срока. Значений формы в URL нет.
 
 `GET /extensions/:namespace/drafts/:id` проверяет сессию, владельца, namespace
 и доступ к действию. Чужой или истёкший снимок даёт одинаковый 404. При изменении

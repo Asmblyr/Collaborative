@@ -1,0 +1,4 @@
+Collaborative is available at {{ .Values.publicUrl }}
+Core and UI use separate Deployments. PostgreSQL and S3 are external.
+Core readiness checks database migrations; UI health checks the UI process.
+Helm rollback does not undo database migrations. Back up PostgreSQL before upgrades.

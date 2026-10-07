@@ -34,7 +34,7 @@ export function InvitationForm() {
     setPending(true);
     setMessage("");
     try {
-      const response = await fetch("/api/auth/invitations/claim", {
+      const response = await fetch("/api/auth/browser/invitations/claim", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ token }),

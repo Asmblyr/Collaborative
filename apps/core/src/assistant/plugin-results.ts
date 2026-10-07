@@ -17,17 +17,21 @@ export class PluginResults {
     this.prepared.set(prepared.draftId, prepared);
   }
 
-  present(
+  async present(
     actions: PluginActions | undefined,
     access: Access,
     args: Record<string, unknown>,
-  ): object {
+  ): Promise<object> {
     const draft =
       typeof args.resultId === "string"
         ? this.prepared.get(args.resultId)
         : undefined;
     if (!actions || !draft) throw new ItemError("Unknown action result", 400);
-    const checked = actions.prepared(access, draft.namespace, draft.draftId);
+    const checked = await actions.prepared(
+      access,
+      draft.namespace,
+      draft.draftId,
+    );
     const card = {
       draftId: checked.draftId,
       namespace: checked.namespace,

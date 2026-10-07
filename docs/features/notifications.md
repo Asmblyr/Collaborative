@@ -45,7 +45,7 @@ Core хранит последние 200 уведомлений каждого �
 и не управлять человеческими подписками.
 
 SDK: `client.notifications.list()`, `.read(id)`, `.readAll(result.readBefore)`.
-В UI те же пути доступны через защищённый cookie proxy `/api`.
+В UI те же пути доступны напрямую в Core под `/api` с браузерной HttpOnly-сессией.
 
 Плагин объявляет и получает одобрение возможности `notifications`. Только обычный
 HTTP-контекст `useAsmblyr(event)` получает `notifications.following`, `follow`,

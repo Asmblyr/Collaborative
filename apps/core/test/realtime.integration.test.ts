@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createClient } from "@asmblyr-collaborative/sdk";
 import type { RealtimeEvent } from "@asmblyr-collaborative/contracts";
+import { createBrowserSession } from "../src/auth/browser/sessions.js";
+import { issueUserTokens } from "../src/auth/tokens.js";
 import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 
 function eventOf(
@@ -135,4 +137,59 @@ test("field locks are atomic, scoped to editor sessions and expire", async (t) =
     (await f.db("asmblyr_field_locks").where({ field: "title" })).length,
     0,
   );
+});
+
+test("browser session reaches realtime routes through Core /api and enforces origin", async (t) => {
+  const f = await pluginItemsFixture();
+  t.after(f.close);
+  const token = await createBrowserSession(
+    f.db,
+    await issueUserTokens(f.db, f.admin.id),
+  );
+  const url = await f.app.listen({ host: "127.0.0.1", port: 0 });
+  const input = {
+    collection: f.collection,
+    recordId: "2",
+    field: "title",
+    clientId: randomUUID(),
+  };
+  const headers = {
+    cookie: `asmblyr_session=${token}`,
+    "content-type": "application/json",
+  };
+  const lockUrl = `${url}/api/realtime/locks`;
+  const denied = await fetch(lockUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(input),
+  });
+  assert.equal(denied.status, 403);
+
+  const browserHeaders = { ...headers, origin: "http://localhost:3000" };
+  const acquired = await fetch(lockUrl, {
+    method: "POST",
+    headers: browserHeaders,
+    body: JSON.stringify(input),
+  });
+  assert.equal(acquired.status, 200, await acquired.clone().text());
+
+  const scope = JSON.stringify({
+    kind: "record",
+    collection: f.collection,
+    id: "2",
+  });
+  const stream = await fetch(
+    `${url}/api/realtime/stream?${new URLSearchParams({ clientId: input.clientId, scope })}`,
+    { headers },
+  );
+  assert.equal(stream.status, 200);
+  assert.match(stream.headers.get("content-type") ?? "", /text\/event-stream/);
+  await stream.body?.cancel();
+
+  const released = await fetch(lockUrl, {
+    method: "DELETE",
+    headers: browserHeaders,
+    body: JSON.stringify(input),
+  });
+  assert.equal(released.status, 204);
 });

@@ -1,31 +1,5 @@
-import { randomUUID } from "node:crypto";
 import type { FastifyReply } from "fastify";
 import type { AssistantStreamEvent } from "@asmblyr-collaborative/contracts";
-
-/** Process-local, like AssistantService concurrency. Cancel requests must reach this Core. */
-export class AssistantRequests {
-  private readonly pending = new Map<
-    string,
-    { userId: string; controller: AbortController }
-  >();
-
-  add(userId: string, controller: AbortController) {
-    const id = randomUUID();
-    this.pending.set(id, { userId, controller });
-    return id;
-  }
-
-  cancel(id: string, userId: string): boolean {
-    const request = this.pending.get(id);
-    if (!request || request.userId !== userId) return false;
-    request.controller.abort();
-    return true;
-  }
-
-  remove(id: string) {
-    this.pending.delete(id);
-  }
-}
 
 export function openResponseStream(
   reply: FastifyReply,

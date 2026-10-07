@@ -1,0 +1,23 @@
+services:
+  migrate:
+    image: ${ASMBLYR_IMAGE:?Set a verified application image digest}
+    env_file: ${ASMBLYR_ENV_FILE:?Set private application environment file}
+    command: [node, scripts/container/migrate.mjs]
+    healthcheck:
+      disable: true
+  app:
+    image: ${ASMBLYR_IMAGE}
+    env_file: ${ASMBLYR_ENV_FILE}
+    environment:
+      PORT: "3000"
+      CORE_PORT: "3001"
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${UI_PORT:-3000}:3000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-3001}:3001"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }

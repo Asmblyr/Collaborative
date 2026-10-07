@@ -93,7 +93,10 @@ export class AssistantRequest {
         `/api/assistant/messages/${encodeURIComponent(this.requestId)}/cancel`,
         {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: {
+            "content-type": "application/json",
+            accept: "application/x-ndjson",
+          },
           body: "{}",
           signal: AbortSignal.any([
             this.controller.signal,
@@ -128,7 +131,10 @@ export class AssistantRequest {
     try {
       const response = await fetch("/api/assistant/messages", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          accept: "application/x-ndjson",
+        },
         body: JSON.stringify(snapshot),
         signal: AbortSignal.any([
           this.controller.signal,

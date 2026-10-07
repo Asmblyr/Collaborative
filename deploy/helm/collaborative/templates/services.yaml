@@ -1,0 +1,18 @@
+{{- range $component := list "core" "ui" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "collaborative.name" $ }}-{{ $component }}
+  labels:
+    {{- include "collaborative.labels" $ | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ $component }}
+  ports:
+    - name: http
+      port: {{ ternary 3001 3000 (eq $component "core") }}
+      targetPort: http
+{{- end }}

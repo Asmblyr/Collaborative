@@ -2,24 +2,14 @@ import "./support/require-test-database.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { AssistantStreamEvent } from "@asmblyr-collaborative/contracts";
+import { createBrowserSession } from "../src/auth/browser/sessions.js";
+import { issueUserTokens } from "../src/auth/tokens.js";
+import { publicServer } from "./support/public-server.js";
 import { assistantConfigFromEnv } from "../src/assistant/config.js";
 import { AssistantService } from "../src/assistant/service.js";
 import { createAssistantProvider } from "../src/assistant/provider.js";
-import { AssistantRequests } from "../src/assistant/response-stream.js";
 import { mcpFixture } from "./support/assistant-mcp-fixture.js";
 import { assistantSse, chatChunk } from "./support/assistant-sse.js";
-
-test("cancellation is scoped to the authenticated owner", () => {
-  const pending = new AssistantRequests();
-  const controller = new AbortController();
-  const id = pending.add("owner", controller);
-  assert.equal(pending.cancel(id, "other"), false);
-  assert.equal(controller.signal.aborted, false);
-  assert.equal(pending.cancel(id, "owner"), true);
-  assert.equal(controller.signal.aborted, true);
-  pending.remove(id);
-  assert.equal(pending.cancel(id, "owner"), false);
-});
 
 test(
   "stream reports actual progress, aborts provider, retains usage, and releases the user slot",
@@ -58,12 +48,20 @@ test(
       stream.send(chatChunk({ content: "Частичный ответ" }));
       return stream.response;
     });
-    const { app, db, headers } = await mcpFixture(
+    const { app, db, access } = await mcpFixture(
       t,
       new AssistantService(config, provider),
     );
-    const address = await app.listen({ host: "127.0.0.1", port: 0 });
-    const response = await fetch(`${address}/assistant/messages`, {
+    const cookie = await createBrowserSession(
+      db,
+      await issueUserTokens(db, access.principal.id),
+    );
+    const headers = {
+      cookie: `asmblyr_session=${cookie}`,
+      origin: "http://localhost:3000",
+    };
+    const address = await publicServer(t, app);
+    const response = await fetch(`${address}/api/assistant/messages`, {
       method: "POST",
       headers: {
         ...headers,
