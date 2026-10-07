@@ -2,7 +2,14 @@
 
 import { useLocalizedCatalog } from "./use-localized-catalog";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { recordIdFromPath } from "@/lib/item-location";
 import { LockKeyhole } from "lucide-react";
@@ -48,6 +55,7 @@ export function ItemRecordDialog({
   title,
   draft,
   onDraftChange,
+  onDirtyChange,
   draftMode,
   onReferenceChange,
   formRevision = 0,
@@ -66,6 +74,7 @@ export function ItemRecordDialog({
   onRetry: () => void;
   draft: RecordDraft;
   onDraftChange: (draft: RecordDraft) => void;
+  onDirtyChange?: (dirty: boolean) => void;
   draftMode?: boolean;
   onReferenceChange: (field: string, value: string) => void;
   onSave: (
@@ -112,8 +121,11 @@ export function ItemRecordDialog({
   }, [id, addressedPanel, targetId, visitPanel]);
   const busy = pending || uploading || extensions.busy;
   const relationChanges = draftChanges({ ...draft, values: {} });
-  const recordDirty = changedCount > 0 || relationChanges > 0;
+  const recordDirty = changedCount > 0 || draftChanges(draft) > 0;
   const dirty = recordDirty || extensions.dirty;
+  useLayoutEffect(() => {
+    onDirtyChange?.(dirty || busy);
+  }, [busy, dirty, onDirtyChange]);
   const live = useRecordLive(collection.name, id, dirty, onRetry);
   const formId = useId();
   const readable = (name: string) =>
@@ -333,7 +345,15 @@ export function ItemRecordDialog({
                     )}
                     portalContainer={portalContainer}
                     onBusyChange={setUploading}
-                    onDirtyChange={setChangedCount}
+                    onDirtyChange={(count) => {
+                      setChangedCount(count);
+                      onDirtyChange?.(
+                        count > 0 ||
+                          draftChanges(draft) > 0 ||
+                          extensions.dirty ||
+                          busy,
+                      );
+                    }}
                     onSubmitAttempt={() => setSection("data")}
                     onSave={(values) => onSave(values, close)}
                     onCancel={close}

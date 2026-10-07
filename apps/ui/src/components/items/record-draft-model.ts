@@ -121,6 +121,17 @@ export function withFormValues(draft: RecordDraft, values: Item): RecordDraft {
   };
 }
 
+export function withRecordSnapshot(
+  draft: RecordDraft,
+  item: Item,
+  initialLoad: boolean,
+): RecordDraft {
+  return {
+    ...draft,
+    baseValues: initialLoad ? (draft.baseValues ?? item) : item,
+  };
+}
+
 export function upsertRecord(
   draft: RecordDraft,
   collection: string,

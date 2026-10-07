@@ -5,6 +5,7 @@ import {
   serializeDraft,
   upsertRecord,
   withFormValues,
+  withRecordSnapshot,
   type RecordDraft,
 } from "../src/components/items/record-draft-model";
 
@@ -60,6 +61,24 @@ test("wire draft preserves nested junction changes but excludes UI data", () => 
   assert.ok(!JSON.stringify(wire).includes("Preview"));
   assert.ok(!JSON.stringify(wire).includes("draft:"));
   assert.equal(draftChanges(draft), 6);
+});
+
+test("accepted record snapshots advance the conflict baseline without losing an initial draft", () => {
+  const initial: RecordDraft = {
+    id: "1",
+    values: {},
+    baseValues: { title: "A" },
+  };
+  const refreshed = withRecordSnapshot(initial, { title: "B" }, false);
+  assert.deepEqual(refreshed.baseValues, { title: "B" });
+  assert.deepEqual(
+    serializeDraft(withFormValues(refreshed, { title: "C" })).expectedValues,
+    { title: "B" },
+  );
+  assert.deepEqual(
+    withRecordSnapshot(initial, { title: "B" }, true).baseValues,
+    { title: "A" },
+  );
 });
 
 test("changing reference discards its draft; reverting related edits removes pending work", () => {

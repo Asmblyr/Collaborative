@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@asmblyr-collaborative/sdk";
 import { readEditorItem } from "@/lib/item-read";
@@ -15,6 +16,7 @@ import {
   serializeDraft,
   upsertRecord,
   withFormValues,
+  withRecordSnapshot,
   type RecordDraft,
 } from "./record-draft-model";
 import {
@@ -56,6 +58,15 @@ export function ItemEditorDialog({
   const [draft, setDraft] = useState<RecordDraft>(
     () => request.draft ?? { id: request.id, values: {} },
   );
+  const dirtyRef = useRef(
+    Boolean(
+      request.extraDirty || (request.draft && draftChanges(request.draft)),
+    ),
+  );
+  const loadedRecordRef = useRef<string | null>(null);
+  const onDirtyChange = useCallback((dirty: boolean) => {
+    dirtyRef.current = dirty;
+  }, []);
   useEffect(() => {
     if (!request.id) return;
     const controller = new AbortController();
@@ -66,18 +77,36 @@ export function ItemEditorDialog({
       request.itemEndpoint,
     )
       .then((result) => {
-        if (!controller.signal.aborted) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        const recordKey = JSON.stringify([
+          request.collection,
+          request.id,
+          request.itemEndpoint,
+        ]);
+        const initialLoad = loadedRecordRef.current !== recordKey;
+        if (!initialLoad && (dirtyRef.current || request.extraDirty)) {
+          setError(
+            copy(
+              "Запись изменена другим участником. При сохранении проверьте конфликт.",
+            ),
+          );
+          return;
+        }
+        // Commit the snapshot and its conflict baseline before another input event.
+        flushSync(() => {
           setItem(result.data);
           setFormRevision((value) => value + 1);
           setDraft((current) => ({
-            ...current,
-            baseValues: current.baseValues ?? result.data,
+            ...withRecordSnapshot(current, result.data, initialLoad),
             collection: request.collection,
             itemEndpoint: request.itemEndpoint,
           }));
           setLabel(result.label ?? request.title ?? "");
           setError("");
-        }
+        });
+        loadedRecordRef.current = recordKey;
       })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted)
@@ -88,6 +117,7 @@ export function ItemEditorDialog({
     return () => controller.abort();
   }, [
     request.collection,
+    request.extraDirty,
     request.itemEndpoint,
     request.id,
     request.title,
@@ -313,6 +343,7 @@ export function ItemEditorDialog({
           title={(draft.label ?? label) || undefined}
           draft={draft}
           onDraftChange={setDraft}
+          onDirtyChange={onDirtyChange}
           draftMode={Boolean(request.onDraft)}
           onRetry={() => {
             setError("");

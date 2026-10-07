@@ -100,12 +100,16 @@ export function ItemForm({
   const writable = fields.filter(
     (f) => !readOnlyFields.includes(f.name) && !fieldIsReadonly(f),
   );
-  const changedCount =
-    writable.filter((field) =>
-      item
-        ? values[field.name] !== inputValue(field, item)
-        : values[field.name] !== "",
-    ).length + (!item && manualKey ? 1 : 0);
+  function changedFieldCount(candidateValues: Record<string, string>): number {
+    return (
+      writable.filter((field) =>
+        item
+          ? candidateValues[field.name] !== inputValue(field, item)
+          : candidateValues[field.name] !== "",
+      ).length + (!item && manualKey ? 1 : 0)
+    );
+  }
+  const changedCount = changedFieldCount(values);
   useLayoutEffect(() => {
     onDirtyChange?.(changedCount);
   }, [changedCount, onDirtyChange]);
@@ -342,6 +346,7 @@ export function ItemForm({
                   field.name,
                   value,
                 );
+                onDirtyChange?.(changedFieldCount(next));
                 setValues(next);
                 for (const candidate of fields) {
                   if (
