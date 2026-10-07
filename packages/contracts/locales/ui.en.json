@@ -2135,5 +2135,13 @@
   "copy.3bc8a5e4": "Show system collections",
   "copy.a0e89f48": "System collections",
   "copy.91fb677a": "Workspaces",
-  "copy.fc4d06c6": "No records"
+  "copy.fc4d06c6": "No records",
+  "copy.baf1dc76": "Another person changed this record. Review any conflict before saving.",
+  "copy.b16be3b4": "Another person deleted this record.",
+  "copy.347125e1": "The field lock expired. Review changes before saving.",
+  "copy.7a5b2a00": "Another person is editing this field.",
+  "copy.fa37a4df": "Online",
+  "copy.3b8f3bee": "Reconnecting…",
+  "copy.ed57e787": "Offline",
+  "copy.452a0ba5": "{{value0}} is editing"
 }

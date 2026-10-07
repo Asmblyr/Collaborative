@@ -31,6 +31,7 @@ import {
 } from "@/components/plugins/record-panels";
 import { useUiCopy } from "@/lib/ui-copy";
 import { AssistantRecordHost } from "@/components/assistant/assistant-host";
+import { useRecordLive } from "./use-record-live";
 
 export function ItemRecordDialog({
   collection: sourceCollection,
@@ -113,6 +114,7 @@ export function ItemRecordDialog({
   const relationChanges = draftChanges({ ...draft, values: {} });
   const recordDirty = changedCount > 0 || relationChanges > 0;
   const dirty = recordDirty || extensions.dirty;
+  const live = useRecordLive(collection.name, id, dirty, onRetry);
   const formId = useId();
   const readable = (name: string) =>
     collection.access.read?.includes("*") ||
@@ -264,6 +266,21 @@ export function ItemRecordDialog({
                 className="space-y-7"
               >
                 {conflictReview}
+                <div
+                  role="status"
+                  className="text-xs text-muted-foreground"
+                >
+                  {live.state === "connected"
+                    ? copy("В сети")
+                    : live.state === "reconnecting"
+                      ? copy("Переподключение…")
+                      : live.state === "offline"
+                        ? copy("Нет соединения")
+                        : copy("Подключение…")}
+                  {live.notice && (
+                    <span className="ml-2 text-amber-600">{live.notice}</span>
+                  )}
+                </div>
                 {collection.sourceKind === "materialized-view" ? (
                   <MaterializedRecordCard
                     collection={collection}
@@ -307,6 +324,13 @@ export function ItemRecordDialog({
                       Boolean(draftMode && draftChanges(draft))
                     }
                     onReferenceChange={onReferenceChange}
+                    onFieldFocus={live.focus}
+                    onFieldBlur={live.blur}
+                    fieldHolders={Object.fromEntries(
+                      Object.entries(live.holders)
+                        .filter(([, holder]) => holder.id !== live.selfId)
+                        .map(([field, holder]) => [field, holder.displayName]),
+                    )}
                     portalContainer={portalContainer}
                     onBusyChange={setUploading}
                     onDirtyChange={setChangedCount}

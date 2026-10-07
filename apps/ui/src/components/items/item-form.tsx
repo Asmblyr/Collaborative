@@ -46,6 +46,9 @@ interface ItemFormProps {
   initialValues?: Item;
   allowUnchanged?: boolean;
   onReferenceChange?: (field: string, value: string) => void;
+  onFieldFocus?: (field: string) => void;
+  onFieldBlur?: (field: string) => void;
+  fieldHolders?: Record<string, string>;
 }
 
 export function ItemForm({
@@ -72,6 +75,9 @@ export function ItemForm({
   initialValues,
   allowUnchanged = false,
   onReferenceChange,
+  onFieldFocus,
+  onFieldBlur,
+  fieldHolders,
 }: ItemFormProps) {
   const copy = useUiCopy();
 
@@ -220,6 +226,22 @@ export function ItemForm({
       id={id}
       noValidate
       onSubmit={submit}
+      onFocusCapture={(event) => {
+        const field = (event.target as HTMLElement).closest<HTMLElement>(
+          "[data-form-field]",
+        )?.dataset.formField;
+        if (field && writable.some((entry) => entry.name === field))
+          onFieldFocus?.(field);
+      }}
+      onBlurCapture={(event) => {
+        const field = (event.target as HTMLElement).closest<HTMLElement>(
+          "[data-form-field]",
+        )?.dataset.formField;
+        const next = (
+          event.relatedTarget as HTMLElement | null
+        )?.closest<HTMLElement>("[data-form-field]")?.dataset.formField;
+        if (field && field !== next) onFieldBlur?.(field);
+      }}
       className={
         embedded ? "space-y-5" : "space-y-4 rounded-xl border bg-card p-5"
       }
@@ -291,6 +313,7 @@ export function ItemForm({
             ))
           ) : (
             <ItemFormField
+              holder={fieldHolders?.[field.name]}
               field={field}
               item={item}
               formId={formId}

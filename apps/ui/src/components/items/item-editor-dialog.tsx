@@ -68,6 +68,7 @@ export function ItemEditorDialog({
       .then((result) => {
         if (!controller.signal.aborted) {
           setItem(result.data);
+          setFormRevision((value) => value + 1);
           setDraft((current) => ({
             ...current,
             baseValues: current.baseValues ?? result.data,
