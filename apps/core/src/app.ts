@@ -20,6 +20,7 @@ import {
 import { registerUserRoutes } from "./auth/user-routes.js";
 import { registerProfileRoutes } from "./auth/profile-routes.js";
 import { registerProfileExtensionRoutes } from "./auth/profile-extension-routes.js";
+import { registerProfileDisplayRoutes } from "./auth/profile-display-routes.js";
 import { registerProfileAvatarRoutes } from "./auth/profile-avatar-routes.js";
 import { registerServiceRoutes } from "./services/routes.js";
 import { registerServiceActivity } from "./services/activity.js";
@@ -239,6 +240,7 @@ export function createApp({
   registerProfileRoutes(app, database);
   registerProfileAvatarRoutes(app, database, storageSource);
   registerProfileExtensionRoutes(app, database, hooks.mutation);
+  registerProfileDisplayRoutes(app, database);
   registerPresenceRoutes(app, database);
   registerNotificationRoutes(app, database, plugins);
   registerServiceRoutes(app, database);

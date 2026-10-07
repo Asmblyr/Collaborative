@@ -1,4 +1,24 @@
 {
+  "GET /users/profile-display": {
+    "access": "Только human superuser; конфигурация блока профиля",
+    "public": false
+  },
+  "PUT /users/profile-display": {
+    "access": "Только human superuser; явно разрешает ограниченную проекцию выбранных полей управляющим пользователями и при selfVisible владельцу профиля",
+    "public": false
+  },
+  "GET /users/profile-display/sources": {
+    "access": "Только human superuser; разрешённые пользовательские поля и пути M2O, без данных записей",
+    "public": false
+  },
+  "GET /users/me/profile-display": {
+    "access": "Активный человек; только собственные значения заранее настроенных selfVisible путей, без права произвольного чтения коллекций",
+    "public": false
+  },
+  "GET /users/:id/profile-display": {
+    "access": "Активный человек с users/read или superuser; настроенная проекция профиля целевого пользователя",
+    "public": false
+  },
   "GET /monitoring/browser": {
     "access": "Активная человеческая сессия; только публичный браузерный DSN и разрешённые флаги, без серверного DSN. Сервисные токены не допускаются",
     "public": false

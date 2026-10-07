@@ -14361,6 +14361,127 @@
         }
       }
     },
+    "/users/{id}/profile-display": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_id_profile_display",
+        "summary": "GET /users/:id/profile-display",
+        "description": "Активный человек с users/read или superuser; настроенная проекция профиля целевого пользователя. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "entries": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "type",
+                              "value"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "enum": [
+                                  "text",
+                                  "email",
+                                  "integer",
+                                  "bigint",
+                                  "decimal",
+                                  "boolean",
+                                  "date",
+                                  "datetime",
+                                  "tags",
+                                  "user"
+                                ]
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
+      }
+    },
     "/users/{id}/recovery": {
       "post": {
         "tags": [
@@ -16050,6 +16171,118 @@
         }
       }
     },
+    "/users/me/profile-display": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_me_profile_display",
+        "summary": "GET /users/me/profile-display",
+        "description": "Активный человек; только собственные значения заранее настроенных selfVisible путей, без права произвольного чтения коллекций. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "entries": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "type",
+                              "value"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "enum": [
+                                  "text",
+                                  "email",
+                                  "integer",
+                                  "bigint",
+                                  "decimal",
+                                  "boolean",
+                                  "date",
+                                  "datetime",
+                                  "tags",
+                                  "user"
+                                ]
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
+      }
+    },
     "/users/me/sessions": {
       "get": {
         "tags": [
@@ -16526,6 +16759,334 @@
         },
         "x-contract-level": "route-only",
         "x-source": "apps/core/src/workspaces/routes.ts"
+      }
+    },
+    "/users/profile-display": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_profile_display",
+        "summary": "GET /users/profile-display",
+        "description": "Только human superuser; конфигурация блока профиля. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "entries": {
+                          "type": "array",
+                          "maxItems": 12,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "path",
+                              "selfVisible"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "path": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 3,
+                                "items": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                                }
+                              },
+                              "selfVisible": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
+      },
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "put__users_profile_display",
+        "summary": "PUT /users/profile-display",
+        "description": "Только human superuser; явно разрешает ограниченную проекцию выбранных полей управляющим пользователями и при selfVisible владельцу профиля. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "entries": {
+                          "type": "array",
+                          "maxItems": 12,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "path",
+                              "selfVisible"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "path": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 3,
+                                "items": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                                }
+                              },
+                              "selfVisible": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "title",
+                  "entries"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "entries": {
+                    "type": "array",
+                    "maxItems": 12,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "label",
+                        "path",
+                        "selfVisible"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "path": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 3,
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                          }
+                        },
+                        "selfVisible": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/profile-display/sources": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_profile_display_sources",
+        "summary": "GET /users/profile-display/sources",
+        "description": "Только human superuser; разрешённые пользовательские поля и пути M2O, без данных записей. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Префикс одиночных связей через точку; пустой — дополнительные поля пользователя."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "name",
+                          "label",
+                          "type"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "email",
+                              "integer",
+                              "bigint",
+                              "decimal",
+                              "boolean",
+                              "date",
+                              "datetime",
+                              "tags",
+                              "user",
+                              "relation"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
       }
     },
     "/users/profile-extension": {

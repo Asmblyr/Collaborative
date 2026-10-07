@@ -175,7 +175,7 @@ async function main() {
         );
       }
       if (suite === "core-profile") {
-        return /test\/(?:user-profiles|profile|profile-avatar|profile-extension|preferences|translations|files-access|schema-export|http-access-surface)[-.]/.test(
+        return /test\/(?:user-profiles|user-relations|profile|profile-avatar|profile-extension|preferences|translations|files-access|schema-export|http-access-surface)[-.]/.test(
           name,
         );
       }
