@@ -7,6 +7,7 @@ import { useDraftPreviews } from "./record-draft-context";
 import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 import { useUiCopy } from "@/lib/ui-copy";
+import { userReferenceUrl } from "./user-reference";
 
 interface Option {
   id: string;
@@ -28,7 +29,9 @@ async function readItems(
   copy: UiCopy = originalCopy,
 ): Promise<ItemList> {
   const response = await fetch(
-    `${endpoint ?? `/api/items/${encodeURIComponent(collection)}`}?${params}`,
+    collection === "@users"
+      ? userReferenceUrl(params)
+      : `${endpoint ?? `/api/items/${encodeURIComponent(collection)}`}?${params}`,
     { signal },
   );
   if (!response.ok)

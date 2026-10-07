@@ -44,14 +44,17 @@ export async function createForeignKey(
 ): Promise<void> {
   const sourceSettings = await findCollectionSettings(transaction, source);
   if (!sourceSettings) throw new CollectionNotFoundError(source);
-  const targetSettings = await findCollectionSettings(
-    transaction,
-    input.targetCollection,
-  );
+  const systemUser = input.targetCollection === "@users";
+  const targetSettings = systemUser
+    ? {
+        sourceKind: "table" as const,
+        primaryKey: { name: "id", type: "uuid" as const },
+      }
+    : await findCollectionSettings(transaction, input.targetCollection);
   if (!targetSettings)
     throw new CollectionNotFoundError(input.targetCollection);
   assertCollectionWritable(sourceSettings);
-  assertCollectionWritable(targetSettings);
+  if (!systemUser) assertCollectionWritable(targetSettings);
   if (isManagedColumn(sourceSettings, input.name)) {
     throw new CollectionFieldConflictError(
       `Field name is managed: ${input.name}`,
@@ -99,7 +102,7 @@ export async function createForeignKey(
       `public.${source}`,
       `asmblyr_relation_fk_${digest}`,
       input.name,
-      `public.${input.targetCollection}`,
+      systemUser ? "public.asmblyr_users" : `public.${input.targetCollection}`,
       targetSettings.primaryKey.name,
     ],
   );
@@ -108,12 +111,15 @@ export async function createForeignKey(
     `public.${source}`,
     input.name,
   ]);
-  await transaction("asmblyr_relations").withSchema("public").insert({
-    source_collection: source,
-    source_field: input.name,
-    target_collection: input.targetCollection,
-    on_delete: input.onDelete,
-  });
+  await transaction("asmblyr_relations")
+    .withSchema("public")
+    .insert({
+      source_collection: source,
+      source_field: input.name,
+      target_collection: systemUser ? null : input.targetCollection,
+      target_system: systemUser ? "users" : null,
+      on_delete: input.onDelete,
+    });
   if (input.required || input.defaultValue !== undefined) {
     await transaction("asmblyr_field_metadata")
       .withSchema("public")

@@ -1,6 +1,6 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 219 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 226 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
@@ -138,6 +138,7 @@
 | `PUT /policies/:id/users` | Человек: superuser ИЛИ policies/update + политика в разрешённом наборе; атомарная замена назначений без изменения себя и superuser | `apps/core/src/policies/routes.ts` |
 | `DELETE /policies/:id/users/:userId` | Человек: superuser ИЛИ policies/update + политика в разрешённом наборе; менеджер не меняет себя и superuser | `apps/core/src/policies/routes.ts` |
 | `PUT /policies/:id/users/:userId` | Человек: superuser ИЛИ policies/update + политика в разрешённом наборе; менеджер не меняет себя и superuser | `apps/core/src/policies/routes.ts` |
+| `GET /policies/applications` | Человек: policies/read ИЛИ update; каталог приложений с управлением через политики, без секретов | `apps/core/src/policies/routes.ts` |
 | `POST /presence` | Активная человеческая сессия; каждый heartbeat проверяет read коллекции/строки или доступ раздела. /files требует files/read либо update у человека, или superuser. Возвращает только ID, имя, аватар и число окон; без email/сессий/значений записи | `apps/core/src/presence/routes.ts` |
 | `DELETE /presence/:clientId` | Активная человеческая сессия; удаляет только собственное окно этой сессии, без требования сохраняющегося read | `apps/core/src/presence/routes.ts` |
 | `GET /public/files/:id/content` | Без авторизации: только явно опубликованный ready-файл (visibility=public). Приватный/удалённый файл — 404; no-store/CSP/nosniff. Без списка и метаданных. | `apps/core/src/files/public-routes.ts` |
@@ -196,6 +197,7 @@
 | `POST /users/:id/invitation` | Человек: superuser ИЛИ users/update; повторное приглашение только в пределах разрешённого набора, без доступа к аккаунтам с собственным делегированием | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/profile` | Активный пользователь с users/read; публичные сведения профиля без credentials | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/profile` | Активный пользователь с users/update; только поля профиля, без изменения статуса и привилегий | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/:id/profile-display` | Активный человек с users/read или superuser; настроенная проекция профиля целевого пользователя | `apps/core/src/auth/profile-display-routes.ts` |
 | `POST /users/:id/recovery` | Свежий человек-superuser; только другой активный обычный пользователь. Одноразовая ссылка на 30 минут, аудит; не делегируется | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
 | `PATCH /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
@@ -214,13 +216,18 @@
 | `POST /users/me/password/setup` | Собственная свежая человеческая сессия; только если пароля ещё нет | `apps/core/src/auth/profile-routes.ts` |
 | `GET /users/me/preferences` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/preferences/routes.ts` |
 | `PATCH /users/me/preferences` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/preferences/routes.ts` |
+| `GET /users/me/profile-display` | Активный человек; только собственные значения заранее настроенных selfVisible путей, без права произвольного чтения коллекций | `apps/core/src/auth/profile-display-routes.ts` |
 | `GET /users/me/sessions` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
 | `DELETE /users/me/sessions/:id` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
 | `GET /users/me/table-preferences/:collection` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/preferences/routes.ts` |
 | `PATCH /users/me/table-preferences/:collection` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/preferences/routes.ts` |
 | `PUT /users/me/workspace` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/workspaces/routes.ts` |
+| `GET /users/profile-display` | Только human superuser; конфигурация блока профиля | `apps/core/src/auth/profile-display-routes.ts` |
+| `PUT /users/profile-display` | Только human superuser; явно разрешает ограниченную проекцию выбранных полей управляющим пользователями и при selfVisible владельцу профиля | `apps/core/src/auth/profile-display-routes.ts` |
+| `GET /users/profile-display/sources` | Только human superuser; разрешённые пользовательские поля и пути M2O, без данных записей | `apps/core/src/auth/profile-display-routes.ts` |
 | `GET /users/profile-extension` | Активный пользователь с users/read; имя выбранной коллекции и ключа | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PUT /users/profile-extension` | Только human superuser; связывает обычную UUID-коллекцию, не выдаёт права и не удаляет данные | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/references` | Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены | `apps/core/src/auth/user-routes.ts` |
 | `GET /workspaces` | Человек; только пространства с доступными коллекциями (superuser видит все) | `apps/core/src/workspaces/routes.ts` |
 | `POST /workspaces` | Человек: superuser | `apps/core/src/workspaces/routes.ts` |
 | `DELETE /workspaces/:id` | Человек: superuser | `apps/core/src/workspaces/routes.ts` |

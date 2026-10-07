@@ -3,11 +3,13 @@ import {
   type CreatePermissionInput,
 } from "../permissions/validation.js";
 import { parseId, parseName, PolicyInputError } from "./validation.js";
+import type { ApplicationGrant } from "../oauth/policy-access.js";
 
 export interface PolicyConfigurationInput {
   name: string;
   permissions: CreatePermissionInput[];
   userIds: string[];
+  applications?: ApplicationGrant[];
 }
 
 export function hasPolicyConfiguration(body: unknown): boolean {
@@ -15,7 +17,7 @@ export function hasPolicyConfiguration(body: unknown): boolean {
     body !== null &&
     typeof body === "object" &&
     !Array.isArray(body) &&
-    ("permissions" in body || "userIds" in body)
+    ("permissions" in body || "userIds" in body || "applications" in body)
   );
 }
 
@@ -27,7 +29,10 @@ export function parsePolicyConfiguration(
   }
   const input = body as Record<string, unknown>;
   if (
-    Object.keys(input).length !== 3 ||
+    Object.keys(input).some(
+      (key) =>
+        !["name", "permissions", "userIds", "applications"].includes(key),
+    ) ||
     !Object.hasOwn(input, "name") ||
     !Object.hasOwn(input, "permissions") ||
     !Object.hasOwn(input, "userIds") ||
@@ -66,5 +71,42 @@ export function parsePolicyConfiguration(
   if (new Set(userIds).size !== userIds.length) {
     throw new PolicyInputError("Duplicate user in policy");
   }
-  return { name: parseName({ name: input.name }), permissions, userIds };
+  let applications: ApplicationGrant[] | undefined;
+  if (input.applications !== undefined) {
+    if (!Array.isArray(input.applications) || input.applications.length > 100) {
+      throw new PolicyInputError("Invalid application permissions");
+    }
+    applications = input.applications.map((entry: unknown) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        throw new PolicyInputError("Invalid application permission");
+      }
+      const grant = entry as Record<string, unknown>;
+      if (
+        Object.keys(grant).some((key) => !["appId", "scopes"].includes(key)) ||
+        !Array.isArray(grant.scopes) ||
+        grant.scopes.length > 30 ||
+        grant.scopes.some(
+          (scope) => typeof scope !== "string" || scope.length > 160,
+        )
+      ) {
+        throw new PolicyInputError("Invalid application permission");
+      }
+      return {
+        appId: parseId(grant.appId),
+        scopes: [...new Set(grant.scopes as string[])].sort(),
+      };
+    });
+    if (
+      new Set(applications.map((grant) => grant.appId)).size !==
+      applications.length
+    ) {
+      throw new PolicyInputError("Duplicate application in policy");
+    }
+  }
+  return {
+    name: parseName({ name: input.name }),
+    permissions,
+    userIds,
+    applications,
+  };
 }

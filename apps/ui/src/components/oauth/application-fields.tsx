@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ApplicationAccess } from "./application-access";
+import { ApplicationPermissions } from "./application-permissions";
 import {
   Select,
   SelectContent,
@@ -166,12 +167,37 @@ export function ApplicationFields({
               )}
             </p>
           </div>
-          <ApplicationAccess
-            draft={draft}
-            onChange={onChange}
-            users={users}
-            portal={portal}
-          />
+          <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+            <div className="space-y-2">
+              <Label htmlFor="oauth-policy-managed">
+                {copy("Управлять доступом через политики")}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {copy(
+                  "Приложение появится в политиках. Вход и разрешения назначаются пользователям через их политики.",
+                )}
+              </p>
+            </div>
+            <Switch
+              id="oauth-policy-managed"
+              checked={draft.policyManaged}
+              onCheckedChange={(value) => change("policyManaged", value)}
+            />
+          </div>
+          {draft.policyManaged ? (
+            <p className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
+              {copy(
+                "После сохранения назначьте приложение хотя бы одной политике. Без разрешения в политике вход закрыт, включая суперпользователей.",
+              )}
+            </p>
+          ) : (
+            <ApplicationAccess
+              draft={draft}
+              onChange={onChange}
+              users={users}
+              portal={portal}
+            />
+          )}
         </fieldset>
       </TabsContent>
       <TabsContent
@@ -199,25 +225,17 @@ export function ApplicationFields({
               placeholder={copy("Например, lavinmq")}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="oauth-scopes">
-              {copy("Разрешённые scopes сервиса")}
-            </Label>
-            <Textarea
-              id="oauth-scopes"
-              rows={5}
-              value={draft.scopes.join("\n")}
-              onChange={(event) =>
-                change("scopes", event.target.value.split("\n"))
-              }
-              placeholder={"lavinmq.tag:monitoring\nlavinmq.read:%2F/*"}
-            />
-            <p className="text-xs text-muted-foreground">
+          <ApplicationPermissions
+            draft={draft}
+            onChange={onChange}
+          />
+          {draft.policyManaged && (
+            <p className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
               {copy(
-                "По одному на строку. Сервис может запросить эти права для любого пользователя из вкладки «Доступ». Это не настройка полей профиля. ",
+                "В сервисе запрашивайте только openid profile email. Персональные права передаются в JWT: resource_access → аудитория → roles. Для LavinMQ это mgmt_scopes = openid profile email.",
               )}
             </p>
-          </div>
+          )}
           <p className="rounded-lg border p-4 text-xs leading-relaxed text-muted-foreground">
             {copy(
               "Токены действуют 5 минут. Уже выданный JWT может приниматься сервисом до истечения этого срока. Для новых прав или отзыва доступа повторный вход обязателен. ",

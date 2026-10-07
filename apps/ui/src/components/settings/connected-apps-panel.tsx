@@ -14,6 +14,7 @@ interface ConnectedApplication {
   enabled: boolean;
   audience: string;
   scopes: string[];
+  serviceScopes: string[];
   approvedAt: string;
   lastUsedAt: string | null;
 }
@@ -159,15 +160,17 @@ export function ConnectedAppsPanel() {
             className="flex flex-wrap gap-1.5"
             aria-label={copy("Предоставленные разрешения")}
           >
-            {app.scopes.map((scope) => (
-              <Badge
-                key={scope}
-                variant="secondary"
-                className="max-w-full whitespace-normal break-all font-normal"
-              >
-                {copy(scopeLabels[scope] ?? scope)}
-              </Badge>
-            ))}
+            {[...new Set([...app.scopes, ...(app.serviceScopes ?? [])])].map(
+              (scope) => (
+                <Badge
+                  key={scope}
+                  variant="secondary"
+                  className="max-w-full whitespace-normal break-all font-normal"
+                >
+                  {copy(scopeLabels[scope] ?? scope)}
+                </Badge>
+              ),
+            )}
           </div>
           <div className="space-y-1 text-xs text-muted-foreground">
             {app.audience && (

@@ -36,6 +36,18 @@ export async function updateRelationSearch(
     ? parseSearchPriority((body as Record<string, unknown>).searchPriority)
     : undefined;
   return database.transaction(async (transaction) => {
+    const system = await transaction("public.asmblyr_relations")
+      .where({
+        source_collection: name,
+        source_field: relationField,
+        target_system: "users",
+      })
+      .first("source_field");
+    if (system && searchable) {
+      throw new CollectionInputError(
+        "System user references do not support related full-text search",
+      );
+    }
     const physical = await transaction("asmblyr_relations")
       .withSchema("public")
       .where({ source_collection: name, source_field: relationField })

@@ -27,6 +27,11 @@ export function normalizeFieldDefault(
       ? current.default_value
       : update.defaultValue;
   if (value === null) return null;
+  if (current.target_system) {
+    throw new CollectionInputError(
+      "System user relations do not support defaults",
+    );
+  }
   if (current.presentation?.sensitive)
     throw new CollectionInputError("Sensitive fields do not support defaults");
 

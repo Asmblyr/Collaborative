@@ -7,6 +7,7 @@ import { AccountTheme } from "@/components/settings/account-theme";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { loadCollections } from "@/lib/collections";
+import { collectionNavigationEntries } from "@/lib/collection-navigation";
 import { requireSession } from "@/lib/session";
 import { loadWorkspaces } from "@/lib/workspaces";
 import { loadLoginProviders } from "@/lib/sso-server";
@@ -41,12 +42,7 @@ export default async function SettingsPage({
     connectionStatus: query.connection,
   };
   const { data, folders } = await loadCollections(token);
-  const collections = data.filter(
-    (collection) =>
-      collection.access.read ||
-      collection.access.create ||
-      collection.access.update,
-  );
+  const collections = collectionNavigationEntries(data);
   if (
     !user.superuser &&
     collections.length === 0 &&
@@ -79,15 +75,7 @@ export default async function SettingsPage({
     <AdminShell
       settingsSections={settings.sections}
       user={user}
-      collections={collections.map(
-        ({ name, displayName, translations, folderId, access }) => ({
-          name,
-          displayName,
-          translations,
-          folderId,
-          readable: Boolean(access.read),
-        }),
-      )}
+      collections={collections}
       folders={folders}
       workspaces={workspaces}
       plugins={plugins}

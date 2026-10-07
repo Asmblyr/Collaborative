@@ -160,9 +160,13 @@ export function FieldEditorForm({
             {field?.relation?.collection}
           </div>
           <p className="text-xs text-muted-foreground">
-            {copy(
-              "В этой коллекции появится внешний ключ. Обратные записи будут видны в карточке целевой записи. ",
-            )}
+            {system
+              ? copy(
+                  "Выбор одной записи. Если связанную запись удалить, поле очистится. Системная запись останется.",
+                )
+              : copy(
+                  "В этой коллекции появится внешний ключ. Обратные записи будут видны в карточке целевой записи. ",
+                )}
           </p>
           {field?.relation?.kind === "m2o" && (
             <p className="text-xs text-muted-foreground">

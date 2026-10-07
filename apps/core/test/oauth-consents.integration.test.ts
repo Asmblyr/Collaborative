@@ -247,10 +247,15 @@ test("Consent migration preserves existing applications, never backfills approva
     up(db: Knex): Promise<void>;
     down(db: Knex): Promise<void>;
   };
+  const policyMigration = createRequire(import.meta.url)(
+    "../migrations/20261007030000_oauth_policy_access.cjs",
+  ) as { up(db: Knex): Promise<void>; down(db: Knex): Promise<void> };
   try {
     await f.db.transaction(async (trx) => {
+      await policyMigration.down(trx);
       await migration.down(trx);
       await migration.up(trx);
+      await policyMigration.up(trx);
       assert.equal(
         (await trx("public.asmblyr_oauth_apps").first()).id,
         f.application.id,

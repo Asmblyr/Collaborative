@@ -25,6 +25,7 @@ import { InitialPasswordForm } from "./initial-password-form";
 import { userDisplayName, userAvatarUrl } from "@/lib/user-profile";
 import { ProfileExtensionFields } from "./profile-extension-fields";
 import { ProfileDates } from "./profile-dates";
+import { ProfileDisplay } from "./profile-display";
 
 export function SettingsWorkspace({
   user,
@@ -72,6 +73,7 @@ export function SettingsWorkspace({
           >
             {t(user.superuser ? "settings.admin" : "settings.user")}
           </Badge>
+          <ProfileDisplay compact />
           <ProfileDates user={user} />
         </aside>
         <Tabs

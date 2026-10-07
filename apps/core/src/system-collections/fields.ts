@@ -7,6 +7,7 @@ import {
   CollectionDependencyError,
 } from "../collections/validation.js";
 import { postgresCode } from "../shared/postgres-error.js";
+import { addSystemRelationConstraint } from "./relations.js";
 import {
   customFields,
   lockSystemCollection,
@@ -67,7 +68,8 @@ export async function saveSystemField(
     const current = create
       ? undefined
       : await ownedField(transaction, name, column, collection.table);
-    const { definition, presentation } = parseCustomFieldConfiguration(
+    const { definition, presentation } = await parseCustomFieldConfiguration(
+      transaction,
       column,
       body,
       current,
@@ -78,6 +80,11 @@ export async function saveSystemField(
         .alterTable(collection.table, (table) =>
           addFieldColumn(table, definition),
         );
+      await addSystemRelationConstraint(
+        transaction,
+        collection.table,
+        definition,
+      );
       await transaction("public.asmblyr_system_fields").insert({
         collection_name: name,
         field_name: column,

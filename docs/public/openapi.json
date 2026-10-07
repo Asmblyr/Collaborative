@@ -7028,7 +7028,7 @@
         ],
         "operationId": "get__oauth_apps",
         "summary": "GET /oauth-apps",
-        "description": "Человек: oauth/read ИЛИ update; superuser bypass. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/oauth/routes.ts",
+        "description": "OAuth application configuration. policyManaged defaults to false; omission on update preserves policyManaged and scopeLabels. Catalog scopes require an audience, label keys must belong to scopes. In policy mode authorization requests use openid/profile/email only; personal permissions are emitted as resource_access[audience].roles. Changing audience or policy-management mode resets consent. Existing client type cannot change.",
         "security": [
           {
             "bearerAuth": []
@@ -7039,11 +7039,130 @@
         ],
         "parameters": [],
         "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "required": [
+                          "name",
+                          "description",
+                          "enabled",
+                          "clientType",
+                          "redirectUris",
+                          "userIds",
+                          "audience",
+                          "scopes"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "clientType": {
+                            "enum": [
+                              "public",
+                              "confidential"
+                            ]
+                          },
+                          "redirectUris": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "minItems": 1,
+                            "maxItems": 10
+                          },
+                          "userIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "maxItems": 1000
+                          },
+                          "accessMode": {
+                            "enum": [
+                              "all",
+                              "selected",
+                              "domains"
+                            ]
+                          },
+                          "emailDomains": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "audience": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "scopes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "maxItems": 30
+                          },
+                          "scopeLabels": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "maxLength": 120
+                            }
+                          },
+                          "policyManaged": {
+                            "type": "boolean",
+                            "description": "Use assigned policies instead of user/domain rules. Omission preserves the existing value; defaults to false on creation."
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid application or permission catalog"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Human identity and settings access required"
+          },
           "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+            "description": "Request or server error"
           }
         },
-        "x-contract-level": "route-only",
+        "x-contract-level": "documented",
         "x-source": "apps/core/src/oauth/routes.ts"
       },
       "post": {
@@ -7052,7 +7171,7 @@
         ],
         "operationId": "post__oauth_apps",
         "summary": "POST /oauth-apps",
-        "description": "Человек: oauth/update; superuser bypass. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/oauth/routes.ts",
+        "description": "OAuth application configuration. policyManaged defaults to false; omission on update preserves policyManaged and scopeLabels. Catalog scopes require an audience, label keys must belong to scopes. In policy mode authorization requests use openid/profile/email only; personal permissions are emitted as resource_access[audience].roles. Changing audience or policy-management mode resets consent. Existing client type cannot change.",
         "security": [
           {
             "bearerAuth": []
@@ -7063,12 +7182,231 @@
         ],
         "parameters": [],
         "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "application"
+                      ],
+                      "properties": {
+                        "application": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": [
+                            "name",
+                            "description",
+                            "enabled",
+                            "clientType",
+                            "redirectUris",
+                            "userIds",
+                            "audience",
+                            "scopes"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "description": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "clientType": {
+                              "enum": [
+                                "public",
+                                "confidential"
+                              ]
+                            },
+                            "redirectUris": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "minItems": 1,
+                              "maxItems": 10
+                            },
+                            "userIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "maxItems": 1000
+                            },
+                            "accessMode": {
+                              "enum": [
+                                "all",
+                                "selected",
+                                "domains"
+                              ]
+                            },
+                            "emailDomains": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "audience": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "scopes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "maxLength": 160
+                              },
+                              "maxItems": 30
+                            },
+                            "scopeLabels": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "maxLength": 120
+                              }
+                            },
+                            "policyManaged": {
+                              "type": "boolean",
+                              "description": "Use assigned policies instead of user/domain rules. Omission preserves the existing value; defaults to false on creation."
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        },
+                        "clientSecret": {
+                          "type": "string",
+                          "description": "Returned once for a new confidential application"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid application or permission catalog"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Human identity and settings access required"
+          },
           "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+            "description": "Request or server error"
           }
         },
-        "x-contract-level": "route-only",
-        "x-source": "apps/core/src/oauth/routes.ts"
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/oauth/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "description",
+                  "enabled",
+                  "clientType",
+                  "redirectUris",
+                  "userIds",
+                  "audience",
+                  "scopes"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "clientType": {
+                    "enum": [
+                      "public",
+                      "confidential"
+                    ]
+                  },
+                  "redirectUris": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 10
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 1000
+                  },
+                  "accessMode": {
+                    "enum": [
+                      "all",
+                      "selected",
+                      "domains"
+                    ]
+                  },
+                  "emailDomains": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "audience": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "scopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 160
+                    },
+                    "maxItems": 30
+                  },
+                  "scopeLabels": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 120
+                    }
+                  },
+                  "policyManaged": {
+                    "type": "boolean",
+                    "description": "Use assigned policies instead of user/domain rules. Omission preserves the existing value; defaults to false on creation."
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/oauth-apps/{id}": {
@@ -7078,7 +7416,7 @@
         ],
         "operationId": "put__oauth_apps_id",
         "summary": "PUT /oauth-apps/:id",
-        "description": "Человек: oauth/update; superuser bypass. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/oauth/routes.ts",
+        "description": "OAuth application configuration. policyManaged defaults to false; omission on update preserves policyManaged and scopeLabels. Catalog scopes require an audience, label keys must belong to scopes. In policy mode authorization requests use openid/profile/email only; personal permissions are emitted as resource_access[audience].roles. Changing audience or policy-management mode resets consent. Existing client type cannot change.",
         "security": [
           {
             "bearerAuth": []
@@ -7098,12 +7436,231 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "application"
+                      ],
+                      "properties": {
+                        "application": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": [
+                            "name",
+                            "description",
+                            "enabled",
+                            "clientType",
+                            "redirectUris",
+                            "userIds",
+                            "audience",
+                            "scopes"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "description": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "clientType": {
+                              "enum": [
+                                "public",
+                                "confidential"
+                              ]
+                            },
+                            "redirectUris": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "minItems": 1,
+                              "maxItems": 10
+                            },
+                            "userIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "maxItems": 1000
+                            },
+                            "accessMode": {
+                              "enum": [
+                                "all",
+                                "selected",
+                                "domains"
+                              ]
+                            },
+                            "emailDomains": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "audience": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "scopes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "maxLength": 160
+                              },
+                              "maxItems": 30
+                            },
+                            "scopeLabels": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "maxLength": 120
+                              }
+                            },
+                            "policyManaged": {
+                              "type": "boolean",
+                              "description": "Use assigned policies instead of user/domain rules. Omission preserves the existing value; defaults to false on creation."
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        },
+                        "clientSecret": {
+                          "type": "string",
+                          "description": "Returned once for a new confidential application"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid application or permission catalog"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Human identity and settings access required"
+          },
           "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+            "description": "Request or server error"
           }
         },
-        "x-contract-level": "route-only",
-        "x-source": "apps/core/src/oauth/routes.ts"
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/oauth/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "description",
+                  "enabled",
+                  "clientType",
+                  "redirectUris",
+                  "userIds",
+                  "audience",
+                  "scopes"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "clientType": {
+                    "enum": [
+                      "public",
+                      "confidential"
+                    ]
+                  },
+                  "redirectUris": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 10
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 1000
+                  },
+                  "accessMode": {
+                    "enum": [
+                      "all",
+                      "selected",
+                      "domains"
+                    ]
+                  },
+                  "emailDomains": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "audience": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "scopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 160
+                    },
+                    "maxItems": 30
+                  },
+                  "scopeLabels": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 120
+                    }
+                  },
+                  "policyManaged": {
+                    "type": "boolean",
+                    "description": "Use assigned policies instead of user/domain rules. Omission preserves the existing value; defaults to false on creation."
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/oauth-apps/{id}/secret": {
@@ -7326,6 +7883,15 @@
                   },
                   "reuse": {
                     "type": "boolean"
+                  },
+                  "serviceScopes": {
+                    "type": "array",
+                    "maxItems": 30,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 160
+                    },
+                    "description": "Displayed servicePermissions.scope values. Required for explicit approval of a policy-managed application. A changed permission set returns 409 and requires a new sign-in."
                   }
                 },
                 "required": [
@@ -7894,6 +8460,100 @@
           }
         },
         "x-contract-level": "route-only",
+        "x-source": "apps/core/src/policies/routes.ts"
+      }
+    },
+    "/policies/applications": {
+      "get": {
+        "tags": [
+          "policies"
+        ],
+        "operationId": "get__policies_applications",
+        "summary": "GET /policies/applications",
+        "description": "Catalog of policy-managed OAuth applications, including disabled applications. Requires policies/read or policies/update. Contains no client secrets. Catalog permissions do not grant access by themselves.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "enabled",
+                          "audience",
+                          "scopes",
+                          "scopeLabels"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "audience": {
+                            "type": "string"
+                          },
+                          "scopes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "maxItems": 30
+                          },
+                          "scopeLabels": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "maxLength": 120
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid application or permission catalog"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Human identity and settings access required"
+          },
+          "default": {
+            "description": "Request or server error"
+          }
+        },
+        "x-contract-level": "documented",
         "x-source": "apps/core/src/policies/routes.ts"
       }
     },
@@ -11670,6 +12330,48 @@
                                   "type": "object",
                                   "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
                                   "additionalProperties": true
+                                },
+                                "relation": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "kind": {
+                                      "const": "m2o"
+                                    },
+                                    "collection": {
+                                      "type": "string"
+                                    },
+                                    "primaryKey": {
+                                      "type": "object",
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "enum": [
+                                            "serial",
+                                            "bigserial",
+                                            "uuid",
+                                            "text"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "type"
+                                      ]
+                                    },
+                                    "onDelete": {
+                                      "const": "setNull"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "collection",
+                                    "primaryKey",
+                                    "onDelete"
+                                  ]
                                 }
                               },
                               "required": [
@@ -11861,6 +12563,48 @@
                                 "type": "object",
                                 "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
                                 "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
                               }
                             },
                             "required": [
@@ -11916,42 +12660,73 @@
                 "additionalProperties": false,
                 "properties": {
                   "field": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "pattern": "^[a-z][a-z0-9_]{0,62}$"
-                      },
-                      "type": {
-                        "enum": [
-                          "text",
-                          "integer",
-                          "bigint",
-                          "boolean",
-                          "datetime",
-                          "date",
-                          "email",
-                          "decimal",
-                          "json",
-                          "uuid",
-                          "file",
-                          "files"
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "integer",
+                              "bigint",
+                              "boolean",
+                              "datetime",
+                              "date",
+                              "email",
+                              "decimal",
+                              "json",
+                              "uuid",
+                              "file",
+                              "files"
+                            ]
+                          },
+                          "required": {
+                            "const": false
+                          },
+                          "nullable": {
+                            "const": true
+                          },
+                          "defaultValue": {
+                            "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
                         ]
                       },
-                      "required": {
-                        "const": false
-                      },
-                      "nullable": {
-                        "const": true
-                      },
-                      "defaultValue": {
-                        "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                          },
+                          "type": {
+                            "const": "relation"
+                          },
+                          "targetCollection": {
+                            "type": "string"
+                          },
+                          "required": {
+                            "const": false
+                          },
+                          "nullable": {
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type",
+                          "targetCollection"
+                        ]
                       }
-                    },
-                    "required": [
-                      "name",
-                      "type"
                     ]
                   },
                   "presentation": {
@@ -11963,7 +12738,8 @@
                 "required": [
                   "field"
                 ],
-                "minProperties": 1
+                "minProperties": 1,
+                "description": "Custom M2O fields target ordinary registered tables. They remain optional, use ON DELETE SET NULL and have no default or reverse field. Existing relation targets and key types are immutable; only presentation can be changed."
               }
             }
           }
@@ -12052,6 +12828,48 @@
                                 "type": "object",
                                 "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
                                 "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
                               }
                             },
                             "required": [
@@ -12129,7 +12947,8 @@
                   }
                 },
                 "required": [],
-                "minProperties": 1
+                "minProperties": 1,
+                "description": "Custom M2O fields target ordinary registered tables. They remain optional, use ON DELETE SET NULL and have no default or reverse field. Existing relation targets and key types are immutable; only presentation can be changed."
               }
             }
           }
@@ -13734,6 +14553,127 @@
             }
           }
         }
+      }
+    },
+    "/users/{id}/profile-display": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_id_profile_display",
+        "summary": "GET /users/:id/profile-display",
+        "description": "Активный человек с users/read или superuser; настроенная проекция профиля целевого пользователя. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "entries": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "type",
+                              "value"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "enum": [
+                                  "text",
+                                  "email",
+                                  "integer",
+                                  "bigint",
+                                  "decimal",
+                                  "boolean",
+                                  "date",
+                                  "datetime",
+                                  "tags",
+                                  "user"
+                                ]
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
       }
     },
     "/users/{id}/recovery": {
@@ -15425,6 +16365,118 @@
         }
       }
     },
+    "/users/me/profile-display": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_me_profile_display",
+        "summary": "GET /users/me/profile-display",
+        "description": "Активный человек; только собственные значения заранее настроенных selfVisible путей, без права произвольного чтения коллекций. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "entries": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "type",
+                              "value"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "enum": [
+                                  "text",
+                                  "email",
+                                  "integer",
+                                  "bigint",
+                                  "decimal",
+                                  "boolean",
+                                  "date",
+                                  "datetime",
+                                  "tags",
+                                  "user"
+                                ]
+                              },
+                              "value": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
+      }
+    },
     "/users/me/sessions": {
       "get": {
         "tags": [
@@ -15903,6 +16955,334 @@
         "x-source": "apps/core/src/workspaces/routes.ts"
       }
     },
+    "/users/profile-display": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_profile_display",
+        "summary": "GET /users/profile-display",
+        "description": "Только human superuser; конфигурация блока профиля. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "entries": {
+                          "type": "array",
+                          "maxItems": 12,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "path",
+                              "selfVisible"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "path": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 3,
+                                "items": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                                }
+                              },
+                              "selfVisible": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
+      },
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "put__users_profile_display",
+        "summary": "PUT /users/profile-display",
+        "description": "Только human superuser; явно разрешает ограниченную проекцию выбранных полей управляющим пользователями и при selfVisible владельцу профиля. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "entries"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "entries": {
+                          "type": "array",
+                          "maxItems": 12,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "label",
+                              "path",
+                              "selfVisible"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "path": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 3,
+                                "items": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                                }
+                              },
+                              "selfVisible": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "title",
+                  "entries"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "entries": {
+                    "type": "array",
+                    "maxItems": 12,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "label",
+                        "path",
+                        "selfVisible"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "path": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 3,
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                          }
+                        },
+                        "selfVisible": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/profile-display/sources": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_profile_display_sources",
+        "summary": "GET /users/profile-display/sources",
+        "description": "Только human superuser; разрешённые пользовательские поля и пути M2O, без данных записей. Источник: apps/core/src/auth/profile-display-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Префикс одиночных связей через точку; пустой — дополнительные поля пользователя."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "name",
+                          "label",
+                          "type"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "email",
+                              "integer",
+                              "bigint",
+                              "decimal",
+                              "boolean",
+                              "date",
+                              "datetime",
+                              "tags",
+                              "user",
+                              "relation"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка входа, доступа, проверки или сервера"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/profile-display-routes.ts"
+      }
+    },
     "/users/profile-extension": {
       "get": {
         "tags": [
@@ -16083,6 +17463,146 @@
             }
           }
         }
+      }
+    },
+    "/users/references": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_references",
+        "summary": "GET /users/references",
+        "description": "Bounded system-user picker. Requires an authenticated human superuser or users section read/update permission. Returns only id and a display label (name/email); service accounts are denied. Search lists active users; explicit ids may resolve disabled users already referenced. This does not expose system tables through /items.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Up to 100 comma-separated UUIDs; invalid IDs and unknown query parameters are rejected."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User reference page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data",
+                    "labels",
+                    "page"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "label"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "labels": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "required": [
+                        "number",
+                        "size",
+                        "total",
+                        "sort",
+                        "direction"
+                      ],
+                      "properties": {
+                        "number": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "string"
+                        },
+                        "sort": {
+                          "const": "label"
+                        },
+                        "direction": {
+                          "const": "asc"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "User directory access denied"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-routes.ts"
       }
     },
     "/workspaces": {

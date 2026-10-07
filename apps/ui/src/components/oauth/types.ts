@@ -10,6 +10,8 @@ export interface OAuthApplication {
   emailDomains: string[];
   audience: string;
   scopes: string[];
+  policyManaged: boolean;
+  scopeLabels: Record<string, string>;
 }
 
 export interface OAuthUser {

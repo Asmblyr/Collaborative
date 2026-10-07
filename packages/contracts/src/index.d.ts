@@ -340,8 +340,10 @@ export type {
 } from "./connections.js";
 export * from "./monitoring.js";
 export * from "./tags.js";
+export * from "./profile-display.js";
 export type {
   SystemCollectionName,
+  SystemCollectionRelation,
   SystemCollectionField,
   SystemCollection,
   SystemCollectionRecord,

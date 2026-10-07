@@ -23,6 +23,7 @@ import { useUiCopy } from "@/lib/ui-copy";
 export function UsersPanel({
   readOnly = false,
   canManageDelegation = false,
+  canManageSystemFields = false,
   delegatablePolicyIds = [],
   currentUserId,
   users,
@@ -32,6 +33,7 @@ export function UsersPanel({
 }: {
   readOnly?: boolean;
   canManageDelegation?: boolean;
+  canManageSystemFields?: boolean;
   delegatablePolicyIds?: string[];
   currentUserId?: string;
   users: AccessUser[];
@@ -325,6 +327,7 @@ export function UsersPanel({
           email={profileUser.email}
           readOnly={readOnly}
           canChooseAvatar={canManageDelegation}
+          canManageSystemFields={canManageSystemFields}
           onClose={() => setProfileUser(null)}
           onSaved={onChange}
         />

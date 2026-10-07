@@ -21,12 +21,14 @@ export function SystemRecordFields({
   catalog,
   container,
   onCancel,
+  embedded = false,
 }: {
   collection: SystemCollection;
   id: string;
   catalog: Collection[];
   container: HTMLElement | null;
   onCancel: () => void;
+  embedded?: boolean;
 }) {
   const copy = useUiCopy();
   const [record, setRecord] = useState<SystemCollectionRecord | null>(null);
@@ -61,6 +63,7 @@ export function SystemRecordFields({
     ),
   ]);
   const fields = localized.fields.filter((field) => !field.managed);
+  const localizedCatalog = useLocalizedCatalog(catalog);
   return (
     <div className="space-y-4">
       {error && (
@@ -81,16 +84,19 @@ export function SystemRecordFields({
       )}
       {record && (
         <>
-          <div>
-            <h3 className="font-medium break-words">{record.label}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {copy("Здесь редактируются только дополнительные поля.")}
-            </p>
-          </div>
+          {!embedded && (
+            <div>
+              <h3 className="font-medium break-words">{record.label}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {copy("Здесь редактируются только дополнительные поля.")}
+              </p>
+            </div>
+          )}
           <ItemForm
             key={`${id}:${revision}`}
             fields={fields}
-            catalog={catalog}
+            catalog={localizedCatalog}
+            embedded={embedded}
             primaryKey={{ name: "id", type: "uuid" }}
             item={{ ...record.values, id: record.id }}
             pending={pending}

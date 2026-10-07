@@ -173,12 +173,16 @@ export function RelationBehaviorSettings({
                     {copy("Очистить внешний ключ")}
                   </SelectItem>
                 )}
-                <SelectItem value="setDefault">
-                  {copy("Установить значение по умолчанию ")}
-                </SelectItem>
-                <SelectItem value="cascade">
-                  {copy("Удалить связанные записи ")}
-                </SelectItem>
+                {targetCollection !== "@users" && (
+                  <SelectItem value="setDefault">
+                    {copy("Установить значение по умолчанию ")}
+                  </SelectItem>
+                )}
+                {targetCollection !== "@users" && (
+                  <SelectItem value="cascade">
+                    {copy("Удалить связанные записи ")}
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>

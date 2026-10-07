@@ -7,11 +7,15 @@ import { ProfileExtensionFields } from "@/components/settings/profile-extension-
 import { ProfileDates } from "@/components/settings/profile-dates";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
+import { userDisplayName } from "@/lib/user-profile";
+import { UserSystemFields } from "./user-system-fields";
+import { ProfileDisplay } from "@/components/settings/profile-display";
 export function UserProfileDialog({
   userId,
   email,
   readOnly,
   canChooseAvatar,
+  canManageSystemFields = false,
   onClose,
   onSaved,
 }: {
@@ -19,6 +23,7 @@ export function UserProfileDialog({
   email: string;
   readOnly: boolean;
   canChooseAvatar: boolean;
+  canManageSystemFields?: boolean;
   onClose(): void;
   onSaved(): Promise<void>;
 }) {
@@ -45,7 +50,7 @@ export function UserProfileDialog({
   return (
     <EditorDialog
       open
-      title={email}
+      title={user ? userDisplayName(user) : email}
       eyebrow={copy("Профиль пользователя")}
       onClose={onClose}
     >
@@ -69,6 +74,7 @@ export function UserProfileDialog({
           )}
           {user && (
             <>
+              <ProfileDisplay userId={userId} />
               <ProfileForm
                 user={user}
                 endpoint={`/api/users/${userId}/profile`}
@@ -86,6 +92,13 @@ export function UserProfileDialog({
                 readOnly={readOnly}
                 container={container}
               />
+              {canManageSystemFields && !readOnly && (
+                <UserSystemFields
+                  userId={userId}
+                  container={container}
+                  onCancel={onClose}
+                />
+              )}
               <ProfileDates user={user} />
             </>
           )}

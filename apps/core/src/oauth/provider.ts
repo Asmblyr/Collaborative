@@ -4,6 +4,7 @@ import type { OAuthConfig } from "./config.js";
 import { OAuthCipher } from "./crypto.js";
 import { OAuthApplications } from "./applications.js";
 import { oauthAdapter } from "./adapter.js";
+import { applicationTokenPermissions } from "./token-permissions.js";
 
 export function createOAuthProvider(db: Knex, config: OAuthConfig) {
   const applications = new OAuthApplications(
@@ -64,7 +65,12 @@ export function createOAuthProvider(db: Knex, config: OAuthConfig) {
             resource !== `urn:asmblyr:application:${app.id}`
           )
             throw new errors.InvalidTarget();
-          const scopes = ["openid", "profile", "email", ...app.scopes];
+          const scopes = [
+            "openid",
+            "profile",
+            "email",
+            ...(app.policy_managed ? [] : app.scopes),
+          ];
           const requested = String(ctx.oidc.params?.scope ?? "")
             .split(" ")
             .filter(Boolean);
@@ -94,9 +100,15 @@ export function createOAuthProvider(db: Knex, config: OAuthConfig) {
       )
         throw new errors.AccessDenied();
       const account = ctx.oidc.account;
-      return account
-        ? account.claims("access_token", "openid profile email", {}, [])
-        : undefined;
+      const profile = account
+        ? await account.claims("access_token", "openid profile email", {}, [])
+        : {};
+      const permissions = await applicationTokenPermissions(
+        db,
+        applications,
+        token,
+      );
+      return { ...profile, ...permissions };
     },
     interactions: {
       policy,

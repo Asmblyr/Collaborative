@@ -163,9 +163,11 @@ const relations: Choice[] = [
 export function FieldTypePicker({
   onSelect,
   allowRelations = true,
+  relationKinds,
 }: {
   onSelect: (type: FieldChoice) => void;
   allowRelations?: boolean;
+  relationKinds?: ("m2o" | "o2m" | "m2m")[];
 }) {
   const copy = useUiCopy();
 
@@ -184,7 +186,18 @@ export function FieldTypePicker({
       );
   const groups = [
     { title: copy("Поля данных"), choices: filter(dataFields) },
-    { title: copy("Связи"), choices: allowRelations ? filter(relations) : [] },
+    {
+      title: copy("Связи"),
+      choices: allowRelations
+        ? filter(
+            relations.filter(
+              (choice) =>
+                !relationKinds ||
+                relationKinds.some((kind) => kind === choice.type),
+            ),
+          )
+        : [],
+    },
   ];
 
   return (

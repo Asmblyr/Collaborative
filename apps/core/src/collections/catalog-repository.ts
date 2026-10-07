@@ -73,9 +73,9 @@ export async function listCollections(database: Knex): Promise<Collection[]> {
         WHERE ns.nspname = 'public' AND idx.relname =
           'asmblyr_search_' || substr(md5(m.name || ':' || c.column_name), 1, 24)
           AND ix.indisvalid) AS search_indexed,
-      r.target_collection AS relation_target,
-      target.primary_key_name AS relation_key_name,
-      target.primary_key_type AS relation_key_type, r.on_delete,
+      CASE WHEN r.target_system = 'users' THEN '@users' ELSE r.target_collection END AS relation_target,
+      CASE WHEN r.target_system = 'users' THEN 'id' ELSE target.primary_key_name END AS relation_key_name,
+      CASE WHEN r.target_system = 'users' THEN 'uuid' ELSE target.primary_key_type END AS relation_key_type, r.on_delete,
       r.searchable AS relation_searchable
     FROM public.asmblyr_collections AS m
     LEFT JOIN public.asmblyr_columns AS c

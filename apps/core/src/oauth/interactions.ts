@@ -35,6 +35,12 @@ export function registerOAuthInteractions(
         redirectUri: details.params.redirect_uri,
         scopes: details.params.scope,
         allowed: await apps.allowed(client.id, user.id),
+        servicePermissions: (await apps.serviceScopes(client.id, user.id)).map(
+          (scope) => ({
+            scope,
+            name: client.scope_labels[scope] ?? scope,
+          }),
+        ),
         canReuseConsent: await consents.canReuse(
           client.id,
           user.id,
@@ -63,6 +69,19 @@ export function registerOAuthInteractions(
         },
       );
     }
+    const expectedServiceScopes = input.serviceScopes;
+    if (
+      expectedServiceScopes !== undefined &&
+      (!Array.isArray(expectedServiceScopes) ||
+        expectedServiceScopes.length > 30 ||
+        expectedServiceScopes.some(
+          (scope) => typeof scope !== "string" || scope.length > 160,
+        ))
+    ) {
+      throw Object.assign(new Error("Invalid application permissions"), {
+        statusCode: 400,
+      });
+    }
     const details = await provider.interactionDetails(request.raw, reply.raw);
     if (details.uid !== request.params.uid)
       throw Object.assign(new Error("Invalid interaction"), {
@@ -80,6 +99,7 @@ export function registerOAuthInteractions(
         user.id,
         request,
         input.reuse === true,
+        expectedServiceScopes as string[] | undefined,
       );
       const scopes = request.scopes.join(" ");
       const grant = new provider.Grant({ accountId: user.id, clientId });

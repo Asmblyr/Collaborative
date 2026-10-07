@@ -1,4 +1,8 @@
-import type { CollectionField } from "../collections/types.js";
+import type { Knex } from "knex";
+import {
+  parseSystemRelation,
+  type CustomFieldDefinition,
+} from "./relations.js";
 import type { FieldPresentation } from "@asmblyr-collaborative/contracts";
 import { objectInput } from "../shared/input.js";
 import {
@@ -22,35 +26,48 @@ export function parseCustomFieldName(value: string): string {
   return name;
 }
 
-export function parseCustomFieldConfiguration(
+export async function parseCustomFieldConfiguration(
+  db: Knex.Transaction,
   name: string,
   body: unknown,
   current?: CustomFieldRow,
-): {
-  definition: CollectionField;
+): Promise<{
+  definition: CustomFieldDefinition;
   presentation: FieldPresentation | Record<string, never>;
-} {
+}> {
   const input = objectInput(body, ["field", "presentation"]);
   if (!Object.keys(input).length) {
     throw new CollectionInputError("Expected field configuration");
   }
   const allowedFieldKeys = current
     ? ["required", "nullable", "defaultValue"]
-    : ["name", "type", "required", "nullable", "defaultValue"];
+    : [
+        "name",
+        "type",
+        "required",
+        "nullable",
+        "defaultValue",
+        "targetCollection",
+      ];
   if (input.field !== undefined) {
     objectInput(input.field, allowedFieldKeys);
   }
-  let definition: CollectionField;
+  let definition: CustomFieldDefinition;
   if (current) {
     const update =
       input.field === undefined ? {} : parseUpdateField(input.field);
-    const draft = { ...current.definition, ...update };
+    const { relation, ...scalar } = current.definition;
+    const draft = { ...scalar, ...update };
     if (draft.defaultValue === null) {
       delete draft.defaultValue;
     }
-    definition = parseField(draft);
+    definition = { ...parseField(draft), ...(relation ? { relation } : {}) };
   } else {
-    definition = parseField(input.field);
+    const field = objectInput(input.field, allowedFieldKeys);
+    definition =
+      field.type === "relation"
+        ? await parseSystemRelation(db, field)
+        : parseField(field);
   }
   if (definition.name !== name) {
     throw new CollectionInputError("Field name does not match URL");
@@ -60,11 +77,16 @@ export function parseCustomFieldConfiguration(
       "Custom system fields must remain optional and nullable so native operations can create records",
     );
   }
+  if (definition.relation && definition.defaultValue !== undefined) {
+    throw new CollectionInputError(
+      "Custom system relations cannot have a default value",
+    );
+  }
   const presentation = parseFieldPresentation(
     input.presentation === undefined
       ? (current?.presentation ?? {})
       : input.presentation,
-    definition.type,
+    definition.relation ? "relation" : definition.type,
   );
   if (
     presentation.rules ||

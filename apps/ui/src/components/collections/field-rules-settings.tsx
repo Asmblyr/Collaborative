@@ -42,7 +42,9 @@ export function FieldRulesSettings({
     ) ?? [];
   const relations = fields.filter(
     (f) =>
-      f.relation?.kind === "m2o" && f.relation.collection !== collection?.name,
+      f.relation?.kind === "m2o" &&
+      f.relation.collection !== "@users" &&
+      f.relation.collection !== collection?.name,
   );
   const selected = relations.find((f) => f.name === rules.computed?.relation);
   const target = catalog.find((c) => c.name === selected?.relation?.collection);
@@ -90,78 +92,84 @@ export function FieldRulesSettings({
         container={container ?? null}
         onChange={(requiredWhen) => set({ requiredWhen })}
       />
-      <section className="space-y-2 border-t pt-4">
-        <h3 className="text-sm font-medium">
-          {copy("Взять значение из связи")}
-        </h3>
-        <FieldSettingSelect
-          label={copy("Источник вычисления")}
-          value={rules.computed?.relation ?? "$none"}
-          disabled={disabled}
-          container={container}
-          options={[
-            { value: "$none", label: copy("Не вычислять") },
-            ...relations.map((f) => ({
-              value: f.name,
-              label: f.presentation?.label || f.name,
-            })),
-          ]}
-          onChange={(relation) => {
-            const source = relations.find((f) => f.name === relation);
-            const target = catalog.find(
-              (c) => c.name === source?.relation?.collection,
-            );
-            set({
-              computed:
-                relation === "$none"
-                  ? undefined
-                  : {
-                      relation,
-                      field: target?.fields.find(compatible)?.name ?? "",
-                    },
-            });
-          }}
-        />
-        {rules.computed && (
+      {current?.relation?.collection !== "@users" && (
+        <section className="space-y-2 border-t pt-4">
+          <h3 className="text-sm font-medium">
+            {copy("Взять значение из связи")}
+          </h3>
           <FieldSettingSelect
-            label={copy("Поле связанной записи")}
-            value={rules.computed.field || "$empty"}
+            label={copy("Источник вычисления")}
+            value={rules.computed?.relation ?? "$none"}
             disabled={disabled}
             container={container}
             options={[
-              { value: "$empty", label: copy("Выберите поле") },
-              ...(target?.fields.filter(compatible).map((f) => ({
+              { value: "$none", label: copy("Не вычислять") },
+              ...relations.map((f) => ({
                 value: f.name,
                 label: f.presentation?.label || f.name,
-              })) ?? []),
+              })),
             ]}
-            onChange={(field) =>
+            onChange={(relation) => {
+              const source = relations.find((f) => f.name === relation);
+              const target = catalog.find(
+                (c) => c.name === source?.relation?.collection,
+              );
               set({
-                computed: {
-                  ...rules.computed!,
-                  field: field === "$empty" ? "" : field,
-                },
-              })
+                computed:
+                  relation === "$none"
+                    ? undefined
+                    : {
+                        relation,
+                        field: target?.fields.find(compatible)?.name ?? "",
+                      },
+              });
+            }}
+          />
+          {rules.computed && (
+            <FieldSettingSelect
+              label={copy("Поле связанной записи")}
+              value={rules.computed.field || "$empty"}
+              disabled={disabled}
+              container={container}
+              options={[
+                { value: "$empty", label: copy("Выберите поле") },
+                ...(target?.fields.filter(compatible).map((f) => ({
+                  value: f.name,
+                  label: f.presentation?.label || f.name,
+                })) ?? []),
+              ]}
+              onChange={(field) =>
+                set({
+                  computed: {
+                    ...rules.computed!,
+                    field: field === "$empty" ? "" : field,
+                  },
+                })
+              }
+            />
+          )}
+          <p className="text-xs text-muted-foreground">
+            {copy(
+              "Сервер копирует значение при сохранении. Пользователю нужны права на источник и изменяемое поле. ",
+            )}
+          </p>
+        </section>
+      )}
+      {type === "relation" &&
+        current &&
+        current.relation?.collection !== "@users" && (
+          <RelationChoiceSettings
+            value={value.relationFilter}
+            field={current}
+            collection={collection!}
+            catalog={catalog}
+            disabled={disabled}
+            container={container}
+            onChange={(relationFilter) =>
+              onChange({ ...value, relationFilter })
             }
           />
         )}
-        <p className="text-xs text-muted-foreground">
-          {copy(
-            "Сервер копирует значение при сохранении. Пользователю нужны права на источник и изменяемое поле. ",
-          )}
-        </p>
-      </section>
-      {type === "relation" && current && (
-        <RelationChoiceSettings
-          value={value.relationFilter}
-          field={current}
-          collection={collection!}
-          catalog={catalog}
-          disabled={disabled}
-          container={container}
-          onChange={(relationFilter) => onChange({ ...value, relationFilter })}
-        />
-      )}
       {["text", "email"].includes(type) && (
         <section className="space-y-2 border-t pt-4">
           <div className="flex items-center gap-2">

@@ -10,6 +10,8 @@ export interface ApplicationInput extends ApplicationAccess {
   userIds: string[];
   audience: string;
   scopes: string[];
+  policyManaged?: boolean;
+  scopeLabels?: Record<string, string>;
 }
 
 function text(
@@ -49,6 +51,8 @@ export function parseApplication(value: unknown): ApplicationInput {
     "emailDomains",
     "audience",
     "scopes",
+    "policyManaged",
+    "scopeLabels",
   ];
   if (Object.keys(input).some((key) => !allowed.includes(key)))
     throw new AuthInputError("Unknown application setting");
@@ -106,6 +110,30 @@ export function parseApplication(value: unknown): ApplicationInput {
     throw new AuthInputError("Invalid service scope");
   if (scopes.length && !audience)
     throw new AuthInputError("Service scopes require an audience");
+  if (
+    input.policyManaged !== undefined &&
+    typeof input.policyManaged !== "boolean"
+  ) {
+    throw new AuthInputError("Invalid policy management setting");
+  }
+  let scopeLabels: Record<string, string> | undefined;
+  if (input.scopeLabels !== undefined) {
+    if (
+      !input.scopeLabels ||
+      typeof input.scopeLabels !== "object" ||
+      Array.isArray(input.scopeLabels)
+    ) {
+      throw new AuthInputError("Invalid permission labels");
+    }
+    scopeLabels = Object.fromEntries(
+      Object.entries(input.scopeLabels).map(([scope, label]) => {
+        if (!scopes.includes(scope)) {
+          throw new AuthInputError("Unknown permission label");
+        }
+        return [scope, text(label, "permission label", 120)];
+      }),
+    );
+  }
   const access = parseApplicationAccess(input);
   return {
     ...access,
@@ -117,5 +145,7 @@ export function parseApplication(value: unknown): ApplicationInput {
     userIds: access.accessMode === "all" ? [] : userIds,
     audience,
     scopes,
+    policyManaged: input.policyManaged as boolean | undefined,
+    scopeLabels,
   };
 }

@@ -25,6 +25,7 @@ import {
   renamePolicy,
 } from "./repository.js";
 import { parseId, parseName } from "./validation.js";
+import { policyApplicationCatalog } from "../oauth/policy-access.js";
 
 interface PolicyParams {
   id: string;
@@ -60,6 +61,9 @@ export function registerPolicyRoutes(
   };
   app.get("/policies", reader, async () => ({
     data: await listPolicies(db()),
+  }));
+  app.get("/policies/applications", reader, async () => ({
+    data: await policyApplicationCatalog(db()),
   }));
   app.post("/policies", admin, async (request, reply) =>
     reply.code(201).send({

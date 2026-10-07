@@ -1,6 +1,7 @@
 import { listPermissions } from "../permissions/repository.js";
 import type { Knex } from "knex";
 import { PolicyConflictError, PolicyNotFoundError } from "./validation.js";
+import { policyApplicationGrants } from "../oauth/policy-access.js";
 
 function translateConflict(error: unknown): never {
   if (
@@ -51,7 +52,12 @@ export async function getPolicy(database: Knex, id: string) {
     .where("assignment.policy_id", id)
     .select("usr.id", "usr.email")
     .orderBy("usr.email");
-  return { ...policy, permissions, users };
+  return {
+    ...policy,
+    permissions,
+    users,
+    applications: await policyApplicationGrants(database, id),
+  };
 }
 
 export async function createPolicy(database: Knex, name: string) {

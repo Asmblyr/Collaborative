@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { NoAccessLayout } from "@/components/layout/no-access-layout";
 import { loadCollections } from "@/lib/collections";
+import { collectionNavigationEntries } from "@/lib/collection-navigation";
 import { SESSION_COOKIE, loadSessionUser } from "@/lib/session";
 import { loadWorkspaces } from "@/lib/workspaces";
 import { loadPluginExtensions } from "@/lib/plugin-extensions";
@@ -25,12 +26,7 @@ export default async function AdminLayout({
     token && user ? loadPluginExtensions(token).catch(() => []) : [],
   ]);
   const { data: collections, folders, online } = catalog;
-  const usableCollections = collections.filter(
-    (collection) =>
-      collection.access.read ||
-      collection.access.create ||
-      collection.access.update,
-  );
+  const usableCollections = collectionNavigationEntries(collections);
   if (
     online &&
     user &&
@@ -44,25 +40,7 @@ export default async function AdminLayout({
   return (
     <AdminShell
       settingsSections={settings.sections}
-      collections={usableCollections.map(
-        ({
-          name,
-          displayName,
-          translations,
-          hidden,
-          folderId,
-          parentCollection,
-          access,
-        }) => ({
-          name,
-          displayName,
-          translations,
-          hidden,
-          folderId,
-          parentCollection,
-          readable: Boolean(access.read),
-        }),
-      )}
+      collections={usableCollections}
       folders={folders}
       user={user}
       workspaces={workspaces}

@@ -5,6 +5,8 @@ import type {
 } from "@asmblyr-collaborative/contracts";
 import { parseItem, parseItemId, ItemError } from "../items/validation.js";
 import { databaseValues } from "../items/database-values.js";
+import type { ItemField } from "../items/types.js";
+import { postgresCode } from "../shared/postgres-error.js";
 import { validateFileWrites } from "../files/references.js";
 import { objectInput } from "../shared/input.js";
 import { customFields, lockSystemCollection } from "./repository.js";
@@ -103,10 +105,20 @@ export async function updateSystemRecord(
       throw new ItemError("Record not found", 404);
     }
     const custom = await customFields(transaction, name);
-    const fields = new Map(
+    const fields = new Map<string, ItemField>(
       custom.map((field) => [
         field.field_name,
-        { ...field.definition, presentation: field.presentation },
+        {
+          ...field.definition,
+          presentation: field.presentation,
+          type: field.definition.relation ? "relation" : field.definition.type,
+          relation: field.definition.relation
+            ? {
+                collection: field.definition.relation.collection,
+                primaryKeyType: field.definition.relation.primaryKey.type,
+              }
+            : undefined,
+        },
       ]),
     );
     // The allowlist contains only fields created through the owned-field registry.
@@ -118,7 +130,13 @@ export async function updateSystemRecord(
     await transaction(collection.table)
       .withSchema("public")
       .where({ id })
-      .update(databaseValues(values, fields));
+      .update(databaseValues(values, fields))
+      .catch((error: unknown) => {
+        if (postgresCode(error) === "23503") {
+          throw new ItemError("Related item does not exist", 409);
+        }
+        throw error;
+      });
     return readSystemRecord(transaction, name, id);
   });
 }
