@@ -11,15 +11,17 @@ import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 function eventOf(
   type: RealtimeEvent["type"],
   subscribe: (callback: (event: RealtimeEvent) => void) => () => void,
+  matches: (event: RealtimeEvent) => boolean = () => true,
+  timeoutMs = 5000,
 ) {
   let release: () => void = () => undefined;
   const result = new Promise<RealtimeEvent>((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error(`Timed out waiting for ${type}`)),
-      5000,
+      timeoutMs,
     );
     release = subscribe((event) => {
-      if (event.type === type) {
+      if (event.type === type && matches(event)) {
         clearTimeout(timer);
         resolve(event);
       }
@@ -77,6 +79,100 @@ test("realtime stream shares committed updates and enforces record access", asyn
   );
   assert.equal(unauthorized.status, 403);
   await unauthorized.body?.cancel();
+});
+
+test("closing Core drains an open realtime stream", async (t) => {
+  const f = await pluginItemsFixture();
+  const active: {
+    stream?: Response;
+    closePromise?: Promise<void>;
+  } = {};
+  t.after(async () => {
+    await active.stream?.body?.cancel().catch(() => undefined);
+    if (active.closePromise) {
+      await active.closePromise;
+    } else {
+      await f.app.close();
+    }
+    await f.db.destroy();
+  });
+  const url = await f.app.listen({ host: "127.0.0.1", port: 0 });
+  const scope = JSON.stringify({
+    kind: "record",
+    collection: f.collection,
+    id: "2",
+  });
+  const stream = await fetch(
+    `${url}/realtime/stream?${new URLSearchParams({ clientId: randomUUID(), scope })}`,
+    { headers: { authorization: `Bearer ${f.adminToken}` } },
+  );
+  active.stream = stream;
+  assert.equal(stream.status, 200);
+
+  const closePromise = f.app.close();
+  active.closePromise = closePromise;
+  const closed = await Promise.race([
+    closePromise.then(() => true),
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000)),
+  ]);
+  assert.equal(closed, true, "Core must close without client cancellation");
+});
+
+test("presence renewal removes expired participants from the open stream", async (t) => {
+  const f = await pluginItemsFixture();
+  const live = createClient({
+    baseUrl: await f.app.listen({ host: "127.0.0.1", port: 0 }),
+    accessToken: f.adminToken,
+  }).realtime.connect();
+  t.after(async () => {
+    live.close();
+    await f.close();
+  });
+  const scope = { kind: "record" as const, collection: f.collection, id: "2" };
+  const ghostId = randomUUID();
+  await f.call(
+    "POST",
+    "/presence",
+    { clientId: ghostId, scope },
+    200,
+    f.memberToken,
+  );
+  const listeners = new Set<(event: RealtimeEvent) => void>();
+  const listen = (callback: (event: RealtimeEvent) => void) => {
+    listeners.add(callback);
+    return () => listeners.delete(callback);
+  };
+  const joined = eventOf(
+    "presence.changed",
+    listen,
+    (event) =>
+      event.type === "presence.changed" &&
+      event.payload.participants.some((person) => person.id === f.member.id),
+  );
+  const unsubscribe = live.subscribe(scope, (event) => {
+    for (const listener of listeners) {
+      listener(event);
+    }
+  });
+  t.after(unsubscribe);
+  await joined.result;
+  joined.release();
+
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  await f
+    .db("asmblyr_presence")
+    .where({ client_id: ghostId })
+    .update({ expires_at: new Date(0) });
+  const expired = eventOf(
+    "presence.changed",
+    listen,
+    (event) =>
+      event.type === "presence.changed" &&
+      !event.payload.participants.some((person) => person.id === f.member.id),
+    35_000,
+  );
+  await expired.result;
+  expired.release();
 });
 
 test("field locks are atomic, scoped to editor sessions and expire", async (t) => {

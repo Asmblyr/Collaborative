@@ -27,6 +27,15 @@ export function registerRealtimeStream(
   database: Knex | null,
   bus: RealtimeBus,
 ): void {
+  const activeStreams = new Set<() => void>();
+  let closing = false;
+  app.addHook("preClose", async () => {
+    closing = true;
+    for (const stop of activeStreams) {
+      stop();
+    }
+  });
+
   function db(): Knex {
     if (!database) {
       throw new ItemError("Database is not configured", 503);
@@ -37,6 +46,11 @@ export function registerRealtimeStream(
   app.get<{ Querystring: { clientId?: string; scope?: string } }>(
     "/realtime/stream",
     async (request, reply) => {
+      const authorization = request.headers.authorization;
+      let access = await loadAccess(db(), authorization);
+      if (access.principal.kind !== "user") {
+        throw new ItemError("Human session required", 403);
+      }
       if (!request.query.scope || request.query.scope.length > 1024) {
         throw new ItemError("Invalid realtime scope", 400);
       }
@@ -53,11 +67,6 @@ export function registerRealtimeStream(
         throw new ItemError("Invalid realtime scope", 400);
       }
       const clientId = request.query.clientId!;
-      const authorization = request.headers.authorization;
-      let access = await loadAccess(db(), authorization);
-      if (access.principal.kind !== "user") {
-        throw new ItemError("Human session required", 403);
-      }
       const principal = access.principal;
       const connectionId = randomUUID();
       const openedAt = Date.now();
@@ -120,7 +129,14 @@ export function registerRealtimeStream(
             ),
           );
       }
+      if (closing) {
+        throw new ItemError("Server is shutting down", 503);
+      }
       const initial = await touchPresence(db(), principal, clientId, key);
+      if (closing) {
+        await leavePresence(db(), principal.sessionId, clientId);
+        throw new ItemError("Server is shutting down", 503);
+      }
 
       reply.hijack();
       reply.raw.writeHead(200, {
@@ -262,6 +278,7 @@ export function registerRealtimeStream(
           return;
         }
         closed = true;
+        activeStreams.delete(stop);
         request.log.info(
           {
             connectionId,
@@ -305,13 +322,18 @@ export function registerRealtimeStream(
               stop();
               return;
             }
-            return presenceKey(db(), fresh, scope).then(() =>
-              touchPresence(db(), principal, clientId, key),
-            );
+            return presenceKey(db(), fresh, scope)
+              .then(() => touchPresence(db(), principal, clientId, key))
+              .then((snapshot) => sendPresence(snapshot));
           })
           .catch(stop);
       }, presenceRenewalMs);
+      activeStreams.add(stop);
       reply.raw.on("close", stop);
+      if (reply.raw.destroyed) {
+        stop();
+        return;
+      }
       request.log.info(
         {
           connectionId,
