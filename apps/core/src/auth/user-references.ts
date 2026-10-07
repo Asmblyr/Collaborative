@@ -9,7 +9,9 @@ export async function requireUserReferenceRead(
   db: Knex,
   principal: Principal,
 ): Promise<void> {
-  if (principal.kind !== "user") throw new AccessDeniedError();
+  if (principal.kind !== "user") {
+    throw new AccessDeniedError();
+  }
   if (
     !principal.superuser &&
     !(await effectiveSettingsAccess(db, principal.id)).sections.includes(
@@ -44,18 +46,28 @@ export async function listUserReferences(
     throw new ItemError("Invalid user reference query", 400);
   }
   const ids = typeof query.ids === "string" ? query.ids.split(",") : undefined;
-  if (ids && (ids.length > 100 || !ids.length))
+  if (ids && (ids.length > 100 || !ids.length)) {
     throw new ItemError("Too many user IDs", 400);
+  }
   ids?.forEach((id) => parseItemId(id, "uuid"));
   const rows = db("public.asmblyr_users");
   // Existing disabled references can still be identified, but cannot be selected anew.
-  if (ids) rows.whereIn("id", ids);
-  else rows.where("status", "active");
+  if (ids) {
+    rows.whereIn("id", ids);
+  } else {
+    rows.where("status", "active");
+  }
   if (typeof query.q === "string" && query.q.trim()) {
     const search = `%${query.q.trim().replace(/[\\%_]/g, "\\$&")}%`;
     rows.where((builder) => {
-      for (const column of ["email", "display_name", "first_name", "last_name"])
+      for (const column of [
+        "email",
+        "display_name",
+        "first_name",
+        "last_name",
+      ]) {
         builder.orWhereILike(column, search);
+      }
     });
   }
   const [users, count] = await Promise.all([

@@ -43,10 +43,11 @@ export async function updateRelationSearch(
         target_system: "users",
       })
       .first("source_field");
-    if (system && searchable)
+    if (system && searchable) {
       throw new CollectionInputError(
         "System user references do not support related full-text search",
       );
+    }
     const physical = await transaction("asmblyr_relations")
       .withSchema("public")
       .where({ source_collection: name, source_field: relationField })

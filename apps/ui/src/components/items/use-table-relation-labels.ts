@@ -58,7 +58,9 @@ export function useTableRelationLabels(
               ),
               { signal: controller.signal },
             );
-            if (!response.ok) return [];
+            if (!response.ok) {
+              return [];
+            }
             const data = (await response.json()) as ItemList;
             return data.data.map(
               (item) =>

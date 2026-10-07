@@ -25,7 +25,9 @@ export function userReferenceCollection(label: string): Collection {
 export function userReferenceUrl(params: URLSearchParams): string {
   const query = new URLSearchParams();
   for (const key of ["q", "page", "limit"]) {
-    if (params.has(key)) query.set(key, params.get(key)!);
+    if (params.has(key)) {
+      query.set(key, params.get(key)!);
+    }
   }
   const filter = params.get("filter");
   if (filter) {

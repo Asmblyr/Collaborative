@@ -11,7 +11,9 @@ exports.up = async (knex) => {
 exports.down = async (knex) => {
   await knex.raw("LOCK TABLE public.asmblyr_relations IN ACCESS EXCLUSIVE MODE");
   const relation = await knex("public.asmblyr_relations").whereNotNull("target_system").first();
-  if (relation) throw new Error("Remove system user relations before rolling back");
+  if (relation) {
+    throw new Error("Remove system user relations before rolling back");
+  }
   await knex.raw("ALTER TABLE public.asmblyr_relations DROP CONSTRAINT asmblyr_relation_target_check");
   await knex.schema.withSchema("public").alterTable("asmblyr_relations", (table) => {
     table.dropColumn("target_system");
