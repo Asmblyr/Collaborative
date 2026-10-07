@@ -25,6 +25,8 @@
 [локализации](./features/localization.md) и [расширениям](./features/plugins.md)
 описывают текущие контракты и их границы.
 [Личные подключения Google Drive и Sheets](./features/google-workspace.md) описаны отдельно.
+[Совместная работа в реальном времени](./features/realtime.md) описывает
+присутствие, изменения записей, блокировки полей и ограничения транспорта.
 
 | Задача                                              | Где читать                                                    |
 | --------------------------------------------------- | ------------------------------------------------------------- |
@@ -39,6 +41,7 @@
 
 - [Локальная разработка и проверки](./development/local-development.md)
 - [Архитектура](./development/architecture.md)
+- [Архитектура Collaborative Live](./architecture/realtime.md)
 - [Первое расширение](./development/first-extension.md)
 - [Архитектура ассистента и model context](./development/assistant-architecture.md)
 - [Опубликованные пакеты](./reference/packages.md)
