@@ -4,6 +4,8 @@ import { RelationValue } from "./relation-value";
 import { inputValue } from "./item-input-values";
 import type { OpenRelated } from "./relation-picker";
 import type { Collection, CollectionField, Item } from "./types";
+import { userReferenceCollection } from "./user-reference";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemReadonlyField({
   field,
@@ -16,12 +18,15 @@ export function ItemReadonlyField({
   catalog: Collection[];
   onOpenRelated?: OpenRelated;
 }) {
+  const copy = useUiCopy();
   const target =
-    field.relation?.kind === "m2o"
-      ? catalog.find(
-          (c) => c.name === field.relation?.collection && c.access.read,
-        )
-      : undefined;
+    field.relation?.collection === "@users"
+      ? userReferenceCollection(copy("Пользователи"))
+      : field.relation?.kind === "m2o"
+        ? catalog.find(
+            (c) => c.name === field.relation?.collection && c.access.read,
+          )
+        : undefined;
   const id = item[field.name] == null ? "" : String(item[field.name]);
   return field.type === "file" || field.type === "files" ? (
     <FileField

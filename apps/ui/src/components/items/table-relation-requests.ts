@@ -1,6 +1,7 @@
 import { itemLabelField } from "./item-label";
 import type { Collection, Item } from "./types";
 import type { ItemColumn } from "./use-item-columns";
+import { userReferenceCollection } from "./user-reference";
 
 export interface TableRelationRequest {
   collection: string;
@@ -18,9 +19,10 @@ export function tableRelationRequests(
   const requests = new Map<string, TableRelationRequest>();
   for (const column of columns) {
     if (column.relation?.kind !== "m2o") continue;
-    const target = catalog.find(
-      (entry) => entry.name === column.relation?.collection,
-    );
+    const target =
+      column.relation.collection === "@users"
+        ? userReferenceCollection("users")
+        : catalog.find((entry) => entry.name === column.relation?.collection);
     if (!target?.access.read) continue;
     const request = requests.get(target.name) ?? {
       collection: target.name,

@@ -13,6 +13,7 @@ import { requireGrant, AccessDeniedError } from "../permissions/access.js";
 import { collectionSchema } from "./schema-repository.js";
 import { listCollections } from "../collections/catalog-repository.js";
 import { itemReadQuery } from "./read-query.js";
+import { validateUserReferenceWrites } from "./user-reference-writes.js";
 
 /** Evaluate invariants on the final row inside the ordinary mutation transaction. */
 export async function applyFieldRules(
@@ -28,6 +29,13 @@ export async function applyFieldRules(
     (f) => f.presentation?.rules || f.presentation?.relationFilter,
   );
   if (!configured.length) {
+    await validateUserReferenceWrites(
+      db,
+      fields,
+      input,
+      before,
+      context.access,
+    );
     return input;
   }
   const values = { ...input };
@@ -216,5 +224,6 @@ export async function applyFieldRules(
       );
     }
   }
+  await validateUserReferenceWrites(db, fields, values, before, context.access);
   return values;
 }

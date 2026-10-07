@@ -41,6 +41,12 @@ export async function commitRecordDraft(
         const definition = schema.fields.get(field);
         if (!definition?.relation)
           throw new ItemError("Unknown reference field", 400);
+        if (definition.relation.collection === "@users") {
+          throw new ItemError(
+            "System users must be selected by ID, not edited in a record draft",
+            400,
+          );
+        }
         if (readable && !fieldGranted(readable, field))
           throw new AccessDeniedError();
         const relatedId = await save(definition.relation.collection, reference);

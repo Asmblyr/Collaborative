@@ -19,6 +19,14 @@ export async function validateFieldBehavior(
   const source = catalog.find((c) => c.name === collection)!;
   const current = source.fields.find((f) => f.name === field)!;
   const rules = presentation.rules;
+  if (
+    current.relation?.collection === "@users" &&
+    (presentation.relationFilter || rules?.computed)
+  ) {
+    throw new CollectionInputError(
+      "System user references do not support choice filters or computed values",
+    );
+  }
   for (const rule of rules?.requiredWhen?.rules ?? []) {
     const dependency = source.fields.find((f) => f.name === rule.field);
     if (

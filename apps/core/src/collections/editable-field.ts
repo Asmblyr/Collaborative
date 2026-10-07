@@ -14,6 +14,7 @@ interface EditableFieldRow {
   default_value: JsonValue;
   presentation: FieldPresentation | null;
   relation_key_type: PrimaryKeyType | null;
+  target_system: "users" | null;
 }
 
 export async function readEditableField(
@@ -24,7 +25,8 @@ export async function readEditableField(
   const result = await database.raw<{ rows: EditableFieldRow[] }>(
     `
     SELECT c.is_nullable, c.data_type, c.character_maximum_length, fm.semantic_type, fm.default_value, fm.presentation,
-      COALESCE(fm.required, FALSE) AS required, target.primary_key_type AS relation_key_type
+      COALESCE(fm.required, FALSE) AS required, r.target_system,
+      CASE WHEN r.target_system = 'users' THEN 'uuid' ELSE target.primary_key_type END AS relation_key_type
     FROM public.asmblyr_columns AS c
     LEFT JOIN public.asmblyr_field_metadata AS fm
       ON fm.collection_name = c.table_name AND fm.field_name = c.column_name

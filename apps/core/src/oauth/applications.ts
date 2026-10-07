@@ -6,6 +6,7 @@ import { AuthInputError } from "../auth/validation.js";
 import type { ApplicationInput } from "./input.js";
 import type { OAuthCipher } from "./crypto.js";
 import { matchesEmailDomain, type ApplicationAccessMode } from "./access.js";
+import { effectiveApplicationGrant } from "./policy-access.js";
 
 interface ApplicationRow {
   id: string;
@@ -18,6 +19,8 @@ interface ApplicationRow {
   redirect_uris: string[];
   audience: string;
   scopes: string[];
+  policy_managed: boolean;
+  scope_labels: Record<string, string>;
   secret: string | null;
   created_at: Date;
 }
@@ -53,6 +56,8 @@ export class OAuthApplications {
       redirectUris: row.redirect_uris,
       audience: row.audience,
       scopes: row.scopes,
+      policyManaged: row.policy_managed,
+      scopeLabels: row.scope_labels,
       createdAt: row.created_at,
       userIds: memberships
         .filter((membership) => membership.app_id === row.id)
@@ -85,13 +90,19 @@ export class OAuthApplications {
         email_domains: string[];
         email: string;
         selected_user: string | null;
+        policy_managed: boolean;
       }>(
         "app.access_mode",
         "app.email_domains",
         "usr.email",
         "membership.user_id as selected_user",
+        "app.policy_managed",
       );
     if (!result) return false;
+    if (result.policy_managed) {
+      return (await effectiveApplicationGrant(database, clientId, userId))
+        .allowed;
+    }
     if (result.access_mode === "all") return true;
     if (result.access_mode === "selected") return result.selected_user !== null;
     if (result.access_mode === "domains") {
@@ -101,6 +112,25 @@ export class OAuthApplications {
       );
     }
     return false;
+  }
+
+  async serviceScopes(
+    clientId: string,
+    userId: string,
+    database: Knex = this.db,
+  ): Promise<string[]> {
+    const app = await database<ApplicationRow>("public.asmblyr_oauth_apps")
+      .where({ id: clientId })
+      .first();
+    if (
+      !app?.policy_managed ||
+      !app.enabled ||
+      !(await this.allowed(clientId, userId, database))
+    ) {
+      return [];
+    }
+    const grant = await effectiveApplicationGrant(database, clientId, userId);
+    return grant.scopes.filter((scope) => app.scopes.includes(scope));
   }
 
   async client(id: string): Promise<ClientMetadata | undefined> {
@@ -155,12 +185,38 @@ export class OAuthApplications {
         redirect_uris: JSON.stringify(input.redirectUris),
         audience: input.audience,
         scopes: JSON.stringify(input.scopes),
+        policy_managed:
+          input.policyManaged ?? previous?.policy_managed ?? false,
+        scope_labels: JSON.stringify(
+          input.scopeLabels ??
+            Object.fromEntries(
+              Object.entries(previous?.scope_labels ?? {}).filter(([scope]) =>
+                input.scopes.includes(scope),
+              ),
+            ),
+        ),
         updated_at: trx.fn.now(),
       };
       if (id) {
         await trx("public.asmblyr_oauth_apps").where({ id }).update(values);
+        // Removing a catalog permission must not resurrect old policy grants if it is added again.
+        const grants = await trx("public.asmblyr_policy_oauth_apps")
+          .where({ app_id: id })
+          .select("policy_id", "scopes");
+        for (const grant of grants) {
+          await trx("public.asmblyr_policy_oauth_apps")
+            .where({ app_id: id, policy_id: grant.policy_id })
+            .update({
+              scopes: JSON.stringify(
+                (grant.scopes as string[]).filter((scope) =>
+                  input.scopes.includes(scope),
+                ),
+              ),
+            });
+        }
         const recipientChanged =
           previous!.audience !== input.audience ||
+          previous!.policy_managed !== values.policy_managed ||
           input.redirectUris.some(
             (uri) => !previous!.redirect_uris.includes(uri),
           );

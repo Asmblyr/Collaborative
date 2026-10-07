@@ -6,6 +6,7 @@ import { resolveRelationChoiceFilter } from "@asmblyr-collaborative/contracts";
 import { RecordChooser } from "./record-chooser";
 import type { Collection, CollectionField } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
+import { userReferenceCollection } from "./user-reference";
 
 export type OpenRelated = (
   collection: string,
@@ -37,9 +38,10 @@ export function RelationPicker({
 }) {
   const copy = useUiCopy();
 
-  const target = catalog.find(
-    (entry) => entry.name === field.relation?.collection,
-  );
+  const systemUser = field.relation?.collection === "@users";
+  const target = systemUser
+    ? userReferenceCollection(copy("Пользователи"))
+    : catalog.find((entry) => entry.name === field.relation?.collection);
   if (!target?.access.read)
     return (
       <div className="space-y-1.5">
@@ -87,7 +89,7 @@ export function RelationPicker({
             }
           />
         </div>
-        {value && onOpen && (
+        {value && onOpen && !systemUser && (
           <Button
             type="button"
             variant="outline"

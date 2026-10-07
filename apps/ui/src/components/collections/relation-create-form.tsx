@@ -172,6 +172,11 @@ export function RelationCreateForm({
               value={targetCollection}
               onValueChange={(value) => {
                 setTargetCollection(value);
+                if (value === "@users") {
+                  setReverseField("");
+                  editor.setDefaultValue("");
+                  editor.setOnDelete(editor.nullable ? "setNull" : "restrict");
+                }
                 setForeignKey("");
                 setReuseExisting(false);
                 setMessage("");
@@ -185,6 +190,11 @@ export function RelationCreateForm({
                 <SelectValue placeholder={copy("Выберите коллекцию")} />
               </SelectTrigger>
               <SelectContent container={portalContainer}>
+                {kind === "m2o" && (
+                  <SelectItem value="@users">
+                    {copy("Пользователи · системная")}
+                  </SelectItem>
+                )}
                 {collections.map((entry) => (
                   <SelectItem
                     key={entry.name}
@@ -198,7 +208,7 @@ export function RelationCreateForm({
               </SelectContent>
             </Select>
           </div>
-          {kind !== "o2m" && (
+          {kind !== "o2m" && targetCollection !== "@users" && (
             <NameInput
               id="relation-reverse"
               label={copy("Поле на обратной стороне (необязательно)")}

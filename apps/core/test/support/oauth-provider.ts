@@ -120,7 +120,16 @@ export async function oauthFixture(
         method: "POST",
         url: `/oauth-interactions/${uid}`,
         headers: { ...currentHeaders, cookie: cookies() },
-        payload: { approve, userId: details.json().data.userId, ...overrides },
+        payload: {
+          approve,
+          userId: details.json().data.userId,
+          serviceScopes: details
+            .json()
+            .data.servicePermissions?.map(
+              (permission: { scope: string }) => permission.scope,
+            ),
+          ...overrides,
+        },
       });
     }
     async function resume(redirectTo: string) {

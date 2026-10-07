@@ -98,9 +98,28 @@ export function parseCreateRelation(value: unknown): CreateRelationInput {
   }
   const input = value as Record<string, unknown>;
   const kind = input.kind ?? "m2o";
+  const systemUser = input.targetCollection === "@users";
+  if (systemUser && (kind !== "m2o" || input.reverseField)) {
+    throw new CollectionInputError(
+      "System users support M2O without a reverse field",
+    );
+  }
+  if (
+    systemUser &&
+    (input.defaultValue !== undefined ||
+      ![undefined, "restrict", "setNull"].includes(
+        input.onDelete as string | undefined,
+      ))
+  ) {
+    throw new CollectionInputError(
+      "System user relations support RESTRICT or SET NULL without defaults",
+    );
+  }
   const common = {
     name: parseMutableFieldName(input.name),
-    targetCollection: parseMutableCollectionName(input.targetCollection),
+    targetCollection: systemUser
+      ? "@users"
+      : parseMutableCollectionName(input.targetCollection),
   };
   const keys =
     kind === "m2o"

@@ -443,6 +443,10 @@
     "access": "Человек: policies/read ИЛИ update; superuser bypass",
     "public": false
   },
+  "GET /policies/applications": {
+    "access": "Человек: policies/read ИЛИ update; каталог приложений с управлением через политики, без секретов",
+    "public": false
+  },
   "POST /policies": {
     "access": "Только человек-superuser: изменение состава политик и permissions",
     "public": false
@@ -862,5 +866,9 @@
   "POST /oauth/complete/:uid": {
     "public": false,
     "access": "Текущий пользователь, подписанные cookies взаимодействия OAuth и совпадающий Origin; идентификатор пользователя должен совпадать с сессией"
+  },
+  "GET /users/references": {
+    "access": "Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены",
+    "public": false
   }
 }

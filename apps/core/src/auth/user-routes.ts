@@ -12,6 +12,8 @@ import { replaceUserDelegation } from "../policies/delegation-repository.js";
 import { parsePolicyIds } from "../policies/assignment-validation.js";
 import { createRecoveryLink } from "./link-login.js";
 import { authenticateAccess } from "./tokens.js";
+import { authenticatePrincipal } from "./principal.js";
+import { listUserReferences } from "./user-references.js";
 
 export function registerUserRoutes(
   app: FastifyInstance,
@@ -29,6 +31,16 @@ export function registerUserRoutes(
     preHandler: (request: Parameters<typeof requireSettingsSection>[1]) =>
       requireSettingsSection(db(), request, "users"),
   };
+
+  app.get("/users/references", async (request, reply) => {
+    const principal = await authenticatePrincipal(
+      db(),
+      request.headers.authorization,
+    );
+    return reply
+      .header("Cache-Control", "no-store")
+      .send(await listUserReferences(db(), principal, request.query));
+  });
 
   const reader = {
     preHandler: (request: Parameters<typeof requireSettingsSection>[1]) =>

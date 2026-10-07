@@ -28,6 +28,7 @@ export async function requireRelatedRead(
   const relations = await database<RelationRow>("asmblyr_relations")
     .withSchema("public")
     .where({ source_collection: source })
+    .whereNull("target_system")
     .whereIn("source_field", fields)
     .select("target_collection", "source_field");
   for (const relation of relations) {

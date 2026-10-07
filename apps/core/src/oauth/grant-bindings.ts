@@ -27,7 +27,8 @@ export async function findGrantBinding(db: Knex, hash: string) {
       consent_id: string;
       app_id: string;
       user_id: string;
-    }>("grant.consent_id", "consent.app_id", "consent.user_id");
+      service_scopes: string[];
+    }>("grant.consent_id", "consent.app_id", "consent.user_id", "grant.service_scopes");
 }
 
 export async function requireGrantBinding(
