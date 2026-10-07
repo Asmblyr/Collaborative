@@ -11,6 +11,7 @@ import {
 import type { ClientOptions, RequestOptions } from "./options.js";
 import { createTransport } from "./transport.js";
 import { createPresenceClient, type PresenceClient } from "./presence.js";
+import { createRealtimeClient } from "./realtime.js";
 import {
   createNotificationsClient,
   type NotificationsClient,
@@ -24,6 +25,7 @@ export interface AsmblyrClient<Schema extends object = DynamicSchema> {
   readonly items: ItemsClient<Schema>;
   readonly users: UsersClient<Schema>;
   readonly presence: PresenceClient;
+  readonly realtime: ReturnType<typeof createRealtimeClient>;
   readonly notifications: NotificationsClient;
   readonly schema: { pull(request?: RequestOptions): Promise<SchemaResult> };
   readonly translations: {
@@ -70,6 +72,7 @@ export function createClient<Schema extends object = DynamicSchema>(
     items,
     users: createUsersClient<Schema>(transport),
     presence: createPresenceClient(transport),
+    realtime: createRealtimeClient(options, transport),
     notifications: createNotificationsClient(transport),
     schema: { pull: (request) => transport.get("/schema", undefined, request) },
     translations: {
