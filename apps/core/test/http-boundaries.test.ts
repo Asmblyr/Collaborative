@@ -22,12 +22,15 @@ test("unexpected errors hide database details and return a diagnostic request ID
     const response = await app.inject("/failure");
     assert.equal(response.statusCode, 500);
     assert.equal(response.json().code, "INTERNAL_ERROR");
+    assert.deepEqual(response.json().details, {});
     assert.ok(response.json().requestId);
     assert.doesNotMatch(
       response.body,
       /SELECT|secret|private_table|password|42P01/,
     );
-    assert.equal((await app.inject("/input")).json().message, "Invalid field");
+    const invalid = (await app.inject("/input")).json();
+    assert.equal(invalid.message, "Invalid field");
+    assert.deepEqual(invalid.details, {});
   } finally {
     await app.close();
   }

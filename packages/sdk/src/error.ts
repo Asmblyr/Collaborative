@@ -6,6 +6,7 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code?: string,
     readonly requestId?: string,
+    readonly details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = "ApiError";
@@ -22,11 +23,19 @@ export async function responseError(response: Response): Promise<ApiError> {
       details.code = body.code;
     if ("requestId" in body && typeof body.requestId === "string")
       details.requestId = body.requestId;
+    if (
+      "details" in body &&
+      body.details &&
+      typeof body.details === "object" &&
+      !Array.isArray(body.details)
+    )
+      details.details = body.details as Record<string, unknown>;
   }
   return new ApiError(
     details.message ?? `API request failed (${response.status})`,
     response.status,
     details.code,
     details.requestId,
+    details.details,
   );
 }
