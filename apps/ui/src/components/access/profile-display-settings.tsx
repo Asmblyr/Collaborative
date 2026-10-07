@@ -294,7 +294,7 @@ function ProfileDisplayEditor({ onClose }: { onClose(): void }) {
               role="status"
               className="text-sm text-muted-foreground"
             >
-              {copy("Загружаем…")}
+              {copy("Загрузка…")}
             </p>
           )}
           {error && (
