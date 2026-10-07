@@ -39,6 +39,15 @@ const field = object(
     nullable: boolean,
     defaultValue: jsonValue,
     presentation,
+    relation: object({
+      kind: { const: "m2o" },
+      collection: string,
+      primaryKey: object({
+        name: string,
+        type: { enum: ["serial", "bigserial", "uuid", "text"] },
+      }),
+      onDelete: { const: "setNull" },
+    }),
   },
   ["name", "type", "managed", "required", "nullable"],
 );
@@ -104,8 +113,32 @@ export function systemCollectionsContract(key) {
     );
     return {
       requestBody: body({
-        ...object({ field: definition, presentation }, create ? ["field"] : []),
+        ...object(
+          {
+            field: create
+              ? {
+                  oneOf: [
+                    definition,
+                    object(
+                      {
+                        name: { ...string, pattern: "^[a-z][a-z0-9_]{0,62}$" },
+                        type: { const: "relation" },
+                        targetCollection: string,
+                        required: { const: false },
+                        nullable: { const: true },
+                      },
+                      ["name", "type", "targetCollection"],
+                    ),
+                  ],
+                }
+              : definition,
+            presentation,
+          },
+          create ? ["field"] : [],
+        ),
         minProperties: 1,
+        description:
+          "Custom M2O fields target ordinary registered tables. They remain optional, use ON DELETE SET NULL and have no default or reverse field. Existing relation targets and key types are immutable; only presentation can be changed.",
       }),
       responses: responses(collection, create ? 201 : 200),
     };

@@ -78,7 +78,7 @@ export function useFieldEditor({
   const resolvedType: string = selectedType;
   const textField =
     !system && (selectedType === "text" || selectedType === "email");
-  const relationField = Boolean(field?.relation);
+  const relationField = !system && Boolean(field?.relation);
   const defaultChanged =
     field &&
     field.type !== "relation" &&

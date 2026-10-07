@@ -15,6 +15,7 @@ export default async function SettingsPage() {
   return (
     <AccessWorkspace
       canManagePolicies={settingsAccess.canManagePolicies}
+      canManageSystemFields={user.superuser}
       delegatablePolicyIds={settingsAccess.delegatablePolicyIds}
       currentUserId={user.id}
       readOnly={readOnly}

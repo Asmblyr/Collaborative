@@ -7,11 +7,13 @@ import { ProfileExtensionFields } from "@/components/settings/profile-extension-
 import { ProfileDates } from "@/components/settings/profile-dates";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
+import { UserSystemFields } from "./user-system-fields";
 export function UserProfileDialog({
   userId,
   email,
   readOnly,
   canChooseAvatar,
+  canManageSystemFields = false,
   onClose,
   onSaved,
 }: {
@@ -19,6 +21,7 @@ export function UserProfileDialog({
   email: string;
   readOnly: boolean;
   canChooseAvatar: boolean;
+  canManageSystemFields?: boolean;
   onClose(): void;
   onSaved(): Promise<void>;
 }) {
@@ -86,6 +89,13 @@ export function UserProfileDialog({
                 readOnly={readOnly}
                 container={container}
               />
+              {canManageSystemFields && !readOnly && (
+                <UserSystemFields
+                  userId={userId}
+                  container={container}
+                  onCancel={onClose}
+                />
+              )}
               <ProfileDates user={user} />
             </>
           )}

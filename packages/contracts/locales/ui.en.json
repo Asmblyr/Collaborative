@@ -2135,5 +2135,9 @@
   "copy.3bc8a5e4": "Show system collections",
   "copy.a0e89f48": "System collections",
   "copy.91fb677a": "Workspaces",
-  "copy.fc4d06c6": "No records"
+  "copy.fc4d06c6": "No records",
+  "copy.1075e4cf": "Create a regular collection for the related records first.",
+  "copy.699766bc": "Select one record. Deleting the related record clears this field and preserves the system record.",
+  "copy.b6c0f68c": "Custom user fields",
+  "copy.85762b9e": "Display name"
 }

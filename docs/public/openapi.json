@@ -11476,6 +11476,48 @@
                                   "type": "object",
                                   "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
                                   "additionalProperties": true
+                                },
+                                "relation": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "kind": {
+                                      "const": "m2o"
+                                    },
+                                    "collection": {
+                                      "type": "string"
+                                    },
+                                    "primaryKey": {
+                                      "type": "object",
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "enum": [
+                                            "serial",
+                                            "bigserial",
+                                            "uuid",
+                                            "text"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "type"
+                                      ]
+                                    },
+                                    "onDelete": {
+                                      "const": "setNull"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "collection",
+                                    "primaryKey",
+                                    "onDelete"
+                                  ]
                                 }
                               },
                               "required": [
@@ -11667,6 +11709,48 @@
                                 "type": "object",
                                 "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
                                 "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
                               }
                             },
                             "required": [
@@ -11722,42 +11806,73 @@
                 "additionalProperties": false,
                 "properties": {
                   "field": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "pattern": "^[a-z][a-z0-9_]{0,62}$"
-                      },
-                      "type": {
-                        "enum": [
-                          "text",
-                          "integer",
-                          "bigint",
-                          "boolean",
-                          "datetime",
-                          "date",
-                          "email",
-                          "decimal",
-                          "json",
-                          "uuid",
-                          "file",
-                          "files"
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                          },
+                          "type": {
+                            "enum": [
+                              "text",
+                              "integer",
+                              "bigint",
+                              "boolean",
+                              "datetime",
+                              "date",
+                              "email",
+                              "decimal",
+                              "json",
+                              "uuid",
+                              "file",
+                              "files"
+                            ]
+                          },
+                          "required": {
+                            "const": false
+                          },
+                          "nullable": {
+                            "const": true
+                          },
+                          "defaultValue": {
+                            "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
                         ]
                       },
-                      "required": {
-                        "const": false
-                      },
-                      "nullable": {
-                        "const": true
-                      },
-                      "defaultValue": {
-                        "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                          },
+                          "type": {
+                            "const": "relation"
+                          },
+                          "targetCollection": {
+                            "type": "string"
+                          },
+                          "required": {
+                            "const": false
+                          },
+                          "nullable": {
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type",
+                          "targetCollection"
+                        ]
                       }
-                    },
-                    "required": [
-                      "name",
-                      "type"
                     ]
                   },
                   "presentation": {
@@ -11769,7 +11884,8 @@
                 "required": [
                   "field"
                 ],
-                "minProperties": 1
+                "minProperties": 1,
+                "description": "Custom M2O fields target ordinary registered tables. They remain optional, use ON DELETE SET NULL and have no default or reverse field. Existing relation targets and key types are immutable; only presentation can be changed."
               }
             }
           }
@@ -11858,6 +11974,48 @@
                                 "type": "object",
                                 "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
                                 "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
                               }
                             },
                             "required": [
@@ -11935,7 +12093,8 @@
                   }
                 },
                 "required": [],
-                "minProperties": 1
+                "minProperties": 1,
+                "description": "Custom M2O fields target ordinary registered tables. They remain optional, use ON DELETE SET NULL and have no default or reverse field. Existing relation targets and key types are immutable; only presentation can be changed."
               }
             }
           }

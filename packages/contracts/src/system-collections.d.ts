@@ -1,4 +1,4 @@
-import type { FieldPresentation } from "./index.js";
+import type { FieldPresentation, PrimaryKey } from "./index.js";
 import type { JsonValue } from "./items.js";
 
 export type SystemCollectionName =
@@ -7,6 +7,12 @@ export type SystemCollectionName =
   | "policies"
   | "workspaces"
   | "service_accounts";
+export interface SystemCollectionRelation {
+  kind: "m2o";
+  collection: string;
+  primaryKey: PrimaryKey;
+  onDelete: "setNull";
+}
 export interface SystemCollectionField {
   name: string;
   type: string;
@@ -15,6 +21,7 @@ export interface SystemCollectionField {
   nullable: boolean;
   defaultValue?: JsonValue;
   presentation?: FieldPresentation;
+  relation?: SystemCollectionRelation;
 }
 export interface SystemCollection {
   name: SystemCollectionName;

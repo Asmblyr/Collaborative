@@ -17,9 +17,15 @@ import {
 } from "./system-collection-model";
 import { SystemFieldDelete } from "./system-field-delete";
 import { SystemRecords } from "./system-records";
+import { SystemRelationForm } from "./system-relation-form";
 
 export type Selection =
-  | { collection: string; kind: "field"; field?: string; type?: DataFieldType }
+  | {
+      collection: string;
+      kind: "field";
+      field?: string;
+      type?: DataFieldType | "m2o";
+    }
   | { collection: string; kind: "delete"; field: string }
   | { collection: string; kind: "records" };
 
@@ -196,9 +202,9 @@ export function SystemCollections({
           if (!field && !selection.type) {
             return (
               <FieldTypePicker
-                allowRelations={false}
+                relationKinds={["m2o"]}
                 onSelect={(type) => {
-                  if (type !== "m2o" && type !== "o2m" && type !== "m2m") {
+                  if (type !== "o2m" && type !== "m2m") {
                     setSelection({
                       kind: "field",
                       collection: selected.name,
@@ -206,6 +212,22 @@ export function SystemCollections({
                     });
                   }
                 }}
+              />
+            );
+          }
+          if (selection.type === "m2o") {
+            return (
+              <SystemRelationForm
+                collection={selected.name}
+                catalog={catalog}
+                container={container}
+                onSaved={saved}
+                onCancel={requestClose}
+                onBack={() =>
+                  requestLeave(() =>
+                    setSelection({ kind: "field", collection: selected.name }),
+                  )
+                }
               />
             );
           }

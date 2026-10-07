@@ -78,7 +78,7 @@ test(
       assert.ok(result.statusCode < 300, result.body);
       return result.json().data;
     }
-    await call("PATCH", "/users/me", { displayName: "Review", pictureUrl: "" });
+    await call("PATCH", "/users/me", { displayName: "Review" });
     await call("PATCH", "/users/me/preferences", {
       theme: "dark",
       style: "ocean",
@@ -111,6 +111,18 @@ test(
       });
       assert.equal(result.statusCode, 200);
     }
+    await call("POST", "/collections", {
+      name: "departments",
+      displayName: "Departments",
+      fields: [{ name: "name", type: "text" }],
+    });
+    await call("POST", "/items/departments", { name: "Engineering" });
+    await call("POST", "/items/departments", { name: "Design" });
+    await call("POST", "/collections", {
+      name: "hidden_notes",
+      hidden: true,
+      fields: [{ name: "title", type: "text" }],
+    });
     await call("POST", "/collections", {
       name: "articles",
       timestamps: { createdAt: true, updatedAt: true },

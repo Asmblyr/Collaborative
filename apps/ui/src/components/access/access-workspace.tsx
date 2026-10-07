@@ -17,6 +17,7 @@ import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
 export function AccessWorkspace({
   readOnly = false,
   canManagePolicies = false,
+  canManageSystemFields = false,
   delegatablePolicyIds = [],
   currentUserId,
   collections: rawCollections,
@@ -26,6 +27,7 @@ export function AccessWorkspace({
 }: {
   readOnly?: boolean;
   canManagePolicies?: boolean;
+  canManageSystemFields?: boolean;
   delegatablePolicyIds?: string[];
   currentUserId?: string;
   collections: PolicyCollection[];
@@ -94,6 +96,7 @@ export function AccessWorkspace({
       {section === "users" && (
         <UsersPanel
           canManageDelegation={canManagePolicies}
+          canManageSystemFields={canManageSystemFields}
           delegatablePolicyIds={delegatablePolicyIds}
           currentUserId={currentUserId}
           readOnly={readOnly}

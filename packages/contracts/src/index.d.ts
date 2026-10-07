@@ -334,6 +334,7 @@ export * from "./monitoring.js";
 export * from "./tags.js";
 export type {
   SystemCollectionName,
+  SystemCollectionRelation,
   SystemCollectionField,
   SystemCollection,
   SystemCollectionRecord,

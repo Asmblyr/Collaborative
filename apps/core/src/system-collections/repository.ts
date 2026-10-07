@@ -3,14 +3,14 @@ import type {
   SystemCollection,
   FieldPresentation,
 } from "@asmblyr-collaborative/contracts";
-import type { CollectionField } from "../collections/types.js";
+import type { CustomFieldDefinition } from "./relations.js";
 import { fieldTypeFromDatabase } from "../collections/field-types.js";
 import { systemCollection, systemCollections } from "./registry.js";
 
 export interface CustomFieldRow {
   collection_name: string;
   field_name: string;
-  definition: CollectionField;
+  definition: CustomFieldDefinition;
   presentation: FieldPresentation;
 }
 
@@ -40,6 +40,7 @@ export async function readSystemCollection(
       if (field) {
         return {
           ...field.definition,
+          type: field.definition.relation ? "relation" : field.definition.type,
           presentation: field.presentation,
           managed: false,
         };
