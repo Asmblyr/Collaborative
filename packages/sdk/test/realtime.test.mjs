@@ -6,8 +6,9 @@ function frame(event) {
   return `id: ${event.id}\ndata: ${JSON.stringify(event)}\n\n`;
 }
 
-test("realtime reconnects, restores scope and ignores duplicate IDs", async () => {
+test("realtime reconnects, restores scope and ignores duplicate IDs", async (t) => {
   const seen = [];
+  const invalidations = [];
   const states = [];
   const scope = { kind: "record", collection: "articles", id: "4" };
   const event = {
@@ -51,6 +52,8 @@ test("realtime reconnects, restores scope and ignores duplicate IDs", async () =
     },
   });
   const live = client.realtime.connect();
+  t.after(() => live.close());
+  live.on("collection.changed", (event) => invalidations.push(event));
   const offState = live.onState((state) => states.push(state));
   const unsubscribe = live.subscribe(scope, (received) => seen.push(received));
   await new Promise((resolve, reject) => {
@@ -72,6 +75,12 @@ test("realtime reconnects, restores scope and ignores duplicate IDs", async () =
   assert.equal(requests, 2);
   assert.equal(seen.filter((entry) => entry.id === "once").length, 1);
   assert.ok(seen.some((entry) => entry.type === "collection.changed"));
+  const scopeInvalidations = seen.filter(
+    (entry) => entry.type === "collection.changed",
+  );
+  assert.equal(scopeInvalidations.length, 1);
+  assert.deepEqual(invalidations, scopeInvalidations);
+  assert.deepEqual(invalidations[0].payload, { collection: "articles" });
   assert.ok(states.includes("reconnecting"));
   assert.equal(live.state, "offline");
 });

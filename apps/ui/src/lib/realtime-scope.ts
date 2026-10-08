@@ -15,6 +15,7 @@ const scopes = new Map<
     listeners: Set<Listener>;
     close: () => void;
     state: RealtimeConnectionState;
+    presence: Extract<RealtimeEvent, { type: "presence.changed" }> | null;
   }
 >();
 
@@ -31,14 +32,21 @@ export function subscribeRealtime(
     active = {
       listeners,
       state: connection.state,
+      presence: null,
       close: () => connection.close(),
     };
     const entry = active;
     const unsubscribe = connection.subscribe(scope, (event) => {
+      if (event.type === "presence.changed") {
+        entry.presence = event;
+      }
       for (const subscriber of listeners) subscriber(event, entry.state);
     });
     const unsubscribeState = connection.onState((state) => {
       entry.state = state;
+      if (state !== "connected") {
+        entry.presence = null;
+      }
       for (const subscriber of listeners) subscriber(null, state);
     });
     entry.close = () => {
@@ -49,6 +57,7 @@ export function subscribeRealtime(
     scopes.set(key, entry);
   }
   active.listeners.add(listener);
+  listener(active.presence, active.state);
   return () => {
     active.listeners.delete(listener);
     if (!active.listeners.size) {

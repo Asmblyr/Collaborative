@@ -116,16 +116,20 @@ export function createRealtimeClient(
             setState("connected");
             if (attempt) {
               // A reconnect may have missed events; callers refetch from the HTTP API.
-              callback({
-                id: crypto.randomUUID(),
-                type: "collection.changed",
-                timestamp: new Date().toISOString(),
-                workspaceId: null,
-                actor: null,
-                payload: {
-                  collection: scope.kind === "page" ? "" : scope.collection,
+              dispatch(
+                {
+                  id: crypto.randomUUID(),
+                  type: "collection.changed",
+                  timestamp: new Date().toISOString(),
+                  workspaceId: null,
+                  actor: null,
+                  payload: {
+                    collection: scope.kind === "page" ? "" : scope.collection,
+                  },
                 },
-              });
+                callback,
+                recentIds,
+              );
               for (const lock of heldLocks.values()) {
                 if (
                   scope.kind === "record" &&
