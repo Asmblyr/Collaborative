@@ -29,6 +29,8 @@ rollback миграций не заменяет восстановление.
 
 <a id="backups-of-the-local-docker-installation"></a>
 
+<a id="копии-локальной-docker-установки"></a>
+
 ## Копии локальной Docker-установки
 
 Следующие инструменты обслуживают только `deploy/local/compose.yaml`:
