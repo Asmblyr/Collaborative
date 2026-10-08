@@ -95,6 +95,18 @@
     "access": "Активная человеческая сессия; каждый heartbeat проверяет read коллекции/строки или доступ раздела. /files требует files/read либо update у человека, или superuser. Возвращает только ID, имя, аватар и число окон; без email/сессий/значений записи",
     "public": false
   },
+  "GET /realtime/stream": {
+    "access": "Активная человеческая сессия через Bearer token или браузерную HttpOnly cookie; scope проверяется теми же collection/row read правилами, что GET /items. Поток повторно проверяет доступ и закрывается при его потере. Presence только для этой сессии",
+    "public": false
+  },
+  "POST /realtime/locks": {
+    "access": "Активная человеческая сессия; read и update указанного поля и строки. Атомарная 30-секундная lease, конфликт 409 FIELD_LOCKED",
+    "public": false
+  },
+  "DELETE /realtime/locks": {
+    "access": "Активная человеческая сессия; освобождает только собственную lease с совпадающим clientId, даже после потери read/update",
+    "public": false
+  },
   "DELETE /presence/:clientId": {
     "access": "Активная человеческая сессия; удаляет только собственное окно этой сессии, без требования сохраняющегося read",
     "public": false

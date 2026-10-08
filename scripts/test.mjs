@@ -254,6 +254,8 @@ async function main() {
           "test/plugin-translations.test.ts",
           "test/plugin-build.test.ts",
           "test/presence.integration.test.ts",
+          "test/realtime.integration.test.ts",
+          "test/realtime-bus.test.ts",
           "test/http-access-surface.integration.test.ts",
         ].includes(name);
       }
@@ -265,6 +267,7 @@ async function main() {
       if (suite === "core-presence") {
         return [
           "test/presence.integration.test.ts",
+          "test/realtime.integration.test.ts",
           "test/http-access-surface.integration.test.ts",
         ].includes(name);
       }

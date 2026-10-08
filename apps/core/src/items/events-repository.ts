@@ -5,6 +5,7 @@ import type { Knex } from "knex";
 import type { HookEvents } from "@asmblyr-collaborative/kit";
 import { findCollectionSettings } from "../collections/settings-repository.js";
 import { ItemError, parseCollectionName, parseItemId } from "./validation.js";
+import { publishRealtime, realtimeEvent } from "../realtime/publish.js";
 
 type JsonRow = Record<string, unknown>;
 type EventAction = "create" | "update" | "delete";
@@ -56,7 +57,7 @@ export async function recordItemEvent(
   context: MutationContext,
 ): Promise<void> {
   const redacted = await sensitiveFields(transaction, collection.name);
-  await transaction("asmblyr_item_events")
+  const [recorded] = await transaction("asmblyr_item_events")
     .withSchema("public")
     .insert({
       collection_id: collection.id,
@@ -70,7 +71,32 @@ export async function recordItemEvent(
         before === null ? null : jsonRow(redactItemValues(before, redacted)!),
       after:
         after === null ? null : jsonRow(redactItemValues(after, redacted)!),
-    });
+    })
+    .returning<{ id: string }[]>("id");
+  const changed = (
+    before && after
+      ? Object.keys(changedFields(before, after).after)
+      : Object.keys(before ?? after ?? {})
+  ).filter((field) => !redacted.includes(field));
+  const liveEvent = realtimeEvent(
+    action === "create"
+      ? "record.created"
+      : action === "update"
+        ? "record.updated"
+        : "record.deleted",
+    context.actor,
+    {
+      collection: collection.name,
+      recordId: collection.itemId,
+      changedFields: changed,
+      revision: String(recorded.id),
+    },
+  );
+  // NOTIFY is limited to 8 KB. Keep the invalidation when a schema is wide.
+  if (Buffer.byteLength(JSON.stringify(liveEvent)) > 7_500) {
+    liveEvent.payload.changedFields = [];
+  }
+  await publishRealtime(transaction, liveEvent);
   await context.onItemEvent?.(transaction, `items.${action}`, {
     collection: collection.name,
     collectionId: collection.id,

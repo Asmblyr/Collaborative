@@ -21,6 +21,7 @@ export function ItemFormField({
   onBusy,
   disabled,
   container,
+  holder,
 }: {
   field: CollectionField;
   item?: Item;
@@ -35,6 +36,7 @@ export function ItemFormField({
   onBusy(busy: boolean): void;
   disabled: boolean;
   container?: HTMLElement | null;
+  holder?: string;
 }) {
   const copy = useUiCopy();
 
@@ -45,6 +47,11 @@ export function ItemFormField({
         className={field.presentation?.label ? undefined : "font-mono"}
       >
         {field.presentation?.label || field.name}
+        {holder && (
+          <span className="ml-2 font-sans text-xs text-amber-600">
+            {copy("{{value0}} редактирует", { value0: holder })}
+          </span>
+        )}
         {!readonly && required && field.defaultValue === undefined && (
           <span aria-label={copy("значение необходимо")}> *</span>
         )}

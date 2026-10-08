@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { registerReadiness } from "./health/readiness.js";
 import { registerPresenceRoutes } from "./presence/routes.js";
+import { PostgresRealtimeBus, InMemoryRealtimeBus } from "./realtime/bus.js";
+import { registerRealtimeRoutes } from "./realtime/routes.js";
+import { expireLocks } from "./realtime/locks.js";
 import { registerNotificationRoutes } from "./notifications/routes.js";
 import { registerErrorHandler } from "./http/error-handler.js";
 import Fastify from "fastify";
@@ -145,6 +148,11 @@ export function createApp({
   const database = databaseUrl
     ? knex({ client: "pg", connection: postgresConnection(databaseUrl) })
     : null;
+  const realtime = databaseUrl
+    ? new PostgresRealtimeBus(databaseUrl, (error) =>
+        app.log.error({ err: error }, "Realtime listener failed"),
+      )
+    : new InMemoryRealtimeBus();
   if (database) {
     app.decorate("credentialLimit", (key: string, limit: number) =>
       requestBucket(database, `credential-route:${key}`, 60000, limit),
@@ -213,6 +221,9 @@ export function createApp({
       Boolean(google && (await google.available(access.principal.id))),
   );
   app.addHook("onReady", async () => {
+    if (realtime instanceof PostgresRealtimeBus) {
+      await realtime.start();
+    }
     if (database) {
       await installPluginCollections(database, plugins);
     } else if (plugins.some((plugin) => plugin.collections?.length)) {
@@ -242,6 +253,15 @@ export function createApp({
   registerProfileExtensionRoutes(app, database, hooks.mutation);
   registerProfileDisplayRoutes(app, database);
   registerPresenceRoutes(app, database);
+  registerRealtimeRoutes(app, database, realtime);
+  const lockCleanup = database
+    ? setInterval(() => {
+        void expireLocks(database).catch((error) =>
+          app.log.error({ err: error }, "Realtime lock cleanup failed"),
+        );
+      }, 15_000)
+    : null;
+  lockCleanup?.unref();
   registerNotificationRoutes(app, database, plugins);
   registerServiceRoutes(app, database);
   registerFederationRoutes(app, database);
@@ -300,6 +320,8 @@ export function createApp({
   );
 
   app.addHook("onClose", async () => {
+    if (lockCleanup) clearInterval(lockCleanup);
+    await realtime.close();
     integrationRuntime?.close();
     fileStorage?.close?.();
     await database?.destroy();

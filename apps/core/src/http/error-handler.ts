@@ -32,7 +32,10 @@ export function describeRequestError(
   const message = exposeMessage
     ? failure.message
     : "An internal error occurred";
-  return { status, body: { code, message, requestId: request.id } };
+  return {
+    status,
+    body: { code, message, details: {}, requestId: request.id },
+  };
 }
 
 export function registerErrorHandler(app: FastifyInstance): void {

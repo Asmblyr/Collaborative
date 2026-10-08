@@ -7,6 +7,8 @@
 ## Подготовка
 
 Следуйте [руководству первого запуска](docs/guide/getting-started.md).
+Для карты компонентов и команд используйте [локальную разработку](docs/development/local-development.md),
+для нового плагина — [первое расширение](docs/development/first-extension.md).
 Публичные пакеты SDK и Kit пока используются как workspace-пакеты репозитория.
 Описание компонентов — в [архитектуре](docs/development/architecture.md).
 

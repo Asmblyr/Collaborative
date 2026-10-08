@@ -2,7 +2,7 @@
 
 import { useLocalizedCatalog } from "./use-localized-catalog";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { TablePreferences } from "@/lib/table-preferences";
@@ -30,6 +30,8 @@ import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import { AssistantTableContext } from "@/components/assistant/assistant-context";
 import { useUiCopy } from "@/lib/ui-copy";
 import { Badge } from "@/components/ui/badge";
+import { PresenceAvatars } from "@/components/presence/presence-avatars";
+import { subscribeRealtime } from "@/lib/realtime-scope";
 
 export function ItemsWorkspace({
   collection: sourceCollection,
@@ -104,6 +106,29 @@ export function ItemsWorkspace({
     setMessage,
   });
   const canRead = Boolean(collection.access.read);
+  useEffect(() => {
+    if (!canRead) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = subscribeRealtime(
+      { kind: "collection", collection: collection.name },
+      (event, state) => {
+        if (
+          event?.type === "collection.changed" &&
+          state === "connected" &&
+          !timer
+        ) {
+          timer = setTimeout(() => {
+            timer = null;
+            router.refresh();
+          }, 200);
+        }
+      },
+    );
+    return () => {
+      unsubscribe();
+      if (timer) clearTimeout(timer);
+    };
+  }, [canRead, collection.name, router]);
   const itemKey = (item: Item) => String(item[collection.primaryKey.name]);
   const canCreate =
     !collection.profileExtension &&
@@ -206,6 +231,9 @@ export function ItemsWorkspace({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
           <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 py-3">
+            <PresenceAvatars
+              scope={{ kind: "collection", collection: collection.name }}
+            />
             {collection.sourceKind === "materialized-view" && (
               <Badge variant="secondary">{copy("Только просмотр")}</Badge>
             )}

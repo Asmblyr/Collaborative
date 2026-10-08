@@ -210,13 +210,67 @@ export function operationContract(key) {
       },
     };
   }
+  if (key === "GET /realtime/stream") {
+    return {
+      parameters: [
+        query(
+          "clientId",
+          { type: "string", format: "uuid" },
+          "ID открытого окна",
+        ),
+        query(
+          "scope",
+          { type: "string", maxLength: 1024 },
+          "JSON scope из PresenceInput",
+        ),
+      ],
+      responses: {
+        200: {
+          description:
+            "SSE envelope; heartbeat-комментарии, событие presence.changed при подключении и изменении присутствия",
+          content: { "text/event-stream": { schema: { type: "string" } } },
+        },
+        default: error,
+      },
+    };
+  }
+  if (key === "POST /realtime/locks" || key === "DELETE /realtime/locks") {
+    const lockBody = wrapped({
+      collection: string,
+      recordId: string,
+      field: string,
+      clientId: { type: "string", format: "uuid" },
+    });
+    return {
+      requestBody: body(lockBody),
+      responses: key.startsWith("POST")
+        ? {
+            200: response(
+              wrapped({ data: object }),
+              "Получена или продлена lease поля",
+            ),
+            default: error,
+          }
+        : {
+            204: {
+              description: "Собственная lease освобождена или уже отсутствует",
+            },
+            default: error,
+          },
+    };
+  }
   if (key === "POST /items/:collection/commit") {
     return {
       requestBody: body(itemCommitBody),
       responses: {
         200: response(wrapped({ data: wrapped({ id: string }) })),
         409: response(
-          wrapped({ code: string, message: string, requestId: string }),
+          wrapped({
+            code: string,
+            message: string,
+            details: object,
+            requestId: string,
+          }),
           "Конфликт, включая ITEM_CHANGED. Весь черновик и его история откатываются. Ответ не содержит закрытых значений.",
         ),
         default: error,

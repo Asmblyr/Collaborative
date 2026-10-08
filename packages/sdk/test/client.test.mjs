@@ -121,7 +121,12 @@ test("API failures retain status, code and requestId without retries", async () 
       fetch: async () => {
         calls++;
         return Response.json(
-          { code: "TEST_ERROR", message: "Denied", requestId: "request-1" },
+          {
+            code: "TEST_ERROR",
+            message: "Denied",
+            details: { field: "title" },
+            requestId: "request-1",
+          },
           { status },
         );
       },
@@ -132,6 +137,7 @@ test("API failures retain status, code and requestId without retries", async () 
       assert.equal(error.code, "TEST_ERROR");
       assert.equal(error.requestId, "request-1");
       assert.equal(error.message, "Denied");
+      assert.deepEqual(error.details, { field: "title" });
       return true;
     });
     assert.equal(calls, 1);

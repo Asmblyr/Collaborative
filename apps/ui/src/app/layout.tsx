@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Geist } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import { cn } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { themeStyles, type ThemeStyle } from "@asmblyr-collaborative/contracts";
 import { AppearanceProvider } from "@/components/settings/appearance-provider";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geist = localFont({
+  src: "./fonts/geist-latin.woff2",
+  variable: "--font-sans",
+  weight: "100 900",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Asmblyr",

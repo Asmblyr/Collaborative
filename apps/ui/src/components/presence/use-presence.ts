@@ -4,8 +4,7 @@ import type {
   PresenceResult,
   PresenceScope,
 } from "@asmblyr-collaborative/contracts";
-import { asmblyr } from "@/lib/asmblyr";
-import { createPresenceSession } from "./presence-session";
+import { subscribeRealtime } from "@/lib/realtime-scope";
 
 export function usePresence(
   scope: PresenceScope | null,
@@ -20,51 +19,19 @@ export function usePresence(
       return;
     }
     const target: PresenceScope = JSON.parse(key);
-    function start() {
-      const clientId = crypto.randomUUID();
-      return createPresenceSession(
-        () =>
-          asmblyr.presence.touch(
-            { clientId, scope: target },
-            { timeoutMs: 5000 },
-          ),
-        () =>
-          fetch(`/api/presence/${clientId}`, {
-            method: "DELETE",
-            keepalive: true,
-          }),
-        (result) => setSnapshot({ key, data: result?.data ?? null }),
-      );
-    }
-    let session = start();
-    void session.refresh();
-    const refresh = () => {
-      void session.refresh();
-    };
-    const hide = () => session.dispose();
-    const show = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        session = start();
-        refresh();
+    const unsubscribe = subscribeRealtime(target, (event) => {
+      if (event?.type === "presence.changed") {
+        setSnapshot({
+          key,
+          data: {
+            participants: event.payload.participants,
+            total: event.payload.total,
+          },
+        });
       }
-    };
-    const visibility = () => {
-      if (document.visibilityState === "visible") {
-        refresh();
-      }
-    };
-    const timer = window.setInterval(refresh, 5000);
-    window.addEventListener("focus", refresh);
-    window.addEventListener("pagehide", hide);
-    window.addEventListener("pageshow", show);
-    document.addEventListener("visibilitychange", visibility);
+    });
     return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("focus", refresh);
-      window.removeEventListener("pagehide", hide);
-      window.removeEventListener("pageshow", show);
-      document.removeEventListener("visibilitychange", visibility);
-      session.dispose();
+      unsubscribe();
     };
   }, [key]);
   return snapshot?.key === key ? snapshot.data : null;

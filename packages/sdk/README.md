@@ -68,7 +68,7 @@ const profile = await client.users.me();
 ```
 
 `baseUrl` — корень API, например `http://localhost:3001` для прямого доступа
-к Core или `http://localhost:3000/api` для прокси админки. Префикс `/api`
+к Core или `http://localhost:3000/api` для браузерной админки. Префикс `/api`
 автоматически не добавляется. Путь `/api` без origin работает в браузере.
 
 Для прямых запросов к Core передайте access token:
@@ -85,7 +85,7 @@ const client = createClient({
 каждого запроса. Поддерживаются access tokens пользователя и сервисного аккаунта;
 права проверяет Core. `/users/me` предназначен для пользователя.
 SDK не хранит токены в браузере, не выполняет вход и не обновляет токены сам.
-В админке обновление сессии остаётся задачей её существующего серверного прокси.
+В админке браузерная сессия хранится в HttpOnly cookie, которую проверяет Core.
 
 ## Реализованные методы
 
@@ -184,7 +184,8 @@ await client.presence.leave(clientId);
 
 `touch` продлевает отметку на 30 секунд и возвращает до 50 пользователей;
 текущий пользователь идёт первым, окна одного человека объединяются. Повторяйте
-вызов, пока окно открыто: админка делает это каждые 5 секунд. SDK сам не создаёт
+вызов, пока окно открыто: этот HTTP API требует самостоятельного таймера.
+Realtime API ниже обновляет присутствие сам. SDK сам не создаёт
 таймеры. `leave` удаляет только окно текущей человеческой сессии и безопасен при
 повторении. До 32 активных окон на одну сессию; превышение возвращает 429.
 
@@ -193,6 +194,42 @@ await client.presence.leave(clientId);
 возвращаются. Сервисные principal не участвуют. При недоступной сети индикатор
 может отставать до истечения отметки; присутствие не блокирует запись и не
 показывает редактируемое поле.
+
+## Collaborative Live
+
+```ts
+const live = client.realtime.connect();
+const unsubscribe = live.subscribe(
+  { kind: "record", collection: "articles", id: "4" },
+  (event) => {
+    if (event.type === "record.updated") {
+      // Перечитайте запись через items.get; payload не содержит значения полей.
+      void client.items.get(event.payload.collection, event.payload.recordId);
+    }
+  },
+);
+const offState = live.onState((state) => console.log(state));
+const lock = {
+  collection: "articles",
+  recordId: "4",
+  field: "title",
+  clientId: crypto.randomUUID(),
+};
+await live.locks.acquire(lock);
+// Пока редактор открыт: await live.locks.refresh(lock) не реже 30 секунд.
+await live.locks.release(lock);
+unsubscribe();
+offState();
+live.close();
+```
+
+`subscribe` работает для page, collection и record. Состояния — `connecting`,
+`connected`, `reconnecting`, `offline`. SDK повторяет подписку с backoff и
+jitter. После переподключения он отправляет `collection.changed`, чтобы клиент
+перечитал данные. Повторные события с тем же ID в потоке пропускаются. Через
+админку используется HttpOnly cookie; внешнему API-клиенту нужен пользовательский
+Bearer token. Сервисный ключ для realtime не подходит. Блокировки — временный
+UX-сигнал, а `items.commit` с `expectedValues` остаётся защитой записи.
 
 ## Типизация коллекций
 
@@ -252,7 +289,13 @@ try {
   });
 } catch (error) {
   if (error instanceof ApiError) {
-    console.error(error.status, error.code, error.requestId, error.message);
+    console.error(
+      error.status,
+      error.code,
+      error.requestId,
+      error.message,
+      error.details,
+    );
   }
 }
 ```
@@ -262,7 +305,7 @@ HTTP-ошибка становится `ApiError`. Ошибки сети и от
 Таймаут по умолчанию — 10 секунд, включая чтение тела ответа; `timeoutMs: 0`
 отключает его. `request.signal` позволяет отменить конкретный запрос.
 `request.timeoutMs` переопределяет таймаут одного вызова; редактор админки передаёт
-`0` для commit, сохраняя действующий таймаут серверного прокси.
+`0` для commit, не ограничивая длительность запроса таймаутом SDK.
 SDK не повторяет запросы автоматически и отклоняет HTTP-редиректы.
 Ответы запрашиваются с `cache: "no-store"`.
 
