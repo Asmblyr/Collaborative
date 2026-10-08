@@ -39,6 +39,15 @@ test("route source and route-only disclaimer survive translation", () => {
   );
 });
 
+test("Russian OpenAPI localizes an English access declaration with its source suffix", () => {
+  const description = httpText(
+    "Public CLI discovery; configured admin consent URL only. No credential.. Источник: apps/core/src/cli-auth/routes.ts",
+    "ru",
+  );
+  assert.match(description, /^Публичное обнаружение CLI/);
+  assert.match(description, /Источник: apps\/core\/src\/cli-auth\/routes.ts$/);
+});
+
 test("guide links resolve source relationships in the selected locale", () => {
   assert.equal(
     guideLinks(

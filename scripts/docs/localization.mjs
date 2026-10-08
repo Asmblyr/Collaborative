@@ -22,7 +22,13 @@ const russianHttp = {
 };
 
 export function httpText(value, locale) {
-  if (locale === "ru") return russianHttp[value] ?? value;
+  if (locale === "ru") {
+    if (russianHttp[value]) return russianHttp[value];
+    const prefix = Object.keys(russianHttp).find((text) =>
+      value.startsWith(text + ". "),
+    );
+    return prefix ? russianHttp[prefix] + value.slice(prefix.length) : value;
+  }
   if (!/[А-Яа-яЁё]/.test(value)) return value;
   if (catalogs.en[value]) return catalogs.en[value];
   const source = value.match(/^(.*?)\. (Схемы тела.*? )?Источник: (.+)$/s);
