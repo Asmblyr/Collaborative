@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 144 144" role="img" aria-labelledby="title">
+<title id="title">Collaborative symbol</title>
+<defs><clipPath id="accent"><path d="M64 0h64v64H64z"/></clipPath></defs>
+<g fill="none" stroke-width="16" stroke-linejoin="round">
+  <path stroke="#1B2930" d="M40 40H24A16 16 0 1 1 40 24V104A16 16 0 1 1 24 88H104A16 16 0 1 1 88 104V24A16 16 0 1 1 104 40Z"/>
+  <path stroke="#88BFAA" clip-path="url(#accent)" d="M40 40H24A16 16 0 1 1 40 24V104A16 16 0 1 1 24 88H104A16 16 0 1 1 88 104V24A16 16 0 1 1 104 40Z"/>
+</g>
+</svg>

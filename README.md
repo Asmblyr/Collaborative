@@ -1,121 +1,167 @@
-# Asmblyr Collaborative
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/collaborative-logo-dark.svg">
+    <img src="docs/assets/brand/collaborative-logo-light.svg" alt="Collaborative" width="680">
+  </picture>
+</p>
 
-**Данные команды, права доступа и расширения — на PostgreSQL.**
+<p align="center">
+  <strong>A collaborative workspace for your PostgreSQL data.</strong><br>
+  Collections, an admin interface, access policies, and an API — on your infrastructure.
+</p>
 
-Asmblyr Collaborative — открытая платформа для команд, которым нужны настраиваемые
-коллекции, редактор записей и HTTP API. Разработчики могут добавить серверные
-обработчики и страницы через `@asmblyr-collaborative/kit`; интеграции работают
-через API, TypeScript SDK и CLI.
+<p align="center">
+  <a href="https://github.com/Asmblyr/Collaborative/actions/workflows/verify.yml"><img src="https://github.com/Asmblyr/Collaborative/actions/workflows/verify.yml/badge.svg?branch=main" alt="Build and checks"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-88bfaa?labelColor=1b2930" alt="MIT license"></a>
+  <a href="https://github.com/Asmblyr/Collaborative/releases"><img src="https://img.shields.io/badge/status-early%20beta-dc927c?labelColor=1b2930" alt="Early beta"></a>
+</p>
 
-**Статус: ранняя бета.** Одна установка предназначена для одной команды.
-Интерфейс и основная документация сейчас на русском. SDK, CLI, Kit и контракты
-доступны в npm как `0.1.0-beta.1` под тегом `beta`; выпуск не объявлен стабильным.
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="deploy/README.md">Deployment</a> ·
+  <a href="docs/index.md">Documentation</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
 
-[Сайт и демо](https://asmblyr.io/) · [Рабочая консоль](https://console.asmblyr.io/) ·
-[Быстрый старт](#быстрый-старт) · [Документация](docs/index.md) ·
-[Участие](CONTRIBUTING.md)
+Collaborative turns PostgreSQL data into a workspace your team can use together.
+Define collections and relationships, build forms and table views, and control
+which records and fields each person can access. Use the same data through the
+HTTP API or a typed TypeScript client, and extend the product with plugins.
 
-## Что уже работает
+**Early beta.** Each installation is intended for one team. The interface supports
+English and Russian; most detailed guides are currently in Russian. SDK and CLI
+packages are available under the npm `beta` tag.
 
-| Область            | Возможности                                                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| Данные             | Коллекции, типизированные поля, связи M:1 / 1:M / M:N, формы, таблицы, поиск, вложенные фильтры и сохранённые виды               |
-| Совместная работа  | Комментарии, живое присутствие, обновление записей, блокировки полей и проверка конфликтов при сохранении                        |
-| Доступ             | Политики для действий, полей и строк; отдельные права на настройки; приглашения, пароль, passkey и SSO                           |
-| Файлы и интеграции | S3-совместимое хранилище, сервисные аккаунты, GitLab CI federation, OAuth/OIDC provider и личные подключения Google Drive/Sheets |
-| Разработка         | H3-обработчики, страницы, редакторы полей, коллекции и миграции через Kit; типизированный SDK и CLI `asm connect`                |
-| Ассистент          | Опциональный потоковый чат, инструменты с правами пользователя и действия расширений через внутренний MCP                        |
+## What you can do
 
-Подробности и границы — в [карте возможностей](docs/guide/features.md).
-Workspaces группируют коллекции, но не изолируют компании; публичного MCP endpoint
-и установки расширений из интерфейса пока нет.
+| Area                   | Capabilities                                                                                                                                        |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model your data**    | Typed fields, M:1 / 1:M / M:N relationships, custom fields on supported system collections, and read-only materialized views.                       |
+| **Build a workspace**  | Configurable forms and tables, relevance search, nested filters, saved views, tags, and translated collection and field labels.                     |
+| **Work together**      | Discussions, notifications, live presence, saved-record updates, advisory field locks, and conflict handling that preserves local edits.            |
+| **Control access**     | Policies for actions, fields, and rows; invitations by link; passwords, passkeys, and external SSO; service accounts and OAuth/OIDC applications.   |
+| **Connect services**   | S3-compatible storage, encrypted connection secrets, optional Yandex KMS, personal Google Drive/Sheets connections, and optional Sentry monitoring. |
+| **Extend the product** | Server handlers, UI pages, field editors, collections, and migrations through the plugin Kit; a TypeScript SDK and schema-generating CLI.           |
+| **Use an assistant**   | Optional streaming chat with conversation history, permission-aware data tools, and explicitly exposed plugin actions.                              |
 
-## Collaborative Live
+See the [feature guide](docs/guide/features.md) for details and current limits.
+Workspaces organize collections within an installation; they are not tenant
+isolation boundaries. Plugins are installed with the application, and their
+server code runs as trusted code inside Core.
 
-Откройте одну запись в двух браузерах: участники видят друг друга, активное
-редактирование поля и сохранённые изменения почти сразу. Таблица обновляется
-через SSE; занятые поля показывают имя редактора. Если два человека изменили
-одно поле, сохранение черновика возвращает конфликт и предлагает выбрать
-значение. [Контракт и ограничения](docs/features/realtime.md).
+## Live collaboration
 
-## Ассистент и расширения
+Open the same record in two sessions to see who is there, which fields are being
+edited, and changes after they are saved. Tables and record editors receive
+updates over server-sent events. Unsaved edits stay in the form; conflicting
+changes to the same field can be reviewed before saving.
 
-При настройке OpenAI-совместимого провайдера ассистент работает с разрешёнными
-данными и явно опубликованными действиями расширений. `defineModelContext`
-публикует H3-обработчик для ассистента и внутреннего MCP; обычный HTTP-обработчик
-не становится инструментом автоматически. Доступ к данным дополнительно зависит
-от прав вызывающего и настройки публикации коллекции в MCP. Личные подключения
-Google Drive и Sheets поддерживают чтение по запросу и изменение после
-подтверждения пользователя.
+Field locks help coordinate editing. Conflict checks protect draft saves;
+ordinary API writes retain their documented behavior. Live events come from
+operations through Core, not direct SQL writes.
+[How live collaboration works](docs/features/realtime.md).
 
-[Как работает ассистент](docs/development/assistant-architecture.md) ·
-[Первое расширение](docs/development/first-extension.md) ·
-[Контракт Kit](docs/reference/kit-guide.md)
+## Quick start
 
-## Быстрый старт
-
-Нужны **Node.js 22+, pnpm 11.13.1 и Docker Compose**. Из корня репозитория:
+For local development, install **Node.js 22+, pnpm 11.13.1, and Docker Compose**.
 
 ```sh
+git clone https://github.com/Asmblyr/Collaborative.git
+cd Collaborative
 pnpm install --frozen-lockfile
 pnpm db:up
 cp -n apps/core/.env.example apps/core/.env
 ```
 
-В `apps/core/.env` задайте случайный `ASMBLYR_SETUP_TOKEN` длиной не менее 32
-символов. Затем:
+Set `ASMBLYR_SETUP_TOKEN` in `apps/core/.env` to a random value of at least
+32 characters, then start the application:
 
 ```sh
 pnpm db:migrate
 pnpm dev
 ```
 
-Откройте [localhost:3000/setup](http://localhost:3000/setup), чтобы создать первого
-администратора. Копируйте шаблон `.env` только если файла ещё нет. Подробнее —
-[первый запуск](docs/guide/getting-started.md).
-Для Docker и Kubernetes предусмотрены отдельные образы Core и UI, собранные из
-одного коммита, Docker Compose и Helm-чарт. PostgreSQL и S3 подключаются отдельно:
-[установка и настройка](deploy/README.md). CI публикует согласованную пару
-`ghcr.io/asmblyr/collaborative-core` и `ghcr.io/asmblyr/collaborative-ui`;
-для установки закрепляйте оба образа одной версии по digest.
-SDK, CLI, Kit и общие контракты доступны в npm как `0.1.0-beta.1` под тегом
-`beta`: [установка и подключение](docs/reference/packages.md). Docker-сборка
-не зависит от предварительной публикации этих пакетов.
+Open [localhost:3000/setup](http://localhost:3000/setup) to create the first
+administrator. The copy command above is for a POSIX shell; on Windows, copy the
+example file without overwriting an existing `.env`.
+See [first-time setup](docs/guide/getting-started.md) for configuration details.
 
-## Развёртывание
+## Deploy with Docker or Kubernetes
 
-Основной способ установки использует отдельные образы Core и UI. Совместимый
-монолитный образ доступен для существующих установок. [Docker и обновления](docs/guide/deployment.md)
-описывают сборку из исходников, Compose и эксплуатационные границы.
-[Опубликованные пакеты](docs/reference/packages.md) и
-[CLI](docs/reference/cli-guide.md) предназначены для внешних клиентов.
+Deploy **Core and UI as a matching pair**, built from the same commit. PostgreSQL
+and S3-compatible storage are connected separately. Both components can share
+one public origin, with the API available at `/api`.
 
-## Как устроен проект
+- **Docker Compose:** [deployment instructions](deploy/README.md#docker-compose).
+- **Kubernetes:** [Helm chart](deploy/helm/collaborative) and [configuration](deploy/README.md#kubernetes-и-helm).
+- **Images:** `ghcr.io/asmblyr/collaborative-core` and `ghcr.io/asmblyr/collaborative-ui`.
+- **Operations:** [upgrades](docs/guide/deployment.md), [backups and recovery](docs/development/operations.md).
+
+Pin both images to the same release and their respective digests. Container builds
+compile the SDK, Kit, contracts, and bundled plugins directly from this repository;
+they do not require those packages to be published to npm first.
+
+## Connect a TypeScript project
+
+```sh
+npm install @asmblyr-collaborative/sdk@beta
+npm install --save-dev @asmblyr-collaborative/cli@beta
+npx asm connect --url http://localhost:3000
+```
+
+The CLI opens your installation's sign-in and consent flow, downloads the schema
+available to your account, and generates collection and plugin types. No custom
+compiler or bundler plugin is required. Schema authorization does not grant data
+access; API requests still need their own authenticated session or credentials.
+
+[SDK guide](docs/reference/sdk-guide.md) ·
+[CLI guide](docs/reference/cli-guide.md) ·
+[HTTP API](docs/reference/http.md)
+
+## Assistant and plugins
+
+Connect an OpenAI-compatible provider to enable the assistant. It works with the
+caller's permissions and collections explicitly made available to its tools.
+Personal Google Drive and Sheets connections support reading on request and
+proposing changes for user approval.
+
+Plugins can expose selected actions through `defineModelContext`. Ordinary HTTP
+handlers do not automatically become assistant tools. The MCP integration is
+internal; there is no public MCP endpoint.
+
+[Assistant architecture](docs/development/assistant-architecture.md) ·
+[Build your first plugin](docs/development/first-extension.md) ·
+[Kit guide](docs/reference/kit-guide.md)
+
+## Architecture
 
 ```mermaid
 flowchart LR
-  Browser[Браузер] -->|страницы| UI[Next.js UI]
-  Browser -->|/api| API[Fastify Core API]
-  SDK[TypeScript SDK и CLI] --> API
-  API --> DB[(PostgreSQL)]
-  API --> S3[(S3-совместимое хранилище)]
-  Kit[Расширения через Kit] --> API
+  Browser[Browser] -->|Pages| UI[Next.js UI]
+  Browser -->|/api| Core[Fastify Core]
+  SDK[TypeScript SDK and CLI] --> Core
+  Core --> DB[(PostgreSQL)]
+  Core --> S3[(S3-compatible storage)]
+  Plugins[Kit plugins] --> Core
 ```
 
-Core отвечает за HTTP, авторизацию и данные; UI предоставляет админку.
-Браузерная сессия обрабатывается Core. Серверный код расширений исполняется внутри Core как доверенный
-код. [Архитектура](docs/development/architecture.md) и
-[структура репозитория](docs/development/local-development.md) раскрывают границы
-компонентов и хранения.
+Core owns the HTTP API, authentication, permissions, and database access. UI
+provides the admin interface. PostgreSQL coordinates realtime updates between
+Core instances.
+[Architecture guide](docs/development/architecture.md).
 
-## Документация и участие
+## Contributing
 
-- [Руководства и справочники](docs/index.md) · [HTTP API](docs/reference/http.md) · [TypeScript SDK](docs/reference/sdk-guide.md)
-- [Локальная разработка](docs/development/local-development.md) · [Участие в проекте](CONTRIBUTING.md)
-- [Безопасность и сообщение об уязвимости](SECURITY.md)
+Bug reports and proposals are welcome in [GitHub Issues](https://github.com/Asmblyr/Collaborative/issues).
+For code changes, fork the repository and open a pull request. Discuss substantial
+architecture or API changes in an issue first.
 
-## Лицензия
+- [Contribution guide](CONTRIBUTING.md) and [local development](docs/development/local-development.md).
+- [Documentation index](docs/index.md) and [documentation workflow](docs/development/documentation.md).
+- [Security policy and private reporting](SECURITY.md).
 
-[MIT](LICENSE). Сторонние зависимости сохраняют свои лицензии. Дополнительное
-локальное S3-хранилище использует MinIO под AGPL. Встроенный шрифт Geist
-распространяется по [SIL OFL 1.1](apps/ui/src/app/fonts/OFL.txt).
+## License
+
+[MIT](LICENSE). Third-party dependencies retain their own licenses. The optional
+local S3 service uses MinIO under AGPL. The wordmark uses the bundled Geist
+typeface, distributed under [SIL OFL 1.1](apps/ui/src/app/fonts/OFL.txt).

@@ -1,10 +1,10 @@
-# Asmblyr Collaborative
+# Collaborative
 
 Открытая платформа для работы с данными в PostgreSQL. Админка объединяет структуру
 коллекций, редакторы записей, права команды, файлы и интеграции.
 Проект находится в ранней бете; одна команда использует отдельную установку.
 
-[Сайт и демо](https://asmblyr.io/) · [Рабочая консоль](https://console.asmblyr.io/)
+[GitHub](https://github.com/Asmblyr/Collaborative) · [Релизы](https://github.com/Asmblyr/Collaborative/releases)
 
 ## Начать
 

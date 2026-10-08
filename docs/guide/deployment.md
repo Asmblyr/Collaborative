@@ -5,7 +5,6 @@
 PostgreSQL 17+ и S3-совместимое хранилище подключаются отдельно. Готовые сборки
 публикуются в `ghcr.io/asmblyr/collaborative-core` и
 `ghcr.io/asmblyr/collaborative-ui`; закрепляйте оба образа одной версии по digest.
-Также доступна [рабочая консоль](https://console.asmblyr.io/).
 Одна собственная установка предназначена для одной команды; workspace не создаёт
 отдельный tenant.
 
