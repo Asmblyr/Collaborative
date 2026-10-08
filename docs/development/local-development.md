@@ -1,38 +1,45 @@
-# Локальная разработка
+<a id="локальная-разработка"></a>
 
-## Структура репозитория
+# Local development
 
-| Каталог                            | Ответственность                                             |
-| ---------------------------------- | ----------------------------------------------------------- |
-| `apps/core`                        | Fastify API, доменные сервисы, Knex, миграции и авторизация |
-| `apps/ui`                          | Next.js админка и серверный BFF для сессии                  |
-| `packages/contracts`               | Общие публичные типы                                        |
-| `packages/sdk`                     | Типизированный HTTP-клиент                                  |
-| `packages/cli`                     | Подключение SDK и генерация типов                           |
-| `packages/kit`                     | Серверный и браузерный контракт расширений, сборщик         |
-| `packages/plugin-comments`         | Установленный по умолчанию плагин комментариев              |
-| `packages/plugin-google-workspace` | Инструменты личных Google-подключений                       |
-| `examples/plugins`                 | Не включённые по умолчанию примеры                          |
-| `deploy`, `docs`, `scripts`        | Развёртывание, документация и проверки                      |
+<a id="структура-репозитория"></a>
 
-[Схема компонентов](./architecture.md) показывает путь запросов и данных.
+## Repository layout
 
-## Запуск и изменения
+| Directory                          | Responsibility                                                       |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| `apps/core`                        | Fastify API, domain services, Knex, migrations, authentication       |
+| `apps/ui`                          | Next.js admin pages and server rendering; Core owns sessions and API |
+| `packages/contracts`               | Shared public types                                                  |
+| `packages/sdk`                     | Typed HTTP client                                                    |
+| `packages/cli`                     | SDK connection and type generation                                   |
+| `packages/kit`                     | Server/browser plugin contracts and builder                          |
+| `packages/plugin-comments`         | Discussion plugin installed by default                               |
+| `packages/plugin-google-workspace` | Tools for personal Google connections                                |
+| `examples/plugins`                 | Examples disabled by default                                         |
+| `deploy`, `docs`, `scripts`        | Deployment, documentation, checks                                    |
 
-Требуются Node.js 22+, pnpm 11.13.1 и Docker Compose. Выполните
-[первый запуск](../guide/getting-started.md), затем работайте через `pnpm dev`.
-Эта команда собирает пакеты и запускает Core с UI. Маршруты расширений в локальных
-workspace-пакетах отслеживает Core; изменение списка установленных пакетов требует
-перезапуска Core и UI. Для production UI и пакеты собираются заново.
+The [architecture](./architecture.md) shows request and data paths.
 
-Структуру Core меняйте новой версионной миграцией в `apps/core/migrations`.
-Пользовательские коллекции живут в схеме `public`; имена `asmblyr_` и `plugin_`
-зарезервированы. Миграции существующей установки выполняются через `pnpm db:migrate`.
-Доступ к данным, правам и файлам проверяйте в сервисах Core, а не только в UI.
-[Политики и границы доступа](../features/access.md) и
-[матрица доступа](../security/access-matrix.md) описывают текущие правила.
+<a id="запуск-и-изменения"></a>
 
-## Проверки
+## Running and changing the application
+
+Use Node.js 22+, pnpm 11.13.1, and Docker Compose. Complete
+[first-time setup](../guide/getting-started.md), then work with `pnpm dev`.
+This builds packages and starts Core and UI. Core watches plugin routes in local
+workspace packages. Changing the installed package list requires restarting both
+Core and UI. Rebuild UI and packages for production.
+
+Change Core schemas with a new versioned migration in `apps/core/migrations`.
+Custom collections live in `public`; `asmblyr_` and `plugin_` names are reserved.
+Run existing-installation migrations through `pnpm db:migrate`. Check data,
+permission, and file access in Core services, not just UI. Current rules are in
+[policies](../features/access.md) and the [access matrix](../security/access-matrix.md).
+
+<a id="проверки"></a>
+
+## Checks
 
 ```sh
 pnpm format:check
@@ -42,13 +49,12 @@ pnpm docs:build
 pnpm build
 ```
 
-Для интеграционных тестов используйте **только** `node scripts/test.mjs` и
-одноразовую БД: скрипту нужен локальный PostgreSQL и `TEST_DATABASE_ADMIN_URL`
-с правом `CREATEDB`. `pnpm check` объединяет публикационную проверку, формат,
-типы, lint, тесты, документацию; полный набор может быть долгим.
-Инструкции по обновлению сгенерированных справочников — в
-[сопровождении документации](./documentation.md).
+Run integration tests **only** through `node scripts/test.mjs` and its disposable
+database. The runner needs local PostgreSQL and `TEST_DATABASE_ADMIN_URL` with
+`CREATEDB`. `pnpm check` combines publication checks, formatting, types, lint,
+tests, and documentation; the full suite can take time. Generated reference
+updates are explained in the [documentation workflow](./documentation.md).
 
-Перед pull request прочитайте [CONTRIBUTING.md](https://github.com/Asmblyr/Collaborative/blob/main/CONTRIBUTING.md).
-Рабочие health/ready проверки, журналы и резервные копии описаны в
-[эксплуатации](./operations.md).
+Before opening a pull request, read
+[CONTRIBUTING.md](https://github.com/Asmblyr/Collaborative/blob/main/CONTRIBUTING.md).
+See [operations](./operations.md) for health/readiness checks, logs, and backups.

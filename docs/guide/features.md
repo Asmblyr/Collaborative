@@ -1,22 +1,26 @@
-# Карта возможностей
+<a id="карта-возможностеи"></a>
 
-Карта текущей реализации. Колонка «Ограничения» описывает границы функций; сроки дальнейших изменений не закреплены.
+# Feature map
 
-| Область      | Реализовано                                                                                                                              | Ограничения                                                                      |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Коллекции    | Создание, single/multiple, тип ключа, поля, подписи, формы, индексы, поиск, системные даты и состояние                                   | Подключение произвольных существующих таблиц/views; перенос между БД как продукт |
-| Записи       | Таблица, страницы, сортировка, колонки, боковой редактор, адрес записи, пакетные действия, атомарный draft, live invalidation            | Внешний SQL не создаёт live-события                                              |
-| Связи        | M:1, обратные 1:M, M:N через junction, выбор/создание/отвязка, поля связи                                                                | Нет обещания произвольной глубины вложенных запросов                             |
-| Фильтры      | Группы AND/OR, типовые условия, поля связей, сохранённые виды                                                                            | Условия permissions: прямые поля, И/ИЛИ и параметры участника запроса            |
-| Права        | Действия/поля/условия коллекции, переиспользуемые permissions, политики M:N, просмотр настроек и ограниченное назначение готовых политик | DDL остаётся у superuser; per-object file ACL                                    |
-| Пользователи | Setup, вход по ссылке, пароль/passkey, профиль, сессии, SSO, восстановление администратором                                              | Отдельный MFA flow, самостоятельное email-восстановление, LDAP/SAML              |
-| Интеграции   | Сервисные аккаунты/ключи, GitLab CI federation, собственный OAuth/OIDC provider                                                          | Универсальная федерация любых issuer; публичный MCP                              |
-| Файлы        | S3/YC, метаданные, ссылки, files/read и update, проверка чтения                                                                          | Per-object ACL, antivirus/преобразования, reconciliation DB/S3                   |
-| Пространства | Переключатель, набор коллекций, пользовательский выбор                                                                                   | Не являются tenant isolation                                                     |
-| Ассистент    | Контекст, stream, инструменты, model-handlers, telemetry, общие лимиты и опциональный retention                                          | Денежный бюджет провайдера; доказанная устойчивость к prompt injection           |
-| Плагины      | pnpm/local packages, H3 file routes, типизированный Kit, миграции, hooks, UI/fields/settings, MCP annotations                            | Песочница, marketplace/install из UI, гарантированная доставка внешних событий   |
-| SDK          | HTTP items list/get/create/update/delete/commit, users.me, presence touch/leave и realtime stream/locks                                  | Обёртки остальных системных endpoints, генерация схем коллекций                  |
-| Коллаборация | Проверка исходных значений, выбор при конфликте, SSE presence, live updates, TTL-блокировки полей                                        | Нет синхронизации комментариев и прав через live protocol                        |
-| Протоколы    | HTTP и SSE; OIDC протокол отдельно                                                                                                       | Общий GraphQL API                                                                |
+This table describes the current implementation. The limits column records
+feature boundaries; it does not promise dates for future changes.
 
-Подробности — на функциональных страницах, требования допуска — в [матрице](../security/access-matrix.md).
+| Area          | Implemented                                                                                                                                        | Limits                                                                                         |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Collections   | Creation, single/multiple mode, key types, fields, labels, forms, indexes, search, system dates and status; import of read-only materialized views | Import of arbitrary existing tables or ordinary views; database migration as a product feature |
+| Records       | Tables, pagination, sorting, columns, side-panel editor, record URLs, bulk actions, atomic drafts, live invalidation                               | External SQL does not produce live events                                                      |
+| Relationships | M:1, inverse 1:M, M:N through junctions, select/create/unlink, relationship fields                                                                 | Arbitrarily deep nested queries are not guaranteed                                             |
+| Filters       | AND/OR groups, typed conditions, relationship fields, saved views                                                                                  | Permission conditions use direct fields, AND/OR, and request-principal parameters              |
+| Access        | Collection actions/fields/conditions, reusable permissions, M:N policies, settings read access, bounded assignment of existing policies            | DDL remains superuser-only; no per-object file ACL                                             |
+| Users         | Setup, invitation links, passwords/passkeys, profile, sessions, SSO, administrator-assisted recovery                                               | No separate MFA flow, self-service email recovery, or LDAP/SAML                                |
+| Integrations  | Service accounts/keys, GitLab CI federation, built-in OAuth/OIDC provider                                                                          | No universal federation for arbitrary issuers or public MCP endpoint                           |
+| Files         | S3/YC, metadata, references, files/read and update, read checks                                                                                    | No per-object ACL, antivirus/transformation pipeline, or DB/S3 reconciliation                  |
+| Workspaces    | Switcher, collection sets, per-user selection                                                                                                      | Not tenant isolation                                                                           |
+| Assistant     | Context, streaming, tools, model handlers, telemetry, shared limits, optional retention                                                            | Provider spending limits remain external; resistance to prompt injection is not proven         |
+| Plugins       | pnpm/local packages, H3 file routes, typed Kit, migrations, hooks, UI/fields/settings, MCP annotations                                             | No sandbox, marketplace/UI installation, or guaranteed external event delivery                 |
+| SDK           | HTTP items list/get/create/update/delete/commit, users.me, presence and realtime/locks; schema generation and fluent queries through the CLI       | Not every system endpoint has a dedicated client wrapper                                       |
+| Collaboration | Baseline checks, conflict resolution, SSE presence, live updates, TTL field locks                                                                  | Comments and policy changes are not synchronized through the live protocol                     |
+| Protocols     | HTTP and SSE; separate OIDC protocol                                                                                                               | No general GraphQL API                                                                         |
+
+Feature pages explain the details. Access requirements are in the
+[access matrix](../security/access-matrix.md).

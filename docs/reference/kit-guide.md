@@ -2,19 +2,15 @@
 
 # @asmblyr-collaborative/kit
 
-Типизированный API для описания плагинов Asmblyr.
+Typed API for Collaborative plugins.
 
-[Возможности и разрешения](./kit-capabilities.md) · [Hooks и настройки](./kit-hooks.md)
+[Capabilities and permissions](kit-capabilities.md) · [Hooks and settings](kit-hooks.md)
 
-Плагины также могут предоставлять [редакторы текстовых полей](./kit-fields.md)
-с настройками и отображением в таблице. Пример — `examples/plugins/color`.
+Plugins can also supply [text-field editors](kit-fields.md), field settings, and table displays. See examples/plugins/color.
 
-`@asmblyr-collaborative/kit` содержит серверный контекст, H3-обработчики и сборщик плагинов.
-HTTP-клиент для браузера и Node находится в отдельном [@asmblyr-collaborative/sdk](./sdk-guide.md).
-Общие типы запросов и ответов принадлежат `@asmblyr-collaborative/contracts`;
-kit переэкспортирует типы, необходимые авторам обработчиков.
+Kit contains server context, H3 handlers, and the plugin builder. The browser/Node HTTP client is the separate [SDK](sdk-guide.md). Shared request/response types belong to @asmblyr-collaborative/contracts; Kit re-exports those needed by handler authors.
 
-Обязательный `plugin.ts` в корне пакета пока остаётся пустым описанием:
+The required root plugin.ts currently stays minimal:
 
 ```ts
 import { definePlugin } from "@asmblyr-collaborative/kit";
@@ -22,17 +18,13 @@ import { definePlugin } from "@asmblyr-collaborative/kit";
 export default definePlugin({});
 ```
 
-Маршруты обнаруживаются по файлам в `server/api`. Перечислять их в `plugin.ts`
-не нужно. Дополнительные возможности этого файла определим отдельно.
+Routes are discovered under server/api and are not listed manually in plugin.ts. The same principle applies to the assistant/MCP: defineModelContext&lt;Input&gt; connects an existing H3 handler to defineModelAnnotation. The builder derives schemas from TypeScript. See [plugin actions](../development/plugin-actions.md).
 
-Тот же принцип действует для ассистента и MCP: `defineModelContext<Input>` связывает
-существующий h3-обработчик с `defineModelAnnotation`. Сборщик выводит схемы из типов
-TypeScript; описание хранится рядом с обработчиком. Контракт, пример и правила проверки —
-в [действиях плагинов](../development/plugin-actions.md).
+<a id="обработчик"></a>
 
-## Обработчик
+## Handlers
 
-Файл `server/api/comments/status.get.ts`:
+server/api/comments/status.get.ts:
 
 ```ts
 import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
@@ -44,40 +36,21 @@ export default defineHandler((event) => {
 });
 ```
 
-- `defineHandler` — реэкспорт настоящего обработчика H3 **2.0.1-rc.32**. На входе
-  `H3Event`; HTTP-утилиты можно импортировать из `h3`, добавив ту же закреплённую
-  версию в зависимости своего пакета. H3 v1 с этим контрактом несовместим.
-- `useAsmblyr(event)` возвращает проверенный контекст: `actor` (`id`, `kind`,
-  необязательный `displayName`), `requestId`, `logger`, `items` и разрешённые возможности пакета.
-  `storage` требует namespace и `storage.own`; `displayName` — `identity.profile`. Вызов без контекста Core завершается ошибкой.
-  Возможность `notifications` добавляет подписки и публикацию событий своего
-  namespace в личные входящие. Core выбирает получателей и проверяет права на запись.
-  См. [контракт возможностей](./kit-capabilities.md).
-- Core проверяет access token пользователя или сервисного аккаунта до чтения тела
-  и запуска обработчика. Анонимных endpoints нет. `Authorization` в `event.req`
-  не передаётся; Core также удаляет cookies сессии и провайдеров из запроса к плагину.
-- Параметры и query читаются функциями H3: `getRouterParam`, `getQuery`,
-  `getValidatedQuery`. Для декодирования параметра используйте `{ decode: true }`
-  один раз. Тело читается через `event.req.json()`, `.text()`, `.formData()` или
-  `readValidatedBody`. Generic-параметр сам по себе не проверяет входные данные.
-- Можно возвращать объект, строку, бинарные данные, `Response`, поток или Promise.
-  Статус и заголовки задаются через `event.res` либо в `Response`.
-  Строка теперь отправляется как текст; для JSON-строки нужен `Response.json(value)`.
-  `null`/`undefined` означают пустое тело. Объекты остаются JSON.
-- `HTTPError` из H3 поддерживается. Сохранён и `EndpointError` для ошибок с кодом
-  Asmblyr. Ошибки имеют общий формат `{ code, message, requestId }`; подробности
-  серверных ошибок остаются в журнале. Клиентские HTTPError сохраняют свои headers.
-- Вход не означает доступ к данным коллекций. `items` проверяет право нужного
-  действия на коллекцию и доступ к её полям через общую с `/items` логику Core.
-- `useItems(event)` — общий доступ к этому сервису в обычном endpoint и в model
-  handler. В model handler `useActionContext(event)` также даёт actor, superuser и
-  signal; полного контекста `useAsmblyr` и привилегированного storage там нет.
-  `AccessGate.authenticated` разрешает вход, а права данных проверяет каждый метод
-  items. У MCP дополнительно учитывается публикация всех затронутых коллекций.
+- `defineHandler` re-exports H3 2.0.1-rc.32 and receives H3Event. Import HTTP utilities from h3 with the same pinned dependency. H3 v1 is incompatible.
+- `useAsmblyr`(event) returns validated actor (id, kind, optional displayName), requestId, logger, items, and approved capabilities. Storage needs namespace/storage.own; displayName needs identity.profile. Calls outside Core context fail.
+- Notifications capability adds subscriptions and inbox publication within the plugin namespace. Core selects recipients and checks record access. See [capabilities](kit-capabilities.md).
+- Core authenticates humans/services before reading the body or invoking handlers. There are no anonymous endpoints. Authorization and session/provider cookies are removed from plugin requests.
+- Read parameters/query with H3 getRouterParam, getQuery, or getValidatedQuery. Decode a parameter once with decode:true. Read bodies with event.req.json/text/formData or readValidatedBody. Generics do not validate input.
+- Return objects, strings, bytes, Response, streams, or Promises. Set status/headers through event.res or Response. Strings are text; JSON strings require Response.json(value). Null/undefined mean an empty body; objects remain JSON.
+- H3 HTTPError and Collaborative EndpointError are supported. Errors share code/message/requestId; server details stay in logs. Client HTTPErrors retain headers.
+- Authentication grants no collection access. Items checks actions/fields through Core's shared /items logic.
+- UseItems(event) works in ordinary endpoints and model handlers. `useActionContext` adds actor, superuser, and signal, but excludes full useAsmblyr and privileged storage. AccessGate authenticates; each items method authorizes data. MCP additionally checks publication of all affected collections.
 
-Это API доверенных серверных пакетов, выполняемых в процессе Core, без песочницы.
+These are trusted in-process server packages, not sandboxed code.
 
-## Чтение данных
+<a id="чтение-данных"></a>
+
+## Reading data
 
 ```ts
 import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
@@ -94,107 +67,66 @@ export default defineHandler(async (event) => {
 });
 ```
 
-Одна запись: `await items.get("articles", 4, { fields: ["title"] })`.
-`items` из kit вызывает общий сервис Core внутри процесса, без дополнительного HTTP-запроса.
+Read one record with items.get("articles", 4, { fields: ["title"] }). Kit calls Core's in-process service without extra HTTP.
 
-| Метод                                 | Результат                                                          |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| `items.list(collection, options?)`    | `{ data, labels, page: { number, size, total, sort, direction } }` |
-| `items.get(collection, id, options?)` | `{ data, label }`; отсутствующая запись — ошибка 404               |
+| Method                              | Result                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| items.list(collection, options?)    | { data, labels, page: { number, size, total, sort, direction, order } } |
+| items.get(collection, id, options?) | { data, label }; missing records return 404                             |
 
-Контракты `ItemsReader`, `ItemListOptions`, `ItemReadOptions`, `ItemListResult`,
-`ItemResult`, `ItemRecord` и типы фильтров экспортируются из `@asmblyr-collaborative/kit`.
+Kit exports ItemsReader, ItemListOptions, ItemReadOptions, ItemListResult, ItemResult, ItemRecord, and filter types.
 
-- `collection` и `fields` используют технические имена. Выбор полей относится
-  к физическим столбцам, включая внешние ключи и системные даты. Разворачивания
-  связанных записей и выбора виртуальных полей через `fields` пока нет.
-- Без `fields` возвращаются все доступные поля. `fields: []` возвращает только
-  первичный ключ; ключ всегда включён. `*` указывать не нужно. Недоступное поле —
-  ошибка 403, неизвестное — 400. Проекция выполняется в SQL.
-- Сортировка, поиск и фильтры проверяются по полному набору разрешённых полей,
-  независимо от `fields`. Например, можно вернуть только `id`, сортируя по
-  доступному `title`. `labels`/`label` тоже могут использовать доступные поля вне
-  проекции, но не закрытые поля своей или связанной коллекции.
-- `page` начинается с 1, `limit` — от 1 до 100 (по умолчанию 100), `total` — строка.
-  Это те же ограничения, что у HTTP API. Без `sort` используется первичный ключ.
-- `id` — строка или безопасное целое JS. Большие `bigserial` передавайте строками;
-  в результате они также остаются строками. Поля имеют тип `unknown`, поскольку
-  схемы динамические. Календарный `date` всегда остаётся строкой `YYYY-MM-DD`,
-  обычный `bigint` — точной десятичной строкой. Внутри обработчика `datetime` может быть `Date`;
-  при JSON-ответе они сериализуются в ISO-строки, как в `/items`.
-- Поддерживаются `q` и объект `filter` с теми же операторами и проверками, что у
-  HTTP API. Значения условий — строки или массивы строк, включая числа и boolean.
-  Фильтры по связям ограничены одним переходом и требуют прав на обе стороны.
-  Действуют общие лимиты: 8192 символа JSON, 3 уровня групп, 20 условий, 30 узлов.
-- Права загружаются один раз при входе в endpoint. Изменение политик и отзыв
-  сессии/сервисного ключа учитываются в следующем запросе. Не сохраняйте `items`
-  в глобальной переменной и не передавайте в фоновые задачи: это контекст запроса.
-- Переопределение actor, `superuser` или прав не предусмотрено. Неизвестные опции
-  чтения отклоняются. В kit нет доступа к Knex, токенам или системным
-  таблицам через `items`. Код плагина остаётся доверенным кодом процесса.
-- Условия permissions проверяются Core: до count/пагинации, отдельно от фильтра
-  вызывающей стороны. Поля проецируются по сработавшим веткам; изменения проверяют
-  исходную и итоговую запись. См. [права и границы первой версии](../../docs/features/access.md).
-  Пользовательский `filter` сужает выдачу и не заменяет такую политику.
-  Статусы записей автоматически не отфильтровываются: как в `/items`, нужное
-  условие передаёт вызывающая сторона.
+- Collection/fields use technical names. Selection covers physical columns, foreign keys, and timestamps, without relation expansion or virtual fields.
+- Omitted fields returns all permitted fields. An empty list returns only the primary key, which is always included. No "\*" is needed. Closed fields yield 403; unknown fields 400. SQL performs projection.
+- Sorting/search/filtering use all permitted fields independently of projection. You can return id while sorting by accessible title. Labels may use permitted fields outside selection, never closed fields in source/related collections.
+- Page starts at 1; limit is 1–100, default 100; total is a string. Without search or explicit sorting, the primary key orders results. Search relevance follows Core's order option.
+- IDs are strings or safe JS integers. Large bigserial IDs remain strings. Dynamic fields have unknown type. Date stays YYYY-MM-DD, bigint stays an exact decimal string. Datetime may be Date inside handlers, becoming ISO on JSON serialization.
+- Q/filter use HTTP operators and checks. Values are strings/string arrays, including numbers/booleans. Related filters allow one hop with access to both sides. Limits: 8192 JSON characters, 3 group levels, 20 conditions, 30 nodes.
+- Grants load at endpoint entry. Policy/session/key revocation applies on the next request. Never store items globally or use it in background tasks.
+- Actors, superuser, and grants cannot be overridden. Unknown read options are rejected. Items exposes no Knex, tokens, or system tables; plugin code remains trusted.
+- Core applies row permissions before count/pagination, separately from caller filters. Matching rules control projection and original/final write checks. See [access boundaries](../features/access.md). Record statuses are not implicitly filtered: callers supply the condition as with /items.
 
-Пример фильтра по доступному полю связанной коллекции:
+Example with a readable related field:
 
 ```ts
 const result = await items.list("articles", {
   fields: ["title"],
   filter: {
     logic: "and",
-    children: [{ field: "author_id.name", op: "eq", value: "Анна" }],
+    children: [{ field: "author_id.name", op: "eq", value: "Anna" }],
   },
 });
 ```
 
-Ошибки чтения проходят через общую обработку Core: 400 — некорректный запрос,
-403 — нет разрешения, 404 — коллекция или запись не найдена. До запуска endpoint
-невалидный access token даёт 401. Ошибка не превращается в пустую выдачу.
+Errors remain errors: 400 invalid request, 403 denied, 404 missing collection/record, and 401 invalid token before invocation. They never become empty results.
 
-HTTP API использует ту же проекцию: `GET /items/articles?fields=id,title` и
-`GET /items/articles/4?fields=title`. Без параметра формат ответа сохранён.
+HTTP uses the same projection: GET /items/articles?fields=id,title and GET /items/articles/4?fields=title. Omitting fields preserves its response format.
 
-## Запись данных
+<a id="запись-данных"></a>
+
+## Writing data
 
 ```ts
 const { items } = useAsmblyr(event);
-const result = await items.create("articles", { title: "Статья" });
-await items.update("articles", 4, { title: "Новое название" });
+const result = await items.create("articles", { title: "Article" });
+await items.update("articles", 4, { title: "New title" });
 await items.delete("articles", 4);
 ```
 
-Контекст предоставляет `ItemsService`, включающий чтение и запись. `ItemsReader`
-остаётся отдельным типом для функций, которым требуется только чтение.
-Входные значения — JSON-объекты; правила полей и отношений проверяет Core.
+ItemsService includes reads/writes; ItemsReader remains a separate type for read-only consumers. Inputs are JSON objects validated by Core's field/relation rules.
 
-- `create`/`update` возвращают `{ data }` только с читаемыми полями. Если права
-  чтения нет, успешный результат — `{ data: null }`. `delete` возвращает `void`.
-- Core использует общую с HTTP API логику в `items/writer.ts`: права, проверку
-  связанной коллекции, валидацию, запись и проекцию результата.
-- Каждая операция и её история выполняются в транзакции. Автор истории берётся
-  из текущей сессии пользователя или сервисного аккаунта. ID операции истории
-  генерирует Core; это UUID, отдельный от HTTP `requestId`.
-- Несколько вызовов не образуют одну транзакцию. Для записи со связями есть
-  `items.commit(collection, draft)`, использующий существующий механизм черновиков.
-  Возвращает `{ data: { id } }`. Сбой откатывает весь черновик, включая историю.
-- `ItemCommitDraft` содержит values/references/relations/records, до 100 изменений
-  и глубины 5. Для изменения существующей записи через commit нужно и чтение.
-  `expectedValues` в каждой изменяемой записи включает исходные значения всех
-  обновляемых полей, включая FK. Core проверяет их под блокировкой строки;
-  несовпадение возвращает `ITEM_CHANGED` (409) и откатывает весь черновик.
-  Сравниваемые поля требуют read/update. Пропуск сохраняет прежнее поведение.
-  Полный формат общий с [HTTP SDK](./sdk-guide.md#запись-и-сохранение-связей).
-- Ошибки: 400 — значения или поля, 403 — права, 404 — отсутствующая запись,
-  409 — конфликт связи/ключа или вторая запись в single-коллекции.
+- Create/update return readable data, or data:null on successful write without read access. Delete returns void.
+- Shared items/writer.ts performs authorization, related-collection checks, validation, storage, and projection.
+- Each operation/history is transactional. The caller supplies authorship; Core generates a separate UUID history-operation ID, distinct from HTTP requestId.
+- Multiple calls do not share a transaction. Items.commit(collection, draft) atomically saves linked drafts, returning the root ID and rolling back all changes/history on failure.
+- ItemCommitDraft contains values/references/relations/records, capped at 100 changes/depth 5. Existing records in commits also require reads. ExpectedValues on each modified record includes baselines for updated fields/FKs; Core checks under row locks. Mismatch returns ITEM_CHANGED (409) and rolls back everything. Compared fields need read/update; omission preserves legacy behavior. See [SDK writes](sdk-guide.md#writes-and-relationships).
+- Errors: 400 invalid values/fields, 403 access, 404 missing record, 409 relationship/key conflict or a second singleton record.
 
-Собственные коллекции плагина устанавливаются Core при первом запуске.
-Формат описания и ограничения обновления приведены ниже.
+Core installs plugin-owned collections on first startup; declaration/update rules follow below.
 
-### Пример POST с проверкой тела
+<a id="пример-post-с-проверкои-тела"></a>
+
+### POST body validation
 
 ```ts
 import { defineHandler, useAsmblyr } from "@asmblyr-collaborative/kit";
@@ -210,58 +142,42 @@ export default defineHandler(async (event) => {
 });
 ```
 
-### Граница HTTP
+<a id="граница-http"></a>
 
-Fastify продолжает маршрутизировать запросы. Изолированный parser читает исходные
-байты тела с лимитом **1 МиБ**; H3 разбирает их один раз. Multipart поддерживается
-в этом лимите, потоковая загрузка больших файлов пока не реализована.
-Ответы идут потоком напрямую через Fastify без преобразования в JSON и без полной
-буферизации. Отключение клиента передаётся в `event.req.signal`.
+### HTTP boundary
 
-Core сохраняет content-type, статусы, cookies плагина и end-to-end headers.
-Имена cookies с префиксом `asmblyr_` и настроенным `SESSION_COOKIE_PREFIX`
-зарезервированы; плагин не читает и не заменяет cookies сессии или провайдеров.
-Редирект передаётся браузеру без серверного перехода с токеном Core.
-В `Location` следует использовать публичный адрес, например `/api/comments/status`.
-Промежуточного UI-прокси и его таймаута нет; клиент управляет отменой запроса.
-Все ответы плагинов имеют `Cache-Control: no-store`.
+Fastify routes requests. An isolated parser reads raw bodies up to 1 MiB; H3 parses once. Multipart fits within that limit; large streaming uploads are unsupported. Responses stream through Fastify without JSON conversion/full buffering. Disconnect reaches event.req.signal.
 
-Это интеграция обработчиков H3, а не полноценный Nitro-сервер. `event.app`,
-сырой Node req/res, WebSocket upgrades и фоновый lifecycle пока не предоставляются.
-`plugin.ts` по-прежнему описывает пакет Asmblyr; `definePlugin` из `h3` — другое API.
+Core preserves content type, status, plugin cookies, and end-to-end headers. Cookie names prefixed asmblyr\_ or SESSION_COOKIE_PREFIX are reserved; plugins cannot read/replace session/provider cookies. Redirects go to the browser without a server-side follow carrying Core credentials. Use public Location values such as /api/comments/status.
 
-## Адреса
+There is no intermediate UI proxy timeout; clients control cancellation. All plugin responses use Cache-Control:no-store.
 
-Путь определяется относительно `server/api`, метод — суффиксом файла:
+This integrates H3 handlers, not a full Nitro server. Event.app, raw Node req/res, WebSocket upgrades, and background lifecycle are unavailable. H3's definePlugin is a different API from Collaborative's package declaration.
 
-| Файл внутри `server/api`             | Публичный маршрут на адресе админки |
-| ------------------------------------ | ----------------------------------- |
-| `comments/index.get.ts`              | `GET /api/comments`                 |
-| `comments/index.post.ts`             | `POST /api/comments`                |
-| `comments/[id].delete.ts`            | `DELETE /api/comments/:id`          |
-| `comments/[id]/replies/index.get.ts` | `GET /api/comments/:id/replies`     |
+<a id="адреса"></a>
 
-Core использует те же пути без общего префикса `/api`. Имя npm-пакета в URL не
-подставляется. Поддерживаются `.get.ts`, `.post.ts`, `.put.ts`, `.patch.ts` и
-`.delete.ts`. Файл без суффикса метода, например `comments/status.ts`, обслуживает
-все пять методов. Каждый файл должен экспортировать обработчик по умолчанию.
+## Addresses
 
-Вспомогательные функции размещаются вне `server/api`. Файлы `.d.ts` не считаются
-маршрутами. Необязательные параметры, catch-all, составные параметры в сегменте
-и отдельные HEAD/OPTIONS handlers пока не поддерживаются.
+Paths are relative to server/api; suffixes determine methods.
 
-Первый сегмент пути принадлежит плагину. Core отклоняет пересечения с собственными
-разделами, другими плагинами и дубли маршрутов. Сборка также отклоняет неоднозначные
-файлы, например `[id].get.ts` и `[key].get.ts` в одном каталоге.
-UI автоматически проксирует пути плагинов, используя
-свою сессию и существующую проверку Origin для изменений.
+| File under server/api              | Public admin-domain route     |
+| ---------------------------------- | ----------------------------- |
+| comments/index.get.ts              | GET /api/comments             |
+| comments/index.post.ts             | POST /api/comments            |
+| comments/[id].delete.ts            | DELETE /api/comments/:id      |
+| comments/[id]/replies/index.get.ts | GET /api/comments/:id/replies |
 
-## Коллекции плагина
+Core also uses these paths without /api. Npm package names are not inserted in URLs. Supported suffixes: get/post/put/patch/delete.ts. A file without a method suffix serves all five. Every route default-exports a handler.
 
-В `server/collections/entries.ts` плагина comments есть пример с
-`defineCollection()` из kit. Core проверяет описание и при первом запуске создаёт
-таблицу вместе с метаданными. Файлы лежат непосредственно в `server/collections`,
-имя файла совпадает с локальным именем коллекции. Подкаталоги и симлинки запрещены.
+Keep helpers outside server/api. Declaration files are not routes. Optional parameters, catch-all, compound path segments, and separate HEAD/OPTIONS handlers are unsupported.
+
+The first path segment belongs to the plugin. Core rejects collisions with built-in sections, other plugins, and duplicate routes. Builds reject ambiguous files such as [id].get.ts and [key].get.ts in one directory. Browser calls use the public API with the current session and the existing mutation Origin checks.
+
+<a id="коллекции-плагина"></a>
+
+## Plugin collections
+
+Comments' server/collections/entries.ts demonstrates defineCollection. Core validates declarations and creates tables/metadata on initial startup. Files sit directly under server/collections and match local collection names. Subdirectories/symlinks are forbidden.
 
 ```ts
 import { defineCollection } from "@asmblyr-collaborative/kit";
@@ -270,82 +186,51 @@ export default defineCollection({
   name: "entries",
   primaryKey: { name: "id", type: "uuid" },
   timestamps: { createdAt: true, updatedAt: true },
-  presentation: { displayName: "Комментарии", hidden: true },
+  presentation: { displayName: "Comments", hidden: true },
   fields: {
     body: {
       type: "text",
       required: true,
       nullable: false,
-      presentation: { label: "Комментарий", interface: "textarea" },
+      presentation: { label: "Comment", interface: "textarea" },
     },
   },
 });
 ```
 
-- `name` — локальное имя внутри плагина. Namespace задаётся в манифесте,
-  а Core формирует имя таблицы: `plugin_<namespace>_<name>`, например `plugin_comments_entries`.
-- `primaryKey` и `timestamps` используют общие с Core типы из contracts.
-  Ключ и системные даты не нужно повторять в `fields`.
-- Ключи объекта `fields` — технические имена полей. Порядок объявления задаёт
-  порядок создания столбцов. Метаданные полей сохраняются при установке.
-- `required` — обязательность непустого значения в API; `nullable` — допустимость
-  SQL NULL в БД. Оба параметра явные и независимые: `true` / `true` допустимо.
-- Типы полей соответствуют Core. Тип значения `defaultValue` зависит от поля;
-  `date` и `bigint` используют строки, включая `CollectionRow` и входы storage.
-  для `file` / `files` дефолт не поддерживается. `searchable` доступен для `text`
-  и `email`; создание индекса это свойство не описывает.
-- `presentation` поля использует существующий `FieldPresentation` из contracts;
-  можно указать только нужные настройки. У коллекции пока доступны `displayName`
-  и `hidden`. Скрытие из навигации не заменяет права или защиту структуры.
-- `defineCollection` возвращает описание без побочных действий. Это не runtime-
-  валидатор: допустимость имён, UUID/дат/чисел, сочетаний настроек интерфейса и
-  конфликтов полей проверяет загрузчик Core через общие валидаторы коллекций.
+- Name is local to the plugin. Manifest namespace produces plugin*&lt;namespace&gt;*&lt;name&gt;, such as plugin_comments_entries.
+- PrimaryKey/timestamps use shared Contracts types; do not duplicate them in fields.
+- Field keys are technical names; declaration order determines column creation order. Installation persists metadata.
+- Required means nonempty API input; nullable permits SQL NULL. Both are explicit/independent, including true/true.
+- Types match Core. DefaultValue depends on type; date/bigint use strings, including CollectionRow/storage input. File/files have no defaults. Searchable supports text/email and does not itself declare an index.
+- Field presentation uses FieldPresentation with optional settings. Collection presentation currently supports displayName/hidden. Navigation hiding is not authorization or structural protection.
+- DefineCollection is side-effect-free and not a runtime validator. Core uses shared validators for names, values, interface combinations, and field conflicts.
 
-Пакет с коллекциями задаёт `asmblyr.manifest.namespace`, например `comments`,
-и экспортирует `"./collections": "./dist/collections.json"`. Namespace — стабильное
-имя из 1–31 строчных латинских букв, цифр и подчёркиваний, начиная с буквы.
-Он уникален между установленными пакетами; `asmblyr` и префиксы `asmblyr_` / `plugin_`
-зарезервированы. Полное имя таблицы должно умещаться в 63 символа PostgreSQL.
-Сборщик создаёт индекс деклараций. В dev Core сканирует исходники локального пакета,
-в production читает индекс и скомпилированные модули. `plugin.ts` остаётся пустым.
+Packages with collections specify a namespace and export ./collections as ./dist/collections.json. Namespace is 1–31 lowercase Latin letters/digits/underscores, beginning with a letter, unique among installed packages. Asmblyr and asmblyr*/plugin* prefixes are reserved. Full table names must fit PostgreSQL's 63-character limit.
 
-Core хранит namespace и npm-владельца в `asmblyr_plugins`, а локальное имя,
-физическое имя и нормализованное описание — в `asmblyr_plugin_collections`.
-Реестр создаётся обычной миграцией Core (`pnpm db:migrate`). При старте установка
-всех включённых коллекций проходит в одной транзакции под общей блокировкой.
-Чужие таблицы и метаданные не присваиваются. Повторный запуск сохраняет данные.
+The builder generates the declaration index. Development scans local source; production loads indexes/compiled modules. `plugin.ts` remains empty.
 
-Изменения установленного описания должны быть воспроизведены явными миграциями
-из `server/migrations`. Несовпадение итогового описания останавливает запуск.
-Новые коллекции добавляются автоматически. Исчезнувшая
-таблица не создаётся заново поверх реестра. Прямые изменения структуры через SQL
-не синхронизируются автоматически. Отключение плагина сохраняет таблицы и владельца.
+Core stores namespace/npm ownership in asmblyr_plugins and local/physical names plus normalized declarations in asmblyr_plugin_collections. Normal Core migrations create the registry. Startup installs all enabled collections in one transaction under a shared lock. Foreign tables/metadata are never adopted; restarting preserves data.
 
-Префикс `plugin_` зарезервирован в редакторе структуры и API независимо от того,
-включён ли пакет. Обычные пользователи и superuser не меняют структуру и настройки
-таких коллекций. Строки доступны через `/items` и kit по обычным правам, включая
-историю изменений; отключение кода плагина само по себе эти права не отзывает.
-MCP при установке выключен. Связи между коллекциями плагина пока не поддержаны
-декларациями. Формат пока экспериментальный.
+Installed declaration changes require explicit server/migrations reproducing the new state. Mismatch stops startup. New collections install automatically. Missing registered tables are not silently recreated. Direct SQL structure edits do not synchronize automatically. Disabling a plugin preserves tables/ownership.
 
-## Миграции, хранилище и UI
+Plugin\_ remains reserved in UI/API whether the package is enabled or not. Neither ordinary users nor superusers edit these collections' structure/settings. Rows use normal /items/Kit grants and history; disabling plugin code does not revoke those grants. MCP starts disabled. Declaration-based relations between plugin collections are unsupported; the format remains experimental.
 
-Полный контракт и ограничения описаны в [жизненном цикле плагина](./kit-lifecycle.md).
-Пример со всеми тремя возможностями — `packages/plugin-comments`.
+<a id="миграции-хранилище-и-ui"></a>
 
-## Пакет и подключение
+## Migrations, storage, and UI
 
-Имя, версия и зависимости плагина остаются в его `package.json`.
-`asmblyr.manifest.version` задаёт версию формата манифеста, а не версию kit.
+See [plugin lifecycle](kit-lifecycle.md). Packages/plugin-comments demonstrates all three.
 
-Пакет плагина экспортирует собранный модуль по `exports["."].default`, типы по
-`exports["."].types`, метаданные по `exports["./package.json"]` и сгенерированный
-`dist/routes.json` по `exports["./routes"]`. Пакеты с namespace также экспортируют
-`dist/collections.json` по `exports["./collections"]`.
-Пример настройки находится в `packages/plugin-comments/package.json`.
+<a id="пакет-и-подключение"></a>
 
-Пакеты устанавливаются как зависимости корневого проекта и явно включаются
-в его `package.json`:
+## Package and installation
+
+Name, version, and dependencies remain in package.json. Asmblyr.manifest.version is the manifest format version, not Kit's version.
+
+Export built modules through exports["."].default, types through exports["."].types, metadata through ./package.json, and generated dist/routes.json through ./routes. Namespaced packages also export dist/collections.json through ./collections. See packages/plugin-comments/package.json.
+
+Install dependencies at the project root and explicitly enable them:
 
 ```json
 {
@@ -355,53 +240,32 @@ MCP при установке выключен. Связи между колле
 }
 ```
 
-Core проверяет имена, версии манифестов и наличие обработчиков всех включённых
-пакетов перед импортом. Ошибки включённого плагина останавливают запуск.
-Сканирование происходит только внутри включённых пакетов; установка сама по себе
-не включает плагин.
+Core validates enabled package names, manifest versions, and handlers before imports. Enabled-plugin failures stop startup. Discovery scans enabled packages only; installing a dependency alone does not enable it.
 
-## Разработка и сборка
+<a id="разработка-и-сборка"></a>
 
-В разработке `pnpm dev` использует исходники включённых локальных пакетов из
-workspace-пакетов внутри проекта. Изменение, добавление и удаление `.ts`-файлов автоматически перезапускает
-Core и обновляет маршруты. Это перезапуск процесса, а не замена обработчика на лету.
+## Development and build
 
-Сборка плагина выполняется командой kit `asmblyr-plugin build` в каталоге пакета;
-в comments она задана в script `build`. TypeScript использует `rootDir: "."`,
-`outDir: "dist"`, включая `plugin.ts` и `server/**/*.ts`.
-Для типов Web API добавлены `DOM` и `DOM.Iterable` в `lib`. В kit и примере включён
-`skipLibCheck`: декларации выбранной RC содержат несовместимости с TypeScript 5.9
-и ссылки на опциональные зависимости. Проверка собственного кода остаётся строгой;
-при обновлении H3 это ограничение нужно пересмотреть.
-Сборщик проверяет имена маршрутов, default exports и типы, очищает собственный
-`dist`, создаёт JavaScript, декларации типов и список маршрутов `dist/routes.json`.
+Pnpm dev uses enabled local workspace sources. Adding/changing/removing TypeScript files restarts Core and rebuilds route discovery; it is a process restart, not hot handler replacement.
 
-В production и для установленных npm-пакетов Core читает готовый список и загружает
-JavaScript. Сканирования исходников в этом режиме нет. Удалённые исходные маршруты
-не сохраняются в следующей сборке.
+Run asmblyr-plugin build in the package directory, as the Comments build script does. TypeScript uses rootDir:"." and outDir:"dist", including plugin.ts and server/\*_/_.ts. DOM/DOM.Iterable provide Web API types. Kit/examples use skipLibCheck because the pinned H3 RC declarations conflict with TypeScript 5.9 and refer to optional dependencies; project code stays strictly checked. Revisit this when upgrading H3.
 
-В репозитории Kit и comments связаны как workspace-пакеты. `pnpm build:plugins` собирает оба;
-`pnpm dev` выполняет начальную сборку автоматически. `pnpm build` сначала собирает
-пакеты, затем Core и UI. Публикация пакетов остаётся отдельным шагом.
+The builder checks route names, default exports, and types, then generates JavaScript, declarations, and dist/routes.json in its own dist. Production/npm packages load the index and JavaScript without source scanning. Deleted routes disappear from the next build.
 
-Проверка kit и первого плагина из корня репозитория:
+Workspace builds link Kit and bundled plugins. Pnpm build:plugins builds them; pnpm dev performs initial generation. Pnpm build builds packages before Core/UI. Publishing remains separate.
 
 ```sh
 pnpm build:plugins
 pnpm --filter @asmblyr-collaborative/kit --filter @asmblyr-collaborative/plugin-comments typecheck
 ```
 
-## Локализация расширения
+<a id="локализация-расширения"></a>
 
-Необязательные плоские JSON-каталоги `locales/ru.json` и `locales/en.json`
-располагаются рядом с `package.json`. Включайте `locales/` в опубликованный пакет
-вместе с `dist/`. Core читает их одинаково в source и built режиме и добавляет
-в защищённый `GET /translations`. Каталоги содержат только публичные подписи: не
-добавляйте в них настройки, ключи или пользовательские данные.
+## Plugin localization
 
-UI использует тот же каталог через `defineUiPlugin({ translations: { ru, en }, ... })`.
-Для JSON-импортов включите `resolveJsonModule` в tsconfig. У страниц, панелей
-и интерфейсов поля можно указать `titleKey`; `title` остаётся запасной подписью.
+Optional flat locales/ru.json and locales/en.json sit beside package.json. Publish locales alongside dist. Core reads them in source/built modes and includes them in protected GET /translations. Catalogs contain public labels only, never settings, keys, or user data.
+
+UI uses defineUiPlugin({ translations: { ru, en }, ... }). Enable resolveJsonModule for JSON imports. Pages, record panels, and field interfaces support titleKey with title fallback.
 
 ```tsx
 import { usePluginTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
@@ -412,32 +276,24 @@ function Panel() {
 }
 ```
 
-Хост предоставляет изолированный i18next provider на текущем языке профиля,
-пространство имён `plugin.<manifest.namespace>` и русский fallback. React
-экранирует текст при отображении. Не импортируйте серверный entry point в UI.
-Ключи `collection.<local-name>.label` и
-`field.<local-name>.<field>.label|description|placeholder` задают подписи
-собственных таблиц в UI и API. Для настроек используются `settings.title`,
-`settings.description` и `settings.<field>.label|description`.
-Имена коллекций/полей, значения записей и HTTP-контракты не переводятся.
+The host supplies isolated i18next context using the profile locale, plugin.&lt;manifest.namespace&gt;, and Russian fallback. React escapes text. Never import the server entry in UI.
 
-## Личные внешние подключения
+Collection.&lt;local-name&gt;.label and field.&lt;local-name&gt;.&lt;field&gt;.label|description|placeholder supply owned-table UI/API labels. Settings use settings.title, settings.description, and settings.&lt;field&gt;.label|description. Technical names, record values, and HTTP contracts are not translated.
 
-Model handler с `connection: "google"` в `defineModelAnnotation` виден ассистенту только при активном подключении текущего человека. Пакет запрашивает capability `connections.google`, установка явно одобряет её в `asmblyr.pluginPermissions`.
+<a id="личные-внешние-подключения"></a>
 
-`useActionContext(event).connections?.google` предоставляет owner-bound операции `list`, `readText`, `sheet`, `cells`, `proposeWrite`. Контракты `PersonalConnections`, `GoogleWriteInput`, `GoogleFileList`, `GoogleText`, `GoogleSheet`, `GoogleCells` экспортируются Kit. Нет raw token, произвольного URL или метода подтверждения. `proposeWrite` только сохраняет предложение; реальную запись подтверждает человек в UI Core. HTTP и внутренний MCP используют одинаковый handler. Пример — `packages/plugin-google-workspace`; ограничения и настройка — [Google Workspace](../../docs/features/google-workspace.md).
+## Personal external connections
+
+Model annotation connection:"google" makes a handler visible only with the current human's active connection. Declare connections.google and obtain explicit project approval.
+
+`useActionContext`(event).connections?.google exposes owner-bound list, readText, sheet, cells, and proposeWrite. Kit exports PersonalConnections, GoogleWriteInput, GoogleFileList, GoogleText, GoogleSheet, and GoogleCells. There are no raw tokens, arbitrary URLs, or confirmation methods. `proposeWrite` saves a proposal; humans confirm actual writes in Core UI. HTTP/MCP share handlers. See packages/plugin-google-workspace and [Google Workspace](../features/google-workspace.md).
+
+<a id="контракты-потребителеи-sdk"></a>
 
 ## SDK consumer contracts
 
-Built defineModelContext handlers include generated JSON input/output schemas.
-Core exports accessible handlers through GET /schema, using their existing
-AccessGate and original HTTP address. The generated SDK provides
-`client.plugins.namespace[methodId](input)` with inferred output. Method IDs join
-route segments with hyphens. No extra SDK handler or registry is needed.
+Built defineModelContext handlers include generated input/output JSON schemas. GET /schema exports accessible handlers using AccessGate and original HTTP routes. Generated SDK methods use client.plugins.namespace[methodId](https://github.com/Asmblyr/Collaborative/blob/main/packages/kit/input) with inferred output. IDs join route segments with hyphens; no extra registry is needed.
 
-Contracts describe Kit's bounded JSON model subset. They do not grant data access
-or imply that a personal OAuth connection is available. Execution still runs the
-original gate and current Core permissions. Legacy defineAction handlers without
-a generated outputSchema do not appear in the typed consumer API.
+The bounded JSON contract grants no data access and implies no personal OAuth connection. Execution rechecks the original gate/current Core permissions. Legacy defineAction handlers without generated outputSchema are omitted.
 
-[Package checks and release preparation](./packages.md).
+See [package checks and release preparation](packages.md).

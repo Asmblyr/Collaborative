@@ -1,27 +1,24 @@
-# Переводы
+<a id="переводы"></a>
 
-Язык интерфейса (`ru`, `en`) сохраняется в личных настройках вместе с независимыми
-режимом и цветовым стилем. Основа построена на i18next/react-i18next: каталоги
-поставляются с приложением, внешний сервис переводов для работы не нужен.
-Экземпляры изолированы при серверном рендеринге.
+# Translations
 
-## Кто переводит подписи
+The interface language (`ru`, `en`) is saved in personal preferences independently of color mode and style. The admin uses i18next/react-i18next with bundled catalogs, so it needs no external translation service. Server-rendered instances are isolated.
 
-- Интерфейс и системные поля: JSON-каталоги `packages/contracts/locales/`.
-- Плагины: собственные `locales/ru.json`, `locales/en.json` и namespace плагина.
-- Пользовательские коллекции и поля: раздел «Переводы» в правом редакторе настроек.
-  Для коллекции сохраняется подпись, для поля — подпись, описание и плейсхолдер.
+<a id="кто-переводит-подписи"></a>
 
-Основная подпись остаётся запасным вариантом, если пользователь не заполнил
-перевод. Языковые каталоги плагинов используют русский fallback. Технические имена
-API, значения записей, enum-значения и шаблоны подписи записей не переводятся.
-Переключение языка не перезаписывает исходные настройки схемы.
+## Label ownership
+
+- Interface and system fields: JSON catalogs in `packages/contracts/locales/`.
+- Plugins: their own `locales/ru.json`, `locales/en.json`, and plugin namespace.
+- Custom collections and fields: the Translations section in the right-side settings editor. Collections have translated labels; fields also support descriptions and placeholders.
+
+The original label is the fallback when a custom translation is missing. Plugin catalogs fall back to Russian. Technical API names, record values, enum values, and record label templates are not translated. Switching languages does not overwrite the underlying schema settings.
 
 ## HTTP API
 
-Core: `GET /translations?locale=en`. Прокси админки:
-`GET /api/translations?locale=en`. SDK: `client.translations.get("en")`.
-Язык по умолчанию — русский; другие языки и неизвестные query-параметры дают 400.
+Core: `GET /translations?locale=en`. On the admin domain: `GET /api/translations?locale=en`. SDK: `client.translations.get("en")`.
+
+The API defaults to Russian. Unsupported locales and unknown query parameters return 400. The documentation website's English default does not change this contract.
 
 ```json
 {
@@ -43,28 +40,18 @@ Core: `GET /translations?locale=en`. Прокси админки:
 }
 ```
 
-Требуется активный пользователь или сервисный аккаунт. `schema` использует тот же
-набор видимых коллекций и полей, что и `GET /collections`: права создания, чтения
-и изменения объединяются для метаданных. Это не разрешает читать записи.
-Системный ключ присутствует, timestamps — только при доступе к ним. В ответе нет
-данных записей, defaults, настроек или секретов. `plugins` содержит статические
-публичные каталоги всех активных расширений, в том числе без собственного UI.
-Ответ имеет `Cache-Control: private, no-store`.
+An active human or service account is required. `schema` uses the same visible collections and fields as `GET /collections`: create, read, and update grants are combined for metadata. This does not authorize reading records.
 
-## Покрытие
+The system key is included; timestamps appear only when accessible. Responses contain no record data, defaults, settings, or secrets. `plugins` includes static public catalogs from all active plugins, even those without UI. Responses use `Cache-Control: private, no-store`.
 
-Каталоги RU/EN покрывают встроенные формы и сообщения: редакторы коллекций,
-полей и записей, фильтры, права, файлы, профиль и безопасность, интеграции,
-ассистент и настройки расширений. Даты и форматированные числа учитывают язык,
-точные decimal-значения сохраняют свою точность. Смена языка обновляет и подписи,
-пришедшие с сервера. Пользовательские значения, названия политик и сообщения чата
-сохраняются в исходном виде; переводы пользовательской схемы задаются явно.
+<a id="покрытие"></a>
 
-Плагины переводят подписи своих настроек ключами `settings.<name>.label`,
-`settings.<name>.description` и `settings.<name>.options.<value>`. При отсутствии
-перевода используется исходная подпись. Новые встроенные тексты добавляются
-в оба каталога; проверки контролируют наличие ключей и совпадение параметров.
+## Coverage
 
-Каталоги — обычные JSON-файлы со стабильными ключами; их можно готовить внешними
-инструментами и проверять в ревью. Автоматических вызовов AI, платного backend
-переводов или автоматической публикации переводов в текущей реализации нет.
+RU/EN catalogs cover built-in forms and messages: collection, field, and record editors; filters; permissions; files; profile and security; integrations; assistant; and plugin settings. Dates and formatted numbers follow the locale without losing decimal precision. Switching language also refreshes server-provided labels.
+
+User values, policy names, and chat messages keep their original text. Custom schema translations are explicit.
+
+Plugin settings use `settings.<name>.label`, `settings.<name>.description`, and `settings.<name>.options.<value>`, falling back to the original label. Add built-in strings to both catalogs; checks enforce key and interpolation-parameter parity.
+
+Catalogs are ordinary JSON with stable keys. External tools can prepare translations for review. Automatic AI calls, a paid translation backend, and automatic translation publication are not implemented.

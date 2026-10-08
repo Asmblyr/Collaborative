@@ -1,32 +1,27 @@
 # Calculator
 
-Пример одного действия для формы, внутреннего MCP и ассистента.
-Пример не включён по умолчанию; [подключите его](../README.md) перед запуском.
-Страница: `http://localhost:3000/extensions/calculator/home`.
+<!-- languages -->
 
-- `shared/calculation.ts` — TypeScript-типы входа/выхода, подписи и ограничения в JSDoc.
-- `server/api/calculator/calculate.post.ts` — h3-обработчик, расчёт в целых копейках.
-  Путь и метод определяются файлом. `defineModelContext<CalculationInput>` и
-  `defineModelAnnotation` публикуют действие для MCP. `readOnly: true` запрещает запись.
-- `plugin.ts` — пустой `definePlugin({})`, без регистрации обработчиков.
-- `ui/pages/calculator-page.tsx` — форма shadcn и `useAction`.
+[English](README.md) · [Русский](README.ru.md)
 
-HTTP: `POST /calculator/calculate`, из UI — `/api/calculator/calculate`.
-MCP и HTTP вызывают один handler; обёртка `defineModelContext` явно включает инструмент.
-Сборщик создаёт `.asmblyr/models/calculator/calculate.post.json`: UI и Core используют
-его для проверки входа и результата. Генерируемые файлы в Git не включаются.
+<!-- /languages -->
 
-Сборка/запуск из корня: `pnpm dev`. Core требует локальную PostgreSQL для сессий;
-у самого калькулятора таблиц нет. После подключения нового пакета перезапустите UI.
+One action shared by a form, internal MCP, and the assistant. [Enable the example](../README.md) first; it is disabled by default. Page: http://localhost:3000/extensions/calculator/home.
+
+- Shared/calculation.ts defines input/output types, labels, and JSDoc constraints.
+- Server/api/calculator/calculate.post.ts is an H3 handler using integer minor-unit arithmetic. File routing determines URL/method. DefineModelContext and defineModelAnnotation explicitly expose it to MCP. ReadOnly:true blocks writes.
+- `plugin.ts` is definePlugin({}), without handler registration.
+- Ui/pages/calculator-page.tsx uses shadcn and useAction.
+
+HTTP: POST /calculator/calculate, or /api/calculator/calculate from UI. HTTP/MCP share the handler. The builder creates .asmblyr/models/calculator/calculate.post.json for Core/UI input/output validation. Generated files stay out of Git.
+
+Run pnpm dev at the root. Core needs local PostgreSQL for sessions; Calculator has no tables. Restart UI after enabling the package.
 
 ```text
-Рассчитай стоимость для 150 пользователей на 12 месяцев по 990 рублей
-за пользователя в месяц со скидкой 10%. Открой калькулятор.
+Calculate the price for 150 users over 12 months at 990 rubles per user
+per month with a 10% discount. Open the calculator.
 ```
 
-Результат: 1 603 800 ₽. Ассистент подготовит приватную форму на 20 минут.
-Для перехода нажмите «Открыть страницу» в его ответе.
-Она исчезает после перезапуска Core; новые ручные значения можно пересчитать.
-Запрос должен содержать все параметры — цены и скидки ассистент не выдумывает.
+Result: 1,603,800 ₽. The assistant prepares a private form for twenty minutes. Click Open page to navigate; manual values can then be recalculated. PostgreSQL snapshots survive Core restarts until expiry. Supply every parameter: the assistant must not invent prices or discounts.
 
-Контракт, доступ и ограничения: [действия плагинов](../../../docs/development/plugin-actions.md).
+See [action contracts and limits](../../../docs/development/plugin-actions.md).

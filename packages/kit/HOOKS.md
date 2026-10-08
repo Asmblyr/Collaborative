@@ -1,11 +1,20 @@
-# Hooks и настройки
+<a id="hooks-и-настроики"></a>
 
-`plugin.ts` остаётся `definePlugin({})`. Core обнаруживает дополнительные файлы
-автоматически. Возможности объявляются и разрешаются по [контракту capabilities](CAPABILITIES.md).
+# Hooks and settings
 
-## Транзакционные hooks
+<!-- languages -->
 
-Каждый файл непосредственно в `server/hooks/` экспортирует один обработчик:
+[English](HOOKS.md) · [Русский](HOOKS.ru.md)
+
+<!-- /languages -->
+
+`plugin.ts` remains definePlugin({}). Core discovers additional files automatically. Declare and approve [capabilities](CAPABILITIES.md).
+
+<a id="транзакционные-hooks"></a>
+
+## Transactional hooks
+
+Each direct server/hooks file exports one handler:
 
 ```ts
 import { defineHook } from "@asmblyr-collaborative/kit";
@@ -18,91 +27,63 @@ export default defineHook("items.delete", async (event, context) => {
 });
 ```
 
-Пример очистки с пагинацией: `packages/plugin-comments/server/services/cleanup.ts`.
-Не создавайте реестр hooks в `plugin.ts`.
+See packages/plugin-comments/server/services/cleanup.ts for paginated cleanup. Do not create a hook registry in plugin.ts.
 
-| Событие              | Данные                                 |
-| -------------------- | -------------------------------------- |
-| `items.create`       | `collection`, `collectionId`, `itemId` |
-| `items.update`       | `collection`, `collectionId`, `itemId` |
-| `items.delete`       | `collection`, `collectionId`, `itemId` |
-| `collections.delete` | `collection`, `collectionId`           |
+| Event              | Data                             |
+| ------------------ | -------------------------------- |
+| items.create       | collection, collectionId, itemId |
+| items.update       | collection, collectionId, itemId |
+| items.delete       | collection, collectionId, itemId |
+| collections.delete | collection, collectionId         |
 
-`collectionId` — стабильный ID экземпляра коллекции; имя может впоследствии
-принадлежать другой коллекции. `itemId` — строковое представление сохранённого ключа.
-Скрытые значения полей в событие не попадают. Контекст предоставляет actor,
-requestId, logger, reader `items`, разрешённый `storage` и настройки пакета.
-Reader использует права исходного пользователя; удалённую запись уже не прочитать.
+`collectionId` identifies the collection instance; the name may later be reused. `itemId` is the saved key as a string. Hidden field values are excluded. Context includes actor, requestId, logger, items reader, approved storage, and package settings. Reads use the original caller; deleted rows cannot be reread.
 
-Событие вызывается после мутации и записи истории, **до commit**. Hook выполняется
-в той же транзакции, включая свою работу с `storage`. Ошибка прерывает операцию и
-откатывает данные, историю и изменения предыдущих hooks. Обработчики выполняются
-последовательно: порядок пакетов в конфигурации, затем имена файлов по порядку
-кодовых единиц строки. Source и production используют один порядок.
-Нельзя рассчитывать, что внешний HTTP-вызов или отправка уведомления откатятся
-вместе с БД. Такие эффекты и гарантированная доставка после commit пока не поддержаны.
-Каждый вызов сервиса обязательно нужно `await`-ить.
+Hooks run after mutation/history but before commit, in the same transaction, including storage operations. Failure rolls back data, history, and earlier hooks. Execution is sequential: configured package order, then filename order by string code units, identical in source/production.
 
-HTTP items, Kit, MCP, массовые изменения, операции связей и сохранение черновика
-используют общую границу мутаций. Нет событий для update без изменений, прямого
-SQL, каскадных действий PostgreSQL и записей в `asmblyr_`/`plugin_`. Исключение
-внутренних коллекций предотвращает рекурсию при очистке собственного хранилища.
-Отключённый плагин не получает события; его данные сохраняются.
+External HTTP calls or notifications cannot be rolled back with PostgreSQL. External effects and guaranteed post-commit delivery are unsupported. Await every service call.
 
-Production export: `"./hooks": "./dist/hooks.json"`.
-Сборщик создаёт индекс; вручную поддерживать его не нужно.
-В `server/hooks` допустимы только непосредственные `.ts`-файлы без symlinks;
-вспомогательный код размещается в `server/services` или другой соседней папке.
+HTTP items, Kit, MCP, bulk, relation changes, and draft saves share this boundary. No events fire for unchanged updates, direct SQL, PostgreSQL cascades, or asmblyr*/plugin* writes. Internal-collection exclusion prevents recursive cleanup. Disabled plugins receive no events and retain data.
 
-## Работа с данными, привязанными к записи
+Production export: "./hooks": "./dist/hooks.json". The builder maintains the index. Only direct .ts files without symlinks belong under server/hooks; put helpers in server/services or a sibling directory.
 
-В обычном endpoint `context.withRecord(collection, id, async context => ...)`
-проверяет право чтения, удерживает разделяемую блокировку записи и выполняет callback
-в транзакции. Используйте **контекст callback** для своего `storage`: он участвует
-в той же транзакции. Это позволяет сохранять комментарий и исключить одновременное
-удаление его целевой записи. Метод требует `items.read`; в model handlers его нет.
-В callback не выполняйте длительную внешнюю работу и не сохраняйте контекст наружу.
+<a id="работа-с-данными-привязанными-к-записи"></a>
 
-## Настройки
+## Record-bound data
 
-Файл `server/settings.ts`:
+In ordinary endpoints, context.withRecord(collection, id, async context => ...) checks reads, holds a shared record lock, and runs the callback transactionally. Use the callback's context for storage in that same transaction. This allows comment saves while preventing concurrent target deletion.
+
+It requires items.read and is unavailable in model handlers. Do not perform slow external work inside the callback or retain its context outside.
+
+<a id="настроики"></a>
+
+## Settings
+
+`server/settings.ts`:
 
 ```ts
 import { defineSettings } from "@asmblyr-collaborative/kit";
 
 export default defineSettings({
-  title: "Комментарии",
+  title: "Comments",
   fields: {
     allowNewComments: {
       type: "boolean",
-      label: "Разрешить новые комментарии",
+      label: "Allow new comments",
       default: true,
     },
   },
 });
 ```
 
-Использование в endpoint, model handler или hook:
+Use in endpoints, model handlers, or hooks:
 
 ```ts
 const options = useSettings(context, settings);
-// options.allowNewComments имеет тип boolean.
+// options.allowNewComments is boolean.
 ```
 
-Поддержаны boolean, строка с maxLength, число с min/max/integer, select со списком
-вариантов. Core проверяет декларацию, default и каждое сохраняемое значение.
-Неизвестные поля, пропущенные значения и неявное приведение типов не допускаются.
-До 40 полей и 32 000 символов JSON значений. Это обычные настройки, не секреты.
+Supported types: boolean, string with maxLength, number with min/max/integer, and select options. Core validates declaration, defaults, and saved values. Unknown fields, missing values, and implicit coercion are rejected. Limits: 40 fields and 32000 JSON characters. These are ordinary settings, not secrets.
 
-Production export: `"./settings": "./dist/server/settings.js"`.
-Суперпользователь управляет настройками через `/settings/plugins/:namespace`
-и форму **Система → Плагины**. PUT принимает `{ values, revision }`; устаревшая
-revision возвращает 409, сохраняя черновик в UI. `null` обозначает ещё не сохранённые
-значения по умолчанию. Кнопка «По умолчанию» меняет черновик до явного сохранения.
+Production export: `"./settings": "./dist/server/settings.js"`. Manage them through `/settings/plugins/:namespace` and Settings → Extensions. Reads require `plugins/read` (or `plugins/update`); writes require `plugins/update`. Superusers also have access. PUT accepts `{ values, revision }`; stale revision returns 409 and preserves the UI draft. A null revision represents unsaved defaults. Restore defaults changes the draft until explicitly saved.
 
-Значения хранятся в `asmblyr_settings` под ключом `plugin:<namespace>`.
-Изменения действуют для новых запросов без перезапуска; в журнале безопасности
-сохраняются автор, namespace и имена изменённых настроек, без копирования значений.
-Новые поля получают default, удалённые игнорируются. Несовместимое изменение типа
-или диапазона существующей настройки требует предварительного обновления её значения:
-Core отклоняет неверное сохранённое значение и не исправляет его молча.
+Values live in asmblyr_settings under plugin:&lt;namespace&gt;. New requests see changes without restart. Security audit stores actor, namespace, and changed setting names, not values. New fields receive defaults; removed fields are ignored. Incompatible type/range changes require updating stored values first: Core rejects invalid saved values rather than silently repairing them.

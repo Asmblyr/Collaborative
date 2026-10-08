@@ -1,7 +1,11 @@
+<a id="фирменные-материалы-collaborative"></a>
+
 # Collaborative brand assets
 
 The public wordmark is **Collaborative**. The symbol combines four connected loops
 around a square opening, with a mint accent on the upper-right loop.
+
+<a id="фаилы"></a>
 
 ## Files
 
@@ -12,7 +16,7 @@ around a square opening, with a mint accent on the upper-right loop.
 
 The SVG files are the editable source assets. They use vector paths, including
 outlined lettering, with no embedded raster images, external fonts, or scripts.
-The wordmark uses Geist, distributed under [SIL OFL 1.1](../../../apps/ui/src/app/fonts/OFL.txt).
+The wordmark uses Geist, distributed under [SIL OFL 1.1](https://github.com/Asmblyr/Collaborative/blob/main/apps/ui/src/app/fonts/OFL.txt).
 
 Use the same symbol geometry at every size. Keep clear space around it, preserve
 its proportions, and use the appropriate wordmark for the background. Graphite

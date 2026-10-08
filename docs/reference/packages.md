@@ -1,3 +1,5 @@
+<a id="пакеты-sdk"></a>
+
 # SDK packages
 
 Four MIT packages are available on npm at version `0.1.0-beta.1`:
@@ -42,6 +44,8 @@ For local package development, use workspace commands or the checked archives. S
 [CLI guide](cli-guide.md) for browser approval, CI credentials and generated files,
 and the [SDK guide](sdk-guide.md) for runtime clients. Generated code needs ordinary
 TypeScript; it does not require a custom compiler or build plugin.
+
+<a id="публикация"></a>
 
 ## Release procedure
 

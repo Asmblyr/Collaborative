@@ -29,7 +29,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:generate": "node scripts/docs/generate.mjs",
-    "docs:check": "node scripts/docs/generate.mjs --check",
+    "docs:check": "node --test scripts/docs/localization.test.mjs && node scripts/docs/generate.mjs --check",
     "docs:dev": "pnpm docs:generate && vitepress dev docs --host 127.0.0.1",
     "docs:build": "pnpm docs:generate && pnpm docs:check && vitepress build docs",
     "docs:preview": "vitepress preview docs --host 127.0.0.1",

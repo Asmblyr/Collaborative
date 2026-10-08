@@ -1,17 +1,17 @@
 <!-- Generated from packages/kit/FIELDS.md; edit the source. -->
 
-# Редакторы полей из плагинов
+<a id="редакторы-полеи-из-плагинов"></a>
 
-Первый этап поддерживает обычные поля хранения `text`. Плагин предоставляет
-ввод, необязательное отображение значения и настройки каждого поля. Его
-регистрация использует существующий браузерный export `./ui`:
+# Plugin field editors
+
+The initial contract supports ordinary text storage fields. A plugin supplies an editor, optional value display, and per-field settings through its existing ./ui browser export.
 
 ```ts
 export default defineUiPlugin({
   fieldInterfaces: [
     {
       id: "picker",
-      title: "Цвет",
+      title: "Color",
       types: ["text"],
       editor: ColorEditor,
       display: ColorDisplay,
@@ -21,44 +21,31 @@ export default defineUiPlugin({
 });
 ```
 
-Рабочий пример: [examples/plugins/color](./plugin-color.md). Серверный
-`plugin.ts` остаётся `definePlugin({})`; таблицы и HTTP endpoints этому плагину
-не нужны. Включение пакета, сборка, source/built discovery и общие компоненты
-работают так же, как у страниц и вкладок.
+See the working [color example](plugin-color.md). Server plugin.ts remains definePlugin({}); no tables or endpoints are needed. Enablement, build, source/built discovery, and shared components follow page/panel conventions.
 
-## Контракт компонентов
+<a id="контракт-компонентов"></a>
 
-Типы доступны из `@asmblyr-collaborative/kit/ui`:
+## Component contract
 
-- `FieldEditorProps`: `id`, `label`, `value`, `options`, `disabled`, `required`,
-  `placeholder`, `describedBy`, `onChange(value)`.
-- `FieldDisplayProps`: `value: string | null`, `options`.
-- `FieldInterfaceSettingsProps`: `options`, `disabled`, `onChange(options)`.
+Types from @asmblyr-collaborative/kit/ui:
 
-`options` — JSON-объект. Плагин должен читать пустые, старые и неизвестные
-настройки с подходящими значениями по умолчанию. Компонент настроек сохраняет
-изменения через callback; настройки принадлежат конкретному полю.
+- FieldEditorProps: id, label, value, options, disabled, required, placeholder, describedBy, onChange(value).
+- FieldDisplayProps: value:string|null, options.
+- FieldInterfaceSettingsProps: options, disabled, onChange(options).
 
-Редактор получает строковый черновик, пустая строка означает отсутствие ввода.
-Преобразование в `null`, пропуск default при создании, проверка обязательности
-и отправка в API принадлежат форме Core. Нельзя сохранять запись из редактора
-или подменять callback собственным хранилищем. Плагин вызывает `onChange` только
-в ответ на действие пользователя, учитывает `disabled` и не меняет значение
-при монтировании. Права на чтение и изменение полей проверяются хостом и API.
+Options is a JSON object. Handle empty, older, and unknown options with suitable defaults. Settings changes use the callback and belong to that field.
 
-Для проверок ввода используйте обычные `required`, `pattern`, `setCustomValidity`
-на Input/Textarea. Форма проверяет их перед сохранением изменённых полей и
-показывает ошибку у нужного поля. Серверные ограничения остаются обязательными:
-UI-проверки не являются ограничением API или способом авторизации.
+Editors receive string drafts; empty string means no input. Core's form owns null conversion, omission for create defaults, required validation, and API submission. Do not save records from editors or replace callbacks with separate storage. Call onChange only after user action, respect disabled, and never mutate values on mount. Host/API enforce field reads/writes.
 
-Компоненты shadcn импортируются из `@asmblyr-collaborative/kit/ui/<component>`. Хост передаёт
-контейнер нативного диалога через `PortalContainerContext`: вложенные Select
-остаются внутри окна. Компоненты должны поддерживать серверный рендер React;
-доступ к DOM допустим в обработчиках и effects, а не при импорте/рендере.
+Use native required, pattern, and setCustomValidity on Input/Textarea. The form checks changed fields before save and shows errors at the field. Server validation remains essential; UI constraints are not API authorization.
 
-## Хранение и отключение
+Import shadcn components from @asmblyr-collaborative/kit/ui/&lt;component&gt;. PortalContainerContext keeps nested Select portals inside the native dialog. Components must support React SSR: access DOM in handlers/effects, not imports or render.
 
-В существующем JSONB presentation сохраняется:
+<a id="хранение-и-отключение"></a>
+
+## Persistence and disabling
+
+Existing presentation JSONB stores:
 
 ```json
 {
@@ -70,27 +57,17 @@ UI-проверки не являются ограничением API или с
 }
 ```
 
-ID формируется как `<namespace>:<local-id>`. Core проверяет формат, совместимый
-тип и ограниченный JSON: до 8 КиБ, 8 уровней, 1000 узлов. URL/импорты из
-метаданных не исполняются. Настройки видны читателям поля и не подходят для
-секретов. Новая миграция базы не требуется.
+IDs use namespace:local-id. Core validates format, compatible type, and bounded JSON: 8 KiB, depth 8, 1000 nodes. Metadata URLs/imports are never executed. Field readers see options, so they must contain no secrets. No new database migration is required.
 
-Настройки сохраняются и для отсутствующего пакета. UI использует только
-собранные расширения, включённые в Core. Если расширение отсутствует, ввод
-возвращается к стандартному полю с уведомлением, отображение — к обычному
-тексту. Ошибка клиентского рендера компонента также включает fallback. Черновик
-остаётся в хосте. Повторное включение пакета возвращает оформление.
+Missing packages retain settings. UI loads only built extensions enabled in Core. If absent, editors fall back to the standard input with a notice, and displays to plain text. Client render errors also trigger fallback. The host retains the draft. Re-enabling restores presentation.
 
-Смена редактора в настройках — явное действие: она удаляет ссылку на предыдущий
-редактор и его options, не меняя записанные значения. Настройка плагина имеет
-приоритет над встроенным display; при её выборе UI сбрасывает старый display.
+Changing editor explicitly removes the prior extension/options without changing stored values. Plugin presentation takes precedence over built-in display; selecting it clears the old display.
 
-## Границы этапа
+<a id="границы-этапа"></a>
 
-- Один редактор может включать свой display; независимый выбор display плагина
-  пока не реализован.
-- Расширение не определяет SQL-тип, серверную валидацию или отдельные права.
-- Цвет поддерживает HEX `#RRGGBB`. `allowCustom` управляет выбором в UI;
-  через API поле остаётся строкой с обычными ограничениями Core.
-- События, внешние справочники, редакторы связей и асинхронные операции
-  редактора относятся к следующим этапам.
+## Limits
+
+- An editor may include its own display; independent plugin-display selection is unsupported.
+- Extensions define no SQL type, server validator, or separate permissions.
+- Color supports HEX #RRGGBB. AllowCustom controls UI choices; API values remain strings under ordinary Core rules.
+- Events, external catalogs, relationship editors, and asynchronous editor operations are not part of this contract.

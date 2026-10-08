@@ -1,58 +1,48 @@
-# Сервисы, федерации и OAuth-приложения
+<a id="сервисы-федерации-и-oauth-приложения"></a>
 
-## Сервисные аккаунты
+# Services, federations, and OAuth applications
 
-Аккаунту назначают политики. Секрет ключа показывается один раз, в БД хранится hash. `POST /auth/service-token` меняет ключ на короткий Bearer token до 15 минут, без refresh. Отзыв ключа/отключение аккаунта проверяется при последующих обращениях.
+<a id="сервисные-аккаунты"></a>
 
-В карточке каждого ключа видны дата и время выпуска, срок действия, последняя
-активность и число обращений к API. Последняя активность учитывает успешный
-обмен ключа на токен и HTTP-запросы с успешно проверенным токеном этого ключа.
-Счётчик увеличивается один раз на такой HTTP-запрос, даже если затем операция
-отклонена из-за прав. Получение токена, неверные/истёкшие/отозванные токены,
-запросы без проверки сервисного токена и федеративные токены в него не входят.
-Статистика читается при открытии аккаунта; обращения до её включения не восстанавливаются.
+## Service accounts
 
-`GET /service-accounts/:id` и ответ выпуска ключа содержат `createdAt`,
-`lastUsedAt` (последний обмен), `lastActivityAt` и `requestCount`. Счётчик передаётся
-десятичной строкой, сохраняя точность PostgreSQL bigint. Новые ключи начинают с
-`"0"`; существующим ключам миграция переносит известное время обмена в последнюю
-активность, оставляя счётчик нулевым. Отзыв и отключение сохраняют статистику.
-Откат миграции запрещён, если он удалит записанную статистику.
+Assign policies to a service account. A key secret is shown once; only its hash is stored. `POST /auth/service-token` exchanges it for a Bearer token lasting up to 15 minutes, without refresh. Subsequent requests check key revocation and account status.
 
-Просмотр требует section `services/read` или `update`; изменение — `services/update`. Для менеджера все текущие и назначаемые политики сервиса должны входить в личный разрешённый набор администратора. Эта проверка действует и для выпуска/отзыва ключей и изменения федераций. Сервис с закрытой политикой доступен только для просмотра. Подробнее — [ограниченное назначение политик](./access.md#ограниченное-назначение-политик).
+Each key shows issuance time, expiry, last activity, and API request count. Activity includes successful key-to-token exchange and HTTP requests with a successfully validated token from that key. The count increments once per such HTTP request, even if permissions later reject the operation. Token issuance, invalid/expired/revoked tokens, requests without service-token verification, and federated tokens are excluded.
 
-Сервисный токен использует права на данные, но не человеческие настройки/профиль. Ранее выданные ключи не отзываются автоматически при сокращении разрешённого набора менеджера; их отзывает администратор отдельно.
+Statistics load when opening the account; activity predating their introduction is not reconstructed. `GET /service-accounts/:id` and key-issuance responses contain `createdAt`, `lastUsedAt` (last exchange), `lastActivityAt`, and `requestCount`. The counter is a decimal string preserving PostgreSQL bigint precision. New keys start at `"0"`. Migration seeds old keys' activity from their known exchange time and leaves counters at zero. Revocation and disabling preserve statistics; rollback refuses to discard recorded statistics.
+
+Viewing requires services/read or update; changes require services/update. For managers, all current and requested service policies must belong to their personal delegation set. Keys and federation changes use the same check. A service with a protected policy is read-only. See [bounded delegation](./access.md#bounded-policy-delegation).
+
+Service tokens use data permissions, not human settings/profile access. Reducing a manager's allowed set does not automatically revoke previously issued keys; administrators revoke them separately.
 
 ## GitLab CI federation
 
-Реализован конкретный issuer `https://gitlab.com`. Проверяются RS256, issuer, audience, subject, project/job-project ID и path, защищённая ветка, время действия и jti. Merge-request pipeline не допускается. Повтор assertion блокируется хешем jti в БД.
+The supported issuer is `https://gitlab.com`. Checks cover RS256, issuer, audience, subject, project/job-project ID and path, protected branch, validity times, and jti. Merge-request pipelines are rejected. A database jti hash blocks assertion replay.
 
-Это вход сервиса в Asmblyr, а не универсальный каталог всех OIDC issuer. Федерация доступа Core к Yandex Object Storage — отдельная настройка инфраструктурной учётной записи.
+This signs a service into Collaborative; it is not a general catalog of OIDC issuers. Core's Yandex Object Storage federation is separate infrastructure-account configuration.
 
-## Asmblyr как OAuth/OIDC provider
+<a id="asmblyr-как-oauth-oidc-provider"></a>
 
-В разделе `oauth` создаются приложения для входа других сервисов через аккаунт Asmblyr. Базовый профиль фиксирован: ID, email, имя и при наличии изображение. Доступ приложения можно ограничить настроенными правилами, включая пользователей/домен email, либо разрешить всем подходящим пользователям.
+## Collaborative as an OAuth/OIDC provider
 
-Согласие сохраняется для пары пользователь–приложение. Повторный вход с действующим grant не требует повторного согласия для уже разрешённого набора. Пользователь может отозвать приложение в профиле. OAuth-токен приложения не является Core API-токеном.
+The OAuth section creates applications that let external services authenticate through a Collaborative account. The base profile is fixed: ID, email, name, and optional picture. Admission can use configured user/email-domain rules or allow all eligible users.
 
-Протокол обслуживает `oidc-provider` через `/oauth/*`. Полные protocol endpoints берутся из его discovery, а не из статической REST-матрицы. Административные `/oauth-apps` и `/oauth-interactions` описаны отдельно.
+Consent is stored per user/application. Existing grants avoid repeated consent for already approved scopes. Users can revoke applications in their profile. Application OAuth tokens are not Core API tokens.
 
-### Доступ через политики
+`oidc-provider` serves `/oauth/*`. Obtain protocol endpoints from discovery, not the static REST matrix. Administrative `/oauth-apps` and `/oauth-interactions` routes are documented separately.
 
-В приложении на вкладке «Доступ» включите **«Управлять доступом через политики»**.
-На вкладке «Интеграция» задайте Audience и каталог разрешений: техническое значение
-для сервиса и понятное название для редактора. Сам каталог не выдаёт права.
-Затем в редакторе политики → «Приложения» разрешите вход, отметьте разрешения
-и назначьте политику пользователям. Разрешения всех политик пользователя объединяются.
-Без подходящей политики вход запрещён, в том числе superuser Collaborative.
+<a id="доступ-через-политики"></a>
 
-При включённом режиме прежние правила по пользователям и доменам не участвуют
-в проверке. При выключении снова действуют эти правила; назначенные права политик
-сохраняются, но не используются. Перед выключением проверьте прежний режим доступа.
-Существующие приложения сохраняют прежнее поведение: миграция не включает новый режим.
+### Policy-managed access
 
-В режиме политик приложение запрашивает только `openid profile email`.
-Core добавляет персональные разрешения в подписанный access token:
+Enable Manage access through policies on the application's Access tab. On Integration, configure Audience and the permission catalog: a technical service value and a readable editor label. The catalog itself grants nothing.
+
+In a policy's Applications tab, allow sign-in, select permissions, and assign the policy to users. User policies combine grants. Without a matching policy, sign-in is denied even to a Collaborative superuser.
+
+While this mode is enabled, old user/domain admission rules do not participate. Disabling it restores those rules; policy assignments remain stored but unused. Review the previous admission mode before switching off. Existing applications keep their behavior: migration does not enable policy management automatically.
+
+In policy mode, the application requests only `openid profile email`. Core adds personal permissions to its signed access token:
 
 ```json
 {
@@ -64,29 +54,18 @@ Core добавляет персональные разрешения в под�
 }
 ```
 
-Сервис должен поддерживать чтение этого claim; универсального преобразования
-произвольных политик в формат каждого сервиса нет. Для LavinMQ установите
-`resource_server_id = lavinmq`, `audience = lavinmq`, `verify_aud = true` и
-`mgmt_scopes = openid profile email`. Удалите общие сервисные scopes из запроса входа.
-Теги управления и разрешения на vhost/ресурсы задаются отдельно по правилам LavinMQ.
+The external service must understand this claim; there is no universal conversion to every service's policy format. For LavinMQ, set `resource_server_id = lavinmq`, `audience = lavinmq`, `verify_aud = true`, and `mgmt_scopes = openid profile email`. Remove shared service scopes from the sign-in request. Management tags and vhost/resource permissions follow separate LavinMQ rules.
 
-На согласии видны названия персональных разрешений. Расширение прав требует нового
-согласия. Если набор изменился, пока открыто окно подтверждения, Core возвращает
-409: нужно начать вход заново и увидеть актуальные права. При обмене кода Core повторно проверяет доступ и пересекает текущие права
-с подтверждёнными: начатый вход не может получить позднее добавленное право.
-Изменения учитываются при новой выдаче токена. Уже выданный JWT внешний сервис может
-принимать до истечения его срока (5 минут); активное соединение сервис может
-закрывать по собственным правилам. Пользователи LavinMQ остаются OAuth-идентичностями,
-локальные учётные записи в брокере не создаются.
+Consent displays personal permission labels. Adding rights requires new consent. If rights change while confirmation is open, Core returns 409; restart sign-in to review current rights. Code exchange rechecks access and intersects current rights with consented rights, preventing a pending sign-in from receiving newly added permissions.
 
-REST-поля приложения: `policyManaged` (по умолчанию `false`), `scopes` (каталог),
-`scopeLabels` (словарь значение → название). Пропущенные `policyManaged` и
-`scopeLabels` при обновлении сохраняют текущую настройку. Удаление значения из
-каталога удаляет его из назначений политик; добавление обратно не восстанавливает
-старые права. Смена Audience или режима доступа сбрасывает согласия.
+Changes apply when issuing a new token. External services may accept an existing JWT until expiry, five minutes, and manage active connections under their own rules. LavinMQ users remain OAuth identities; local broker accounts are not created.
 
-Локальный пример LavinMQ существует; его live-проверка зависит от поднятого контейнера и не выполняется обычным полным набором тестов. Не переносите разрешение HTTP для localhost в production: внешнему issuer нужны HTTPS, постоянные ключи подписи и корректные proxy/origin настройки.
+Application REST fields are `policyManaged` (default false), `scopes` (catalog), and `scopeLabels` (value → label). Omitting policyManaged or scopeLabels on update preserves them. Removing a catalog value removes policy assignments for it; adding it back does not restore old grants. Changing Audience or access mode resets consent.
 
-## Личные подключения Google
+A local LavinMQ example is available. Its live test requires a running container and is not part of the ordinary full suite. Localhost HTTP allowances are not production settings: external issuers need HTTPS, persistent signing keys, and correct proxy/origin configuration.
 
-[Google Workspace](./google-workspace.md) использует отдельный OAuth client для ассистента, личные зашифрованные токены и подтверждение внешней записи. Это не вход через SSO и не выдача доступа приложениям Asmblyr OAuth provider.
+<a id="личные-подключения-google"></a>
+
+## Personal Google connections
+
+[Google Workspace](./google-workspace.md) uses a separate OAuth client for the assistant, encrypted personal tokens, and confirmation before external writes. It is separate from SSO login and from applications using Collaborative as their OAuth provider.

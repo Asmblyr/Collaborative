@@ -1,63 +1,69 @@
-# Развёртывание и обновление
+<a id="развертывание-и-обновление"></a>
 
-Для локальной разработки начните с [первого запуска](./getting-started.md).
-Основная поставка использует отдельные образы Core и UI из одного коммита;
-PostgreSQL 17+ и S3-совместимое хранилище подключаются отдельно. Готовые сборки
-публикуются в `ghcr.io/asmblyr/collaborative-core` и
-`ghcr.io/asmblyr/collaborative-ui`; закрепляйте оба образа одной версии по digest.
-Одна собственная установка предназначена для одной команды; workspace не создаёт
-отдельный tenant.
+# Deployment and upgrades
 
-| Сценарий                                   | Где начать                                                                                                                                                                                      |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Основная поставка с внешними PostgreSQL/S3 | [`deploy/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/compose.yaml) и [`deploy/env.example`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/env.example) |
-| Локальный стенд с PostgreSQL и MinIO       | [`deploy/local/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/local/compose.yaml)                                                                                     |
-| Совместимый монолитный образ               | [`deploy/compose.monolith.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/compose.monolith.yaml)                                                                               |
+For local development, start with [first-time setup](./getting-started.md).
+The primary distribution uses separate Core and UI images from the same commit;
+PostgreSQL 17+ and S3-compatible storage are connected separately. Images are
+published as `ghcr.io/asmblyr/collaborative-core` and
+`ghcr.io/asmblyr/collaborative-ui`; pin both to the same release and their
+respective digests. Each installation serves one team; a workspace is not a tenant.
 
-Точные команды сборки и запуска, настройки портов, GHCR и контейнерные проверки —
-в [руководстве `deploy`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/README.md).
-Основной Compose выполняет миграции отдельным коротким запуском образа Core
-перед стартом приложения. Он публикует общий адрес на loopback-порту 3000
-по умолчанию. Не переносите локальные секреты и HTTP origin в публичную
-установку.
+| Scenario                                       | Start here                                                                                                                                                                                        |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Primary deployment with external PostgreSQL/S3 | [`deploy/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/compose.yaml) and [`deploy/env.example`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/env.example) |
+| Local environment with PostgreSQL and MinIO    | [`deploy/local/compose.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/local/compose.yaml)                                                                                       |
+| Legacy monolithic image                        | [`deploy/compose.monolith.yaml`](https://github.com/Asmblyr/Collaborative/blob/main/deploy/compose.monolith.yaml)                                                                                 |
 
-## Конфигурация
+Build and run commands, port settings, GHCR, and container checks are covered in
+the [deployment README](https://github.com/Asmblyr/Collaborative/blob/main/deploy/README.md).
+The primary Compose setup runs migrations in a separate short-lived Core container
+before starting the application. By default, it exposes the shared address on
+loopback port 3000. Do not carry local secrets or an HTTP origin into a public installation.
 
-Для основной поставки скопируйте `deploy/env.example` в приватный файл вне
-репозитория. Core читает `DATABASE_URL` и остальные параметры из окружения;
-полный шаблон с комментариями —
+<a id="конфигурация"></a>
+
+## Configuration
+
+For the primary deployment, copy `deploy/env.example` to a private file outside
+the repository. Core reads `DATABASE_URL` and other settings from the environment.
+See the complete commented template in
 [`apps/core/.env.example`](https://github.com/Asmblyr/Collaborative/blob/main/apps/core/.env.example).
-Основные группы настроек:
+The main settings are:
 
-- `ASMBLYR_SETUP_TOKEN` нужен до создания первого superuser.
-- `AUTH_UI_URL` задаёт точный внешний origin UI и обязателен в production.
-- `SECRETS_LOCAL_KEY` защищает сохраняемые секреты интеграций.
-- S3 можно настроить в системных настройках или через `FILES_STORAGE`, `FILES_BUCKET`
-  и параметры выбранного провайдера. Bucket создаёт оператор.
-- `OPENAI_API_KEY` и `OPENAI_API_MODEL` включают опционального ассистента,
-  если `ASSISTANT_ENABLED` не установлен в `false`.
-- `OAUTH_ISSUER_URL` и `OAUTH_KEYS_FILE` относятся к Asmblyr как OAuth provider;
-  ключи создаются отдельно и сохраняются между обновлениями.
+- `ASMBLYR_SETUP_TOKEN` is required until the first superuser is created.
+- `AUTH_UI_URL` specifies the exact external UI origin and is required in production.
+- `SECRETS_LOCAL_KEY` protects stored integration secrets.
+- Configure S3 in system settings or with `FILES_STORAGE`, `FILES_BUCKET`, and
+  provider-specific settings. The operator creates the bucket.
+- `OPENAI_API_KEY` and `OPENAI_API_MODEL` enable the optional assistant unless
+  `ASSISTANT_ENABLED` is `false`.
+- `OAUTH_ISSUER_URL` and `OAUTH_KEYS_FILE` configure Collaborative as an OAuth
+  provider. Generate signing keys separately and preserve them across upgrades.
 
-Значения и ограничения описаны в env-шаблонах и на страницах
-[интеграций](../features/integrations.md), [файлов](../features/files.md) и
-[ассистента](../features/assistant.md). Секреты и ключи держите вне Git и образов.
+Values and limits are documented in the environment templates and the guides for
+[integrations](../features/integrations.md), [files](../features/files.md), and
+[the assistant](../features/assistant.md). Keep secrets and keys out of Git and images.
 
-## Публичная установка
+<a id="публичная-установка"></a>
 
-Разместите UI и Core API за HTTPS reverse proxy. PostgreSQL и bucket должны
-оставаться приватными; основной Compose публикует порты только на loopback.
-Оператор настраивает TLS, IAM, резервные копии и мониторинг. `GET /health`
-проверяет процесс, `GET /ready` — БД и обязательные миграции. Скрипты
-резервирования локального стенда не обслуживают внешний облачный bucket.
+## Public installations
 
-## Обновление и восстановление
+Put UI and Core API behind an HTTPS reverse proxy. Keep PostgreSQL and the bucket
+private; the primary Compose setup binds ports to loopback only. The operator owns
+TLS, IAM, backups, and monitoring. `GET /health` checks the process; `GET /ready`
+checks the database and required migrations. Local backup scripts do not manage
+an external cloud bucket.
 
-Перед обновлением сохраните согласованную копию PostgreSQL и объектов, проверьте
-восстановление на отдельной установке и выполните миграции **до запуска нового Core**.
-Старые миграции не редактируются; `db:rollback` может удалить данные и не заменяет
-восстановление из копии. Откат образа возможен только при совместимой схеме.
-Для дополнительного локального стенда доступны
-[команды backup/restore и проверка статуса](../development/operations.md#копии-локальной-docker-установки).
+<a id="обновление-и-восстановление"></a>
 
-Рекомендации по защите установки — в [границах безопасности](../security/overview.md).
+## Upgrades and recovery
+
+Before an upgrade, take a consistent backup of PostgreSQL and objects, test recovery
+in a separate installation, and apply migrations **before starting the new Core**.
+Do not edit old migrations. `db:rollback` can delete data and does not replace
+restoring a backup. An image rollback is possible only when its schema is compatible.
+The optional local environment has
+[backup/restore commands and status checks](../development/operations.md).
+
+For installation hardening, see [security boundaries](../security/overview.md).

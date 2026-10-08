@@ -1,35 +1,32 @@
-# Примеры расширений
+# Plugin examples
 
-Три небольших пакета демонстрируют Kit:
+<!-- languages -->
 
-| Пакет                              | Пример                                                  |
-| ---------------------------------- | ------------------------------------------------------- |
-| [calculator](calculator/README.md) | Типизированный model handler, форма и вызов ассистентом |
-| [color](color/README.md)           | Редактор и отображение поля с настройками               |
-| [overview](overview/README.md)     | Страница админки и endpoint текущего участника          |
+[English](README.md) · [Русский](README.ru.md)
 
-Они входят в workspace для разработки и тестов, но **не включены по умолчанию**.
-Рабочие комментарии находятся отдельно в `packages/plugin-comments`.
-`package.json` в этом каталоге — конфигурация примеров для тестов, не конфигурация
-обычного приложения. `pnpm build` собирает приложение без демонстрационных пакетов.
+<!-- /languages -->
 
-## Подключить пример локально
+Three small packages demonstrate Kit:
 
-Из корня выполните `pnpm build:examples`. Затем добавьте имя нужного пакета в
-`asmblyr.plugins` корневого `package.json`. Для overview также одобрите
-`identity.profile` в `asmblyr.pluginPermissions`; calculator и color не требуют
-capabilities. Сохраните разрешения уже включённых пакетов.
+| Package                            | Example                                   |
+| ---------------------------------- | ----------------------------------------- |
+| [calculator](calculator/README.md) | Typed model handler, form, assistant call |
+| [color](color/README.md)           | Field editor/display with settings        |
+| [overview](overview/README.md)     | Admin page and current-caller endpoint    |
 
-Перезапустите Core и UI. Чтобы отключить пример, удалите его из `asmblyr.plugins`
-и пересоберите UI. Поля color останутся доступными как обычный текст.
-Локальные изменения конфигурации примеров не включайте в pull request.
+They belong to the development/test workspace but are disabled by default. The bundled Comments plugin is under packages/plugin-comments. This directory's package.json is test configuration, not ordinary app configuration. Pnpm build builds the app without demonstration packages.
 
-## Проверить контракты
+## Enable an example locally
+
+Run pnpm build:examples from the root, then add the desired package to root asmblyr.plugins. Overview also needs identity.profile approval in asmblyr.pluginPermissions; Calculator/Color need no capabilities. Preserve existing package approvals.
+
+Restart Core/UI. To disable, remove the example from asmblyr.plugins and rebuild UI. Color fields remain ordinary text. Do not include local example configuration changes in pull requests.
+
+## Check contracts
 
 ```sh
 pnpm build:examples
 node scripts/test.mjs core-plugins
 ```
 
-Тестовая конфигурация явно включает примеры. Source и production loaders
-используют один manifest; сгенерированные schemas и `dist` не хранятся в Git.
+Test configuration explicitly enables examples. Source/production loaders share one manifest. Generated schemas and dist stay out of Git.

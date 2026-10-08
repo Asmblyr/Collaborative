@@ -1,13 +1,12 @@
 <!-- Generated from packages/kit/UI.md; edit the source. -->
 
-# Общие компоненты UI
+<a id="общие-компоненты-ui"></a>
 
-Регистрация собственных редакторов полей и их настроек описана в
-[FIELDS.md](./kit-fields.md). Они используют эти же компоненты и тему хоста.
+# Shared UI components
 
-Kit содержит исходники общих shadcn-компонентов в `src/ui`. Админка и плагины
-импортируют одну реализацию. Компоненты работают без `PluginUiProvider`;
-обычные props, события, ref, `asChild` и варианты shadcn доступны напрямую.
+[Field editors](kit-fields.md) use these same components and host theme.
+
+Kit owns shared shadcn sources under src/ui. Admin and plugins import one implementation. Components need no PluginUiProvider; ordinary props, events, refs, asChild, and shadcn variants work directly.
 
 ```tsx
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
@@ -29,34 +28,27 @@ import {
 } from "@asmblyr-collaborative/kit/ui/select";
 ```
 
-`buttonVariants` экспортируется из `@asmblyr-collaborative/kit/ui/button` для ссылок и других
-элементов, которым нужен стиль кнопки. `@asmblyr-collaborative/kit/ui` содержит регистрацию
-плагина и контракты его UI. Серверный entry `@asmblyr-collaborative/kit` в браузер не импортируется.
-React и ReactDOM — совместимые peer dependencies: плагины используют экземпляры
-хоста. Серверные потребители Kit не обязаны импортировать UI.
+`buttonVariants` from kit/ui/button styles links and other elements. `kit/ui` contains plugin registration/UI contracts. Never import the server root into browsers. React/ReactDOM are compatible peer dependencies shared with the host. Server consumers need not import UI.
 
-## Стили и сборка
+<a id="стили-и-сборка"></a>
 
-Хост использует Tailwind 4, анимации shadcn и общие переменные темы. В его глобальном
-CSS уже подключено:
+## Styles and build
+
+The host uses Tailwind 4, shadcn animations, and shared theme variables. Global CSS already imports:
 
 ```css
 @import "@asmblyr-collaborative/kit/ui/styles.css";
 ```
 
-Этот entry указывает Tailwind на собранные компоненты внутри пакета, поэтому их
-классы доступны и из установленного пакета. Плагину повторять импорт не нужно;
-его собственные классы хост сканирует через сгенерированный `plugin-ui.css`.
-Цвета, радиусы и светлая/тёмная тема принадлежат хосту.
+This entry points Tailwind at built package components. Plugins need not repeat it; generated plugin-ui.css includes their own classes. Colors, radii, and light/dark themes belong to the host.
 
-После изменения Kit выполните из корня `pnpm --filter @asmblyr-collaborative/kit build`.
-`pnpm dev` и `pnpm build` также собирают Kit перед приложениями.
+After Kit changes run pnpm --filter @asmblyr-collaborative/kit build. Pnpm dev/build also builds Kit first.
 
-## Выпадающие списки внутри нативного dialog
+<a id="выпадающие-списки-внутри-нативного-dialog"></a>
 
-Radix-портал должен находиться в том же диалоге, чтобы не попасть под его backdrop.
-В `SelectContent` можно передать `container={dialogElement}`. Для вложенных контролов
-есть общий контекст из `@asmblyr-collaborative/kit/ui/portal-container`:
+## Dropdowns inside native dialogs
+
+Radix portals must stay inside the dialog to appear above its backdrop. Pass container={dialogElement} to SelectContent or use the shared kit/ui/portal-container context:
 
 ```tsx
 <PortalContainerContext.Provider value={dialogElement}>
@@ -64,17 +56,12 @@ Radix-портал должен находиться в том же диалог
 </PortalContainerContext.Provider>
 ```
 
-`SelectContent` использует явно указанный контейнер или унаследованный контекст.
-Popover админки использует этот же контекст. За пределами диалога контейнер не нужен.
+SelectContent uses an explicit container or inherited context. Admin popovers share it. No container is needed outside dialogs.
 
-## Изменение и добавление компонентов
+<a id="изменение-и-добавление-компонентов"></a>
 
-Общие Button, Input, Textarea, Select, Checkbox и Tabs меняются в Kit.
-Сохраняйте `"use client"` на интерактивных модулях и проверяйте компоненты внутри
-нативного диалога. Button и `buttonVariants` остаются доступными серверным компонентам.
+## Changing or adding components
 
-`apps/ui/components.json` пока обслуживает остальные локальные компоненты админки.
-Не запускайте `shadcn add --overwrite` для уже перенесённых компонентов в `apps/ui`:
-это создаст вторую реализацию. При переносе следующего компонента добавьте явный
-export в Kit, перенесите необходимые зависимости и замените импорты потребителей.
-Импорты внутри Kit не должны зависеть от `@/` или файлов админки.
+Change shared Button, Input, Textarea, Select, Checkbox, and Tabs in Kit. Keep "use client" on interactive modules and check native-dialog behavior. Button/buttonVariants remain usable from server components.
+
+Apps/ui/components.json still manages other local components. Do not run shadcn add --overwrite for components already moved to Kit: it creates duplicates. When moving another component, add an explicit Kit export, move dependencies, and replace consumer imports. Kit imports must not depend on @/ aliases or admin files.

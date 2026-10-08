@@ -1,27 +1,22 @@
 <!-- Generated from examples/plugins/color/README.md; edit the source. -->
 
-# Цвет
+<a id="цвет"></a>
 
-Пример расширения редактора обычного текстового поля.
+# Color
 
-1. Откройте настройки текстового поля → **Отображение**.
-2. В списке **Редактор** выберите **Цвет · расширение**.
-3. Настройте палитру и возможность вводить произвольный цвет.
-4. Сохраните поле. В карточке появится палитра, в таблице — цвет и HEX.
+An example editor extension for ordinary text fields.
 
-Каждое поле хранит свою палитру. Поддержаны 1–24 цвета в формате `#RRGGBB`,
-очистка значения, обязательность и блокировка на время сохранения. Старое
-значение вне палитры сохраняется, пока пользователь сам его не заменит.
-Некорректная строка отображается как текст, без выполнения HTML или CSS.
+1. Open a text field's Presentation settings.
+2. Select Color · extension in Editor.
+3. Configure its palette and whether custom colors are allowed.
+4. Save. Record cards show the palette; tables show color and HEX.
 
-`plugin.ts` — пустой серверный контракт. `ui/index.ts` регистрирует вклад
-`color:picker`; editor, display, settings и чтение options находятся рядом
-в отдельных небольших файлах. Импортов из Core или UI нет.
+Each field stores its own palette of 1–24 #RRGGBB colors. Clearing, required validation, and disabling during save are supported. Existing values outside the palette remain until explicitly replaced. Invalid strings display as text without executing HTML/CSS.
 
-Сборка: `pnpm --filter @asmblyr-collaborative/plugin-color build`. Пакет не включён по умолчанию; подключение описано в [руководстве примеров](https://github.com/Asmblyr/Collaborative/blob/main/examples/plugins/README.md). После изменения состава пакетов перезапустите
-Core и UI. При отключении плагина поле остаётся доступно как обычный текст.
+`plugin.ts` is the empty server contract. Ui/index.ts registers color:picker; editor, display, settings, and option parsing live in separate small files. There are no Core/UI imports.
 
-Настройка палитры не ограничивает HTTP API: формат и палитра являются UI.
-Сервер применяет обычные права и ограничения текстового поля.
+Build: pnpm --filter @asmblyr-collaborative/plugin-color build. It is disabled by default; see [example setup](https://github.com/Asmblyr/Collaborative/blob/main/examples/plugins/README.md). Restart Core/UI after changing packages. Disabling falls back to ordinary text.
 
-Полный контракт: [Kit / Редакторы полей](./kit-fields.md).
+Palette settings constrain UI only, not HTTP API. The server applies normal text-field permissions/constraints.
+
+Full contract: [Kit field editors](kit-fields.md).

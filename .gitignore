@@ -8,6 +8,10 @@ dist/
 .turbo/
 *.tsbuildinfo
 .vitepress/
+!docs/.vitepress/
+docs/.vitepress/*
+!docs/.vitepress/config.mts
+!docs/.vitepress/navigation.ts
 apps/ui/src/generated/plugin-ui.ts
 apps/ui/src/generated/plugin-ui.css
 
@@ -64,6 +68,10 @@ docs/public/api/LICENSE
 docs/public/api/NOTICE
 docs/reference/sdk/
 docs/reference/kit/
+docs/ru/reference/sdk/
+docs/ru/reference/kit/
+docs/public/brand/
+docs/public/assets/brand/
 
 # Machine-specific editor and OS files; retain shared editor settings
 /.vscode/*

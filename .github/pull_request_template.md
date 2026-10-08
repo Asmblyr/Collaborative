@@ -1,11 +1,12 @@
-## Изменение
+## Change
 
-<!-- Кратко: проблема, итоговое поведение и связанные issue. -->
+<!-- Describe the problem, resulting behavior, and related issues. -->
 
-## Проверка
+## Validation
 
-<!-- Укажите выполненные команды и результаты; отдельно — то, что не проверялось. -->
+<!-- List checks and results. State anything not verified separately. -->
 
-## Данные, доступ и документация
+## Data, access, and documentation
 
-<!-- Отметьте влияние на миграции, данные пользователей, права/секреты и публичные контракты. Ссылки на обновлённые руководства. Для UI используйте только вымышленные данные. -->
+<!-- Note migration, user-data, permission/secret, and public-contract impact.
+Link updated guides. Use fictional data in UI evidence. -->

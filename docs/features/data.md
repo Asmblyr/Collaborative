@@ -1,57 +1,42 @@
-# Коллекции, записи и связи
+<a id="коллекции-записи-и-связи"></a>
 
-## Структура
+# Collections, records, and relationships
 
-Главная страница `/` показывает доступные коллекции выбранного рабочего пространства
-и открывает их записи по `/items/<collection>`. Управление структурой, полями и связями
-находится отдельно в `/admin/collections` и доступно суперпользователю. Настройки
-команды и системы остаются в `/admin/settings`. Маршруты Core API `/collections`
-и `/items` от этого разделения не меняются.
+<a id="структура"></a>
 
-Коллекция описывает пользовательскую таблицу либо явно подключённое materialized view в `public`. Core-таблицы используют `asmblyr_`, таблицы расширений — `plugin_<namespace>_<name>`; эти префиксы зарезервированы. Их структуру нельзя произвольно менять через API.
+## Structure
 
-Создание коллекции задаёт техническое имя, режим одной записи, первичный ключ (serial, bigserial, UUID либо ручная строка), системные даты. Отображаемое название, шаблон подписи записи, скрытие из навигации, MCP-описание и участие в MCP настраиваются отдельно. Скрытие не отзывает доступ по API.
+The home page / lists accessible collections in the selected workspace and opens records at /items/&lt;collection&gt;. Superusers manage structure, fields, and relationships separately at /admin/collections. Team/system settings remain at /admin/settings. Core API /collections and /items routes are unchanged by this separation.
 
-В редакторе поля выбирается обычный тип либо связь; настройки разделены по назначению. После создания нельзя менять техническое имя/тип обычного поля. `nullable` отвечает за допустимость NULL в БД; `required` — за непустое значение в API. Это разные ограничения.
+A collection describes a user table or explicitly imported materialized view in public. Core reserves asmblyr* tables; plugins reserve plugin*&lt;namespace&gt;\_&lt;name&gt;. Their structure cannot be arbitrarily changed through the API.
 
-Системное состояние по умолчанию использует опубликовано/черновик/архивировано, новая запись — опубликована. Стандартное представление скрывает черновики/архив; это поведение отображения, а не ограничение доступа. Значения состояния настраиваются.
+Collection creation sets its technical name, singleton mode, primary key (serial, bigserial, UUID, or manually assigned string), and system timestamps. Display label, record-label template, navigation visibility, MCP description, and MCP enablement are separate settings. Hiding a collection does not revoke API access.
 
-## Работа с данными
+Field editors distinguish ordinary types and relationships, with settings grouped by purpose. Ordinary field names/types cannot change after creation. Nullable controls database NULL; required controls nonempty API values. These are different constraints.
 
-### Дополнительные поля системных коллекций
+Default system status uses published/draft/archived, with new records published. The default view hides drafts/archives as presentation behavior, not authorization. Status values are configurable.
 
-В `/admin/collections` раздел «Показать системные коллекции» по умолчанию свёрнут.
-Он содержит пользователей, файлы, политики доступа, рабочие пространства и сервисные
-аккаунты. Сессии, токены, секреты и служебные таблицы не показываются. Встроенные поля
-помечены замком: их имя, тип, ограничения и отображение нельзя менять этим редактором.
-Сами системные коллекции нельзя переименовать или удалить.
+<a id="работа-с-данными"></a>
 
-Суперпользователь может добавлять собственные физические колонки: обычные типы,
-даты, JSON, теги, списки вариантов, файлы и связи «многие к одному» с обычными
-пользовательскими коллекциями. Настройки открываются в стандартной правой панели.
-Вычисляемые/условные правила и настройка поиска для этих полей
-пока не поддерживаются. Все дополнительные колонки остаются nullable и необязательными,
-чтобы регистрация пользователя и другие штатные операции не требовали новых значений.
-Можно задать default; при добавлении он применяется к существующим строкам,
-а его последующее изменение влияет только на новые записи.
+## Working with data
 
-Кнопка «Дополнительные данные» открывает выбор существующей записи и форму её
-пользовательских полей. У пользователей эти поля также доступны суперпользователю
-в карточке профиля в `/admin/settings/users`, с отдельной кнопкой сохранения.
-Создание и удаление системных записей остаётся в штатных
-разделах. Удаление собственного поля требует ввода его имени и удаляет значения;
-зависимые SQL-представления блокируют удаление, `CASCADE` не используется.
+<a id="дополнительные-поля-системных-коллекции"></a>
 
-Например, создайте коллекцию `departments`, затем в системной коллекции «Пользователи»
-добавьте поле «Многие к одному» с именем `department_id` и выберите `departments`.
-В дополнительных полях пользователя появится обычный селектор записей с поиском.
-В БД создаются внешний ключ и индекс; удаление департамента очищает ссылку
-(`ON DELETE SET NULL`), сохраняя пользователя. Удаление самой коллекции департаментов
-блокируется, пока существует поле связи. Целевая коллекция и тип ключа после создания
-не меняются. Системные/плагинные таблицы, singleton и materialized view не могут быть
-целями этих связей; обратные O2M/M2M-поля и default для связи не поддерживаются.
+### Custom fields on system collections
 
-Чтобы создать такую связь через существующий POST configuration, передайте:
+The Show system collections section at /admin/collections starts collapsed. It contains users, files, policies, workspaces, and service accounts, excluding sessions, tokens, secrets, and internal tables. Locked built-in fields cannot have names, types, constraints, or presentation changed here. System collections cannot be renamed or deleted.
+
+Superusers may add physical custom columns: ordinary types, dates, JSON, tags, choices, files, and many-to-one relations to ordinary user collections. Standard side panels edit their settings. Computed/conditional rules and search configuration are not yet supported. All custom columns remain nullable and optional so registration and built-in operations need no new values.
+
+A default can be set; adding a column applies its default to existing rows, while later default changes affect only new records.
+
+Additional data opens an existing-record selector and custom-field form. Superusers also edit users' extra fields in /admin/settings/users, with a separate save button. Native sections retain creation/deletion of system records. Deleting a custom field requires typing its name and removes its values; dependent SQL views block deletion, without CASCADE.
+
+For example, create departments, then add a many-to-one department_id field to system Users targeting departments. User extra data gains a searchable record selector. Core creates a foreign key and index. Deleting a department clears the reference with ON DELETE SET NULL and preserves the user. Dropping departments is blocked while the relation exists.
+
+The target and key type cannot change after creation. System/plugin tables, singletons, and materialized views cannot be targets. Reverse O2M/M2M fields and relation defaults are unsupported.
+
+Existing POST configuration accepts:
 
 ```json
 {
@@ -60,38 +45,25 @@
     "type": "relation",
     "targetCollection": "departments"
   },
-  "presentation": { "label": "Департамент" }
+  "presentation": { "label": "Department" }
 }
 ```
 
-Core API: `GET /system-collections`, `POST|PUT
-/system-collections/:name/fields/:field/configuration`, `DELETE
-/system-collections/:name/fields/:field`, `GET /system-collections/:name/records`
-и `GET|PATCH /system-collections/:name/records/:id`. Имена `users`, `files`, `policies`,
-`workspaces`, `service_accounts` являются отдельным системным каталогом. PATCH принимает
-`{ "values": { "custom_field": "value" } }` и изменяет только зарегистрированные
-пользовательские колонки. Встроенные значения и секреты не возвращаются; селектор
-содержит ID и подпись (для пользователя — email). Все эти маршруты доступны только
-активному человеческому суперпользователю, включая заполнение значений. Системные
-таблицы не становятся обычными `/items`-коллекциями и не включаются в генерацию SDK.
-Самостоятельное редактирование этих полей обычными пользователями не включено;
-отдельная коллекция расширения профиля с обычными политиками продолжает работать.
+Core API: GET /system-collections, POST|PUT /system-collections/:name/fields/:field/configuration, DELETE /system-collections/:name/fields/:field, GET /system-collections/:name/records, and GET|PATCH /system-collections/:name/records/:id.
 
-Владение колонкой фиксируется атомарно с DDL в `asmblyr_system_fields`.
-Существующая колонка никогда не присваивается пользовательскому расширению.
-При будущих миграциях Core нужно проверять конфликт имён и разрешать его явно,
-с сохранением пользовательских данных. Откат реестра запрещён, пока в нём есть поля.
-Изображения и галереи используют обычную файловую библиотеку; привязанные файлы
-защищены от удаления. Интеграционные проверки: `node scripts/test.mjs core-system-collections`.
+Names users, files, policies, workspaces, and service_accounts belong to a separate system catalog. PATCH accepts `{ "values": { "custom_field": "value" } }` and changes registered custom columns only. Built-in values and secrets are not returned; selectors expose ID and label (email for users).
 
-### Связь обычной коллекции с пользователем
+All these routes, including value editing, require an active human superuser. System tables do not become ordinary /items collections and are excluded from SDK generation. Ordinary users cannot self-edit these fields. The separate profile-extension collection with ordinary policies remains available.
 
-В редакторе обычной коллекции выберите «Многие к одному», затем
-«Пользователи · системная». Например, поле `manager_id` связывает департамент
-с руководителем. Форма, фильтр и ячейки таблицы используют имя и почту пользователя;
-само значение в записи и SDK — UUID. Системные таблицы не появляются в обычном каталоге.
+Column ownership is recorded atomically with DDL in asmblyr_system_fields. Existing columns are never adopted as custom extensions. Future Core migrations must detect naming conflicts and resolve them explicitly while preserving data. Registry rollback is blocked while fields exist. Images/galleries use the normal library, and attached files cannot be deleted. Tests: node scripts/test.mjs core-system-collections.
 
-Создание через `POST /collections/:name/relations` доступно суперпользователю:
+<a id="связь-обычнои-коллекции-с-пользователем"></a>
+
+### Linking an ordinary collection to a user
+
+In an ordinary collection's relationship editor, choose Many to one → Users · system. For example, manager_id links a department to its manager. Forms, filters, and table cells show user name/email; records and SDK retain the UUID. System tables stay out of the ordinary catalog.
+
+Superusers create the relation through POST /collections/:name/relations:
 
 ```json
 {
@@ -103,194 +75,93 @@ Core API: `GET /system-collections`, `POST|PUT
 }
 ```
 
-`@users` — специальная цель связи, отличная от пользовательской коллекции `users`.
-Core создаёт UUID-столбец, индекс и внешний ключ на системного пользователя.
-Поддерживаются `restrict` и `setNull`; каскадное удаление записей, обратные поля,
-значения по умолчанию, вычисления и зависимые фильтры этой связи не поддерживаются.
-Фильтрация записей по UUID руководителя поддерживается; поиск внутри связанного
-профиля и переходы вроде `manager_id.email` не предоставляются.
+@users is a special target, distinct from a user-created users collection. Core creates a UUID column, index, and FK to the system user. Restrict and setNull are supported; cascading record deletion, reverse fields, defaults, computations, and dependent filters are not. Filtering by manager UUID works; searching the linked profile or paths such as manager_id.email is not exposed.
 
-Для поиска пользователей, получения подписей и назначения пользователя требуется
-человеческая сессия с чтением раздела «Пользователи» (или суперпользователь).
-Права записи исходной коллекции также обязательны. Сервисные ключи не получают
-доступ к каталогу пользователей. Очистить необязательную связь можно с правом
-изменения самого поля. Назначить можно только активного пользователя.
-Сохранённую связь можно оставить без изменения, даже если пользователь отключён
-или у редактора больше нет доступа к каталогу пользователей.
+Searching, resolving labels, and assigning a user require a human session with Users read access or a superuser, plus write access to the source collection. Service keys cannot access the directory. Clearing an optional relation requires update on the field. Only active users can be assigned. Existing references may stay unchanged after the user is disabled or the editor loses directory access.
 
-`GET /users/references` возвращает только `id` и `label`, принимает `q`, `page`,
-`limit` (1–100) и `ids` (до 100 UUID через запятую). Поиск показывает активных;
-запрос известных `ids` также позволяет подписать уже сохранённые ссылки на
-отключённых пользователей. Без права чтения подпись недоступна, UI показывает UUID.
-`/items/asmblyr_users` остаётся закрытым. Миграция не добавляет пользовательские
-поля автоматически; откат блокируется, пока существуют связи с пользователями.
+GET /users/references returns only id/label and accepts q, page, limit (1–100), and ids (up to 100 comma-separated UUIDs). Search shows active users; known-ID lookup can label stored references to disabled users. Without read permission, labels are unavailable and the UI shows UUIDs.
+
+/items/asmblyr_users remains closed. Migration creates no custom fields automatically; rollback is blocked while user relations exist.
 
 ### Materialized views
 
-На `/admin/collections` суперпользователь может подключить готовое PostgreSQL
-materialized view через кнопку-иконку «Подключить представление». В правой панели
-выбирается источник из `public`, затем название, ключ строки, папка, подпись записи
-и подписи полей. Подключение добавляется в выбранное рабочее пространство.
-Сохранение регистрирует только метаданные Asmblyr; отмена ничего не создаёт.
-После подключения обычные настройки полей и конструктор карточки позволяют
-изменить форматы, переводы, порядок и расположение полей.
+Superusers import existing PostgreSQL materialized views using the Connect view icon at /admin/collections. The side panel selects a public source, then label, row key, folder, record label, and field labels. The view joins the selected workspace. Saving registers only Collaborative metadata; cancellation creates nothing. Ordinary field settings and the card builder then control formats, translations, order, and placement.
 
-Без отдельной раскладки карточка представления автоматически располагает короткие
-поля в две колонки (в одну в узкой панели), а заголовок и длинное содержимое — на
-полную ширину. Числа показываются с разделителями разрядов без потери точности
-decimal/bigint, булевы значения — компактными метками. Указанные подписи, переводы,
-форматы, скрытие и раскладка сохраняют приоритет. Автоматические подписи только
-заменяют подчёркивания пробелами; перевод пользовательских полей и валюта не
-угадываются. Это оформление при чтении: SQL и сохранённые метаданные не изменяются,
-поэтому оно работает и для ранее подключённых представлений.
+Without a custom layout, short fields use two columns (one in a narrow panel), while titles and long content span the width. Numbers use separators without losing decimal/bigint precision; booleans use compact badges. Explicit labels, translations, formats, hidden settings, and layout take precedence. Automatic labels only replace underscores with spaces; translations and currency are never guessed. This read-time presentation changes neither SQL nor metadata and works for previously imported views.
 
-Первый вариант требует заполненное представление с поддерживаемыми скалярными
-полями и одним устойчивым ключом: UUID, положительный integer/bigint или непустая
-строка не длиннее 255 символов. На ключе должен существовать действующий полный
-одноколоночный UNIQUE индекс; составные, частичные и expression-индексы не подходят.
-Имена источника и полей должны соответствовать обычным API-именам коллекций.
-Несовместимые и уже подключённые объекты отображаются с причиной и недоступны
-для выбора. Зарезервированные Core/plugin объекты не предлагаются.
+Import requires a populated view with supported scalar fields and one stable key: UUID, positive integer/bigint, or a nonempty string up to 255 characters. A valid, full, single-column UNIQUE index must cover that key. Composite, partial, and expression indexes do not qualify. Source/field names must follow normal API naming rules. Incompatible or already imported objects show a reason and cannot be selected; reserved Core/plugin objects are excluded.
 
-Представления доступны только для чтения: таблица, карточка, фильтры, сортировка,
-поиск, SDK и MCP используют обычный read API. Для других пользователей нужны
-отдельные read grants на поля и выходные строки. Права на исходные коллекции
-не переносятся автоматически. В схеме SDK `sourceKind` равен `materialized-view`,
-create/update/delete выключены, а генератор типов запрещает операции записи.
+Views are read-only. Tables, cards, filters, sorting, search, SDK, and MCP use ordinary read APIs. Other users need separate grants on output fields/rows; source-collection permissions do not transfer. SDK schema marks sourceKind as materialized-view and disables create/update/delete; generated types prohibit writes.
 
-В списке записей подключённого materialized view показана метка «Только просмотр».
-Она отличает представление от редактируемой коллекции; настройка отображения,
-поиск и фильтры остаются доступны в рамках прав пользователя.
+The record list shows a Read only badge, while permitted presentation settings, search, and filters remain available.
 
-Создание, редактирование и удаление строк, bulk/commit с вложенными записями,
-физические поля, индексы, CRUD-состояния и FK-связи запрещены сервером, включая
-суперпользователя. Изменяемые метаданные отображения не изменяют SQL-объект.
-«Отключить представление» удаляет подключение и его права/метаданные из каталога,
-сохраняя само materialized view и данные в PostgreSQL.
+The server rejects row creation/update/deletion, bulk/nested commit, physical fields, indexes, CRUD status fields, and FK relationships, even for superusers. Editable presentation metadata never changes SQL. Disconnect view removes the catalog connection and its grants/metadata while preserving the PostgreSQL object and data.
 
-SQL-определение, создание и `REFRESH MATERIALIZED VIEW` управляются внешними
-миграциями или процессом проекта. Перезагрузка таблицы выполняет только чтение.
-Внешний процесс должен сохранять выбранный ключ уникальным, непустым и устойчивым
-между пересчётами. Изменение колонок или потеря уникального индекса возвращают
-`409 MATERIALIZED_VIEW_CHANGED`; источник нужно подключить заново.
-Незаполненный источник возвращает `503 MATERIALIZED_VIEW_NOT_POPULATED`.
-Время последнего внешнего пересчёта не показывается. Составные ключи, обычные views
-и логические связи с представлениями не поддерживаются этим вариантом.
+External migrations/processes own SQL definition, creation, and REFRESH MATERIALIZED VIEW. Reloading the UI only reads data. External refresh must preserve a unique, nonempty, stable key. Column changes or loss of the unique index return 409 MATERIALIZED_VIEW_CHANGED and require reconnecting the source. Unpopulated views return 503 MATERIALIZED_VIEW_NOT_POPULATED. Last external refresh time is not displayed. Composite keys, ordinary views, and logical relationships to views are unsupported.
 
-### Типы и простые редакторы
+<a id="типы-и-простые-редакторы"></a>
 
-Поле `date` хранит календарную дату без времени и часового пояса. API, SDK и Kit
-передают её строкой `YYYY-MM-DD`; форма показывает календарный ввод и не пересчитывает
-сутки по часовому поясу устройства. Поддерживается диапазон `0001-01-01`–`9999-12-31`;
-несуществующие даты и строки со временем отклоняются. `datetime` сохраняет прежний
-контракт момента времени с часовым поясом.
+### Types and simple editors
 
-Обычный `bigint` — знаковое 64-битное целое, отдельное от `bigserial` первичного ключа.
-API принимает и возвращает каноническую десятичную строку, например
-`"9007199254740993"`. Диапазон — от `"-9223372036854775808"` до
-`"9223372036854775807"`. JS-числа, дроби, экспоненциальная запись, ведущие нули и `-0`
-отклоняются. Фильтрация и сортировка выполняются по числовой колонке PostgreSQL.
+Date stores a calendar day without time or time zone. API, SDK, and Kit use YYYY-MM-DD; the calendar editor never shifts days for device time zone. Range: 0001-01-01 through 9999-12-31. Invalid dates and timestamps are rejected. Datetime keeps its time-zone-aware instant contract.
 
-В уже управляемой коллекции `character varying`/`varchar` распознаётся как `text`.
-Это не меняет SQL-тип и ограничение длины колонки и не подключает произвольные
-существующие таблицы автоматически.
+Ordinary bigint is a signed 64-bit integer, distinct from a bigserial primary key. API input/output is a canonical decimal string, such as "9007199254740993", ranging from "-9223372036854775808" to "9223372036854775807". JavaScript numbers, fractions, exponents, leading zeros, and -0 are rejected. PostgreSQL performs numeric filtering/sorting.
 
-Для одного варианта используется штатный `select`: у `text` значения вариантов
-строковые, у `integer` — числовые, включая `0` и отрицательные числа. Пример настройки:
-`{ interface: "select", options: [{ value: 0, label: "Обычный" }] }`.
-Сервер проверяет тип, допустимые значения и default. Удалённые варианты остаются
-видимыми в старых записях; новые записи и изменения этого поля принимают только
-текущий список. `multiselect` для JSON сохраняет строковые варианты.
+Character varying/varchar in an already managed collection maps to text without changing SQL type or length limits. This does not automatically import arbitrary tables.
 
-«Теги» в выборе нового поля создаёт JSON-колонку с `interface: "tags"`. Этот же
-редактор можно выбрать для существующего JSON-поля. Ввод показывает компактные
-плашки: Enter или выход из поля добавляет тег, крестик удаляет его. Просмотр
-карточки показывает все теги, таблица — первые три и `+N` с остальными в подсказке.
+Select uses string options for text and numeric options for integer, including zero/negative numbers. Example: `{ interface: "select", options: [{ value: 0, label: "Standard" }] }`. Core validates types, allowed values, and defaults. Removed choices remain visible in old records; new records and explicit field edits accept only current choices. JSON multiselect stores string choices.
 
-API и редактор принимают массив строк: до 100 тегов, каждый до 120 символов после
-обрезки пробелов по краям. Пустые теги, повторы после обрезки и управляющие символы
-отклоняются; регистр и порядок сохраняются. Обязательное поле требует хотя бы
-одного тега; необязательное допускает `[]`, а nullable-поле — также `null`.
-Default проходит ту же проверку. Настройка редактора не переписывает старые записи:
-несовместимое значение остаётся видимым как исходный JSON и проверяется при явном
-изменении этого поля. `/schema` экспортирует теги как `strings` без закрытого enum,
-генератор SDK — как `string[]` (с `| null` для nullable-поля). После смены редактора
-обновите схему SDK через `asm schema pull` и `asm generate`.
+Tags creates a JSON column with interface:tags, also selectable for existing JSON fields. Enter or blur adds a tag; the cross removes it. Cards show all tags; tables show three plus +N with a tooltip.
 
-Для radio-сценариев достаточно этого же списка. Обычный JSON редактируется в
-текстовом поле с проверкой JSON перед сохранением и на сервере. Текстовое поле с
-интерфейсом `url` принимает абсолютный HTTP(S)-адрес без учётных данных; компактная
-кнопка рядом открывает корректную ссылку в новой вкладке. При просмотре ссылка
-также доступна для открытия.
+API/editor accept up to 100 strings, each up to 120 characters after trimming. Empty tags, trimmed duplicates, and control characters are rejected; case/order are preserved. Required fields need at least one tag; optional allows []; nullable also allows null. Defaults use the same validation.
 
-### Редактирование и таблица
+Changing the interface does not rewrite old data. Incompatible values remain visible as raw JSON and are validated when explicitly edited. /schema exports strings without a closed enum; SDK generation uses string[] with null for nullable fields. Refresh after interface changes with asm schema pull and asm generate.
 
-Нажатие строки открывает боковой редактор; запись имеет собственный URL `/items/<collection>/<id>`. Без права update редактор работает на чтение. Создание использует такой же диалог. Выделение строк показывает плавающую панель действий.
+Use the same option list for radio-style scenarios. Ordinary JSON uses a text editor with client/server validation. Text with interface:url accepts absolute HTTP(S) URLs without credentials; a compact button opens valid links in a new tab, including read-only views.
 
-Таблица поддерживает страницы, сортировку, перестановку/скрытие и ресайз колонок, поиск,
-фильтры и виды. При вводе поиска включается порядок по релевантности: точное
-совпадение, начало названия с целым словом, целое слово внутри названия, затем
-подстрока. Точный первичный ключ имеет наивысший приоритет. При равном совпадении
-основные поисковые поля выше дополнительных; автоматический приоритет берётся
-из шаблона/поля названия записи, иначе из первого текстового поля. Приоритет
-настраивается в редакторе поля или связи. Поиск остаётся буквальным и без учёта
-регистра; исправления опечаток и морфологии нет.
+<a id="редактирование-и-таблица"></a>
 
-Ширина меняется перетаскиванием правого края заголовка. Двойной щелчок возвращает
-стандартную ширину. На разделителе работают стрелки влево/вправо (шаг 16 px),
-Home/End (80/1200 px) и Delete/Backspace (сброс); Escape отменяет текущий жест.
-Ширины сохраняются в личных настройках после отпускания указателя, восстанавливаются
-после перезагрузки и входят в определение именованного вида. Скрытие и перестановка
-сохраняют ширины; удаление поля или потеря права чтения исключают его настройки.
-Это настройка отображения: право редактировать записи не требуется.
+### Editor and table
 
-`GET/PATCH /users/me/table-preferences/:collection` и `columns` в определениях
-`/table-views/:collection` поддерживают необязательное `widths`, например
-`{"order":["id","title"],"hidden":[],"widths":{"title":400}}`.
-Значения — целые CSS-пиксели от 80 до 1200, ключи — доступные поля коллекции.
-Пустая карта возвращает все ширины к стандартным; отсутствие ключа поля — его
-стандартная ширина. Старые определения без `widths` остаются допустимыми.
+Click a row to open a side editor at /items/&lt;collection&gt;/&lt;id&gt;. Without update access it is read-only. Creation uses the same dialog. Selecting rows reveals a floating action bar.
 
-Участие поля в поиске и индекс — отдельные решения. Поиск по настроенной связи
-ограничен одним уровнем, учитывает название связанной записи и не размножает
-строки источника. Скрытые правами и чувствительные поля не участвуют в совпадении
-или ранжировании. Связи с условными правами строк пока исключены из поиска.
-Релевантность вычисляется в PostgreSQL до пагинации; равные результаты упорядочены
-по столбцу и первичному ключу. Клик по заголовку включает обычную сортировку,
-переключатель возвращает релевантность. Режим сохраняется в личных видах.
-Глобальный поиск ранжирует записи внутри каждой коллекции; общий межколлекционный
-рейтинг не вычисляется. Наличие индекса не гарантирует приемлемый план на любом
-размере данных: проверяйте EXPLAIN на своей выборке.
+Tables support pagination, sorting, column order/visibility/resize, search, filters, and views. Search defaults to relevance: exact match, whole-word prefix, whole word within a label, then substring. Exact primary keys rank highest. Primary search fields win equal matches over secondary fields. Automatic priority uses record-label/template fields, falling back to the first text field; field/relation editors can override it. Matching is literal and case-insensitive, without typo correction or morphology.
 
-В HTTP/SDK параметр `order` принимает `relevance` или `field`. Запрос с `q` без
-явных `sort`/`direction` использует релевантность; явный столбец сохраняет обычный
-порядок. `order=relevance` вместе с `sort` задаёт столбец для равных результатов.
-Без поисковой строки эффективный режим всегда `field`, он возвращается в `page.order`.
+Resize by dragging a header's right edge; double-click resets. Keyboard separators support Left/Right (16 px), Home/End (80/1200 px), Delete/Backspace (reset), and Escape (cancel drag). Widths save to personal preferences after pointer release, survive reload, and join named-view definitions. Hiding/reordering preserves widths; removing fields or read access removes their settings. Record-edit permission is unnecessary.
 
-Таблица связанных записей без явно заданных колонок показывает ключ, поле подписи
-и до двух доступных M2O-полей для контекста (например, площадку категории).
-Ссылка на коллекцию текущей карточки не дублируется. Закрытые и чувствительные
-поля не добавляются в автоматический контекст; выбранный пользователем набор
-колонок имеет приоритет. Пустое название остаётся пустым, вместо него не подставляется название
-другого поля. Подписи M2O загружаются с обычными правами на связанные записи.
+GET/PATCH /users/me/table-preferences/:collection and table-view columns accept optional widths, for example:
 
-Фильтры объединяют условия AND/OR, включая допустимые связанные поля. Нельзя использовать закрытое поле как канал фильтрации/сортировки. Максимум HTTP-страницы — 100; total передаётся строкой.
+```json
+{ "order": ["id", "title"], "hidden": [], "widths": { "title": 400 } }
+```
 
-## Связи и сохранение
+Widths are integer CSS pixels from 80–1200 for accessible fields. Empty maps reset all widths; missing field keys use defaults. Old definitions without widths remain valid.
 
-Есть M:1, обратные 1:M и M:N с промежуточной коллекцией. В форме можно выбирать существующие записи и создавать новые; права каждой затронутой коллекции/поля проверяются отдельно. Перенос между родителями требует соответствующего изменения связи.
+Search participation and indexing are separate. Configured relationship search traverses one level, uses related labels, and does not duplicate source rows. Hidden/sensitive fields contribute neither matches nor ranking. Relations with conditional row grants are excluded for now.
 
-`POST /items/:collection/commit` сохраняет корневую запись и связанные изменения одной транзакцией. Ошибка откатывает также историю и транзакционные hooks. Draft ограничен 100 изменениями и глубиной 5. Последовательные обычные HTTP-запросы одной транзакцией не становятся.
+PostgreSQL ranks before pagination; ties use the selected column and primary key. Header clicks select field ordering; the relevance switch restores ranking. Personal views retain the mode. Global search ranks within each collection, not across collections. An index does not guarantee a suitable plan at every scale: inspect EXPLAIN on your workload.
 
-## Правила поля и зависимые формы
+HTTP/SDK order accepts relevance or field. Search with q and no explicit sort/direction uses relevance; explicit sorting preserves field order. Order=relevance with sort uses that field for ties. Without search text, effective order is always field and appears in page.order.
 
-Во вкладке «Правила» бокового редактора доступны скрытие в форме, режим чтения,
-условная обязательность и копирование значения из M2O-связи. `rules.hidden`
-меняет только форму; доступ через API по-прежнему задаётся политикой.
-`rules.readonly` отклоняет явную запись поля через штатный writer, включая
-superuser. Default при создании применяется без ручной записи readonly-поля.
+Related-record tables without explicit columns show key, label field, and up to two accessible M2O context fields, such as a category's marketplace. A backlink to the current card's collection is omitted. Hidden/sensitive fields are excluded; user-selected columns take precedence. Empty labels stay empty rather than borrowing another field's title. M2O labels use normal related-record permissions.
 
-Пример `presentation` для поля `note`:
+Filters combine AND/OR, including permitted related fields. Closed fields cannot become filtering/sorting channels. HTTP pages are limited to 100; total is a string.
+
+<a id="связи-и-сохранение"></a>
+
+## Relationships and saving
+
+M:1, inverse 1:M, and M:N with a junction collection are supported. Forms select existing records or create new ones. Every affected collection/field is checked separately. Moving between parents requires the corresponding relation update.
+
+POST /items/:collection/commit saves the root and related changes in one transaction. Failure also rolls back history and transactional hooks. Drafts permit 100 changes and depth 5. Sequential ordinary HTTP requests do not share a transaction.
+
+<a id="правила-поля-и-зависимые-формы"></a>
+
+## Field rules and dependent forms
+
+The side editor's Rules tab controls hidden, read-only, conditional-required, and M2O-copy behavior. Rules.hidden changes forms only; policies still control API access. Rules.readonly rejects explicit writes through the normal writer, including superusers. Create defaults apply without manually writing the read-only field.
+
+Example presentation for note:
 
 ```json
 {
@@ -303,22 +174,13 @@ superuser. Default при создании применяется без руч�
 }
 ```
 
-Условие использует другие скалярные поля этой коллекции: `eq`, `ne`, `empty`,
-`notEmpty`, объединение `all`/`any`, до 12 правил. `false` и `0` не пусты.
-Core проверяет итоговую запись с defaults и прежними значениями при PATCH.
-Обязательное значение — не NULL и не пустая/пробельная строка. Необходимые
-скрытые поля раскрываются при проверке формы; серверная ошибка сохраняет черновик.
+Conditions use other scalar fields with eq, ne, empty, notEmpty and all/any, up to 12 rules. False/zero are not empty. Core checks the final record, including defaults and previous PATCH values. Required values cannot be NULL or empty/whitespace strings. Form validation reveals required hidden fields; server errors preserve the draft.
 
-`rules.computed: { relation: "project", field: "client" }` копирует `project.client`
-при сохранении. Копируются скалярные поля. Типы полей должны совпадать, а для FK — ещё и целевая коллекция.
-Копирование ограничено одной прямой M2O; цепочки, циклы и произвольные выражения
-отклоняются. Явная запись computed-поля запрещена. Пользователю нужны права
-чтения источника и записи изменяемого результата. Отсутствующий источник связи
-даёт NULL с обычной проверкой nullable/required. Это вычисление при сохранении,
-не динамическая колонка: изменение исходной записи само по себе не обновляет
-все зависимые записи. Чувствительный источник разрешён только для чувствительного результата.
+`rules.computed: { relation: "project", field: "client" }` copies project.client on save. Source/target scalar types must match, including target collection for foreign keys. Only one direct M2O is supported; chains, cycles, and arbitrary expressions are rejected. Explicit computed-field writes are forbidden. Users need source-read and result-write access. Missing relation sources yield NULL with normal nullable/required checks.
 
-M2O-поле может задать `relationFilter`, например выбор города по региону формы:
+This computes on save, not dynamically: editing a source does not update every dependent record. Sensitive sources require sensitive results.
+
+A relationFilter can restrict M2O candidates, such as cities by the form's region:
 
 ```json
 {
@@ -340,61 +202,50 @@ M2O-поле может задать `relationFilter`, например выбо
 }
 ```
 
-Список кандидатов использует обычные фильтры и права строк/полей. До заполнения
-зависимости выбор закрыт. Изменение родителя в форме сбрасывает зависимые ссылки,
-включая следующий уровень. Core проверяет новое значение при создании и при
-изменении самой связи либо её зависимости. Несоответствующая связь отклоняется;
-сервер сам не выбирает и не очищает её. Старый архивный выбор разрешено сохранить
-при редактировании другого поля. Литералы скалярные или массив скаляров, зависимости
-— скалярные поля формы. AND/OR ограничены 30 узлами и глубиной 3. Связанный путь
-фильтра — один переход; условия прав строк при таком переходе по-прежнему
-отклоняются безопасно. Условие с недоступной зависимостью не раскрывается в каталоге.
+Candidates use ordinary filters and row/field permissions. Selection stays disabled until dependencies are filled. Changing a parent clears dependent form references, including the next level. Core validates on create and when the relation or its dependency changes. Invalid links are rejected; the server never silently selects/clears them. An old archived choice may remain when editing an unrelated field.
 
-Эти проверки общие для HTTP, SDK, Kit, массового изменения и вложенного commit.
-Ошибочный ряд откатывает транзакцию целиком. Прямой SQL не проходит через writer.
+Literals are scalars or scalar arrays; dependencies are scalar form fields. AND/OR supports 30 nodes and depth 3. Related filter paths permit one hop; row conditions along that hop still fail safely. Conditions with inaccessible dependencies are omitted from the catalog.
 
-Шаблоны подписей поддерживают до двух M2O-переходов, например
-<code v-pre>{{project.client.name}} · {{title}}</code>. Каталог предлагает допустимые поля.
-Чтение проверяется на каждом переходе, включая условные права строки; при
-недоступном поле/записи используется обычная подпись или ключ. Подстановка
-использует пакетные запросы. To-many пути и вычисления внутри шаблона не поддержаны.
-Панели обратных 1:M и M:N связей можно разместить в секции или вкладке конструктора
-формы существующей записи; повторной панели внизу не будет. В новой записи
-размещённая панель показывает подсказку до первого сохранения.
+These checks apply to HTTP, SDK, Kit, bulk, and nested commit. One invalid row rolls back the transaction. Direct SQL bypasses the writer.
 
-## Защита от перезаписи
+Record-label templates support two M2O hops, such as <code v-pre>{{project.client.name}} · {{title}}</code>. The catalog suggests valid fields. Each hop checks read access, including row rules; unavailable values fall back to the normal label/key. Resolution uses batched queries. To-many paths and template expressions are unsupported.
 
-Боковой редактор запоминает исходные значения и передаёт `expectedValues` только для изменяемых полей. Core проверяет их под блокировкой строки в той же транзакции. Для вложенных записей, FK и атрибутов промежуточной связи применяется такая же проверка. Системные даты не нужны: сравниваются фактические значения, поэтому изменение через обычный PATCH, плагин или прямой SQL тоже обнаруживается при следующем защищённом сохранении.
+Inverse 1:M/M:N panels can be placed in a form section/tab for existing records without duplication below the form. On new records, placed panels show a hint until first save.
 
-Изменения разных полей сохраняются независимо. Если другое сохранение уже записало точно такое же значение, повтор считается успешным. Несовпадение одного изменяемого поля возвращает `409 ITEM_CHANGED` и откатывает весь commit. UI оставляет черновик в панели, загружает доступные актуальные значения и предлагает выбрать «Ваше значение / Актуальное». После выбора пользователь продолжает редактирование и сохраняет явно; повторная запись снова проверяет исходные значения. При ошибке чтения или изменении доступа черновик остаётся в открытом окне.
+<a id="защита-от-перезаписи"></a>
 
-SDK и Kit могут включить эту проверку через `items.commit` с `expectedValues` для каждой существующей изменяемой записи. Пропуск параметра совместим с прежними клиентами. Обычные `update`, массовые изменения и прямой SQL сами по себе не требуют исходных значений. Это проверка содержимого изменяемых полей, не счётчик версий или блокировка всей карточки. Возврат поля к исходному значению не считается конфликтом. JSON, rich text и массивы сравниваются целиком; состав связей меняется явными attach/detach, без проверки снимка всего списка. Черновик хранится в памяти панели и не переживает перезагрузку страницы.
+## Overwrite protection
 
-Проверка не раскрывает актуальные значения в ошибке и требует права чтения и записи каждого сравниваемого поля, включая условные grants.
+The side editor remembers original values and sends expectedValues for changed fields only. Core compares them under a row lock in the same transaction, including nested records, foreign keys, and junction attributes. It compares actual values rather than timestamps, detecting changes from ordinary PATCH, plugins, or direct SQL at the next protected save.
 
-## Кто сейчас здесь
+Edits to different fields can save independently. If another save already wrote the identical desired value, the repeat succeeds. A mismatch returns 409 ITEM_CHANGED and rolls back the entire commit. The UI retains the draft, fetches accessible current values, and offers Your value / Current value. Users continue editing and save explicitly; the next write checks its baseline again. Read failures or access changes keep the draft open.
 
-В существующей карточке записи показываются компактные аватарки участников, открывших эту же запись. Наведение или фокус раскрывает имя; один пользователь с несколькими окнами получает одну аватарку. Видны три аватарки и счётчик остальных. Новой несохранённой записи присутствие не назначается.
+SDK and Kit opt in through items.commit expectedValues for each existing modified record. Omission remains compatible. Ordinary update, bulk changes, and SQL do not require baselines. This is changed-field comparison, not a version counter or whole-card lock. Returning a field to its original value is not a conflict. JSON, rich text, and arrays compare as whole values. Relationships use explicit attach/detach rather than whole-list snapshots. Drafts are in-memory and do not survive reload.
 
-UI обновляет список раз в 5 секунд. Имя и аватар берутся из профиля; без заданного имени отображается «Участник». Core хранит отметки в PostgreSQL на 30 секунд и удаляет их при уходе; закрытие окна без сети покрывает срок действия. Сессии, которые отозваны или истекли, и отключённые пользователи исключаются сразу при следующем чтении списка. Ошибка присутствия скрывает аватарки и не мешает редактированию.
+Conflict errors do not expose current values. Every compared field requires read and write access, including conditional grants.
 
-Каждое обновление проверяет актуальные права чтения конкретной записи. Имена, аватары и число окон видны другим участникам этой записи; email, URL с поиском/фильтрами, сессии и значения записи не передаются. Присутствие не означает, что человек редактирует поле. Плагинные коллекции используют обычное присутствие записей.
+<a id="кто-сеичас-здесь"></a>
 
-## История и удаление
+## Who is here
 
-История item events хранит actor, время и изменения значений.
+Existing record cards show compact avatars for participants viewing that record. Hover/focus shows names; multiple windows of one person share one avatar. Three avatars plus an overflow count are visible. Unsaved new records have no presence.
 
-Текст/email с `presentation.sensitive: true` маскируется в форме просмотра и
-таблице, редактируется как password и не используется в подписи записи.
-Вместо значения в `before`/`after` истории сохраняется `[REDACTED]`, включая
-create/update/delete, bulk и nested commit. Включение настройки в той же
-транзакции безвозвратно очищает прежние события этого поля; выключение не
-восстанавливает их. Default чувствительного поля запрещён. Это не шифрование
-и не write-only API: разрешённый read по-прежнему возвращает живое значение,
-его ограничивают права поля. Копии БД, прямой SQL и внешние логи проверяет оператор.
+The legacy presence UI polls every five seconds. Profile name/avatar are used, with Participant as fallback. Core stores 30-second PostgreSQL leases and removes them on leaving; expiry covers offline closes. Revoked/expired sessions and disabled users are excluded on the next list read. Presence failures hide avatars without blocking editing. See [real-time collaboration](./realtime.md) for SSE presence and field-lock behavior.
 
-Чтение истории проецируется на разрешённые поля; события, затрагивающие только закрытые поля, не раскрываются. История схемы и безопасный rollback поля с восстановлением данных — отдельная нерешённая задача.
+Every update checks current row-read access. Other record participants see names, avatars, and window counts, not email, search/filter URLs, sessions, or record values. Presence does not imply active editing. Plugin collections use ordinary record presence.
 
-Прямой SQL и каскады, исполняемые самой БД, не проходят через обычный writer и не обеспечивают такую же историю/hooks. Удаление коллекции/поля требует superuser и проверки влияния; backup остаётся обязанностью эксплуатации.
+<a id="история-и-удаление"></a>
 
-Источники: `apps/core/src/collections`, `apps/core/src/items`; контракты — `packages/contracts/src/items.d.ts`, SDK — [справочник](../reference/sdk-guide.md).
+## History and deletion
+
+Item events record actor, time, and changed values.
+
+Text/email with presentation.sensitive:true is masked in read-only forms/tables, edited as a password, and excluded from record labels. History stores [REDACTED] in before/after for create/update/delete, bulk, and nested commits. Enabling this setting irreversibly scrubs older events for the field in the same transaction; disabling it does not restore them. Sensitive defaults are forbidden.
+
+This is neither encryption nor a write-only API: authorized reads still return live values, controlled by field permissions. Operators must handle database copies, direct SQL, and external logs.
+
+History reads project permitted fields and omit events touching only closed fields. Schema history and safe field rollback with data restoration remain unimplemented.
+
+Direct SQL and database cascades bypass the ordinary writer and do not guarantee equivalent history/hooks. Deleting collections/fields requires a superuser and impact checks. Operators remain responsible for backups.
+
+Sources: apps/core/src/collections and apps/core/src/items; contracts: packages/contracts/src/items.d.ts; [SDK reference](../reference/sdk-guide.md).

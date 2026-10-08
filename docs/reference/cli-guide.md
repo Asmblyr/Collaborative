@@ -81,4 +81,4 @@ may still be private: commit generated files only when suitable for your project
 Use the same permission scope for generation and runtime requests. Core remains
 the authority on current access and row conditions.
 
-See [SDK](./sdk-guide.md) and [package preparation](./packages.md).
+See [SDK](sdk-guide.md) and [package preparation](packages.md).

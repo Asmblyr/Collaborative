@@ -1,66 +1,57 @@
-# Расширения
+<a id="расширения"></a>
 
-Если вы пишете первое расширение, начните с [пошагового руководства](../development/first-extension.md).
+# Plugins
 
-Плагин — npm/workspace-пакет. Рабочие пакеты проекта находятся в `packages`, демонстрационные — в `examples/plugins`. Обнаружение идёт по списку пакетов `asmblyr.plugins` в корневом `package.json`, а не по имени каталога. Подключённый пакет должен быть установлен. Установка из UI пока не реализована.
+Plugins are npm or workspace packages explicitly listed in the root `asmblyr.plugins` configuration. A directory name alone does not install a plugin. Installing packages through the UI is not supported.
 
-В разделе «Настройки → Расширения» показывается список плагинов. Нажатие на строку или название открывает штатный правый редактор с настройками выбранного плагина и разрешёнными возможностями. Закрытие несохранённого черновика требует подтверждения; во время сохранения редактор блокирует закрытие. Плагины без параметров также открываются для просмотра возможностей.
+Settings shows a list of plugins. Clicking one opens its right-side editor with capabilities and settings. Closing a dirty editor requires confirmation; closing is blocked during save. Plugins without configurable parameters still expose their capability view.
 
-## Контракт
+<a id="контракт"></a>
 
-- `plugin.ts`: `definePlugin({})`, без отдельного реестра роутов.
-- `server/api/**/*.get.ts` / `.post.ts`: H3 v2 handlers; имя файла определяет путь/метод.
-- `server/hooks/*.ts`: lifecycle hooks.
-- `server/settings.ts`: декларация настроек.
-- Browser entry: отдельный `./ui`, страницы и field interfaces.
-- `defineModelContext` + аннотация: явная публикация handler во внутреннем MCP/ассистенте.
+## Package contract
 
-`@asmblyr-collaborative/kit` — серверный/браузерный контракт расширений. `@asmblyr-collaborative/sdk` — HTTP-клиент, не доступ к Knex. `useItems(event)` всегда использует права caller; `storage.own` — привилегированное хранилище собственных таблиц, перед ним плагин обязан проверять доменный доступ.
+- `plugin.ts` uses `definePlugin`; there is no manual route registry.
+- `server/api/**/*.get.ts`, `*.post.ts`, and other method suffixes define H3 v2 file routes.
+- `server/hooks` and `server/settings` provide hooks and settings.
+- The `./ui` entry contains browser code.
+- Model-visible handlers require an explicit `defineModelContext` annotation.
 
-Сгенерированные Kit model handlers экспортируют входные и выходные JSON-контракты
-через `GET /schema` с учётом `AccessGate`. CLI создаёт типизированные методы
-`client.plugins.<namespace>[methodId](input)`, которые вызывают исходные HTTP routes.
-Права на данные и личное OAuth-подключение проверяются при выполнении. Legacy
-actions без выходной схемы в этот клиент не попадают. Подробнее —
-[генерация SDK](../reference/cli-guide.md).
+Kit is the server/browser extension API. SDK is an HTTP client, not access to Knex. `useItems` keeps the caller's permissions. `storage.own` provides privileged access to the plugin's own tables; the plugin must enforce its domain permissions.
 
-## Декларации и установка
+Annotated model handlers expose schemas through `GET /schema`, filtered by AccessGate. Generated clients call `client.plugins.namespace[methodId](input)` over HTTP. Runtime data and OAuth checks still apply. Legacy handlers without output schemas are excluded from generation.
 
-Capabilities заявляются в `asmblyr.manifest.capabilities` и отдельно одобряются для пакета в `asmblyr.pluginPermissions`. По умолчанию нет одобренных возможностей. Это проверка поддерживаемого API Kit; произвольный Node-код она не изолирует.
+<a id="декларации-и-установка"></a>
 
-Первичная установка таблиц транзакционная, имена `plugin_<namespace>_<local_name>`. Нельзя занять чужую существующую таблицу. Изменения установленной схемы требуют версионных неизменяемых миграций; отключение пакета не удаляет данные.
+## Capabilities and storage
 
-Пакеты этой платформы используют scope `@asmblyr-collaborative`: Core/UI,
-Contracts/SDK/Kit/CLI, встроенные Comments/Google Workspace и учебные плагины.
-При обновлении старой установки замените имена встроенных пакетов в зависимостях,
-`asmblyr.plugins` и ключах `asmblyr.pluginPermissions`, затем выполните
-`pnpm install`, `pnpm db:migrate` и сборку перед запуском Core/UI.
-Миграция `20261005220000_collaborative_package_names` меняет только npm-имена
-известных владельцев в реестре. Она проверяет соответствие namespace и отказывается
-от переноса при конфликте владельцев; сторонние пакеты не переименовываются.
-Namespace `comments`/`google`, таблицы, настройки, история миграций, URL и ключ
-конфигурации `asmblyr` сохраняются. Старый workspace-алиас `@asmblyr/kit`
-в Comments нужен неизменяемой ранее выпущенной миграции и сохранён намеренно.
+A capability must be declared in the manifest and approved in `pluginPermissions`. None are granted by default. This mechanism is not a Node.js sandbox.
 
-В списке расширений название Google Workspace берётся из каталогов переводов
-плагина. `GET /settings/plugins` также возвращает `title` для начального отображения:
-RU `settings.title`, заголовок настроек или техническое имя. Каталог выбранного
-языка уточняет его после загрузки переводов. Это работает и для плагинов без UI
-или собственных настроек. Технические namespace и npm-имя остаются отдельными
-идентификаторами.
+First installation creates tables transactionally under reserved `plugin_<namespace>_<local>` names. A plugin cannot adopt someone else's table. Versioned migrations are immutable. Disabling a plugin preserves its data.
 
-Таблицы плагинов не показываются в редакторе структуры `/admin/collections`,
-включая счётчик коллекций. Плагин продолжает использовать их через свои страницы
-и API с обычными проверками доступа; скрытие из редактора не меняет права.
+All product packages use the `@asmblyr-collaborative` scope. Existing installations must update dependency names, `asmblyr.plugins`, and permission keys, then run install, migrations, and build before starting Core and UI. Migration `20261005220000_collaborative_package_names` updates only known registry owners, validates namespace/conflicts, and leaves third-party plugins unchanged.
 
-Hooks исполняются до commit в транзакции: ошибка откатывает изменение. Внешние запросы/отправку сообщений нельзя считать гарантированно доставленными; для этого позже нужен outbox. Все контекстные операции необходимо await.
+Namespaces, comment/Google tables, settings, history, URLs, and the `asmblyr` configuration key stay compatible. The old `@asmblyr/kit` name in a historical Comments migration is retained because migrations are immutable.
 
-## Где смотреть точные API
+<a id="названия-и-видимость"></a>
 
-Плагин комментариев использует возможность `notifications` для подписок на запись
-и транзакционной публикации событий в отдельный колокольчик. Получателей выбирает
-Core; новые права на данные не выдаются. Подробнее — [обсуждения и уведомления](./notifications.md).
+## Names and visibility
 
-[Kit](../reference/kit-guide.md), [Hooks](../reference/kit-hooks.md), [Field interfaces](../reference/kit-fields.md). Исходники и примеры — `packages/kit`, `packages/plugin-comments` и `examples/plugins`. Source scanner и production build index должны давать одинаковые маршруты.
+Plugin names come from their locale catalogs. `GET /settings/plugins` falls back from Russian `settings.title` to the settings title and then the technical name. Once the selected locale loads, the UI refines the label. This works for plugins without UI or settings. Namespaces and npm identifiers remain unchanged.
 
-Доверяйте устанавливаемому пакету как коду Core: server plugin может импортировать Node-модули и обращаться к окружению, browser plugin работает в контексте админки. Для недоверенных пакетов нужна отдельная процессная/браузерная изоляция.
+Plugin-owned tables are hidden from `/admin/collections`, including its counts. They remain available to permitted APIs and plugin pages; hiding them does not change authorization.
+
+<a id="hooks-и-уведомления"></a>
+
+## Hooks and notifications
+
+Before-commit hook failures roll back the transaction. External requests do not guarantee delivery; reliable delivery requires an outbox, which is not implemented. Await every context operation.
+
+The `notifications` capability supports discussion subscriptions and the core bell in the same transaction. Core selects recipients without granting extra access.
+
+See [Kit](../reference/kit-guide.md), [hooks](../reference/kit-hooks.md), and [fields](../reference/kit-fields.md). Discovery must behave consistently in source and built package indexes.
+
+<a id="граница-доверия"></a>
+
+## Trust boundary
+
+Server plugins run with Core's Node.js and environment access. Browser plugins run in the admin's context. Untrusted plugins require separate process or browser isolation.

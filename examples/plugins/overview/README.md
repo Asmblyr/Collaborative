@@ -1,59 +1,34 @@
 # Overview
 
-Второй пример плагина: отдельная страница внутри админки и собственный HTTP endpoint.
-Открывается через **Приложения → Обзор** по адресу
-`http://localhost:3000/extensions/overview/home`.
+<!-- languages -->
 
-## Где писать код
+[English](README.md) · [Русский](README.ru.md)
 
-- `ui/pages/overview-page.tsx` — содержимое страницы; начните с этого файла.
-- `ui/index.ts` — регистрация: `id`, название в меню и компонент страницы.
-- `ui/hooks/use-overview.ts` — загрузка, отмена запроса, ошибка и повтор.
-- `server/api/overview/session.get.ts` — пример серверного обработчика с текущим actor.
-- `shared/overview.ts` — общий тип ответа.
-- `plugin.ts` — обязательный серверный entry.
+<!-- /languages -->
 
-UI получает `PluginPageProps` из `@asmblyr-collaborative/kit/ui`. Его `request("/session")`
-обращается к `/api/overview/session` через сессию пользователя. Прямой адрес Core:
-`GET http://localhost:3001/overview/session` (нужен bearer token).
-Токены и серверные модули в компонент не передаются.
+An admin page and its own HTTP endpoint. Open Applications → Overview at http://localhost:3000/extensions/overview/home.
 
-Общий shadcn `Button` импортируется из `@asmblyr-collaborative/kit/ui/button`.
-Доступные компоненты и правила их использования описаны в
-[Kit UI](../../../packages/kit/UI.md).
+## Code locations
 
-Пример показывает только собственный ID, имя, вид actor и время ответа.
-Он не читает коллекции, не создаёт таблицы и не сохраняет настройки.
-Доступ к записям добавляйте через `useAsmblyr(event).items` с правами вызывающего.
+- Ui/pages/overview-page.tsx: page content; start here.
+- Ui/index.ts: page ID, menu title, component registration.
+- Ui/hooks/use-overview.ts: load, cancellation, errors, retry.
+- Server/api/overview/session.get.ts: current-actor endpoint.
+- Shared/overview.ts: response type.
+- `plugin.ts`: required server entry.
 
-## Разработка
+PluginPageProps from `kit/ui` supplies request("/session"), calling /api/overview/session with the user's session. Direct Core: GET http://localhost:3001/overview/session with a Bearer token. Tokens/server modules never reach the component.
 
-Пакет не включён при обычном запуске. Для подключения следуйте [руководству примеров](../README.md).
-Из корня репозитория:
+Shared Button comes from `kit/ui`/button. See [Kit UI](../../../packages/kit/UI.md). The example displays only the caller's ID, name, actor kind, and response time. It reads no collections, creates no tables, and saves no settings. Add record operations through useAsmblyr(event).items under caller permissions.
 
-```sh
-pnpm dev
-```
+## Development
 
-Обычный Core требует запущенную PostgreSQL (`pnpm db:up`).
-Правки TSX подхватывает Next; API подхватывает watcher Core.
-При добавлении нового пакета перезапустите оба dev-сервера.
-Для production нужны `pnpm build` и перезапуск сервисов.
+The package is disabled by default; follow [example setup](../README.md), then run pnpm dev. Start PostgreSQL with pnpm db:up. Next handles TSX changes; Core's watcher handles API changes. New packages require restarting both dev servers. Production needs pnpm build and service restart.
 
-Название страницы меняется в `ui/index.ts`. В том же `pages` можно зарегистрировать
-ещё один компонент с другим ID — меню и маршрут появятся автоматически.
-Имена состоят из строчных латинских букв, цифр и дефисов, начинаются с буквы.
-Адрес всегда `/extensions/<namespace>/<id>`; встроенные страницы не перехватываются.
+Change the title in ui/index.ts. Register another pages entry with a different ID to add its menu/route automatically. IDs use lowercase Latin letters, digits, and hyphens, beginning with a letter. Routes always use /extensions/&lt;namespace&gt;/&lt;id&gt; and cannot override built-ins.
 
-## Границы первого этапа
+## Current limits
 
-Страница доступна вошедшим пользователям, допущенным текущим layout в админку.
-Отдельных прав на страницы расширений пока нет. Для пользователя без минимального
-доступа сохраняется существующий экран «Нет доступа». Endpoint проверяет сессию
-независимо от меню и возвращает только контекст самого вызывающего.
+Pages require authenticated users admitted by the existing admin layout; users without minimum access retain the no-access screen. Separate plugin-page grants are unsupported. The endpoint independently validates the session and returns only its caller's context.
 
-Пока нет вложенных маршрутов, параметров маршрута и подключения UI без пересборки.
-Страницы могут сообщать host о несохранённых изменениях через `onStateChange`:
-это защищает от замены формы ассистентом и предупреждает перед перезагрузкой.
-Защиты всех обычных переходов через меню пока нет.
-Текущий пример только читает данные и не содержит несохранённых форм.
+Nested/dynamic routes and UI loading without rebuilding are unsupported. OnStateChange reports unsaved state to protect against assistant form replacement and warn on reload. A universal guard for normal menu navigation is not yet implemented. This read-only example has no unsaved forms.

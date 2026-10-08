@@ -1,9 +1,11 @@
-# Локальный запуск
+<a id="локальныи-запуск"></a>
 
-Нужны Node.js 22+, pnpm 11.13.1, Docker Compose. Команды выполняются из корня репозитория.
+# Local setup
 
-На Unix shell используйте `cp -n apps/core/.env.example apps/core/.env` вместо
-`Copy-Item` ниже. Существующий файл окружения сохраняйте.
+Install Node.js 22+, pnpm 11.13.1, and Docker Compose. Run commands from the repository root.
+
+In a Unix shell, use `cp -n apps/core/.env.example apps/core/.env` instead of
+`Copy-Item` below. Preserve any existing environment file.
 
 ```powershell
 pnpm install --frozen-lockfile
@@ -13,29 +15,41 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Копируйте пример только при отсутствии своего `.env`. До первой настройки задайте в нём случайный `ASMBLYR_SETUP_TOKEN` длиной не менее 32 символов. Не сохраняйте секрет в Git.
+Copy the example only if you do not have an `.env` file. Before first-time setup,
+set a random `ASMBLYR_SETUP_TOKEN` of at least 32 characters in that file. Keep it out of Git.
 
-| Компонент        | Адрес                         |
+| Component        | Address                       |
 | ---------------- | ----------------------------- |
-| Админка          | `http://localhost:3000`       |
+| Admin UI         | `http://localhost:3000`       |
 | Core             | `http://127.0.0.1:3001`       |
-| PostgreSQL       | 127.0.0.1:5433                |
-| Первая настройка | `http://localhost:3000/setup` |
+| PostgreSQL       | `127.0.0.1:5433`              |
+| First-time setup | `http://localhost:3000/setup` |
 
-В `/setup` введите setup secret, email и пароль от 12 символов. Создаётся первый superuser. После появления пользователя endpoint закрывается; секрет можно удалить из конфигурации. Публичной регистрации по паролю нет.
+At `/setup`, enter the setup secret, email, and a password of at least 12 characters.
+This creates the first superuser. Once a user exists, the endpoint closes and you
+can remove the setup secret from configuration. Public password registration is not available.
 
-`pnpm dev` предварительно собирает SDK, Kit и встроенные плагины. `CORE_URL` в серверной конфигурации UI по умолчанию указывает на локальный Core. `GET /health` проверяет процесс, `/ready` — БД и обязательные миграции.
+`pnpm dev` first builds SDK, Kit, and bundled plugins. The server-side UI setting
+`CORE_URL` points to local Core by default. `GET /health` checks the process;
+`/ready` checks the database and required migrations.
 
-`pnpm db:down` останавливает PostgreSQL без удаления volume. Не добавляйте `-v`, если данные нужно сохранить. Перед обновлением существующего проекта выполняйте `pnpm db:migrate`; откат DDL может уничтожить данные.
+`pnpm db:down` stops PostgreSQL without deleting its volume. Do not add `-v` if
+you need to retain the data. Run `pnpm db:migrate` before upgrading an existing
+installation; rolling back DDL can destroy data.
 
-Установка Docker Compose, внешние PostgreSQL/S3 и порядок production-обновлений —
-в [руководстве по развёртыванию](./deployment.md).
+For Docker Compose installation, external PostgreSQL/S3, and production upgrades,
+see [deployment](./deployment.md).
 
-## Документация
+<a id="документация"></a>
+
+## Documentation
 
 ```powershell
 pnpm docs:dev
 pnpm docs:build
 ```
 
-Первый запуск генерирует справочники. Статический сайт получается в `docs/.vitepress/dist`; его можно разместить на любом статическом хостинге. OpenAPI доступен отдельным JSON. Страницы можно печатать средствами браузера; отдельного конвейера PDF-книги пока нет.
+The first command generates the reference pages. The static site is built into
+`docs/.vitepress/dist` and can be served by any static host. English is at `/` and
+Russian at `/ru/`. OpenAPI is also available as JSON. Use the browser's print
+feature to print pages; there is no separate PDF book pipeline.

@@ -1,3 +1,9 @@
+<!-- languages -->
+
+[English](README.md) · [Русский](README.ru.md)
+
+<!-- /languages -->
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/collaborative-logo-dark.svg">
@@ -29,7 +35,7 @@ which records and fields each person can access. Use the same data through the
 HTTP API or a typed TypeScript client, and extend the product with plugins.
 
 **Early beta.** Each installation is intended for one team. The interface supports
-English and Russian; most detailed guides are currently in Russian. SDK and CLI
+English and Russian, as does the documentation (English by default). SDK and CLI
 packages are available under the npm `beta` tag.
 
 ## What you can do
@@ -93,7 +99,7 @@ and S3-compatible storage are connected separately. Both components can share
 one public origin, with the API available at `/api`.
 
 - **Docker Compose:** [deployment instructions](deploy/README.md#docker-compose).
-- **Kubernetes:** [Helm chart](deploy/helm/collaborative) and [configuration](deploy/README.md#kubernetes-и-helm).
+- **Kubernetes:** [Helm chart](deploy/helm/collaborative) and [configuration](deploy/README.md#kubernetes-and-helm).
 - **Images:** `ghcr.io/asmblyr/collaborative-core` and `ghcr.io/asmblyr/collaborative-ui`.
 - **Operations:** [upgrades](docs/guide/deployment.md), [backups and recovery](docs/development/operations.md).
 
