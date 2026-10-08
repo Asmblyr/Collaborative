@@ -1,5 +1,11 @@
 # Google Workspace assistant tools
 
+<!-- languages -->
+
+[English](README.md) · [Русский](README.ru.md)
+
+<!-- /languages -->
+
 The admin extension list displays **Google Workspace** using this package's RU/EN
 translation catalogs. Its API namespace stays `google`.
 

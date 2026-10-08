@@ -1,27 +1,23 @@
-# Безопасность
+# Security
 
-Проект находится в ранней бете; проверка изменения выполняется для актуальной ветки
-`main`. Поддерживаемые стабильные release-ветки пока не объявлены.
+<!-- languages -->
 
-## Сообщить об уязвимости
+[English](SECURITY.md) · [Русский](SECURITY.ru.md)
 
-Если на вкладке [Security](https://github.com/Asmblyr/Collaborative/security)
-доступна кнопка **Report a vulnerability**, используйте её для приватного сообщения.
-Если приватная отчётность недоступна, создайте issue с запросом приватного канала,
-без деталей эксплуатации и пользовательских данных.
+<!-- /languages -->
 
-Не публикуйте действующие токены, пароли, дампы, данные пользователей или подробности
-неисправленной уязвимости. Для приватного отчёта подготовьте версию/commit,
-минимальное воспроизведение на вымышленных данных, влияние и необходимый доступ.
+The project is in early beta. Changes are assessed against current main; supported stable release branches have not yet been announced.
 
-## Размещение
+## Reporting a vulnerability
 
-Одна команда использует отдельную установку. Workspaces не являются границей
-между компаниями. PostgreSQL и S3 должны быть приватными; для внешнего доступа
-нужны HTTPS, собственная конфигурация и резервные копии.
+If Report a vulnerability is available under [Security](https://github.com/Asmblyr/Collaborative/security), use it for a private report. Otherwise open an issue requesting a private channel without exploitation details or user data.
 
-Серверные расширения исполняют доверенный код внутри Core. Одобрение capabilities
-не превращает пакет в песочницу. Не устанавливайте неподконтрольные серверные пакеты.
+Never publish live tokens, passwords, dumps, user data, or details of an unfixed vulnerability. Private reports should include version/commit, minimal reproduction with fictional data, impact, and required access.
 
-Точные границы доступа — в [документации безопасности](docs/security/overview.md),
-рекомендации по установке и восстановлению — в [эксплуатации](docs/development/operations.md).
+## Deployment
+
+Use a separate installation per team. Workspaces do not isolate companies. Keep PostgreSQL/S3 private and provide HTTPS, installation-specific configuration, and backups.
+
+Server plugins run trusted code inside Core. Capability approval is not a sandbox. Do not install untrusted server packages.
+
+See [security boundaries](docs/security/overview.md) and [operations/recovery](docs/development/operations.md).

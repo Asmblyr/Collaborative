@@ -1,43 +1,50 @@
-# Границы безопасности
+<a id="границы-безопасности"></a>
 
-Asmblyr проверяет доступ на сервере. Скрытие коллекции в меню, представление,
-рабочее пространство и параметры редактора поля не заменяют права на данные.
-Одна установка обслуживает одну команду; разделения компаний внутри установки нет.
+# Security boundaries
 
-## Авторизация
+Collaborative enforces access on the server. Hiding a collection in a menu,
+a view, a workspace, or field-editor metadata does not replace data permissions.
+One installation serves one team; there is no company isolation within an installation.
 
-Права задаются политиками: действия над коллекциями, разрешённые поля и условия
-для строк. Для настроек используются отдельные grants просмотра и изменения.
-Superuser управляет структурой данных и составом политик. Назначение готовых
-политик можно делегировать только в пределах явно заданного набора.
+<a id="авторизация"></a>
 
-Сервисные токены проверяют права данных и не управляют настройками команды.
-SSO-идентичность связывается явно по provider, issuer и subject; совпадение email
-не связывает аккаунты автоматически. Приглашения и восстановление используют
-одноразовые ссылки. Passkey требует корректного origin и свежей сессии для управления.
+## Authorization
 
-Требования допуска перечислены в [матрице доступа](./access-matrix.md),
-подробные правила — в [правах](../features/access.md) и [авторизации](../features/identity.md).
+Policies define collection actions, allowed fields, and row conditions.
+Settings have separate read and update grants. A superuser manages the data
+schema and policy contents. Assignment of existing policies can be delegated
+only within an explicitly configured set.
 
-## Файлы, расширения и ассистент
+Service tokens are subject to data permissions and cannot manage team settings.
+SSO identities are linked explicitly by provider, issuer, and subject; matching
+email addresses never link accounts automatically. Invitations and recovery use
+single-use links. Passkeys require the correct origin and a recent session for management.
 
-Файловая библиотека общая для команды. Чтение конкретной ссылки может быть разрешено
-через доступную запись; отдельных ACL для каждого файла нет. Bucket обслуживает
-оператор, а содержимое выдаёт Core после проверки прав.
+Requirements are listed in the [access matrix](./access-matrix.md). Detailed rules
+are in [permissions](../features/access.md) and [identity](../features/identity.md).
 
-Расширения исполняются как доверенный код. Kit ограничивает выданные capabilities
-и доступ к данным вызывающего, но не изолирует произвольный Node.js-код.
-Ассистент использует права текущего пользователя и настройки публикации коллекций
-в MCP; модель не получает сырой SQL или привилегированное хранилище плагина.
+<a id="фаилы-расширения-и-ассистент"></a>
 
-## Эксплуатация
+## Files, plugins, and the assistant
 
-Используйте HTTPS и приватные PostgreSQL/S3, храните конфигурацию вне Git,
-ограничивайте доступ к signing keys и резервным копиям. Миграции и восстановление
-проверяйте на отдельной копии. Производственная установка требует собственной
-проверки TLS, IAM, нагрузки и доставки уведомлений.
+The file library is shared by the team. Reading a particular reference may be
+authorized through an accessible record; there are no separate per-file ACLs.
+The operator manages the bucket, and Core serves content after checking access.
 
-Автоматические тесты проверяют отдельные сценарии и отказ в доступе; их успешное
-выполнение не является сертификацией безопасности. Инструкции — в
-[эксплуатации](../development/operations.md). Порядок сообщения об уязвимости
-описан в [SECURITY.md](https://github.com/Asmblyr/Collaborative/blob/main/SECURITY.md).
+Plugins run as trusted code. Kit restricts granted capabilities and access to
+the caller's data, but does not sandbox arbitrary Node.js code. The assistant
+uses the current user's permissions and collection MCP settings; the model
+does not receive raw SQL access or a plugin's privileged storage.
+
+<a id="эксплуатация"></a>
+
+## Operations
+
+Use HTTPS and private PostgreSQL/S3, keep configuration out of Git, and limit
+access to signing keys and backups. Test migrations and recovery on a separate
+copy. Production installations need their own TLS, IAM, load, and notification-delivery checks.
+
+Automated tests cover specific scenarios and access-denial cases; passing them
+is not a security certification. See [operations](../development/operations.md).
+Vulnerability reporting is described in
+[SECURITY.md](https://github.com/Asmblyr/Collaborative/blob/main/SECURITY.md).

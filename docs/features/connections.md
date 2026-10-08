@@ -1,104 +1,54 @@
-# Подключения и защита секретов
+<a id="подключения-и-защита-секретов"></a>
 
-Суперпользователь управляет подключениями на `/admin/settings/integrations`.
-Список открывает правую панель с безопасными параметрами, состоянием ключей,
-проверкой соединения и включением/отключением. Изменения подхватываются ядром
-без перезапуска, включая другие экземпляры, подключённые к той же базе.
+# Connections and secret protection
 
-[Sentry и мониторинг](./monitoring.md) настраиваются отдельно на
-`/admin/settings/monitoring`. DSN используют те же write-only secrets, revision,
-локальное шифрование/Yandex KMS и приоритет env.
+Superusers manage connections at `/admin/settings/integrations`. Each list entry opens a side panel with safe parameters, key status, connection testing, and an enable switch. Core picks up changes without restart, including other instances using the same database.
 
-## Источники настроек
+[Sentry monitoring](./monitoring.md) has a separate page at `/admin/settings/monitoring`. DSNs use the same write-only secrets, revisions, local encryption/Yandex KMS, and environment priority.
 
-Непустые параметры подключения в окружении Core имеют приоритет над настройками
-админки. Вся соответствующая группа становится read-only: API также отклоняет
-изменение с 409. Пустые примеры переменных не блокируют группу. Явное
-`ASSISTANT_ENABLED=false` или `FILES_STORAGE=disabled` отключает подключение и
-блокирует редактирование. Незавершённая env-конфигурация не дополняется
-сохранёнными в админке ключами.
-Изменение env-файла требует обычного перезапуска Core; изменения через админку
-подхватываются автоматически.
+<a id="источники-настроек"></a>
 
-API возвращает адрес API, модель, бакет, регион, источник и признаки наличия
-ключей. URL с логином, паролем, query или fragment не допускаются. Секреты
-write-only: пропуск сохраняет прежний ключ, `null` удаляет, пустая строка запрещена.
-Параметры и секреты сохраняются при отключении подключения.
+## Configuration sources
 
-В read-only настройках S3 бакет, регион, endpoint и ID сервисного аккаунта можно
-выделить или скопировать кнопкой рядом с полем. Ключи доступа не раскрываются и
-не копируются; провайдер и включение подключения остаются недоступны для изменения.
+Nonempty Core environment parameters take precedence over admin settings. The entire corresponding group becomes read-only; the API rejects changes with 409. Empty example variables do not lock a group. Explicit `ASSISTANT_ENABLED=false` or `FILES_STORAGE=disabled` disables and locks that connection. Incomplete environment configuration is not supplemented with saved admin keys.
 
-`GET /settings/integrations`, `PUT /settings/integrations/:section` и
-`POST /settings/integrations/:section/test` требуют активной человеческой сессии
-superuser. `section`: `storage`, `assistant`, `encryption`. Изменение передаёт
-текущую `revision`: устаревший или конкурентный запрос получает 409.
-Делегированные `files/update` и `assistant/update` не дают доступа к ключам
-подключений. Лимит проверки соединения — 12 запросов в минуту по правилам
-credential rate limit.
+Environment changes require a Core restart. Admin changes apply automatically.
 
-## Файлы и ассистент
+The API returns safe values such as API URL, model, bucket, region, source, and key-presence flags. URLs containing credentials, query strings, or fragments are rejected. Secrets are write-only: omission preserves the old value, `null` removes it, and an empty string is invalid. Disabling a connection retains its parameters and secrets.
 
-S3 поддерживает бакет, регион, HTTPS endpoint и отдельные access/secret/session
-keys. Yandex Object Storage также поддерживает федеративный обмен OIDC → IAM
-без постоянного S3-ключа: в админке задаются бакет и ID сервисного аккаунта,
-на сервере — `YC_OIDC_TOKEN_FILE` с обновляемым projected token. Ранее
-настроенные `FILES_YC_*` продолжают работать. Создание bucket, федерации,
-сервисного аккаунта и IAM-политик выполняет оператор установки.
+Read-only S3 settings allow selecting/copying the bucket, region, endpoint, and service-account ID. Access keys cannot be revealed or copied; provider and enable switches remain locked.
 
-Проверка S3 выполняет HeadBucket и не загружает файлы. При наличии файлов
-ядро запрещает смену местоположения хранилища; перенос файлов — отдельная
-операция оператора. Отключение сохраняет метаданные, но загрузка и скачивание
-байтов требуют включённого подключения.
+`GET /settings/integrations`, `PUT /settings/integrations/:section`, and `POST /settings/integrations/:section/test` require an active human superuser. Sections are `storage`, `assistant`, and `encryption`. Updates supply the current `revision`; stale or concurrent requests return 409. Delegated files/update or assistant/update grants do not expose connection keys. Connection tests allow 12 requests per minute under the credential rate-limit rules.
 
-AI-провайдер поддерживает OpenAI-compatible Responses и Chat Completions,
-base URL, модель, лимит ответа, таймаут и поддерживаемые настройки reasoning /
-thinking. API-ключ хранится зашифрованным. Проверка запрашивает `GET /models`
-без генерации: она проверяет доступность этого endpoint, но не гарантирует
-доступ к конкретной модели. Некоторые совместимые провайдеры не реализуют
-список моделей. Инструкции и телеметрия остаются на странице AI-ассистента.
+<a id="фаилы-и-ассистент"></a>
 
-## Шифрование
+## Files and assistant
 
-Все обратимые секреты, сохранённые этими настройками админки, хранятся в
-PostgreSQL как версионированный ciphertext. Пароли и session/access tokens
-продолжают храниться в виде хешей; OAuth signing keys и env-секреты остаются
-конфигурацией оператора.
-Секреты OAuth-приложений и OAuth protocol payload сохраняют существующее
-шифрование ключом из `OAUTH_KEYS_FILE`; новый провайдер относится к подключениям
-S3/AI и не меняет действующие OAuth-сеансы.
+S3 supports bucket, region, HTTPS endpoint, and separate access/secret/session keys. Yandex Object Storage also supports OIDC → IAM federation without a permanent S3 key: configure bucket and service-account ID in the admin, and `YC_OIDC_TOKEN_FILE` with a refreshed projected token on the server. Existing `FILES_YC_*` settings continue to work. Operators create the bucket, federation, service account, and IAM policies.
 
-| Режим      | Настройки админки                            | Bootstrap на сервере                                                                                |
-| ---------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Локальный  | Выбор локального провайдера                  | `SECRETS_LOCAL_KEY`: 32 случайных байта, base64url                                                  |
-| Yandex KMS | ID симметричного ключа и сервисного аккаунта | `YC_OIDC_TOKEN_FILE`: projected OIDC token, федерация и права `kms.keys.encrypterDecrypter` на ключ |
+The S3 test runs HeadBucket without uploading files. Core prevents changing storage location while files exist; moving files is a separate operator task. Disabling storage preserves metadata, but uploading/downloading bytes requires an enabled connection.
 
-Локальный режим использует AES-256-GCM со случайным nonce и AAD, привязывающим
-секрет к установке и полю. KMS использует native REST encrypt/decrypt с AAD
-и краткоживущим федеративным токеном; ключ KMS не передаётся приложению.
-Размер одного секрета ограничен 8000 байт UTF-8. Lockbox в этом механизме
-не участвует: KMS защищает ключом ciphertext в базе.
+The AI provider supports OpenAI-compatible Responses and Chat Completions, base URL, model, output limit, timeout, and supported reasoning/thinking settings. Its API key is encrypted. Testing calls `GET /models` without generating content. This checks endpoint availability, not access to a particular model; some compatible providers do not implement model listing. Instructions and telemetry remain on the Assistant page.
 
-Смена провайдера или KMS key ID проверяет новый ключ, расшифровывает секреты
-старым и шифрует новым в одной транзакции. Ошибка сохраняет прежнее состояние;
-автоматического переключения на локальный ключ нет. Для защиты от потери
-данных сначала смените провайдера в админке, затем при необходимости закрепите
-его env-переменными `SECRETS_PROVIDER`, `SECRETS_YC_KMS_KEY_ID`,
-`SECRETS_YC_SERVICE_ACCOUNT_ID`. Изменение env поверх несовместимого сохранённого
-провайдера блокирует чтение секретов до восстановления согласованной настройки.
+<a id="шифрование"></a>
 
-Bootstrap-ключ не задаётся через админку. Его нельзя заменять случайным новым
-значением поверх действующей установки: прежние ciphertext требуют прежнего
-ключа. Резервная копия базы должна сопровождаться отдельной защищённой копией
-локального ключа либо сохранённым доступом к прежним версиям ключа KMS.
-После переноса в KMS старый локальный ключ может потребоваться для восстановления
-старых резервных копий.
+## Encryption
 
-Сохранённые ciphertext и секреты не включаются в журналы изменений или ответы
-API. Событие аудита содержит только раздел, провайдер и число ключей.
-Настройки можно просмотреть даже при недоступности KMS; работа подключений
-требует успешного получения их секретов. Уже созданные клиенты могут держать
-расшифрованные ключи в памяти до смены конфигурации или остановки процесса.
+Reversible secrets saved by these admin settings are stored in PostgreSQL as versioned ciphertext. Passwords and session/access tokens remain hashes. OAuth signing keys and environment secrets remain operator configuration.
 
-См. [Yandex Workload Identity Federation](https://yandex.cloud/ru/docs/iam/concepts/workload-identity)
-и [KMS symmetric encryption](https://yandex.cloud/ru/docs/kms/concepts/symmetric-encryption).
+OAuth application secrets and protocol payloads retain their existing encryption using `OAUTH_KEYS_FILE`. The connection-secret provider does not change active OAuth sessions.
+
+| Mode       | Admin configuration                   | Server bootstrap                                                                                     |
+| ---------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Local      | Select the local provider             | `SECRETS_LOCAL_KEY`: 32 random bytes, base64url                                                      |
+| Yandex KMS | Symmetric key and service-account IDs | `YC_OIDC_TOKEN_FILE`: projected OIDC token, federation, and `kms.keys.encrypterDecrypter` on the key |
+
+Local encryption uses AES-256-GCM with a random nonce and AAD binding each secret to its installation and field. KMS uses native REST encrypt/decrypt with AAD and a short-lived federated token; the KMS key is never sent to the application. Each secret is limited to 8000 UTF-8 bytes. Lockbox is not involved: KMS protects ciphertext stored in the database.
+
+Changing provider or KMS key ID validates the new key, decrypts with the old one, and re-encrypts in one transaction. Failure preserves the previous state; there is no automatic fallback to the local key. Change provider in the admin first, then optionally lock it with `SECRETS_PROVIDER`, `SECRETS_YC_KMS_KEY_ID`, and `SECRETS_YC_SERVICE_ACCOUNT_ID`. An incompatible environment override blocks secret reads until configuration is consistent again.
+
+The bootstrap key is not set through the admin. Do not replace it with a random new value on an existing installation: old ciphertext requires the old key. Database backups need a separate protected copy of the local key or continued access to the relevant KMS key versions. After moving to KMS, the old local key may still be needed to restore older backups.
+
+Neither secrets nor ciphertext appear in audit logs or API responses. Audit events contain only section, provider, and key count. Settings remain viewable while KMS is unavailable, but connections need successful secret retrieval. Existing clients may retain decrypted keys in memory until configuration changes or the process stops.
+
+See [Yandex Workload Identity Federation](https://yandex.cloud/en/docs/iam/concepts/workload-identity) and [KMS symmetric encryption](https://yandex.cloud/en/docs/kms/concepts/symmetric-encryption).

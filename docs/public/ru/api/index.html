@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Collaborative HTTP API</title>
+    <link rel="stylesheet" href="../../api/swagger-ui.css" />
+    <style>body { margin: 0; } nav { padding: 16px 24px; font: 14px system-ui; background: #fafafa; border-bottom: 1px solid #ddd; } nav a { margin-right: 20px; color: #1b2930; }</style>
+  </head>
+  <body>
+    <nav aria-label="Навигация">
+      <a href="../reference/http.html">Документация</a>
+      <a href="../../api/index.html" lang="en">English</a>
+      <a href="../openapi.json">OpenAPI JSON</a>
+    </nav>
+    <div id="swagger-ui"></div>
+    <script src="../../api/swagger-ui-bundle.js"></script>
+    <script>
+      SwaggerUIBundle({
+        url: "../openapi.json", dom_id: "#swagger-ui", validatorUrl: null,
+        supportedSubmitMethods: [], persistAuthorization: false,
+        defaultModelsExpandDepth: 0,
+      });
+    </script>
+  </body>
+</html>

@@ -1,43 +1,32 @@
-# Участие в проекте
+# Contributing
 
-Ошибки и предложения принимаются в [GitHub Issues](https://github.com/Asmblyr/Collaborative/issues).
-Для изменения кода создайте ветку и pull request. Крупные изменения архитектуры,
-модели данных или публичных контрактов сначала обсудите в issue.
+<!-- languages -->
 
-## Подготовка
+[English](CONTRIBUTING.md) · [Русский](CONTRIBUTING.ru.md)
 
-Следуйте [руководству первого запуска](docs/guide/getting-started.md).
-Для карты компонентов и команд используйте [локальную разработку](docs/development/local-development.md),
-для нового плагина — [первое расширение](docs/development/first-extension.md).
-Публичные пакеты SDK и Kit пока используются как workspace-пакеты репозитория.
-Описание компонентов — в [архитектуре](docs/development/architecture.md).
+<!-- /languages -->
 
-Не включайте в изменения `.env`, ключи, пользовательские данные, дампы,
-локальные скриншоты, внутренние планы или сгенерированные сборки.
-Используйте вымышленные данные и домены `example.test` в примерах.
+Report bugs and proposals in [GitHub Issues](https://github.com/Asmblyr/Collaborative/issues). Create a branch and pull request for code changes. Discuss substantial architecture, data-model, or public-contract changes in an issue first.
 
-## Проверки
+## Setup
+
+Follow [first-time setup](docs/guide/getting-started.md), [local development](docs/development/local-development.md), and [your first plugin](docs/development/first-extension.md). Repository development uses workspace packages; published SDK/CLI previews use the beta tag. See [architecture](docs/development/architecture.md).
+
+Never commit environment files, keys, user data, dumps, local screenshots, internal plans, or generated builds. Use fictional data and example.test domains.
+
+## Checks
 
 ```sh
 pnpm check
 pnpm build
 ```
 
-Интеграционные тесты запускаются через `scripts/test.mjs`: он создаёт и удаляет
-отдельную PostgreSQL-базу. Для `TEST_DATABASE_ADMIN_URL` нужен локальный сервер
-и роль с правом `CREATEDB`. Не запускайте тестовые файлы напрямую на рабочей базе.
-Дополнительный live-тест LavinMQ требует отдельно настроенного примера.
+Integration tests run through scripts/test.mjs, which creates/removes a disposable PostgreSQL database. TEST_DATABASE_ADMIN_URL needs a local server and CREATEDB role. Never run test files directly against a working database. The optional live LavinMQ test needs a separately configured broker.
 
-Форматируйте изменённые файлы Prettier. При изменении поведения обновляйте
-соответствующее руководство; при изменении HTTP или SDK/Kit — также контракты
-и генерируемые справочники. Подробнее — [документация](docs/development/documentation.md).
+Format changed files with Prettier. Update feature guides with behavior changes; update HTTP/SDK/Kit contracts and generated references with API changes. See [documentation workflow](docs/development/documentation.md).
 
-## Pull request
+## Pull requests
 
-Опишите проблему, итоговое поведение и выполненные проверки. Для изменений UI
-проверьте обычный и ограниченный доступ и приложите результат на вымышленных данных.
-Существующие миграции не переписывайте: добавляйте новую миграцию и учитывайте
-сохранность данных. Не смешивайте исправление с несвязанными переработками.
+Describe the problem, resulting behavior, and checks. Verify UI with ordinary and restricted access using fictional data. Add new migrations rather than rewriting old ones; preserve existing data. Avoid unrelated refactors.
 
-Инструкции для кодовых агентов начинаются с [AGENTS.md](AGENTS.md).
-Вклад распространяется на условиях [MIT](LICENSE).
+Coding-agent instructions start at [AGENTS.md](AGENTS.md). Contributions use the [MIT license](LICENSE).

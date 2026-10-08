@@ -1,104 +1,87 @@
-# Пользователи и вход
+<a id="пользователи-и-вход"></a>
 
-Первый superuser создаётся в UI с setup secret. Следующие пользователи — через приглашение либо настроенный SSO flow. Email уникален; одинаковый email не означает разрешение автоматически объединить две внешние личности.
+# Users and sign-in
 
-## Профиль и дополнительные поля
+Create the first superuser in the UI with the setup secret. Later users join through invitations or configured SSO. Email is unique, but matching email addresses do not authorize automatic linking of external identities.
 
-Базовый профиль включает почту, отображаемое имя, необязательные имя и фамилию, описание «О себе», аватар и даты создания, изменения профиля, последнего входа и активности. UI выбирает отображаемое имя, затем имя с фамилией, затем почту. Существующее отображаемое имя сохраняется. Профиль не позволяет изменять почту, статус, superuser, credentials или системные даты.
+<a id="профиль-и-дополнительные-поля"></a>
 
-Аватар загружается кнопкой **Загрузить аватар** через `POST /users/me/avatar` в настроенное файловое хранилище, включая S3: PNG, JPEG, GIF или WebP до 2 MiB. Внешнюю ссылку на изображение в форме вводить не нужно. Право на библиотеку файлов для собственного аватара не требуется. Загрузка создаёт приватный файл; `PATCH /users/me` с `avatarId` прикрепляет его. При редактировании другого пользователя загруженный файл прикрепляется через `PATCH /users/:id/profile`, который требует `users/update`. Несохранённые загрузки остаются в библиотеке и могут быть удалены администратором. Собственный аватар видит его владелец; чужой — пользователь с доступом к разделу пользователей либо обычным правом на файл. Прикреплённый файл удалить нельзя. Отдельный `pictureUrl` остаётся в API для совместимости и публичного OAuth profile; форма его не редактирует, а приватный аватар туда не экспортируется.
+## Profile and extensions
 
-В настройках внешнего вида сохраняется IANA-часовой пояс пользователя, например `Asia/Yekaterinburg`. `null` означает часовой пояс устройства. Он применяется к датам профиля и сессий; значения в БД и API остаются UTC timestamps. `lastLoginAt` обновляется при выдаче новой сессии, а refresh его не продлевает. `lastActiveAt` приблизительный: успешные запросы с пользовательским access token обновляют его не чаще раза в пять минут; сервисные ключи учитываются отдельно.
+The base profile includes email, display name, optional first/last name, About text, avatar, and creation, profile-update, last-login, and activity timestamps. Display-name fallback is display name → first/last name → email. Existing display names are preserved. Profile editing cannot change email, status, superuser, credentials, or system timestamps.
 
-Должность, департамент, организация и руководитель не встроены в ядро. Для таких данных superuser создаёт обычную коллекцию с UUID-ключом и выбирает её в **Настройки → Пользователи → Расширение профиля**. Можно добавить любые поддержанные поля, M2O/O2M/M2M-связи и настроить форму стандартным редактором коллекций. Рекомендуется начать с пустой коллекции. У существующих записей ID должны совпадать с ID пользователей; один пользователь имеет одну запись профиля. Служебный FK защищает привязку к пользователю; переименование коллекции сохраняет настройку.
+Upload avatar uses `POST /users/me/avatar` with configured file storage, including S3: PNG, JPEG, GIF, or WebP up to 2 MiB. No external image URL or file-library permission is needed for your own avatar. Upload creates a private file; `PATCH /users/me` with `avatarId` attaches it. Another user's avatar is attached through `PATCH /users/:id/profile`, requiring users/update.
 
-Дополнительные данные открываются из собственного профиля и бокового окна пользователя. Первое сохранение через `PATCH /users/me/extension` либо `PATCH /users/:id/extension` создаёт запись с ID пользователя, последующие — изменяют её. Обычный `POST /items/:collection` для коллекции профиля не создаёт профили со случайными ID. Уже созданные записи и связи редактируются стандартным редактором записей. Отключение расширения сохраняет данные и FK; перед удалением коллекции расширение нужно отключить.
+Unsaved uploads remain in the library for administrator cleanup. Owners can view their own avatar; viewing another requires users-section access or ordinary file access. An attached avatar cannot be deleted. `pictureUrl` remains in the API for compatibility and public OAuth profiles; the form does not edit it and private avatars are not exported there.
 
-Настройка расширения сама по себе не выдаёт права. Пользователю необходимы обычные права коллекции: `read`, `create` для первого заполнения и `update` для изменений. Для личных данных задайте row filter: поле `id` (либо имя вашего UUID-ключа), оператор «Равно», параметр «Текущий пользователь» для всех этих действий. Права на связанные коллекции и файлы проверяются отдельно. Управление чужим профилем дополнительно требует `users/read` или `users/update`; скрытые поля и строки не раскрываются. Валидация, вычисляемые поля, audit и mutation hooks совпадают с обычными коллекциями. Схема расширения входит в `GET /schema` и стандартную генерацию CLI — [пример SDK](../reference/sdk-guide.md#профиль-пользователя).
+Appearance preferences include an IANA time zone, such as `Asia/Yekaterinburg`; `null` uses the device time zone. It formats profile and session dates while database/API timestamps stay UTC. `lastLoginAt` changes on new-session creation, not refresh. `lastActiveAt` is approximate: successful user access-token requests update it at most every five minutes. Service-key activity is tracked separately.
 
-## Настраиваемая информация профиля
+Job title, department, organization, and manager are not built into Core. A superuser can create an ordinary UUID-key collection and select it under Settings → Users → Profile extension. Use supported fields, M2O/O2M/M2M relationships, and the standard form editor. An empty collection is recommended. Existing row IDs must match user IDs; each user has one profile row. An internal FK protects the association, and collection renaming preserves the setting.
 
-В **Настройки → Пользователи → Вид профиля** superuser настраивает отдельный блок
-для чтения в личном профиле и карточке пользователя. До 12 строк: подпись, источник,
-порядок и галочка **Показывать владельцу профиля** (по умолчанию выключена).
-Пустой заголовок использует переведённое «Дополнительная информация».
+Extra data opens from the personal profile and user side panel. The first `PATCH /users/me/extension` or `PATCH /users/:id/extension` creates a row with the user's ID; later calls update it. Ordinary `POST /items/:collection` cannot create profiles with random IDs. Existing rows and relationships use the standard record editor. Disabling the extension preserves data and its FK; disable it before deleting the collection.
 
-Источники — дополнительные поля системной коллекции `users`. Можно пройти до двух
-одиночных M2O-связей и выбрать конечное значение (например, отдел → название или
-отдел → руководитель). Поддержаны текст, email, числа, флаги, даты, теги и ссылка на
-пользователя, которая раскрывает только отображаемое имя с fallback на ФИО/почту.
-Фотографии и произвольные поля связанного пользователя не передаются. Системные
-колонки, sensitive-поля, файлы, произвольный JSON, связи ко многим и коллекции
-плагинов не доступны как источники. Настроенные значения читаются из исходных
-записей при загрузке профиля, без копирования.
+Selecting an extension grants no permissions. Users need ordinary collection read, create for initial completion, and update for changes. For personal data, apply a row condition on `id` (or the chosen UUID key): Equals → Current user, for each action. Related collections and files have separate checks. Another user's profile additionally requires users/read or users/update; hidden rows and fields stay hidden.
 
-Это отдельное явное разрешение на проекцию: управляющие с `users/read` видят
-настроенные строки; владелец — только строки с `selfVisible`. Для этих точечных
-значений не требуются обычные права коллекций. Доступ к справочникам, другим
-профилям и редактированию при этом не выдаётся. Выбирайте только сведения,
-предназначенные для такой аудитории. Настраивать проекцию может только superuser.
+Validation, computed fields, audit, and mutation hooks match ordinary collections. The extension schema is included in `GET /schema` and CLI generation; see the [SDK guide](../reference/sdk-guide.md).
 
-Удалённый источник, изменение цели связи, пометка sensitive или удаление и
-повторное создание столбца скрывают затронутую строку до повторной настройки.
-Имена полей и физическая идентичность столбцов входят в проверку привязки;
-переименование источников и восстановление БД с другими OID требуют повторного
-сохранения конфигурации. Отсутствующее значение показывается как «Не указано».
+<a id="настраиваемая-информация-профиля"></a>
 
-API: `GET|PUT /users/profile-display`, `GET /users/profile-display/sources`,
-`GET /users/me/profile-display`, `GET /users/:id/profile-display`.
-Проверки включены в `node scripts/test.mjs core-profile`.
+## Configurable profile information
 
-## Пароль и сессии
+A superuser configures a separate read-only block under Settings → Users → Profile display. It supports up to 12 rows with label, source, order, and Show to profile owner, off by default. An empty title uses the translated Additional information label.
 
-Пароли хранятся как Argon2id hash отдельно от пользователя. Access/refresh — случайные непрозрачные токены; в БД только SHA-256 hashes. Access живёт 15 минут, сессия до 30 дней; refresh вращается. Повтор использованного refresh отзывает сессию.
+Sources are custom fields of the system `users` collection. Paths may traverse up to two single M2O relations to a final value, such as department → name or department → manager. Supported values include text, email, numbers, flags, dates, tags, and user references exposing only a display name with name/email fallback. Photos and arbitrary fields of linked users are not returned.
 
-Для браузера Core выдаёт отдельную непрозрачную HttpOnly cookie `asmblyr_session`
-(SameSite=Lax, Secure при HTTPS). В БД хранится только SHA-256 hash. Сессия действует
-до 30 дней без продления срока; каждый запрос проверяет срок, отзыв и статус
-пользователя. Refresh-токены браузеру не выдаются: параллельные вкладки и реплики
-используют одну проверяемую в БД сессию без гонок refresh. Профиль позволяет менять
-собственные данные/пароль, смотреть сессии и отзывать их.
+System columns, sensitive fields, files, arbitrary JSON, to-many relations, and plugin collections cannot be sources. Values are read from their source records when loading the profile, without copying.
 
-Вход браузера: `/api/auth/browser/login`, `/api/auth/browser/invitations/claim`,
-`/api/auth/browser/passkeys/options` и `/api/auth/browser/passkeys/login`. Ответ
-успешного входа — `{ok:true}`, секрет передаётся только через Set-Cookie. Выход:
-`POST /api/auth/browser/logout`. Записывающие запросы с cookie и все browser auth
-операции требуют точного `Origin`, равного `AUTH_UI_URL`; чужой или отсутствующий
-Origin отклоняется. Явный Authorization имеет приоритет над cookie.
+This is an explicit, separate projection permission: managers with users/read see configured rows; owners see only rows with `selfVisible`. Ordinary collection grants are unnecessary for these specific values. The projection grants no directory access, access to other profiles, or editing rights. Choose information suitable for that audience. Only superusers configure it.
 
-При обновлении с версии с BFF нужно повторно войти: прежние access/refresh cookies
-не используются. Данные, учётные записи, passkey и API-сессии сохраняются.
+Deleting a source, changing a relation target, marking it sensitive, or dropping/recreating a column hides the affected row until reconfiguration. Binding validation includes field names and physical column identity. Source renames or database restoration with different OIDs require saving the configuration again. Missing values display Not specified.
 
-Администратор указывает email и передаёт пользователю ссылку `/invite#token=…` любым выбранным способом. Ссылка одноразовая, живёт семь дней и входит в аккаунт без почтовой доставки и обязательного пароля. Fragment удаляется из адреса страницы до отправки; GET сам по себе ссылку не активирует. Ссылка подтверждает владение секретом приглашения, а не почтовым ящиком. После входа можно добавить пароль, passkey или привязать SSO. Для повторного входа необходимо сохранить хотя бы один из этих способов; повторная активация использованной ссылки запрещена.
+API: `GET|PUT /users/profile-display`, `GET /users/profile-display/sources`, `GET /users/me/profile-display`, and `GET /users/:id/profile-display`. Tests run with `node scripts/test.mjs core-profile`.
 
-Приглашения требуют section `users/update`. Менеджер повторно выдаёт приглашение только ещё не активированному аккаунту без пароля, passkey и SSO, все политики которого входят в его разрешённый набор. Собственный аккаунт и пользователи с личным правом делегирования закрыты для такого действия. UI скрывает недоступную кнопку; сервер перепроверяет состояние. [Правила делегирования](./access.md#ограниченное-назначение-политик) описаны отдельно.
+<a id="пароль-и-сессии"></a>
 
-## Passkey и восстановление
+## Passwords and sessions
 
-WebAuthn реализован через SimpleWebAuthn: discoverable credential, обязательное подтверждение пользователя на устройстве, проверка challenge, подписи, origin, RP ID и счётчика. Challenge живёт пять минут, одноразовый; регистрация привязана к конкретной сессии. До десяти ключей на аккаунт. Закрытый ключ остаётся на устройстве. Добавление/удаление и установка первого пароля требуют входа за последние пять минут; refresh не продлевает этот срок. Последний доступный способ входа удалить нельзя.
+Passwords are stored separately as Argon2id hashes. Access/refresh tokens are random opaque values; only SHA-256 hashes are stored. Access lasts 15 minutes, sessions up to 30 days, and refresh rotates. Reusing a consumed refresh token revokes its session.
 
-Активному обычному пользователю superuser со свежей сессией выдаёт одноразовую ссылку восстановления на 30 минут. При её использовании отзываются прежние сессии, пароль, passkey, SSO-привязки и OAuth-согласия. Выдача ссылки сама по себе ничего не сбрасывает. Такое восстановление не делегируется менеджерам и не применяется к superuser. Потерявшего доступ администратора восстанавливает оператор на сервере через `scripts/operations/admin-recover.mjs`; инструкция в [эксплуатации](../development/operations.md).
+Browsers receive a separate opaque HttpOnly `asmblyr_session` cookie, SameSite=Lax and Secure on HTTPS. Its database value is hashed. Sessions last up to 30 days without sliding expiry; every request checks expiration, revocation, and user status. Browsers receive no refresh tokens, so tabs and replicas share a database-validated session without refresh races. Profiles allow editing personal information/passwords and viewing/revoking sessions.
 
-`AUTH_UI_URL` задаёт точный публичный origin и обязателен в production. HTTPS обязателен, кроме локального localhost. Опциональный `PASSKEY_RP_ID` должен совпадать с hostname. При смене домена нужны новые ключи. Core дополнительно связывает passkey challenge с HttpOnly cookie браузера.
+Browser sign-in endpoints are `/api/auth/browser/login`, `/api/auth/browser/invitations/claim`, `/api/auth/browser/passkeys/options`, and `/api/auth/browser/passkeys/login`. Success returns `{ok:true}`; the secret is sent only through Set-Cookie. Logout uses `POST /api/auth/browser/logout`. Cookie-authenticated mutations and all browser-auth operations require an exact Origin matching `AUTH_UI_URL`; missing or foreign origins are rejected. Explicit Authorization takes precedence over cookies.
 
-## Подключение CLI
+Upgrading from the former BFF requires signing in again: old access/refresh cookies are unused. Data, users, passkeys, and API sessions are preserved.
 
-`asm connect` открывает `/sdk/connect` в админке для входа и подтверждения получения
-схемы. CLI использует PKCE S256, одноразовый код на 60 секунд и точный callback на
-`127.0.0.1` со случайным портом. Доступ `schema:read` действует 10 минут, связан с
-активной сессией и принимается только `GET /schema`. Он не даёт читать или менять
-записи. CLI не сохраняет токен; следующий онлайн-запрос снова требует входа либо
-отдельного API-ключа из env/stdin. Подробнее — [CLI](../reference/cli-guide.md).
+Administrators specify an email and share a one-time `/invite#token=…` link through any channel. It expires after seven days and signs in without email delivery or a mandatory password. The fragment is removed before submission; GET alone does not consume it. It proves possession of the invitation secret, not ownership of the mailbox. After sign-in, add a password, passkey, or linked SSO for future access. Consumed invitations cannot be reused.
+
+Invitations require users/update. Managers can re-invite only unactivated accounts without password, passkey, or SSO, whose policies all belong to their allowed set. Their own account and users with delegation rights are excluded. UI controls and server checks enforce this independently. See [delegation](./access.md#bounded-policy-delegation).
+
+<a id="passkey-и-восстановление"></a>
+
+## Passkeys and recovery
+
+SimpleWebAuthn implements discoverable credentials with required device user verification and checks for challenge, signature, origin, RP ID, and counter. Challenges are single-use, expire in five minutes, and registration binds to the session. Accounts support up to ten passkeys; private keys stay on the device.
+
+Adding/removing passkeys and setting the first password require sign-in within the past five minutes; refresh does not extend this period. The last available sign-in method cannot be removed.
+
+A freshly authenticated superuser can issue a one-time 30-minute recovery link to an active ordinary user. Claiming it revokes prior sessions, password, passkeys, SSO links, and OAuth consents. Issuing it alone resets nothing. Recovery is not delegated to managers and cannot target superusers. Operators recover locked-out administrators on the server using `scripts/operations/admin-recover.mjs`; see [operations](../development/operations.md).
+
+`AUTH_UI_URL` sets the exact public origin and is mandatory in production. HTTPS is required except for local localhost. Optional `PASSKEY_RP_ID` must match the hostname. Domain changes require new passkeys. Core also binds the challenge to an HttpOnly browser cookie.
+
+<a id="подключение-cli"></a>
+
+## CLI connection
+
+`asm connect` opens `/sdk/connect` for sign-in and schema consent. It uses PKCE S256, a one-time 60-second code, and an exact `127.0.0.1` callback on a random port. The session-bound `schema:read` token lasts ten minutes and is accepted only by `GET /schema`, never for record reads or writes.
+
+The CLI does not persist the token. Another online request requires sign-in or a separate API key from env/stdin. See [CLI](../reference/cli-guide.md).
 
 ## SSO
 
-Поддержаны OIDC и OAuth через конфигурацию провайдеров. Ключ провайдера задаёт URL
-`/sign/sso/<provider>/callback` на публичном домене. Core обслуживает начало входа
-`POST /sign/sso/:provider` и callback, проверяет browser proof и создаёт сессию.
-Программные endpoints `/auth/sso/:provider/start` и `/callback` также сохраняются.
+Configured providers support OIDC and OAuth. The provider key determines the public `/sign/sso/<provider>/callback` URL. Core serves `POST /sign/sso/:provider` and its callback, validates browser proof, and creates the session. Programmatic `/auth/sso/:provider/start` and `/callback` endpoints remain available.
 
-OIDC использует discovery и проверку issuer, state, PKCE и nonce. Привязать новый провайдер можно из уже подтверждённой учётной записи; совпадение email само по себе не связывает аккаунты. Секреты провайдеров остаются в серверной конфигурации.
+OIDC validates discovery, issuer, state, PKCE, and nonce. New providers are linked from an already authenticated account; matching email alone never links accounts. Provider secrets stay in server configuration.
 
-Ограничения: нет отдельного MFA flow, общего LDAP/SAML-коннектора и самостоятельного email-восстановления пароля. SMTP не требуется для первой беты. Общий лимит credential endpoints хранится в PostgreSQL; дополнительные ограничения маршрутов локальны процессу. На встроенном публичном listener Core видит соединение браузера напрямую. За внешним reverse proxy общий лимит источника относится к адресу proxy: внешним forwarded headers Core не доверяет.
+There is no separate MFA flow, general LDAP/SAML connector, or self-service email password recovery. SMTP is unnecessary for the first beta. The shared credential-endpoint rate limit lives in PostgreSQL; additional route limits are process-local. Core's built-in public listener sees browser connections directly. Behind an external reverse proxy, the shared source limit applies to the proxy address because Core does not trust external forwarded headers.
 
-Источники: `apps/core/src/auth`, `apps/core/src/auth/browser`. Авторизацию для внешних приложений описывает [интеграционная страница](./integrations.md).
+Sources: `apps/core/src/auth` and `apps/core/src/auth/browser`. External application authorization is covered under [integrations](./integrations.md).

@@ -1,58 +1,63 @@
-# Asmblyr Collaborative
+# Collaborative
 
-Открытая платформа для работы с данными в PostgreSQL. Админка объединяет структуру
-коллекций, редакторы записей, права команды, файлы и интеграции.
-Проект находится в ранней бете; одна команда использует отдельную установку.
+An open-source workspace for PostgreSQL data. The admin interface brings together
+collection schemas, record editors, team permissions, files, and integrations.
+The project is in early beta; each team runs its own installation.
 
-[Сайт и демо](https://asmblyr.io/) · [Рабочая консоль](https://console.asmblyr.io/)
+[GitHub](https://github.com/Asmblyr/Collaborative) · [Releases](https://github.com/Asmblyr/Collaborative/releases)
 
-## Начать
+<a id="начать"></a>
 
-- [Возможности и ограничения](./guide/features.md)
-- [Первый запуск](./guide/getting-started.md)
-- [Docker, production и обновления](./guide/deployment.md)
+## Get started
+
+- [Features and limits](./guide/features.md)
+- [First-time setup](./guide/getting-started.md)
+- [Docker, production, and upgrades](./guide/deployment.md)
 - [HTTP API](./reference/http.md)
-- [TypeScript SDK](./reference/sdk-guide.md) и [CLI](./reference/cli-guide.md)
+- [TypeScript SDK](./reference/sdk-guide.md) and [CLI](./reference/cli-guide.md)
 
-## Работа с продуктом
+<a id="работа-с-продуктом"></a>
 
-Руководства по [данным](./features/data.md), [правам](./features/access.md),
-[пользователям](./features/identity.md), [файлам](./features/files.md),
-[настройкам](./features/settings.md), [пространствам](./features/workspaces.md),
-[мониторингу](./features/monitoring.md),
-[интеграциям](./features/integrations.md), [ассистенту](./features/assistant.md),
-[обсуждениям и уведомлениям](./features/notifications.md),
-[локализации](./features/localization.md) и [расширениям](./features/plugins.md)
-описывают текущие контракты и их границы.
-[Личные подключения Google Drive и Sheets](./features/google-workspace.md) описаны отдельно.
-[Совместная работа в реальном времени](./features/realtime.md) описывает
-присутствие, изменения записей, блокировки полей и ограничения транспорта.
+## Using the product
 
-| Задача                                              | Где читать                                                    |
-| --------------------------------------------------- | ------------------------------------------------------------- |
-| Коллекции, поля, связи, записи, фильтры и поиск     | [Данные](./features/data.md)                                  |
-| Виды таблицы и рабочие пространства                 | [Пространства](./features/workspaces.md)                      |
-| Пользователи, вход и сессии                         | [Авторизация](./features/identity.md)                         |
-| Политики, разрешения и условия строк                | [Права](./features/access.md)                                 |
-| Файлы и S3                                          | [Файлы](./features/files.md)                                  |
-| Аутентификация API, страницы, ошибки и примеры кода | [HTTP](./reference/http.md) и [SDK](./reference/sdk-guide.md) |
+The guides cover [data](./features/data.md), [permissions](./features/access.md),
+[users](./features/identity.md), [files](./features/files.md),
+[settings](./features/settings.md), [workspaces](./features/workspaces.md),
+[monitoring](./features/monitoring.md), [integrations](./features/integrations.md),
+[the assistant](./features/assistant.md),
+[discussions and notifications](./features/notifications.md),
+[localization](./features/localization.md), and [plugins](./features/plugins.md).
+Each describes the current contract and its limits.
+[Personal Google Drive and Sheets connections](./features/google-workspace.md) have a separate guide.
+[Live collaboration](./features/realtime.md) covers presence, saved-record updates,
+field locks, and transport limits.
 
-## Разработка и эксплуатация
+| Task                                                             | Read more                                                       |
+| ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| Collections, fields, relationships, records, filters, and search | [Data](./features/data.md)                                      |
+| Table views and workspaces                                       | [Workspaces](./features/workspaces.md)                          |
+| Users, sign-in, and sessions                                     | [Identity](./features/identity.md)                              |
+| Policies, permissions, and row conditions                        | [Access](./features/access.md)                                  |
+| Files and S3                                                     | [Files](./features/files.md)                                    |
+| API authentication, pagination, errors, and examples             | [HTTP](./reference/http.md) and [SDK](./reference/sdk-guide.md) |
 
-- [Локальная разработка и проверки](./development/local-development.md)
-- [Архитектура](./development/architecture.md)
-- [Архитектура Collaborative Live](./architecture/realtime.md)
-- [Первое расширение](./development/first-extension.md)
-- [Архитектура ассистента и model context](./development/assistant-architecture.md)
-- [Опубликованные пакеты](./reference/packages.md)
-- [Сопровождение документации](./development/documentation.md)
-- [Эксплуатация и восстановление](./development/operations.md)
-- [Границы безопасности](./security/overview.md)
-- [Визуальная идентичность и публичные assets](./assets/brand/README.md)
-- [Участие в проекте](https://github.com/Asmblyr/Collaborative/blob/main/CONTRIBUTING.md)
+<a id="разработка-и-эксплуатация"></a>
 
-Руководства по Kit и SDK поддерживаются в исходных пакетах и копируются в
-`reference` при генерации сайта. Технические детали размещаются рядом с
-контрактом; эта главная страница служит маршрутом к ним. Основной язык сейчас
-русский; при добавлении других языков следует сохранить общие исходные
-контракты и отдельную навигацию для каждого языка.
+## Development and operations
+
+- [Local development and checks](./development/local-development.md)
+- [Architecture](./development/architecture.md)
+- [Collaborative Live architecture](./architecture/realtime.md)
+- [Your first plugin](./development/first-extension.md)
+- [Assistant architecture and model context](./development/assistant-architecture.md)
+- [Published packages](./reference/packages.md)
+- [Documentation workflow](./development/documentation.md)
+- [Operations and recovery](./development/operations.md)
+- [Security boundaries](./security/overview.md)
+- [Branding and public assets](./assets/brand/README.md)
+- [Contributing](https://github.com/Asmblyr/Collaborative/blob/main/CONTRIBUTING.md)
+
+The site is available in English and Russian. English is the default; the language
+menu opens the corresponding page in the other language. SDK and Kit guides are
+maintained in their source packages and copied into `reference` during generation.
+API identifiers and contracts are shared by both versions.

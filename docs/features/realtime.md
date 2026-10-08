@@ -1,72 +1,47 @@
 # Real-time collaboration
 
-Collaborative Live работает для коллекций и записей, доступных текущему
-пользователю. Таблица подписывается на коллекцию и обновляется после сохранения
-записи. Карточка показывает участников, состояние соединения, изменения и
-редактируемые поля. В клиентском интерфейсе данные перечитываются через обычный
-HTTP API: событие содержит только идентификатор, имена разрешённых изменённых
-полей и номер события истории. Несохранённый ввод остаётся в редакторе.
+Live subscriptions operate on accessible collections and records. Tables refresh after saved changes; record forms show participants, connection state, and active field editing. Record data is fetched over HTTP. Events contain identifiers, permitted field names, and history event IDs, and preserve unsaved edits.
 
 ## Presence
 
-SSE-подписка открывает 30-секундную lease присутствия. Core обновляет её пока
-соединение активно, удаляет при закрытии и проверяет право чтения при
-подключении и при каждом событии. Участники одного человека объединяются;
-отображаются имя, аватар и число окон. После аварийного закрытия остаток lease
-исчезает не позднее 30 секунд. Ранее доступный HTTP presence API сохранён.
-Каждое продление активной SSE-подписки отправляет актуальный состав участников;
-так исчезают и окна, чья lease истекла без события выхода.
-Компоненты админки разделяют один поток на scope. Новый подписчик сразу получает
-текущее состояние соединения и последний состав участников. При обрыве этот
-снимок сбрасывается до получения актуальных данных после переподключения.
+An SSE subscription creates a 30-second presence lease. It is renewed while active and removed on close. Core checks row read access on connection and events. Multiple windows of the same human are combined into one participant with name, avatar, and window count. A crashed window disappears when its lease expires, within 30 seconds. The legacy HTTP presence API remains available.
 
-## Live updates и разрешения
+Each renewal sends the current participant list, also removing windows that expired without a leave event. Admin components share one stream per scope. A new subscriber immediately receives connection state and the latest presence snapshot. Disconnection clears that snapshot until fresh data arrives after reconnection.
 
-Core публикует `record.created`, `record.updated`, `record.deleted` из
-транзакции записи. PostgreSQL доставляет уведомление только после commit и между
-экземплярами Core. Подписка на запись проверяет read коллекции и строки по тем
-же правилам, что HTTP `/items`. Имена полей фильтруются по фактически видимым
-полям строки; sensitive поля не объявляются. Подписка на коллекцию получает
-только `collection.changed`, если изменённая строка доступна читателю. При
-условных правах удаление не объявляется, поскольку удалённую строку уже нельзя
-проверить. Изменение прав обнаруживается при следующем событии или продлении
-lease (до 20 секунд), после чего поток закрывается.
+<a id="live-updates-и-разрешения"></a>
 
-## Field locks и конфликты
+## Live updates and permissions
 
-Фокус в редактируемом поле получает lease на 30 секунд. Core проверяет read и
-update поля и строки. Вторая сессия получает `409 FIELD_LOCKED`; блокировка
-одного поля не мешает редактировать другие. При выходе из поля lease удаляется,
-а при обрыве сети истекает автоматически. Клиент повторяет запрос каждые 10
-секунд, пока поле активно.
+Core emits `record.created`, `record.updated`, and `record.deleted` inside the write transaction. PostgreSQL delivers notifications after commit and across Core instances.
 
-Блокировка помогает людям видеть редактирование, но не гарантирует сохранение.
-Атомарный draft commit по-прежнему сравнивает `expectedValues` изменяемых полей
-и возвращает `409 ITEM_CHANGED`, когда чужая правка затрагивает то же поле.
-Редактор оставляет черновик и показывает существующий выбор значений. Обычный
-`PATCH` без precondition сохраняет прежний контракт.
-Чистая форма принимает новое состояние записи только если к моменту ответа HTTP
-у пользователя всё ещё нет несохранённых правок. Вместе с полями обновляется
-база `expectedValues`; если ввод начался во время запроса, ответ не заменяет форму.
+Record subscriptions use the same collection and row read rules as HTTP `/items`. Field names are filtered by actual visibility; sensitive fields are excluded. A collection subscription receives only `collection.changed`, and only for a readable changed row. With conditional permissions, deletion is not announced because the deleted row can no longer be checked.
 
-## Reconnect и SDK
+Revoked permissions are detected on the next event or lease renewal, within 20 seconds, and close the stream.
 
-SDK `client.realtime.connect()` возвращает типизированное соединение.
-`subscribe(scope, callback)` возвращает функцию отписки; `on(type, callback)`
-и `onState(callback)` возвращают очистку слушателя. `locks.acquire`, `refresh`
-и `release` работают с `{ collection, recordId, field, clientId }`.
-При обрыве SDK переподключается с backoff и jitter, повторно регистрирует
-presence и посылает `collection.changed`, чтобы клиент перечитал данные.
-Это событие получают и callback подписки, и обработчики `on("collection.changed")`.
-Повторные ID в одном потоке пропускаются. Отписка и `close()` освобождают
-соединение. Браузерная админка открывает `/api/realtime/stream` напрямую в Core
-с HttpOnly cookie; прямому клиенту Core нужен действующий пользовательский Bearer token.
+<a id="field-locks-и-конфликты"></a>
 
-## Границы
+## Field locks and conflicts
 
-Поток передаёт события операций через Core, включая Kit, но прямой SQL в
-пользовательские таблицы не создаёт событий. Комментарии и изменения прав пока
-не имеют собственных live-событий. SSE не хранит очередь событий: после
-переподключения клиент перечитывает текущие данные. Presence и locks не
-поддерживают сервисные ключи. Workspace в envelope равен `null`, поскольку
-рабочие пространства группируют коллекции и не изолируют данные.
+Focusing an editable field acquires a 30-second lease. Core checks read and update permissions for the field and row. A second session receives `409 FIELD_LOCKED`; other fields remain editable. Leaving the field releases its lease; network loss lets it expire. The client renews an active field every 10 seconds.
+
+Locks communicate editing activity but do not guarantee a successful save. Atomic draft commits still compare `expectedValues` for changed fields and return `409 ITEM_CHANGED` when another edit touches the same field. The editor retains the draft and offers the existing value choices. Ordinary `PATCH` without a precondition keeps its existing contract.
+
+A clean form accepts refreshed data only if it is still clean when the HTTP response arrives. The `expectedValues` baseline updates with the fields. If typing started during the request, the response does not replace the form.
+
+<a id="reconnect-и-sdk"></a>
+
+## Reconnection and SDK
+
+`client.realtime.connect()` returns a typed connection. `subscribe(scope, callback)` returns an unsubscribe function. `on(type, callback)` and `onState(callback)` return listener cleanup functions. `locks.acquire`, `refresh`, and `release` accept `{ collection, recordId, field, clientId }`.
+
+The SDK reconnects with backoff and jitter, registers presence again, and emits `collection.changed` so clients reread data. Both subscription callbacks and global `on("collection.changed")` handlers receive this event. Duplicate IDs within one stream are ignored. Unsubscribing and `close()` release the connection.
+
+The browser admin opens `/api/realtime/stream` directly in Core using its HttpOnly cookie. A direct Core client needs a valid human Bearer token.
+
+<a id="границы"></a>
+
+## Boundaries
+
+Events cover Core operations, including Kit writes. Direct SQL writes do not emit events. Comments and permission changes do not yet have dedicated live events. SSE does not retain an event queue; reconnecting clients fetch current data.
+
+Presence and locks do not support service keys. The envelope's workspace is `null`: workspaces group collections and do not isolate data.

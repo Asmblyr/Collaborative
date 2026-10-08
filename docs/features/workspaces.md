@@ -1,13 +1,17 @@
-# Рабочие пространства и представления
+<a id="рабочие-пространства-и-представления"></a>
 
-Workspace объединяет выбранные коллекции для удобства работы. Переключатель находится в шапке sidebar; текущий выбор сохраняется за пользователем. Коллекции можно организовать папками и виртуальной вложенностью в другие коллекции.
+# Workspaces and views
 
-Workspace фильтрует навигацию, но не изолирует данные между арендаторами. Права определяются политиками. Пользователь видит только доступные коллекции; скрытие коллекции в меню не является запретом на API или связь.
+Workspaces group selected collections for convenient navigation. The switcher lives in the sidebar header, and the selected workspace is saved per user. Collections can be organized into folders and virtual hierarchies.
 
-## Сохранённые виды
+A workspace filters navigation; it does not isolate tenants. Policies determine access. Users see only permitted collections, and hiding a collection from a menu does not prohibit API access or relationships.
 
-Виды таблицы имеют область personal, collection или workspace. Личные редактирует владелец, общие — superuser. Определение проверяется против доступной схемы/полей. При потере прав или изменении схемы несовместимый вид не должен возвращать скрытые данные.
+<a id="сохраненные-виды"></a>
 
-Default выбирается по приоритету personal → workspace → collection. Количество — до 30 видов на scope/коллекцию. Изменения колоночных настроек и профиля используют пользовательские preferences; не все произвольные UI-состояния имеют общий механизм хранения.
+## Saved views
 
-Фильтр вида лишь уточняет выборку: он не задаёт row-level security. Права на изменение самих workspaces остаются у superuser.
+Table views have personal, collection, or workspace scope. Owners edit personal views; superusers edit shared ones. Definitions are validated against accessible schema and fields. After permission or schema changes, an incompatible view must not expose hidden data.
+
+Default priority is personal → workspace → collection. Each scope/collection supports up to 30 views. Column settings and profile choices use user preferences; arbitrary UI state does not all share a persistence mechanism.
+
+A view filter narrows a query; it does not define row-level security. Editing workspaces themselves requires a superuser.

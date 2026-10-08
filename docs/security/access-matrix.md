@@ -1,38 +1,49 @@
-# Что открыто и чем защищено
+<a id="что-открыто-и-чем-защищено"></a>
 
-«Публичный endpoint» означает отсутствие Core Bearer, но не отсутствие проверки учётных данных в его протоколе.
+# Public surfaces and access controls
 
-| Поверхность                                 | Допуск                            | Дополнительная граница                                          |
-| ------------------------------------------- | --------------------------------- | --------------------------------------------------------------- |
-| health/ready, setup status, provider labels | Анонимный                         | Без паролей/ключей/данных коллекций                             |
-| setup/login/invite/refresh                  | Без Bearer                        | Setup secret/пароль/одноразовый токен, rate limit               |
-| SSO start/callback                          | Протокол провайдера               | Flow, state, PKCE; связывание из собственной сессии             |
-| service/federation exchange                 | Ключ/JWT assertion                | Подпись, claims, срок, replay protection                        |
-| OAuth discovery/JWKS                        | Публичный                         | Остальные OAuth endpoints имеют protocol checks                 |
-| Collections/items/search/history            | Активный user/service             | Grants действия/полей; проекция истории и связей                |
-| DDL, folders, формы/метаданные схемы        | superuser                         | Reserved prefixes, ownership, impact checks                     |
-| Профиль, sessions, consent                  | Человек                           | Только собственный ресурс                                       |
-| Участники страницы/карточки                 | Человек + доступ просмотра        | Свежий read строки/раздела; leave только своей сессии           |
-| Просмотр настроек                           | Человек + section read/update     | Свежие политики из БД; без выдачи секретов                      |
-| Изменение настроек                          | Человек + section update          | Политики и сервисы имеют отдельные ограничения ниже             |
-| Состав политик и permissions                | Человек-superuser                 | Менеджер может просматривать готовые права                      |
-| Назначения политик пользователям            | Человек + policies/update         | Явный личный набор; без своих назначений и superuser            |
-| Настройка разрешённого набора               | Человек-superuser                 | Отдельная настройка пользователя, не permission                 |
-| Сервисы, их ключи и федерации               | Человек + services/update         | Все текущие и новые политики входят в личный набор              |
-| Повторные приглашения                       | Человек + users/update            | Политики в наборе; без собственных/делегирующих аккаунтов       |
-| File read/resolve                           | Активный principal                | Readable reference, files/read/update у человека либо superuser |
-| File management                             | Человек + files/update; superuser | Размер, тип выдачи/preview, metadata validation                 |
-| Workspaces                                  | Человек                           | Видимые коллекции; изменения superuser                          |
-| Presets/views                               | Человек + collection access       | Владение; shared изменения superuser                            |
-| Assistant                                   | Человек + data eligibility        | Caller permissions, MCP enable, tool validation                 |
-| Plugin HTTP                                 | Активный principal и handler gate | Capabilities Kit + caller/domain authorization                  |
+A public endpoint does not require a Core Bearer token. Its protocol may still
+require credentials and other verification.
 
-Superuser не ограничен набором. Сервисные токены не управляют настройками. Отзыв набора запрещает будущие операции, но автоматически не отзывает уже выданные ключи и назначения. Подробности — [права и политики](../features/access.md#ограниченное-назначение-политик).
+| Surface                                     | Admission                             | Additional boundary                                            |
+| ------------------------------------------- | ------------------------------------- | -------------------------------------------------------------- |
+| health/ready, setup status, provider labels | Anonymous                             | No passwords, keys, or collection data                         |
+| setup/login/invite/refresh                  | No Bearer token                       | Setup secret/password/single-use token, rate limits            |
+| SSO start/callback                          | Provider protocol                     | Flow, state, PKCE; linking from the user's own session         |
+| Service/federation exchange                 | Key/JWT assertion                     | Signature, claims, expiry, replay protection                   |
+| OAuth discovery/JWKS                        | Public                                | Other OAuth endpoints perform protocol checks                  |
+| Collections/items/search/history            | Active user/service                   | Action/field grants; history and relation projection           |
+| DDL, folders, forms/schema metadata         | Superuser                             | Reserved prefixes, ownership, impact checks                    |
+| Profile, sessions, consent                  | Human                                 | Own resource only                                              |
+| Page/record participants                    | Human with read access                | Fresh row/section read check; leave only the caller's session  |
+| View settings                               | Human with section read/update        | Fresh database policies; no secrets returned                   |
+| Change settings                             | Human with section update             | Policies and services have the additional limits below         |
+| Policy contents and permissions             | Human superuser                       | Managers can inspect existing permissions                      |
+| User policy assignments                     | Human with policies/update            | Explicit personal set; no own assignments or superuser changes |
+| Configure an assignable set                 | Human superuser                       | Separate user setting, not a permission                        |
+| Services, their keys, and federations       | Human with services/update            | All current and new policies must be in the personal set       |
+| Repeat invitations                          | Human with users/update               | Policies in the set; no own or delegating accounts             |
+| File read/resolve                           | Active principal                      | Readable reference, human files/read/update, or superuser      |
+| File management                             | Human with files/update, or superuser | Size, delivery/preview type, metadata validation               |
+| Workspaces                                  | Human                                 | Visible collections; changes require superuser                 |
+| Presets/views                               | Human with collection access          | Ownership; shared changes require superuser                    |
+| Assistant                                   | Human with data eligibility           | Caller permissions, MCP enablement, tool validation            |
+| Plugin HTTP                                 | Active principal and handler gate     | Kit capabilities plus caller/domain authorization              |
 
-Полный перечень деклараций — [матрица маршрутов](../reference/routes.md).
+Superusers are not limited by an assignable set. Service tokens cannot manage
+settings. Revoking the set blocks future operations but does not automatically
+revoke keys or assignments already issued. See [permissions and policies](../features/access.md).
 
-## Что не обеспечивает изоляцию
+The complete declarations are in the [route matrix](../reference/routes.md).
 
-Workspace, скрытие меню/коллекции, default-фильтр опубликованных, metadata readonly в UI, описание инструмента для модели. Доступ обеспечивают проверки сервера. Knex и обычные SQL-запросы не получают права человека автоматически.
+<a id="что-не-обеспечивает-изоляцию"></a>
 
-Доверенные server plugins и администратор БД могут выйти за прикладные проверки. В проекте нет песочницы для произвольного кода плагина и нет общей PostgreSQL RLS-модели.
+## What does not provide isolation
+
+Workspaces, hidden menus/collections, a default published-record filter, UI
+readonly metadata, and a tool's description for the model are not access controls.
+Server checks enforce access. Knex and ordinary SQL queries do not automatically
+inherit a human user's permissions.
+
+Trusted server plugins and database administrators can bypass application checks.
+There is no sandbox for arbitrary plugin code or general PostgreSQL RLS model.

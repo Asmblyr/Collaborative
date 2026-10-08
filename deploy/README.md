@@ -1,22 +1,23 @@
-# Установка Collaborative
+# Deploying Collaborative
 
-Production поставляется двумя образами из одного коммита: **Core** и **UI**.
-PostgreSQL 17+ и S3 подключаются отдельно. SDK, Kit, контракты и встроенные плагины
-собираются из исходников монорепозитория; предварительная публикация в npm не нужна.
+<!-- languages -->
+
+[English](README.md) · [Русский](README.ru.md)
+
+<!-- /languages -->
+
+Production uses matching Core and UI images from one commit. Connect PostgreSQL 17+ and S3 separately. SDK, Kit, Contracts, and bundled plugins build from monorepo source without prior npm publication.
 
 ## Docker Compose
 
-Соберите оба образа из одного checkout с одинаковым идентификатором сборки:
+Build both targets from one checkout with the same build identifier:
 
 ```sh
 docker build --target core --build-arg DEPLOYMENT_VERSION=local -t collaborative-core:local .
 docker build --target ui --build-arg DEPLOYMENT_VERSION=local -t collaborative-ui:local .
 ```
 
-Скопируйте `deploy/env.example` в приватный файл вне репозитория. Задайте
-`DATABASE_URL`, случайный `ASMBLYR_SETUP_TOKEN` (32+ символа), публичный origin в
-`AUTH_UI_URL` и `SECRETS_LOCAL_KEY` согласно [настройкам интеграций](../docs/features/integrations.md).
-S3 можно подключить через системные настройки или env. Бакет должен существовать.
+Copy deploy/env.example to a private file outside the repository. Set DATABASE_URL, a random ASMBLYR_SETUP_TOKEN of at least 32 characters, the public AUTH_UI_URL origin, and SECRETS_LOCAL_KEY as described in [connections](../docs/features/connections.md). Configure S3 through admin settings or env; the bucket must already exist.
 
 ```sh
 export ASMBLYR_CORE_IMAGE=collaborative-core:local
@@ -25,29 +26,17 @@ export ASMBLYR_ENV_FILE=/private/collaborative.env
 docker compose -f deploy/compose.yaml up -d --wait
 ```
 
-Compose запускает миграции отдельным коротким запуском Core, затем Core и UI.
-Публичный адрес по умолчанию `http://localhost:3000`; API доступен на `/api`.
-`UI_PORT` и `BIND_ADDRESS` меняют публикацию порта. Внешний HTTPS reverse proxy
-направьте на этот порт. `AUTH_UI_URL` должен совпадать с адресом в браузере.
-Первого администратора создайте на `/setup`.
+Compose runs migrations in a short-lived Core process, then starts Core/UI. The default public address is `http://localhost:3000`, with /api. UI_PORT/BIND_ADDRESS control port publication. Point an external HTTPS reverse proxy to that port. AUTH_UI_URL must match the browser origin. Create the first administrator at /setup.
 
-В Compose публичный listener Core обрабатывает API и передаёт страницы в UI.
-Next не проксирует API. UI получает только внутренний `CORE_URL` и общий
-`SESSION_COOKIE_PREFIX`, без секретов PostgreSQL, S3 и провайдеров.
-Если меняете префикс cookies, задайте `SESSION_COOKIE_PREFIX` в окружении Compose.
-Для production закрепляйте **оба** образа одной версии по digest.
+Core's public listener handles API and forwards pages to UI; Next does not proxy API. UI receives only internal CORE_URL and shared SESSION_COOKIE_PREFIX, without database, S3, or provider secrets. Set SESSION_COOKIE_PREFIX in Compose's environment if changing it. Pin both production images to the same release and their respective digests.
 
-## Kubernetes и Helm
+## Kubernetes and Helm
 
-Чарт находится в [`deploy/helm/collaborative`](helm/collaborative).
-Он создаёт два Deployment, два ClusterIP Service, опциональный Ingress и Job миграций.
-Все ресурсы относятся к namespace релиза; чарт не создаёт БД, bucket, CRD,
-кластерные роли, ingress-контроллер или cert-manager.
+The [chart](helm/collaborative) creates two Deployments, two ClusterIP Services, optional Ingress, and a migration Job, all scoped to the release namespace. It creates no database, bucket, CRDs, cluster roles, ingress controller, or cert-manager.
 
-До установки подготовьте namespace и Secret `collaborative-core` с параметрами Core
-из `deploy/env.example`. Secret и внешняя БД должны существовать **до** Helm:
-миграции выполняются hook Job перед созданием остальных ресурсов.
-В приватном values-файле укажите, например:
+Prepare the namespace and a collaborative-core Secret with Core parameters from deploy/env.example. The Secret and external database must exist before Helm: migrations run as a pre-install/upgrade hook.
+
+Example private values:
 
 ```yaml
 publicUrl: https://admin.example.com
@@ -75,33 +64,22 @@ helm upgrade --install collaborative deploy/helm/collaborative \
   --wait --timeout 10m
 ```
 
-TLS Secret также принадлежит namespace релиза. `ingress.annotations` позволяет
-передать настройки своего контроллера: таймаут для потоков ассистента должен
-покрывать `OPENAI_API_TIMEOUT_MS`, буферизацию потоков следует отключить,
-лимит тела запроса согласовать с лимитом файлов Core. Чарт использует стандартные
-Prefix-маршруты, не требует regex, rewrite-target или snippets.
-При внешнем Gateway задайте `ingress.enabled: false` и повторите маршруты:
+TLS Secrets also belong to the release namespace. Use ingress.annotations for controller-specific settings: assistant stream timeouts must cover OPENAI_API_TIMEOUT_MS, response buffering should be disabled, and body limits must match Core uploads. The chart uses ordinary Prefix paths without regex, rewrite-target, or snippets.
 
-| Путь                                                | Компонент       |
-| --------------------------------------------------- | --------------- |
-| `/api`, `/sign/sso`, `/connections/google/callback` | Core, порт 3001 |
-| `/oauth/interaction`                                | UI, порт 3000   |
-| `/oauth` (включая `/oauth/complete/:uid`)           | Core, порт 3001 |
-| `/`                                                 | UI, порт 3000   |
+For an external Gateway, disable ingress and reproduce these routes:
 
-Самый длинный Prefix имеет приоритет. Cookie взаимодействия OAuth ограничена
-`/oauth`; страница согласия и серверное завершение находятся в разных ветках.
-Внутренний запрос UI к Core при рендеринге содержит сессию пользователя.
-Публичные callbacks и HTTPS origin остаются на том же домене.
+| Prefix                                        | Target    |
+| --------------------------------------------- | --------- |
+| /api, /sign/sso, /connections/google/callback | Core:3001 |
+| /oauth/interaction                            | UI:3000   |
+| /oauth, including /oauth/complete/:uid        | Core:3001 |
+| /                                             | UI:3000   |
 
-`coreEnv` задаёт несекретные настройки Core. `TRUST_PROXY` — список адресов/CIDR
-доверенного ingress через запятую; по умолчанию forwarded IP не доверяются.
-Указывайте фактические адреса прокси и ограничивайте сетевой доступ к Core:
-доверие всей сети без NetworkPolicy позволяет подделать адрес клиента.
-Для приватных образов используйте `image.pullSecrets`.
+Longest Prefix wins. OAuth interaction cookies are scoped to /oauth; consent and server completion use separate branches. UI server rendering forwards the user session to Core. Public callbacks and HTTPS origin remain on one domain.
 
-Для ключей OAuth-сервера и других файлов Core используйте отдельные заранее
-созданные Secrets. Каждый ключ Secret станет файлом в `/run/secrets/<name>`:
+CoreEnv holds nonsecret Core configuration. TRUST_PROXY is a comma-separated allowlist of trusted ingress addresses/CIDRs; forwarded IPs are untrusted by default. Use actual proxy addresses and restrict Core network access: trusting an entire network without NetworkPolicy enables client-IP spoofing. Private images use image.pullSecrets.
+
+Mount OAuth signing keys and other Core files from precreated Secrets. Each key becomes a file under /run/secrets/&lt;name&gt;:
 
 ```yaml
 coreSecretFiles:
@@ -112,78 +90,47 @@ coreEnv:
   OAUTH_KEYS_FILE: /run/secrets/oauth/keys.json
 ```
 
-В этом примере Secret `collaborative-oauth` содержит ключ `keys.json`.
-Создание файла описано в [руководстве эксплуатации](../docs/development/operations.md).
-Файлы подключаются только к Core и Job миграций, только для чтения. UI их не получает.
-После изменения ключей или env выполните rollout Core; каждый экземпляр должен
-использовать одинаковые настройки. В Docker Compose аналогичные файлы подключаются
-через приватный override с `volumes` для Core и при необходимости миграций.
+Here collaborative-oauth contains keys.json. See [operations](../docs/development/operations.md) for key creation. Files mount read-only into Core/migrations, never UI. Roll out Core after env/key changes; replicas need identical settings. Compose can mount equivalent files with a private volumes override for Core/migrations.
 
-Проверки Core: `/health` для жизни процесса, `/ready` для БД и миграций.
-UI проверяется через `/healthz`, независимо от БД. Контейнеры работают без root,
-без service-account token и с read-only root filesystem; временные файлы и
-кэш UI хранятся в ограниченных `emptyDir`. Ресурсы настраиваются отдельно.
+Core probes: /health for process liveness and /ready for database/migrations. UI /healthz is database-independent. Containers run nonroot, without service-account tokens, and with read-only root filesystems. Bounded emptyDir volumes hold temporary files/UI cache. Configure component resources independently.
 
-## Реплики и обновления
+## Replicas and upgrades
 
-Core и UI по умолчанию имеют по одной реплике. Сессии, ограничения входа,
-суточные/минутные лимиты ассистента, leases, запросы отмены и подготовленные формы
-плагинов хранятся в PostgreSQL и доступны всем репликам. Проверка удалённой отмены
-выполняется активным Core каждые 500 мс. Формы ограничены владельцем и живут 20 минут.
-Процессные ограничения остаются дополнительной защитой ресурсов каждого Core.
-Пользовательские плагины сами отвечают за внешние эффекты и общее состояние.
+Core/UI default to one replica each. PostgreSQL shares sessions, credential limits, assistant daily/minute quotas, leases, cancellation requests, and prepared plugin forms across replicas. Active Core checks remote cancellation every 500 ms. Forms are owner-bound and expire after twenty minutes. Process-local limits additionally protect each Core. Custom plugins own their external effects and shared state.
 
-Действующий поток ответа принадлежит одному соединению. При остановке Core он
-прерывается; автоматического бесшовного продолжения генерации на другой реплике нет.
-История сохраняется, незавершённый запрос можно повторить. Sticky sessions не требуются.
+An active response belongs to one connection. Stopping Core interrupts it; generation does not resume seamlessly on another replica. History remains and interrupted requests can be retried. Sticky sessions are unnecessary.
 
-Оба образа собираются с одним `DEPLOYMENT_VERSION` (в CI — commit SHA). Next использует
-его для обнаружения несовпадения версии клиента и сервера; это не маршрутизация по
-версиям и не гарантия доступности старых JS-файлов во время обновления. Для строгого
-нулевого простоя интерфейса нужны сохранение старых ресурсов или переключение всего
-релиза после готовности. Не смешивайте произвольные версии Core/UI.
+Both images share DEPLOYMENT_VERSION (commit SHA in CI). Next uses it to detect client/server mismatch, not for version-based routing or preserving old JavaScript during rollout. Strict zero-downtime UI upgrades need retained old assets or whole-release switching after readiness. Do not mix arbitrary Core/UI versions.
 
-Перед обновлением делайте копию БД. Миграции должны быть совместимы со старым Core,
-который может продолжать обслуживать запросы во время rollout. Helm ждёт Job миграций;
-ошибка останавливает установку/обновление. **Helm rollback не откатывает PostgreSQL**.
-Удаление релиза не удаляет внешнюю БД, S3 и заранее созданные Secrets.
+Back up PostgreSQL before upgrading. Migrations must remain compatible with old Core replicas still serving during rollout. Helm waits for migrations and stops on failure. Helm rollback does not roll back PostgreSQL. Uninstalling the release preserves external database, S3, and precreated Secrets.
 
-## CI и реестр
+## CI and registry
 
-GitHub Actions проверяет код, собирает два образа, проверяет их с одноразовой
-PostgreSQL и валидирует Helm-чарт. После успешных проверок основной ветки или
-релизного Git-тега workflow публикует:
+GitHub Actions checks code, builds two images, tests them against disposable PostgreSQL, and validates Helm. Successful main/release-tag workflows publish:
 
-- `ghcr.io/asmblyr/collaborative-core`;
-- `ghcr.io/asmblyr/collaborative-ui`;
-- OCI-чарт `oci://ghcr.io/asmblyr/charts/collaborative`.
+- ghcr.io/asmblyr/collaborative-core
+- ghcr.io/asmblyr/collaborative-ui
+- oci://ghcr.io/asmblyr/charts/collaborative
 
-Образы получают теги `sha-<commit>`, `edge` для main и версию для Git-тега `v*`.
-Чарт main получает `0.1.0-edge.<run-number>`; релизный чарт — версию Git-тега.
-Версии и digest опубликованных артефактов указаны в
-[GitHub Releases](https://github.com/Asmblyr/Collaborative/releases).
-Для неопубликованных изменений собирайте образы локально и ставьте чарт из
-репозитория. CI не разворачивает приложение на сервере.
+Images use sha-&lt;commit&gt;, edge for main, and versions for v\* tags. Main charts use 0.1.0-edge.&lt;run-number&gt;; release charts use the Git-tag version. [GitHub Releases](https://github.com/Asmblyr/Collaborative/releases) lists artifact versions/digests.
+
+Build unpublished changes locally and install the repository chart. CI does not deploy servers.
 
 ```sh
 node scripts/test.mjs container-split collaborative-core:local collaborative-ui:local
 node scripts/chart-check.mjs
 ```
 
-Проверка контейнеров создаёт одноразовые PostgreSQL и Docker-сеть и удаляет их.
+Container checks create/remove disposable PostgreSQL and a Docker network.
 
-## Совместимость и локальный стенд
+## Compatibility and local development stack
 
-Существующий монолитный target `app` и `deploy/compose.monolith.yaml` сохранены
-для перехода существующих установок. Новый CI публикует раздельные образы.
-`deploy/local/compose.yaml` содержит дополнительный стенд разработки с PostgreSQL
-и MinIO. Это отдельные внешние для приложения сервисы. MinIO имеет лицензию AGPL.
-Скопируйте `deploy/local/env.example` в приватный файл, задайте секреты и выполните:
+The legacy app monolith target and deploy/compose.monolith.yaml remain for existing installations. Current CI publishes split images. Deploy/local/compose.yaml supplies a development stack with external PostgreSQL/MinIO services. MinIO uses AGPL.
+
+Copy deploy/local/env.example to a private file, set secrets, then run:
 
 ```sh
 docker compose --env-file /private/local.env -p asmblyr-local -f deploy/local/compose.yaml up -d --build --wait
 ```
 
-Адрес по умолчанию `http://localhost:3300`. Для остановки без удаления данных
-используйте `down` без `-v`. Эксплуатационные сценарии и копирование описаны в
-[руководстве эксплуатации](../docs/development/operations.md).
+Default address: `http://localhost:3300`. Stop with down without -v to retain data. See [operations](../docs/development/operations.md) for backups/recovery.

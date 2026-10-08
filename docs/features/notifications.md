@@ -1,60 +1,45 @@
-# Обсуждения и уведомления
+<a id="обсуждения-и-уведомления"></a>
 
-Уведомления открываются колокольчиком в шапке админки. Ассистент остаётся отдельным
-виджетом; отключение AI не отключает обсуждения или уведомления.
+# Discussions and notifications
 
-## Подписка на запись
+The notification bell is separate from the assistant. Disabling AI does not disable notifications.
 
-Во вкладке «Обсуждение» плагина комментариев нажмите **Следить**. Первый отправленный
-комментарий также включает подписку. Кнопка **Вы следите** отключает её; последующие
-собственные комментарии не включают явно отключённую подписку заново.
+<a id="подписка-на-запись"></a>
 
-Новый комментарий другого участника создаёт уведомление подписчикам с текущим
-правом чтения записи. Собственные комментарии уведомлений не создают. Редактирование
-обновляет выдержку существующего уведомления; удаление комментария удаляет его
-уведомления. Email, push и уведомления о простом изменении полей не реализованы.
+## Following a discussion
 
-## Входящие
+Use Follow in a record's Discussion tab. Posting your first comment automatically follows that discussion. Explicitly unfollowing it prevents later comments of your own from enabling following again.
 
-Колокольчик показывает автора, короткий текст, коллекцию, ключ записи и время.
-Нажатие открывает обсуждение и выделяет адресованный комментарий, включая старые
-комментарии вне первой страницы. Уведомление отмечается прочитанным при переходе.
-Если комментарий уже недоступен, обсуждение остаётся открытым с пояснением.
+A new comment notifies other followers who can currently read the record. Your own comments do not notify you. Editing a comment updates its notification excerpt; deleting it removes associated notifications. Email, push, and notifications for ordinary field changes are not implemented.
 
-Открытие списка само по себе не отмечает уведомления прочитанными. **Прочитать все**
-отмечает собственные уведомления до времени снимка списка; новые события после него
-остаются непрочитанными. Статус сохраняется в PostgreSQL и общий для устройств.
-Обновление — каждые 30 секунд в видимой вкладке, при возвращении в окно и открытии
-колокольчика. Переход использует защиту несохранённых изменений редактора.
+<a id="входящие"></a>
 
-Core хранит последние 200 уведомлений каждого пользователя, по умолчанию возвращает
-50 с возможностью показать остальные. Счётчик относится к доступным уведомлениям
-в этом окне хранения. Содержимое и счётчик повторно проверяют права на запись,
-включая правила строк. Выключенный плагин скрывает свои события, сохраняя данные.
-Удаление записи очищает подписки и уведомления; удаление коллекции очищает их по
-стабильному ID коллекции. Повторное создание таблицы с тем же именем их не наследует.
+## Inbox behavior
 
-## API и Kit
+The bell shows the author, excerpt, collection, record, and time. Clicking a notification opens the record, finds the comment even on an older page, highlights it, and marks the notification as read. If the comment no longer exists, the UI explains this.
 
-- `GET /notifications?limit=50`: `{ data, unread, total, readBefore }`.
-- `POST /notifications/:id/read`: 204; чужой или недоступный ID — 404.
-- `POST /notifications/read-all`: `{ before: readBefore }`, ответ 204.
+Opening the list alone does not mark notifications as read. Mark all as read uses the list's snapshot time; newer arrivals remain unread. Read state is stored in PostgreSQL and shared across devices.
 
-Все три endpoint требуют активной человеческой сессии. Сервисный аккаунт может
-написать комментарий с обычными правами на запись, но не читать личные входящие
-и не управлять человеческими подписками.
+The UI refreshes every 30 seconds while visible, on window focus, and when opening the bell. Navigation respects the unsaved-changes guard.
 
-SDK: `client.notifications.list()`, `.read(id)`, `.readAll(result.readBefore)`.
-В UI те же пути доступны напрямую в Core под `/api` с браузерной HttpOnly-сессией.
+The inbox retains the latest 200 notifications per user and initially displays 50, with Load more. The unread count includes accessible notifications within this window. Row permissions are checked again when reading. Disabling the plugin hides its notifications but keeps the data. Deleting a record removes its subscriptions and notifications. Collections are tracked by stable ID, so a new collection with the same name does not inherit them.
 
-Плагин объявляет и получает одобрение возможности `notifications`. Только обычный
-HTTP-контекст `useAsmblyr(event)` получает `notifications.following`, `follow`,
-`publish`, `update` и `remove`. Core связывает источник с namespace пакета,
-автора — с текущей идентичностью, получателей — с подписками и правами записи.
-Model handlers не получают этот привилегированный контекст. Публикация выполняется
-внутри `withRecord`, в одной транзакции с комментарием; внешних сообщений нет.
+<a id="api-и-sdk"></a>
 
-Plugin UI получает необязательные `active` и `targetId` в `RecordPanelProps`.
-Ссылка записи `?panel=plugin:namespace:panel-id&target=entity-id` выбирает только
-существующую панель. Плагин сам проверяет доступ и показывает адресованную сущность.
-Хост не содержит специальных условий для комментариев.
+## API and SDK
+
+- `GET /notifications?limit=50` returns `{ data, unread, total, readBefore }`.
+- `POST /notifications/:id/read` returns 204; another user's or unavailable notification returns 404.
+- `POST /notifications/read-all` with `{ before: readBefore }` returns 204.
+
+An active human account is required. Service accounts may comment with the usual grants but have no human inbox or subscriptions. The SDK exposes list, read, and readAll operations. The admin calls Core through `/api` using an HttpOnly session.
+
+<a id="контракт-плагина"></a>
+
+## Plugin contract
+
+The `notifications` capability requires administrator approval. In a normal HTTP handler, `useAsmblyr` provides following, follow, publish, update, and remove operations. Core derives the plugin namespace and author from the caller and selects recipients through its permission checks. Model handlers do not receive privileged notification operations.
+
+Publish inside `withRecord` to use the same transaction as the comment. This capability does not send external messages.
+
+`RecordPanelProps` supports optional `active` and `targetId`. Links use `?panel=plugin:namespace:panel-id&target=entity-id`; the host accepts only a registered panel. The plugin checks access and renders the target. The host remains independent of comment-specific behavior.

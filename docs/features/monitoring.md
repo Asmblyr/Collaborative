@@ -1,133 +1,79 @@
-# Мониторинг и Sentry
+<a id="мониторинг-и-sentry"></a>
 
-Мониторинг опционален и по умолчанию выключен. Раздел `/admin/settings/monitoring`
-доступен только суперпользователю. Настройки открываются в правом редакторе и
-сохраняются через существующий механизм [подключений и шифрования](./connections.md).
-Новая установка и существующая база работают без Sentry, DSN и дополнительных миграций.
+# Monitoring and Sentry
 
-## Подключение
+Monitoring is optional and disabled by default. Only superusers access `/admin/settings/monitoring`. A right-side editor saves settings through the existing [connections and encryption](./connections.md) mechanism. New and existing installations work without Sentry, DSNs, or extra migrations.
 
-В редакторе есть две вкладки: **«Сервер»** для Core/API и **«Интерфейс»** для
-браузера. В каждой укажите свой DSN и выберите, что собирать. Можно использовать
-один проект Sentry, указав одинаковый DSN в обеих вкладках, или отдельные проекты.
-Для серверного проекта выбирайте платформу Node.js, для браузерного — Browser
-JavaScript. Тег `component` различает `core` и `browser`.
+<a id="подключение"></a>
 
-Включение мониторинга, окружение, релиз и доля трассировок общие для обеих вкладок.
-Чтобы подключить только одну сторону, отключите сбор для другой. По умолчанию
-выбраны ошибки обеих сторон; производительность и SQL-операции выключены. При
-отсутствии нужного DSN редактор откроет вкладку, которую нужно заполнить.
+## Connection
 
-| Переключатель                 | Что собирается                                                                                  |
-| ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| Ошибки сервера                | Неожиданные ошибки обработчиков API с кодом 5xx                                                 |
-| Ошибки интерфейса             | JavaScript errors и unhandled Promise rejections в авторизованной админке                       |
-| Производительность API        | Длительность запроса до окончания ответа; локальные p50/p95/p99 и выбранные Sentry transactions |
-| Производительность интерфейса | Navigation Timing текущей загрузки и новые same-origin fetch/XHR к основным API админки         |
-| Время SQL-операций            | DB spans внутри выбранных API-трассировок; только тип операции и длительность                   |
+The editor separates Server (Core/API) and Interface (browser) tabs. Enter a DSN and select collection options for each. Use one Sentry project with the same DSN in both tabs, or separate projects. Choose Node.js for the server and Browser JavaScript for the browser. The `component` tag distinguishes `core` and `browser`.
 
-«Доля трассировок» задаётся от 0 до 100%. Она управляет отправкой производительности
-в Sentry, а не выборкой ошибок. Локальные процентили используют все измеренные
-запросы, в том числе при 0% трассировок. При выключенном сборе SDK не создаётся;
-браузер не загружает его пакет и не устанавливает обработчики.
+Enablement, environment, release, and trace sample rate are shared. To monitor one side only, disable collection for the other. Both error switches default on; performance and SQL spans default off. If a required DSN is missing, the editor opens its tab.
 
-Кнопка проверки проверяет формат DSN и доступность сохранённых ключей, без тестового
-события. Она не подтверждает доставку в Sentry. Для проверки доставки включите
-нужный сбор и проверьте появление событий в своём проекте Sentry.
+| Switch                | Collected data                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| Server errors         | Unexpected API handler errors with 5xx status                                                   |
+| Interface errors      | JavaScript errors and unhandled Promise rejections in the authenticated admin                   |
+| API performance       | Request duration through response completion; local p50/p95/p99 and sampled Sentry transactions |
+| Interface performance | Current-load Navigation Timing and new same-origin fetch/XHR to selected admin APIs             |
+| SQL duration          | Database spans in sampled API traces, with operation type and duration only                     |
 
-## p95/p99 и пределы измерений
+Trace sampling ranges from 0–100% and controls performance submission, not errors. Local percentiles use all measured requests, even at 0% sampling. Disabled collection does not instantiate the SDK; browsers do not load its package or install handlers.
 
-Локальная таблица показывает **текущий экземпляр Core**, последние 15 минут и до
-2 000 наблюдений на маршрут. При превышении лимита остаются последние наблюдения,
-и появляется отметка ограничения. Поддерживается до 128 маршрутов; превышение
-также отмечается. Это ограниченная диагностика в памяти, без накопления в БД;
-перезапуск или выключение сбора очищает её. При балансировке экземпляров ответы
-могут поступать от разных процессов. Общие показатели смотрите в Sentry.
+Test checks DSN format and saved-key availability without sending an event. It does not prove delivery to Sentry. Enable the relevant collection and verify received events in your Sentry project.
 
-p95 означает, что 95% измеренных запросов заняли не больше указанного времени;
-p99 — 99%. Используется nearest-rank percentile. Админка показывает p95 от 20
-наблюдений, p99 от 100. Это порог отображения, а не гарантия статистической
-устойчивости. В Sentry процентили считаются по отправленным трассировкам и выбранному
-периоду; малая выборка может плохо отражать редкие задержки.
+<a id="p95-p99-и-пределы-измерении"></a>
 
-Длительность Core не включает внешнюю сеть и браузер; для streaming она включает
-передачу всего ответа. Browser Timing измеряется отдельно. Не объединяйте эти
-две серии в один показатель. SQL spans не включают ожидание соединения в пуле;
-очередь пула показана отдельным текущим счётчиком. RSS/heap отражают текущую память
-процесса. p99 event loop берётся с момента включения сбора, с разрешением 20 мс.
+## p95/p99 and measurement limits
 
-## Данные и жизненный цикл
+The local table covers the **current Core instance**, the last 15 minutes, and up to 2,000 observations per route. Over the cap, it retains the latest observations and marks the limit. Up to 128 routes are supported, also with a limit indicator. This is bounded in-memory diagnostics, without database accumulation. Restarting or disabling collection clears it. Load-balanced requests may reach different processes; use Sentry for aggregate observations.
 
-События проходят общий allowlist. Отправляются тип/место ошибки, очищенный стек
-(basename файла, строка, функция), шаблон маршрута, длительности и технические
-параметры окружения/релиза. Текст ошибки заменяется общей фразой. Значения URL,
-query, заголовки, cookies, тела запросов/ответов, записи, сообщения ассистента,
-SQL, bindings, пользователи и breadcrumbs исключены. Имя коллекции и ID в
-шаблоне маршрута заменяются параметрами. Логи, Replay и CPU profiling не включены.
+p95 means 95% of measured requests took no longer than the displayed duration; p99 means 99%. Calculation uses nearest rank. The admin shows p95 from 20 observations and p99 from 100. These are display thresholds, not guarantees of statistical stability. Sentry computes percentiles over submitted traces and the selected period; small samples may misrepresent rare delays.
 
-Sentry получает сетевое соединение от Core или браузера и может обрабатывать
-сетевые метаданные по своим настройкам. Оператор установки выбирает Sentry
-и его правила обработки данных. DSN интерфейса содержит публичный ключ приёма
-событий: при включённом браузерном мониторинге его видят авторизованные
-пользователи. Отдельный серверный DSN браузеру не выдаётся. DSN не является
-административным токеном Sentry; указывать такой токен нельзя.
+Core duration excludes external network and browser time; streaming includes the full response transfer. Browser Timing is separate: do not combine these series. SQL spans exclude connection-pool wait, shown as a separate current queue counter. RSS/heap show current process memory. Event-loop p99 covers the period since enabling collection, at 20 ms resolution.
 
-Сохранённые DSN шифруются как остальные ключи подключения. API настроек возвращает
-только отдельные признаки их наличия. Изменения применяются сразу в экземпляре, обработавшем
-сохранение; остальные экземпляры перечитывают конфигурацию каждые 5 секунд, браузер
-— каждые 30 секунд и при локальном сохранении. Неактивные вкладки приостанавливают
-проверку и возобновляют её при показе. При ошибке конфигурации мониторинг выключается,
-а основные функции продолжают работать. Отключение без смены DSN доступно даже при
-недоступном KMS; сохранённые ключи при этом остаются в БД.
+<a id="данные-и-жизненныи-цикл"></a>
 
-Сбор Core исключает health/ready, auth, OAuth, личные подключения, конфигурацию
-мониторинга и неизвестные маршруты. Браузерные resource timings ограничены API
-items, collections, files, preferences, presence, notifications и assistant.
-Автоматического сбора Next.js SSR errors и React component boundaries нет.
-Ошибки фона вне HTTP-запроса также не перехватываются этим подключением.
+## Data and lifecycle
 
-## Конфигурация через env
+A shared allowlist retains error type/location, sanitized stack (file basename, line, function), route template, durations, and technical environment/release settings. Error text is replaced with a generic message. URL values, queries, headers, cookies, request/response bodies, records, assistant messages, SQL, bindings, users, and breadcrumbs are excluded. Collection names and IDs become route parameters. Logs, Replay, and CPU profiling are not enabled.
 
-Любое непустое значение из списка `SENTRY_*` ниже блокирует группу в админке.
-Параметры становятся read-only; изменить их можно в конфигурации сервера.
-`SENTRY_ENABLED=false` явно выключает и блокирует группу.
+Sentry receives network connections from Core or browsers and may process network metadata under its settings. Operators choose Sentry and its data-processing configuration. The browser DSN contains a public event-ingestion key visible to authenticated users when browser monitoring is enabled. A separate server DSN is never sent to browsers. A DSN is not a Sentry administration token; never supply one as a DSN.
 
-| Переменная                   | По умолчанию / значение                                   |
-| ---------------------------- | --------------------------------------------------------- |
-| `SENTRY_ENABLED`             | `true`, если задан DSN; иначе `false`                     |
-| `SENTRY_DSN`                 | Серверный DSN; HTTPS, публичный ключ, числовой ID проекта |
-| `SENTRY_BROWSER_DSN`         | DSN интерфейса; при отсутствии используется `SENTRY_DSN`  |
-| `SENTRY_ENVIRONMENT`         | `production`, до 64 символов, без пробелов/слешей/`None`  |
-| `SENTRY_RELEASE`             | Пустая строка; до 120 символов                            |
-| `SENTRY_ERRORS_CORE`         | `true` при наличии серверного DSN                         |
-| `SENTRY_ERRORS_BROWSER`      | `true` при наличии DSN интерфейса                         |
-| `SENTRY_PERFORMANCE_CORE`    | `false`                                                   |
-| `SENTRY_PERFORMANCE_BROWSER` | `false`                                                   |
-| `SENTRY_DATABASE_SPANS`      | `false`; работает вместе с performance Core               |
-| `SENTRY_TRACES_SAMPLE_RATE`  | `0.1`; число от 0 до 1                                    |
+Saved DSNs use the same encryption as other connection secrets; settings responses expose only separate presence flags. Changes apply immediately on the saving instance. Other instances reload every five seconds; browsers every 30 seconds and after local saves. Hidden tabs pause polling and resume when visible.
 
-Boolean-параметры принимают только `true`/`false`. HTTP DSN допускается только для
-loopback при локальной проверке. Не используйте DSN с паролем, query или fragment.
-Неверная опциональная конфигурация отключает мониторинг и показывает его недоступность.
+Invalid configuration disables monitoring while core product functions continue. Monitoring can be disabled without changing DSNs even when KMS is unavailable; saved keys remain in the database.
 
-Для совместимости с общей конфигурацией `SENTRY_DSN` используется также для
-браузера, если `SENTRY_BROWSER_DSN` не задана. Для сбора только на сервере явно
-отключите `SENTRY_ERRORS_BROWSER` и `SENTRY_PERFORMANCE_BROWSER`. Если задана только
-`SENTRY_BROWSER_DSN`, сбор серверных ошибок по умолчанию выключен.
+Core excludes health/ready, auth, OAuth, personal connections, monitoring configuration, and unknown routes. Browser resource timings cover items, collections, files, preferences, presence, notifications, and assistant APIs. This connection does not automatically collect Next.js SSR errors, React error boundaries, or background errors outside HTTP requests.
 
-API принимает `secrets.serverDsn` и `secrets.browserDsn`. Ранее сохранённый общий
-DSN остаётся резервным значением для каждой стороны до редактирования ключей.
-При замене или удалении одного ключа значение другой стороны сохраняется отдельно,
-а общий слот удаляется в той же транзакции. `null` удаляет ключ выбранной стороны;
-если её сбор включён, сохранение отклоняется. При выключенном мониторинге можно
-удалить оба ключа. Совместимый ключ `secrets.dsn` допускается только отдельно от
-других ключей: он задаёт общий DSN и очищает отдельные, а `null` удаляет все DSN.
-Без изменения ключей шифротекст сохраняется, включая возможность выключить
-мониторинг при недоступном KMS. Миграция базы для этого не нужна.
+<a id="конфигурация-через-env"></a>
 
-`GET /monitoring/browser` требует активную человеческую сессию и возвращает только
-браузерную конфигурацию. `GET /settings/monitoring` требует human superuser и
-возвращает локальные показатели. Оба ответа имеют `private, no-store`.
-Сохранение — `PUT /settings/integrations/monitoring`, проверка —
-`POST /settings/integrations/monitoring/test`, с общей optimistic revision и правилами
-write-only secrets. Контракты приведены в [OpenAPI](../reference/http.md).
+## Environment configuration
+
+Any nonempty setting below locks the group in the admin. Edit locked values in server configuration. `SENTRY_ENABLED=false` explicitly disables and locks the group.
+
+| Variable                     | Default / value                                             |
+| ---------------------------- | ----------------------------------------------------------- |
+| `SENTRY_ENABLED`             | true when a DSN is set; otherwise false                     |
+| `SENTRY_DSN`                 | Server DSN: HTTPS, public key, numeric project ID           |
+| `SENTRY_BROWSER_DSN`         | Browser DSN; falls back to SENTRY_DSN                       |
+| `SENTRY_ENVIRONMENT`         | production; up to 64 characters, no whitespace/slashes/None |
+| `SENTRY_RELEASE`             | Empty; up to 120 characters                                 |
+| `SENTRY_ERRORS_CORE`         | true when server DSN exists                                 |
+| `SENTRY_ERRORS_BROWSER`      | true when browser DSN exists                                |
+| `SENTRY_PERFORMANCE_CORE`    | false                                                       |
+| `SENTRY_PERFORMANCE_BROWSER` | false                                                       |
+| `SENTRY_DATABASE_SPANS`      | false; requires Core performance                            |
+| `SENTRY_TRACES_SAMPLE_RATE`  | 0.1; number from 0 to 1                                     |
+
+Booleans accept only true/false. HTTP DSNs are allowed only for loopback during local testing. DSNs with passwords, queries, or fragments are invalid. Invalid optional configuration disables monitoring and shows it as unavailable.
+
+For backward compatibility, SENTRY_DSN also supplies the browser when SENTRY_BROWSER_DSN is absent. Server-only collection requires explicitly disabling SENTRY_ERRORS_BROWSER and SENTRY_PERFORMANCE_BROWSER. With only SENTRY_BROWSER_DSN configured, server errors default off.
+
+The API accepts `secrets.serverDsn` and `secrets.browserDsn`. A previously saved shared DSN remains each side's fallback until editing keys. Replacing/removing one side preserves the other separately and removes the shared slot in the same transaction. Null removes that side's key; saving is rejected if its collection remains enabled. Both keys can be removed while monitoring is disabled.
+
+The compatible `secrets.dsn` key can be supplied only without other keys. It sets a shared DSN and clears separate values; null removes all DSNs. Without key changes, ciphertext stays intact, including when disabling during a KMS outage. No database migration is needed.
+
+`GET /monitoring/browser` requires an active human and returns only browser configuration. `GET /settings/monitoring` requires a human superuser and returns local metrics. Both use private, no-store. Save through `PUT /settings/integrations/monitoring`; test through `POST /settings/integrations/monitoring/test`, with shared optimistic revision and write-only-secret rules. See [OpenAPI](../reference/http.md).

@@ -58,7 +58,12 @@ for (const [name, folders] of Object.entries(allowed)) {
   });
   for (const entry of entries.trim().split(/\r?\n/)) {
     const file = entry.replace(/^package\//, "");
-    const topLevel = ["package.json", "README.md", "LICENSE"].includes(file);
+    const topLevel = [
+      "package.json",
+      "README.md",
+      "README.ru.md",
+      "LICENSE",
+    ].includes(file);
     assert.ok(
       topLevel || folders.some((folder) => file.startsWith(folder)),
       `${name}: unexpected packed file ${file}`,

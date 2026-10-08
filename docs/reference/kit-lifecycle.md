@@ -1,11 +1,14 @@
 <!-- Generated from packages/kit/LIFECYCLE.md; edit the source. -->
 
-# Миграции, хранилище и UI плагина
+<a id="миграции-хранилище-и-ui-плагина"></a>
 
-## Миграции
+# Plugin migrations, storage, and UI
 
-Файлы `server/migrations/YYYYMMDDHHmmss_name.ts` экспортируют `defineMigration()`.
-Нужен export `"./migrations": "./dist/migrations.json"` в package.json.
+<a id="миграции"></a>
+
+## Migrations
+
+`server/migrations/YYYYMMDDHHmmss_name.ts` files export defineMigration. `package.json` needs "./migrations": "./dist/migrations.json".
 
 ```ts
 import { defineMigration } from "@asmblyr-collaborative/kit";
@@ -28,47 +31,27 @@ export default defineMigration({
 });
 ```
 
-Одновременно обновите актуальное описание в `server/collections`. Миграции содержат
-неизменяемые JSON-планы: контрольная сумма не зависит от компиляции TS в JS.
-Не импортируйте изменяемое актуальное описание в старую миграцию: её план должен
-оставаться прежним. Есть `addField` и обычный составной B-tree `addIndex`.
-SQL, `drop`, смены типов, переименований, backfill и автоматического down пока нет.
-NOT NULL без default на заполненной таблице завершится ошибкой PostgreSQL и откатом.
+Update the current server/collections declaration too. Migrations are immutable JSON plans; checksums do not depend on TS-to-JS compilation. Never import mutable current declarations into old migrations. Supported operations are addField and ordinary composite B-tree addIndex. SQL, drop, type changes, renames, backfills, and automatic down are unsupported. Adding NOT NULL without a default to populated data fails in PostgreSQL and rolls back.
 
-Core под общей блокировкой запускает новые планы по имени файла. Операции принимают
-только локальные имена собственных коллекций. Реестр `asmblyr_plugin_migrations`
-хранит имя, SHA-256 плана, время и признак baseline. Изменение/удаление выполненного
-плана и добавление плана раньше уже применённого запрещены. Ошибка операции или
-несовпадение итоговой декларации откатывает всю установку: DDL, метаданные и журнал.
+Core applies new plans by filename under a shared lock. Operations accept only local names of owned collections. Asmblyr_plugin_migrations records name, SHA-256 plan hash, timestamp, and baseline flag. Editing/removing applied plans or inserting a plan before an applied one is forbidden. Operation failures or final-declaration mismatch roll back the full installation: DDL, metadata, and journal.
 
-При новой установке таблица создаётся по актуальному описанию, addField проверяется,
-индексы создаются, планы отмечаются как baseline. Новая таблица в существующем
-плагине также получает текущую схему. Удаление деклараций пока не поддержано.
-Данные не удаляются при отключении. Down реестра запрещён при наличии истории.
-Прямые изменения схемы через SQL автоматически не согласуются с декларациями.
+New installations create current declarations, validate addField, create indexes, and baseline plans. New tables in existing plugins also use current schemas. Removing declarations is unsupported. Disabling never deletes data; registry down is blocked while history exists. Direct SQL changes do not synchronize automatically.
 
-## Собственное хранилище
+<a id="собственное-хранилище"></a>
 
-`storage` доступен внутри аутентифицированного обработчика пакета с namespace
-и разрешённой возможностью `storage.own`.
-Методы `list/get/create/update/delete` имеют формат `items`, но принимают локальное
-имя, например `storage.list("entries")`. Область доступа ограничена коллекциями
-этого пакета. Нет SQL, Knex, `commit`, смены actor или получения чужого namespace.
-Применяются валидация Core, история с реальным автором и транзакции записи.
+## Own storage
 
-Это **право доверенного серверного плагина на своё хранилище**. Обычный `items`
-по-прежнему использует права пользователя. Плагин обязан проверить предметные
-условия до `storage`: comments сначала читает обсуждаемую запись через `items.get`,
-потом обращается к своим комментариям. Grants на таблицу комментариев не нужны.
+Authenticated namespaced handlers with storage.own receive storage. List/get/create/update/delete follow items shapes but accept local names, such as storage.list("entries"). Access is restricted to that package. No SQL, Knex, commit, actor switching, or foreign namespace access. Core validation, actual-actor history, and write transactions apply.
 
-Прямой `/items/plugin_…` остаётся административным путём с обычными grants; выдача
-таких grants разрешает работу с таблицей в обход специализированного endpoint.
-Для comments выдавать их участникам не нужно. Код плагина доверенный и выполняется
-в процессе Core, без песочницы. Пользовательские таблицы через storage недоступны.
+This is privileged access by a trusted plugin to its own storage. Ordinary items keeps user permissions. Plugins must enforce domain rules first: Comments reads the target through items.get before accessing comments storage, so users need no grants on comment tables.
 
-## Типизированное хранилище
+Direct /items/plugin\_… remains an administrative path under ordinary grants. Granting it bypasses specialized endpoint rules and is unnecessary for discussion participants. Plugin code is trusted in Core, without a sandbox. Storage cannot access user collections.
 
-Для типизированного доступа к собственной коллекции используйте её декларацию:
+<a id="типизированное-хранилище"></a>
+
+## Typed storage
+
+Use the declaration for typed access:
 
 ```ts
 import { useStorage } from "@asmblyr-collaborative/kit";
@@ -76,109 +59,70 @@ import entries from "./server/collections/entries.js";
 
 const comments = useStorage(context, entries);
 const row = await comments.get(id);
-// row.body, row.author_id и остальные поля выведены из entries.
+// row.body, row.author_id, and other fields are inferred from entries.
 ```
 
-`get/create/update` возвращают саму строку, `list` — `{ data, labels, page }`.
-Имена и типы полей, обязательность при создании, nullable и ручной первичный ключ
-выводятся из `defineCollection`. Дефолты позволяют пропускать поле при создании.
-Генерируемые ключи и системные даты не принимаются в типизированной записи.
-Даты нормализуются в ISO-строки, decimal/bigint сохраняются строками. Несовпадение
-типов прочитанной строки с декларацией даёт ошибку вместо неявного преобразования.
-Проверки записи и область доступа остаются у Core. Этот API читает полные строки;
-для проекций используйте исходный `context.storage`. Не сохраняйте его между запросами.
+Get/create/update return the row itself; list returns { data, labels, page }. DefineCollection infers names/types, required create fields, nullability, and manual primary keys. Defaults allow omission on create. Generated keys/timestamps cannot be supplied to typed writes.
 
-## Вкладки редактора записи
+Dates normalize to ISO strings; decimal/bigint remain strings. Read values inconsistent with declarations throw instead of coercing. Core still owns validation/scope. This API reads full rows; use context.storage for projections. Never retain it across requests.
 
-`ui/index.ts` экспортирует `defineUiPlugin({ recordPanels: [...] })` из
-**`@asmblyr-collaborative/kit/ui`**. Package.json экспортирует его сборку как `./ui`.
-Корневой entry kit и `plugin.ts` в браузер не импортируются.
-У вкладки есть `id`, `title`, React `component` и необязательный `supports(record)`.
+<a id="вкладки-редактора-записи"></a>
 
-Host передаёт `RecordPanelProps`:
+## Record-editor tabs
 
-- `record`: техническое имя коллекции, сохранённый ID и отображаемое имя;
-- `request<T>(path, init)`: запрос через сессию UI в `/api/<namespace>/…`;
-- `onStateChange({ dirty, busy })`: защита текста и выполняющейся записи от закрытия.
+Ui/index.ts exports defineUiPlugin({ recordPanels: [...] }) from @asmblyr-collaborative/kit/ui, with its build exported as ./ui. Do not import root Kit/plugin.ts into browsers. Panels define id, title, React component, and optional supports(record).
 
-Компоненты shadcn импортируются напрямую из `@asmblyr-collaborative/kit/ui/<component>`.
-Админка и плагины используют одну реализацию из Kit, включая полные props и ref.
-Дополнительный provider или prop `components` не требуется.
-Подробнее: [общие компоненты UI](./kit-ui.md).
+RecordPanelProps includes:
 
-Вкладка монтируется при первом открытии и сохраняется при смене вкладок.
-Сбой рендера изолируется от формы записи. Новой несохранённой записи вкладки не
-предоставляются. Активные пакеты сверяются с аутентифицированным `/extensions`.
+- Record: technical collection name, saved ID, display name.
+- Request&lt;T&gt;(path, init): authenticated namespace request under /api/&lt;namespace&gt;/….
+- OnStateChange({ dirty, busy }): protects unsaved text and active writes from closing.
 
-Next при запуске/сборке создаёт статические импорты из exports включённых пакетов
-и источники Tailwind для их UI. Локальная разработка читает `ui/index.ts`, production
-и npm — собранный `./ui`. Изменение списка пакетов требует перезапуска dev-сервера;
-production требует пересборки UI. Изменения TSX используют обычный Fast Refresh.
-React — peer dependency. Для UI используйте `.ts`/`.tsx` в относительных импортах
-и `rewriteRelativeImportExtensions: true` в tsconfig: TypeScript заменяет их на
-`.js` при сборке. Добавьте `ui/**/*` и `shared/**/*` в include.
+Import shadcn directly from kit/ui/&lt;component&gt;. Admin/plugins share full props/refs, without extra providers or components props. See [shared UI](kit-ui.md).
 
-Первый полный пример — `packages/plugin-comments`. Серверные пакеты нельзя импортировать в UI.
+Panels mount on first open and persist across tab changes. Render failures are isolated from the record form. New unsaved records have no panels. Active packages are checked through authenticated /extensions.
 
-## Отдельные страницы
+Next generates static imports and Tailwind sources from enabled exports at startup/build. Development reads ui/index.ts; production/npm use built ./ui. Package-list changes require dev restart or production UI rebuild; TSX uses Fast Refresh. React is a peer dependency. Use .ts/.tsx relative imports with rewriteRelativeImportExtensions:true, and include ui/**/\* and shared/**/\*.
 
-Второй пример — `examples/plugins/overview`. Браузерный entry может экспортировать
-страницы, вкладки записи или оба вида расширений:
+Packages/plugin-comments is the complete example. Server packages must never enter UI imports.
+
+<a id="отдельные-страницы"></a>
+
+## Standalone pages
+
+Examples/plugins/overview demonstrates pages, which can coexist with record panels.
 
 ```ts
 import { defineUiPlugin } from "@asmblyr-collaborative/kit/ui";
 import { OverviewPage } from "./pages/overview-page.tsx";
 
 export default defineUiPlugin({
-  pages: [{ id: "home", title: "Обзор", component: OverviewPage }],
+  pages: [{ id: "home", title: "Overview", component: OverviewPage }],
 });
 ```
 
-Маршрут: `/extensions/<namespace>/<id>`. Host добавляет страницу в группу
-«Приложения» бокового меню, отображает её название в шапке и использует текущий
-layout. ID проверяются на допустимость в URL и уникальность внутри каждого вида
-расширений. Страница и вкладка одного пакета могут иметь одинаковый ID.
+Routes use /extensions/&lt;namespace&gt;/&lt;id&gt;. The host adds pages under Applications, shows their title, and uses the current layout. IDs must be URL-safe and unique within each extension kind; a page/panel may share an ID.
 
-`PluginPageProps` предоставляет `request: PluginRequest` — тот же ограниченный
-namespace HTTP-клиент, что у вкладок. `Button` и `Textarea` доступны из kit.
-Общая оболочка изолирует ошибки отрисовки от остального интерфейса.
-Список активных пакетов загружается для layout через аутентифицированный
-`/extensions` и используется страницами, меню и вкладками записи.
+PluginPageProps.request is the same namespace-limited HTTP client. Shared Button/Textarea come from Kit. The shell isolates render errors. Authenticated /extensions supplies enabled packages to layout, menu, pages, and panels.
 
-Пользователь должен войти и иметь доступ к админке по её существующим правилам.
-Отдельные разрешения на UI-страницы пока не реализованы; API каждого плагина обязан
-сам проверять предметные права. Отсутствующий или отключённый плагин не отображается.
-Включение пакета требует сборки/перезапуска UI и Core.
+Users must satisfy existing admin admission rules. Separate page permissions are unsupported; each plugin API enforces its domain rights. Missing/disabled plugins are hidden. Enabling requires rebuilding/restarting UI and Core.
 
-Пока поддержаны фиксированные страницы без вложенных и динамических маршрутов.
-Страница получает также `preparedAction` и `onStateChange`.
-`useAction(contract, props, { path, initialInput })` использует обычный `request`
-и связывает схему формы с серверным действием, подготовленным результатом
-и признаками dirty/busy для host. Обзор только читает собственный контекст пользователя.
-Редакторы полей описаны в [FIELDS.md](./kit-fields.md).
+Only fixed pages are supported, without nested/dynamic routes. Pages also receive preparedAction/onStateChange. UseAction(contract, props, { path, initialInput }) connects form schema, ordinary requests, prepared results, and dirty/busy host state. Overview reads only the current caller's context. See [field editors](kit-fields.md).
 
-## Действия и ассистент
+<a id="деиствия-и-ассистент"></a>
 
-Первый пример — `examples/plugins/calculator`. TypeScript-интерфейсы описывают поля и результат.
-H3 handler в `server/api/calculator/calculate.post.ts` обёрнут в
-`defineModelContext<CalculationInput>(defineHandler(...), annotate)`.
-`defineModelAnnotation` описывает назначение и `middleware: AccessGate.authenticated`.
-Сборщик и source loader создают `.asmblyr/models` для runtime-валидации и UI;
-для импорта JSON формой нужен `resolveJsonModule: true` в tsconfig.
-Сканер подключает HTTP-маршрут по файлу; Core публикует явно отмеченные действия
-во внутреннем MCP. `plugin.ts` остаётся `definePlugin({})`.
-HTTP и MCP вызывают один handler с одним ограниченным контекстом:
-`useActionContext(event)` предоставляет actor, superuser, signal и items.
-`useItems(event)` работает и в обычных endpoints: проверяет права действия и полей.
-Для MCP также проверяется доступность коллекций и связей в MCP. Привилегированного
-storage в model handler нет. `readOnly: true` запрещает все методы записи items.
-Форма использует `useAction<Input, Output>(generatedModel, props, options)`;
-схемы браузера и сервера получены из одних типов, серверный handler в UI не попадает.
-Подробности и текущие ограничения — [действия плагинов](../development/plugin-actions.md).
+## Actions and assistant
 
-## Возможности, hooks и настройки
+Examples/plugins/calculator declares input/output in TypeScript. Its static POST handler uses defineModelContext&lt;CalculationInput&gt;(defineHandler(...), annotate), with defineModelAnnotation and AccessGate.authenticated.
 
-Пакет объявляет capabilities в manifest; проект разрешает их через
-`asmblyr.pluginPermissions`. Правила и ограничения: [CAPABILITIES.md](./kit-capabilities.md).
-Транзакционные обработчики в `server/hooks` и настройки в `server/settings.ts`
-описаны в [HOOKS.md](./kit-hooks.md). Регистрация в `plugin.ts` не требуется.
+Builder/source loader produce .asmblyr/models for runtime validation/UI; enable resolveJsonModule for JSON imports. File discovery registers HTTP; Core exposes annotated handlers to internal MCP. `plugin.ts` stays definePlugin({}).
+
+HTTP/MCP share one restricted handler context. `useActionContext` exposes actor, superuser, signal, and items. UseItems works in ordinary endpoints too, checking actions/fields. MCP additionally checks publication of collections/relations. Model handlers receive no privileged storage. ReadOnly:true blocks all items writes.
+
+Forms use useAction&lt;Input, Output&gt;(generatedModel, props, options), deriving browser/server schemas from the same types without importing server handlers. See [action contracts](../development/plugin-actions.md).
+
+<a id="возможности-hooks-и-настроики"></a>
+
+## Capabilities, hooks, and settings
+
+Declare manifest capabilities and approve them in asmblyr.pluginPermissions. See [capabilities](kit-capabilities.md). Transactional server/hooks and server/settings.ts are covered in [hooks/settings](kit-hooks.md). No registration in plugin.ts is required.

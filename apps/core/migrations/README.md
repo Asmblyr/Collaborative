@@ -1,5 +1,11 @@
 # Core migrations
 
+<!-- languages -->
+
+[English](README.md) · [Русский](README.ru.md)
+
+<!-- /languages -->
+
 This directory contains versioned Knex `.cjs` migrations for Core-owned tables.
 Core uses the `public` PostgreSQL schema and reserves the `asmblyr_` table prefix,
 including the `asmblyr_migrations` bookkeeping table.

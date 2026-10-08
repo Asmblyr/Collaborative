@@ -1,6 +1,14 @@
-# Возможности плагина
+<a id="возможности-плагина"></a>
 
-Пакет перечисляет используемые возможности в `package.json`:
+# Plugin capabilities
+
+<!-- languages -->
+
+[English](CAPABILITIES.md) · [Русский](CAPABILITIES.ru.md)
+
+<!-- /languages -->
+
+Declare capabilities in the package's package.json:
 
 ```json
 {
@@ -22,7 +30,7 @@
 }
 ```
 
-Владелец проекта разрешает их по **имени npm-пакета** в корневом `package.json`:
+The project owner approves them by npm package name in the root package.json:
 
 ```json
 {
@@ -43,50 +51,31 @@
 }
 ```
 
-Core сверяет все включённые пакеты до импорта их серверных модулей.
-Неизвестные, повторяющиеся или неразрешённые возможности останавливают запуск.
-Отсутствующий список означает отсутствие дополнительных возможностей.
-Разрешение, которого нет в декларации самого пакета, не выдаётся.
-При обновлении пакета новые возможности требуют изменения конфигурации проекта;
-изменения деклараций и разрешений применяются после перезапуска Core.
+Core checks all enabled packages before importing server modules. Unknown, duplicate, or unapproved capabilities stop startup. A missing list grants no additional capabilities. Project approval cannot grant something absent from the package declaration. New capabilities after an upgrade require project configuration changes; restart Core to apply declarations/approvals.
 
-| Возможность          | Что разрешено                                                                                                                                                                          |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `identity.profile`   | `actor.displayName` текущего пользователя или сервиса. Email, токены и чужие профили не выдаются.                                                                                      |
-| `items.read`         | `items.list/get` в пределах прав вызывающего пользователя.                                                                                                                             |
-| `items.write`        | `items.create/update/delete` в пределах прав пользователя. Без `items.read` ответ записи содержит `data: null`. `commit` требует обе возможности.                                      |
-| `collections.manage` | Установка деклараций и выполнение миграций собственных коллекций. Нет произвольного SQL или изменения чужих таблиц.                                                                    |
-| `storage.own`        | Доступ к собственным коллекциям через `storage`. Предметные условия проверяет плагин.                                                                                                  |
-| `hooks.items`        | Обработчики `items.create/update/delete`.                                                                                                                                              |
-| `hooks.collections`  | Обработчик `collections.delete`.                                                                                                                                                       |
-| `settings`           | Декларация настроек и получение значений своего пакета.                                                                                                                                |
-| `notifications`      | Подписка текущего человека на запись; публикация, обновление и удаление inbox-событий своего namespace. Получателей и доступ проверяет Core. Model handlers этот контекст не получают. |
+| Capability         | Access                                                                                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| identity.profile   | Current human/service actor.displayName; no email, tokens, or other profiles                                                                             |
+| items.read         | Items.list/get within caller permissions                                                                                                                 |
+| items.write        | Create/update/delete within caller permissions; without items.read, writes return data:null; commit requires both                                        |
+| collections.manage | Install/migrate own declared collections; no arbitrary SQL or foreign tables                                                                             |
+| storage.own        | Own collections through storage; plugin enforces domain conditions                                                                                       |
+| hooks.items        | Items.create/update/delete hooks                                                                                                                         |
+| hooks.collections  | Collections.delete hooks                                                                                                                                 |
+| settings           | Declare/read own package settings                                                                                                                        |
+| notifications      | Current human's record subscriptions and own-namespace inbox publish/update/remove; Core selects recipients/checks access; unavailable in model handlers |
+| connections.google | Restricted personal Google broker for eligible model handlers; no credentials or automatic write confirmation                                            |
 
-Для обсуждений добавьте `notifications` одновременно в manifest комментариев и
-разрешения проекта. См. [обсуждения и уведомления](https://github.com/Asmblyr/Collaborative/blob/main/docs/features/notifications.md).
-`context.notifications.publish({ collection, item, eventId, panelId, targetId, preview })`
-вызывается внутри `context.withRecord`, рядом с записью события в storage, и должна
-быть awaited. `eventId` устраняет повторную доставку в пределах сохранённого inbox;
-`preview` — обычный текст до 300 символов. Произвольных получателей или URL нет.
+For discussions, declare and approve notifications together. See [notifications](https://github.com/Asmblyr/Collaborative/blob/main/docs/features/notifications.md). Await context.notifications.publish({ collection, item, eventId, panelId, targetId, preview }) inside context.withRecord beside the storage write. EventId deduplicates within retained inbox data. Preview is plain text up to 300 characters; arbitrary recipients/URLs are not accepted.
 
-Базовые `actor.id` и `actor.kind` доступны аутентифицированному endpoint без
-дополнительных возможностей: они нужны для авторства операций.
-Проверка возможностей действует и для superuser. Возможность `items.write`
-не добавляет пользователю права записи. HTTP и MCP используют те же ограничения;
-MCP дополнительно учитывает публикацию коллекций и `readOnly` действия.
-Привилегированный `storage` model handlers не получают.
+Basic actor.id/kind are available to authenticated endpoints without extra capabilities for authorship. Capability checks also apply to superusers. Items.write does not grant the caller write permissions. HTTP/MCP share restrictions; MCP additionally checks publication/readOnly. Model handlers never receive privileged storage.
 
-Администратор видит включённые пакеты и разрешения в **Система → Плагины**.
-Эта страница не изменяет разрешения: они остаются частью конфигурации проекта.
+Administrators view enabled packages and capabilities under Settings → Plugins. Approval remains project configuration, not an editable UI switch.
 
-## Граница контроля
+<a id="граница-контроля"></a>
 
-Это контракт доверенных пакетов, исполняемых в процессе Core. Он контролирует
-выданные Core возможности: Kit, установку схемы, hooks и настройки. Произвольный
-Node-код пакета технически может импортировать сетевые и файловые библиотеки;
-декларация не является песочницей. UI пакета также исполняется в контексте админки.
-Устанавливайте только доверенные пакеты. Изолированное выполнение — отдельный этап.
+## Control boundary
 
-Секреты не хранятся в обычных настройках плагина. Для них нужен отдельный контракт
-хранения и выдачи. Объекты запроса, `items`, `storage` и контекст hook нельзя
-сохранять в глобальных переменных или использовать в фоновых задачах.
+Trusted packages run inside Core. Capabilities control services supplied by Core: Kit, schema installation, hooks, and settings. Arbitrary Node code can still import networking/filesystem libraries. This is not a sandbox. Plugin UI also runs in the admin context. Install trusted packages; isolated execution is not provided.
+
+Ordinary plugin settings are not secret storage. Secrets need a separate storage/access contract. Never retain request, items, storage, or hook contexts globally or use them in background tasks.

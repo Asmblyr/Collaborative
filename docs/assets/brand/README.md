@@ -1,17 +1,31 @@
-# Визуальная идентичность
+<a id="фирменные-материалы-collaborative"></a>
 
-Текущее узнаваемое имя в интерфейсе — **Asmblyr**; полное имя проекта —
-**Asmblyr Collaborative**. У проекта есть [публичный сайт](https://asmblyr.io/)
-с логотипом и [рабочая консоль](https://console.asmblyr.io/). В README используется
-[растровая версия предоставленного логотипа](./asmblyr-wordmark.png) с повышенным
-разрешением; исходный векторный файл и снимки продукта пока не хранятся в этом
-репозитории. Не заменяйте знак новым символом или скриншотом с пользовательскими
-данными.
+# Collaborative brand assets
 
-Когда исходный SVG с сайта станет доступен, храните его здесь вместе с вариантами для светлого и тёмного
-фона; компактный знак должен быть читаем как favicon. Снимки продукта размещайте
-в `docs/assets/screenshots`, схемы — в `docs/assets/diagrams`, когда файлы
-понадобятся страницам. GitHub social preview следует экспортировать из
-официальных исходников и установить в настройках репозитория; сам файл не
-назначает preview автоматически. Перед публикацией проверяйте контраст, alt-текст
-и отсутствие реальных данных, токенов и внутренних URL.
+The public wordmark is **Collaborative**. The symbol combines four connected loops
+around a square opening, with a mint accent on the upper-right loop.
+
+<a id="фаилы"></a>
+
+## Files
+
+- [`collaborative-symbol.svg`](./collaborative-symbol.svg): standalone symbol.
+- [`collaborative-logo-light.svg`](./collaborative-logo-light.svg): wordmark for light backgrounds.
+- [`collaborative-logo-dark.svg`](./collaborative-logo-dark.svg): wordmark for dark backgrounds.
+- [`collaborative-social.png`](./collaborative-social.png): 1280 × 640 repository social preview.
+
+The SVG files are the editable source assets. They use vector paths, including
+outlined lettering, with no embedded raster images, external fonts, or scripts.
+The wordmark uses Geist, distributed under [SIL OFL 1.1](https://github.com/Asmblyr/Collaborative/blob/main/apps/ui/src/app/fonts/OFL.txt).
+
+Use the same symbol geometry at every size. Keep clear space around it, preserve
+its proportions, and use the appropriate wordmark for the background. Graphite
+(`#1B2930`), mint (`#88BFAA`), and warm white (`#F5F3EE`) are the primary colors.
+
+The root README switches wordmarks with the reader's light or dark preference.
+GitHub's repository social preview is configured separately in repository settings;
+adding the PNG to Git alone does not select it.
+
+Product screenshots belong in `docs/assets/screenshots` and must use fictional
+data. Do not include personal data, credentials, or private infrastructure URLs
+in public assets.

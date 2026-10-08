@@ -1,5 +1,11 @@
 # @asmblyr-collaborative/cli
 
+<!-- languages -->
+
+[English](README.md) · [Русский](README.ru.md)
+
+<!-- /languages -->
+
 Connect a TypeScript project to an Asmblyr installation and generate collection
 and plugin types from the access available to the signed-in user. Node.js 22+.
 Install the preview CLI alongside the SDK:

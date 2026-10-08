@@ -1,62 +1,51 @@
-# Настройки админки
+<a id="настроики-админки"></a>
 
-Общая точка входа — `/admin/settings`. Она видна, если есть право хотя бы на одну страницу настроек. Навигация и страницы содержат только разрешённые разделы; Core проверяет право повторно на каждом запросе.
+# Admin settings
 
-На небольших экранах разделы выбираются в компактном меню над содержимым.
-На широком экране они остаются в боковой навигации; обе версии показывают
-только доступные пользователю разделы. «Термины» — словарь для ассистента.
+`/admin/settings` is visible when the user can access at least one settings page. Navigation and pages include only permitted sections. Core checks access again on every request.
 
-Библиотека файлов находится в главном меню на `/files` и не дублируется в меню
-или обзоре системных настроек. Права `files/read` и `files/update` по-прежнему
-назначаются в политиках и видны при просмотре доступа пользователя. Если
-доступна только библиотека файлов, вход в `/admin/settings` перенаправляет туда.
-Настройка S3/Yandex Object Storage находится в разделе «Подключения».
+Small screens use a compact section menu above the content; wide screens use side navigation. Both show only accessible sections. Terms is the assistant's shared glossary.
 
-Суперпользователю также доступен раздел [подключений и защиты секретов](./connections.md)
-на `/admin/settings/integrations`: S3/Yandex Object Storage, AI-провайдер и локальное
-шифрование либо Yandex KMS. Этот раздел не делегируется правами остальных настроек.
+The file library lives at `/files` in the main menu and is not duplicated in system settings. Policies still grant files/read and files/update, and the user access viewer shows them. If the library is the only available section, `/admin/settings` redirects there. S3/Yandex Object Storage configuration lives under Connections.
 
-Опциональный [мониторинг Sentry](./monitoring.md) находится отдельно на
-`/admin/settings/monitoring`: ошибки, производительность, SQL spans и локальные
-p95/p99. Он также доступен только суперпользователю и по умолчанию выключен.
+Superusers manage [connections and secret protection](./connections.md) at `/admin/settings/integrations`: S3/Yandex Object Storage, AI provider, and local encryption or Yandex KMS. Other settings grants cannot delegate this section.
 
-| Раздел           | Ключ в permission | Возможности                                                  |
-| ---------------- | ----------------- | ------------------------------------------------------------ |
-| Пользователи     | users             | Список, приглашения, просмотр эффективного доступа           |
-| Политики         | policies          | Permissions, политики и назначения                           |
-| Расширения       | plugins           | Список загруженных пакетов, декларации и доступные настройки |
-| Ассистент        | assistant         | Настройки модели/инструкций и телеметрия                     |
-| Термины          | terms             | Общий справочник смыслов для ассистента                      |
-| Сервисы          | services          | Аккаунты, ключи и федерации                                  |
-| OAuth-приложения | oauth             | Приложения, секреты, правила допуска                         |
+Optional [Sentry monitoring](./monitoring.md) lives at `/admin/settings/monitoring`: errors, performance, SQL spans, and local p95/p99. It also requires a superuser and is disabled by default.
 
-Назначение: откройте политику → блок настроек → выберите для разделов «Нет доступа», «Просмотр» или «Изменение» → сохраните → назначьте политику пользователю. Права на коллекции настраиваются отдельно.
+| Section            | Permission key | Features                                          |
+| ------------------ | -------------- | ------------------------------------------------- |
+| Users              | users          | List, invitations, effective access               |
+| Policies           | policies       | Permissions, policies, assignments                |
+| Plugins            | plugins        | Loaded packages, declarations, available settings |
+| Assistant          | assistant      | Model/instructions and telemetry                  |
+| Terms              | terms          | Shared glossary for the assistant                 |
+| Services           | services       | Accounts, keys, federations                       |
+| OAuth applications | oauth          | Applications, secrets, admission rules            |
 
-Пользователь только с правами настроек попадает в настройки без требования доступа к данным. Без данных и разделов видит отдельный экран отсутствия доступа. Личный профиль остаётся на `/settings`.
+To grant access, open a policy, select No access, View, or Edit for each settings section, save it, and assign the policy. Collection grants are configured separately.
 
-Старые URL `/access`, `/services`, `/oauth-apps` перенаправляются в новые разделы. Системные права доступны через `GET /settings/access`; каталог данных для редактора политики берётся через ограниченную проекцию `/settings/options/collections`.
+A user with settings-only grants can open settings without data access. Users with neither see a no-access screen. Personal preferences remain at `/settings`.
 
-Управление структурой и рабочими пространствами пока не делегируется этими флажками. Установка пакетов и одобрение plugin capabilities остаются в конфигурации проекта. Для каждого раздела доступны отдельные права `read` и `update`. `update` включает просмотр; разрешения разных политик объединяются. Изменение политик и управление сервисами дополнительно ограничены правилами делегирования ниже. `read` разрешает списки, подробности, телеметрию и ограниченные справочники для селекторов, но не сохранение, приглашения, назначения, выпуск/отзыв ключей, федераций или замену OAuth-секрета. GET не возвращает ранее выданные секреты.
+Legacy `/access`, `/services`, and `/oauth-apps` URLs redirect to the current sections. `GET /settings/access` exposes settings permissions; the policy editor uses the restricted `/settings/options/collections` catalog.
 
-`GET /settings/access` возвращает `sections` (разделы для просмотра) и `editableSections` (разделы для изменения). Навигация использует первый список; страницы передают режим просмотра в свои формы. В режиме просмотра доступно раскрытие правой панели, условий и вкладок; управляющие действия скрыты, значения защищены от изменения. Сервер проверяет отдельное право изменения независимо от UI. `GET /users/:id/access` показывает оба списка для выбранного пользователя.
+Structure and workspace management are not delegated by these switches. Package installation and plugin capability approval remain project configuration. Every section supports read and update; update includes viewing, and policies combine grants. Policy and service management also enforce delegation rules.
 
-Ответ также содержит `canManagePolicies` (только superuser) и `delegatablePolicyIds` (явный набор готовых политик для назначения). `policies/update` у менеджера разрешает только назначения из этого набора; состав прав остаётся для просмотра. Для сервисов набор ограничивает и назначения, и выпуск ключей/федерации. Superuser не ограничен массивом, который для него пуст. Настройка набора находится в правой панели доступа пользователя; подробнее — [делегирование](./access.md#ограниченное-назначение-политик).
+Read allows lists, details, telemetry, and restricted selector catalogs. It cannot save, invite, assign, issue/revoke keys or federations, or replace OAuth secrets. GET never returns previously issued secrets.
 
-Миграция `20261003040000_policy_delegations.cjs` добавляет личный разрешённый набор, пустой для существующих пользователей. Старые назначения сохраняются; не-superuser больше не меняет состав политик и должен получить явный набор от администратора для новых назначений. Down отказывается удалять непустые настройки делегирования.
+`GET /settings/access` returns `sections` for viewing and `editableSections` for modification. Navigation uses the first list; pages pass read-only mode to forms. Read-only users can open side panels, conditions, and tabs, while values are protected and mutation actions hidden. The server independently checks update access. `GET /users/:id/access` shows both lists for the selected user.
 
-Миграция `20261003030000_settings_read_permissions.cjs` добавляет действие `read` и уникальность `(section, action)`, не меняя существующие grants. Down отказывается удалять поддержку просмотра, пока есть permissions `read`.
+The response also includes `canManagePolicies` (superusers only) and `delegatablePolicyIds` (the explicit allowed set of existing policies). For managers, policies/update permits assignments only from this set; policy contents remain read-only. For services, the set restricts assignments, keys, and federation. Superusers are unrestricted even though their array is empty. See [delegation](./access.md#bounded-policy-delegation).
 
-Миграция `20261003010000_settings_permissions.cjs` сохраняет существующие права коллекций и добавляет альтернативную цель section. Down откажется работать, пока существуют section permissions: молча терять назначенные права нельзя.
+Migration `20261003040000_policy_delegations.cjs` adds empty personal allowed sets for existing users, preserving assignments. Non-superusers must receive an explicit set for new assignments and can no longer edit policy contents. Down refuses to remove nonempty delegation settings.
 
-## Оформление и язык
+Migration `20261003030000_settings_read_permissions.cjs` adds read and uniqueness on `(section, action)` without changing existing grants. Down refuses while read permissions exist.
 
-Во вкладке «Внешний вид» личных настроек `/settings` режим (`light`, `dark`, `system`) выбирается
-отдельно от стиля (`neutral`, `ocean`, `coral`). Каждый цветовой стиль поддерживает
-светлый и тёмный режим. Настройки сохраняются в профиле через
-`GET/PATCH /users/me/preferences`; частичный PATCH не сбрасывает остальные значения.
-Пустой профиль возвращает `theme: null`, `style: "neutral"`, `locale: "ru"`.
+Migration `20261003010000_settings_permissions.cjs` preserves collection grants and adds section targets. Down refuses while section permissions exist, preventing silent access loss.
 
-Интерфейс поддерживает основу локализации RU/EN; подробнее —
-[переводы и их API](./localization.md). Старые адреса `/system-settings/...`
-перенаправляются на `/admin/settings/...`. Личные настройки, коллекции, файлы
-и страницы расширений сохраняют свои адреса.
+<a id="оформление-и-язык"></a>
+
+## Appearance and language
+
+The Appearance tab at `/settings` separates mode (`light`, `dark`, `system`) from style (`neutral`, `ocean`, `coral`). Every color style supports light and dark modes. Preferences use `GET/PATCH /users/me/preferences`; a partial PATCH preserves other values. An empty profile returns `theme: null`, `style: "neutral"`, and `locale: "ru"`.
+
+The interface supports RU/EN; see [translations and their API](./localization.md). Old `/system-settings/...` URLs redirect to `/admin/settings/...`. Personal settings, collections, files, and plugin pages keep their addresses.

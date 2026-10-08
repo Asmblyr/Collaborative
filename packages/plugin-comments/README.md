@@ -1,101 +1,64 @@
 # Comments
 
-Встроенный модуль обсуждения записей: комментарии, реальные авторы, редактирование своего текста и вкладка в карточке.
+<!-- languages -->
 
-## Устройство
+[English](README.md) · [Русский](README.ru.md)
 
-Зависимость `@asmblyr/kit` сохранена как workspace-алиас нового
-`@asmblyr-collaborative/kit` только для неизменяемого исходника существующей
-миграции. Новые модули используют актуальное имя пакета.
+<!-- /languages -->
 
-- `plugin.ts` — обязательный `definePlugin({})`.
-- `server/collections/entries.ts` — актуальная декларация `plugin_comments_entries`.
-- `server/migrations/20261002060000_authors.ts` — добавление авторства и индекса.
-- `server/hooks/` — транзакционная очистка при удалении записи или коллекции.
-- `server/settings.ts` — разрешение новых комментариев и максимальная длина.
-- `server/api/comments/[collection]/[item]` — тонкие обработчики HTTP.
-- `server/schemas/comments.ts` — чтение и однократная проверка HTTP-входа.
-- `server/services/comments.ts` — `CommentsService`, операции и правила доступа.
-- `server/presenters/comment.ts` — преобразование типизированной строки в публичный ответ.
-- `shared/comments.ts` — контракты, лимит текста и поддерживаемые коллекции.
-- `ui/index.ts` — браузерный entry `defineUiPlugin`, экспортируемый как `./ui`.
-- `ui/api/comments.ts` — типизированные HTTP-операции.
-- `ui/hooks/use-comments.ts` — загрузка, пагинация, ошибки и состояние операций.
-- `ui/hooks/use-comment-composer.ts` — черновик, редактирование и правила отправки формы.
-- `ui/components` — вкладка, форма ввода и отдельный комментарий.
+Bundled record discussions with real authors, self-editing, and a record-card tab.
 
-Путь запроса: файловый маршрут → schemas → CommentsService → типизированное
-`useStorage(context, entries)` → presenter. Сервис создаётся на каждый запрос;
-он проверяет право чтения целевой записи и авторство перед обращением к хранилищу.
-Типы строк выводятся из `server/collections/entries.ts`, отдельной ручной модели БД нет.
-UI импортирует `Button` из `@asmblyr-collaborative/kit/ui/button` и `Textarea` из
-`@asmblyr-collaborative/kit/ui/textarea` и вызывает именованные операции
-`createComment`, `updateComment`, `deleteComment`.
+## Structure
 
-Пакет включён через `asmblyr.plugins` корневого package.json. `pnpm dev` собирает
-kit и пакет, Core устанавливает таблицы и выполняет новые миграции при запуске.
-После обновления самого Core нужен `pnpm db:migrate` для его реестров.
-В production сначала `pnpm build`, затем запуск сервисов.
+The old @asmblyr/kit workspace alias remains only for an immutable historical migration. New modules use @asmblyr-collaborative/kit.
+
+| Location                                    | Responsibility                                 |
+| ------------------------------------------- | ---------------------------------------------- |
+| plugin.ts                                   | Required definePlugin({})                      |
+| server/collections/entries.ts               | Current plugin_comments_entries declaration    |
+| server/migrations/20261002060000_authors.ts | Author fields/index                            |
+| server/hooks/                               | Transactional record/collection cleanup        |
+| server/settings.ts                          | New-comment switch and length limit            |
+| server/api/comments/[collection]/[item]     | Thin HTTP routes                               |
+| server/schemas/comments.ts                  | Single HTTP input validation                   |
+| server/services/comments.ts                 | CommentsService operations/access              |
+| server/presenters/comment.ts                | Typed storage row → public response            |
+| shared/comments.ts                          | Contracts, text limits, supported collections  |
+| ui/index.ts                                 | DefineUiPlugin browser entry, exported as ./ui |
+| ui/api/comments.ts                          | Typed HTTP calls                               |
+| ui/hooks/use-comments.ts                    | Loading, pagination, errors, operation state   |
+| ui/hooks/use-comment-composer.ts            | Drafts, editing, submission                    |
+| ui/components                               | Panel, composer, individual comment            |
+
+Request flow: route → schemas → per-request CommentsService → useStorage(context, entries) → presenter. The service checks target-record read access and authorship before storage. Types derive from the declaration, without a separate database model. UI uses shared Kit Button/Textarea and named createComment/updateComment/deleteComment calls.
+
+The root asmblyr.plugins enables the package. Pnpm dev builds Kit/plugins; Core installs tables/applies new plugin migrations at startup. Core upgrades need pnpm db:migrate for its registries. Production builds first, then starts services.
 
 ## API
 
-Префикс на UI — `/api`, непосредственно в Core его нет.
+The public admin domain adds /api; direct Core also supports unprefixed paths.
 
-| Метод  | Core path                            | Действие                            |
-| ------ | ------------------------------------ | ----------------------------------- |
-| GET    | `/comments/:collection/:item?page=1` | Список по 30, новые сначала         |
-| POST   | `/comments/:collection/:item`        | Создать, тело `{ "body": "текст" }` |
-| PATCH  | `/comments/:collection/:item/:id`    | Изменить свой текст                 |
-| DELETE | `/comments/:collection/:item/:id`    | Удалить свой комментарий            |
+| Method | Core path                          | Operation                      |
+| ------ | ---------------------------------- | ------------------------------ |
+| GET    | /comments/:collection/:item?page=1 | Latest first, pages of 30      |
+| POST   | /comments/:collection/:item        | Create with { "body": "text" } |
+| PATCH  | /comments/:collection/:item/:id    | Edit own text                  |
+| DELETE | /comments/:collection/:item/:id    | Delete own comment             |
 
-Все endpoints требуют сессию или сервисный токен и право чтения обсуждаемой записи.
-Читатель может комментировать без права менять её поля. Изменять/удалять комментарий
-через эти endpoints может его автор; отдельной модерации superuser пока нет.
-Core проверяет доступ к записи при каждом запросе. Отзыв политики действует со
-следующего запроса. Комментарии к системным и plugin-коллекциям не поддерживаются.
-Чтение целевой записи учитывает действующие условия доступа к строкам.
+Every endpoint requires a human/session or service token and target-record read access, including row conditions. Readers need no record-update grant to comment. Only authors edit/delete through these endpoints; separate superuser moderation is unsupported. Every request rechecks access, so policy revocation applies next request. System/plugin collection discussions are unsupported.
 
-Автор и его имя берутся из контекста. Имя сохраняется на момент отправки, email не
-раскрывается. Старым записям автор не выдумывается: поля остаются NULL.
-Текст — строка длиной 1–10 000 символов после trim; HTML не исполняется.
-Дополнительные поля тела запроса отклоняются. Пагинация имеет досортировку по ID.
-Индекс покрывает адрес записи, дату и ID.
+Author/name come from context; the name is snapshotted on submission, without exposing email. Historical unknown authors remain NULL. Text is 1–10000 trimmed characters; HTML never executes. Extra body keys are rejected. Pagination ties use ID; the index covers record address, date, and ID.
 
-`items.get` проверяет доступ к предметной записи, `storage` даёт плагину доступ
-только к собственной коллекции. Валидация, даты и история используются из Core.
-Grants на `plugin_comments_entries` для участников выдавать не нужно. Прямой
-`/items` остаётся административным путём по обычным grants и позволяет обойти
-правила специализированного API при явной выдаче этих прав.
+Items.get authorizes the target; storage accesses only the plugin's collection with Core validation/timestamps/history. Participants need no plugin_comments_entries grants. Direct /items remains an ordinary-grant administrative path that bypasses specialized API rules if explicitly granted.
 
-Комментарии сохраняются сразу, отдельно от черновика карточки. Текст сохраняется
-при смене вкладок; закрытие с неотправленным текстом требует подтверждения.
-Есть редактирование, подтверждение удаления, повтор загрузки и страницы списка.
-Ошибки загрузки и сохранения независимы. Черновик защищён от перезаписи при
-редактировании другого комментария; удаление другого комментария его не блокирует.
-Признак `isOwn` отделён от прав `canEdit/canDelete`.
-Новые несохранённые записи пока не имеют обсуждений. Нет тредов ответов, упоминаний,
-вложений, real-time, email и push. Кнопка «Следить» и первый отправленный комментарий
-подписывают на новые комментарии других участников. Явно отключённая подписка
-не включается автоматически. Отдельный колокольчик показывает непрочитанные и
-открывает конкретный комментарий; требуется одобренная возможность `notifications`.
+Comments save immediately, independently of record drafts. Text survives tab switches; closing unsent text requires confirmation. Editing, delete confirmation, retry, and pagination are supported. Load/save errors are separate. Editing another comment protects the current draft; deleting another does not block it. IsOwn is distinct from canEdit/canDelete.
 
-При удалении записи или коллекции через Core включённый плагин удаляет обсуждение
-в той же транзакции; ошибка hook откатывает удаление. Сохранение комментария
-удерживает целевую запись, исключая гонку с её удалением. Ключ UUID нормализуется
-по сохранённой записи. Прямой SQL, каскады PostgreSQL и удаления при отключённом
-плагине не порождают hooks: автоматической фоновой очистки таких сирот пока нет.
-Перед повторным использованием их адресов нужна отдельная очистка; старые данные
-при запуске автоматически не удаляются.
+New unsaved records have no discussions. Replies, mentions, attachments, realtime, email, and push are unsupported. Follow and the first submitted comment subscribe to others' comments; explicit unfollow is not automatically reversed. The separate bell opens unread comments and requires approved notifications capability.
 
-В **Система → Плагины → Комментарии** доступны `allowNewComments` и `maxLength`
-(100–10 000). Изменения применяются к следующим запросам. Отключение создания
-оставляет чтение, редактирование и удаление собственных комментариев. Сервер
-проверяет лимит при создании и изменении; UI получает `canCreate` и `maxLength`.
+Enabled hooks delete discussions in the same transaction as Core record/collection deletion; failures roll back. Saving holds the target record against concurrent deletion and normalizes UUID from the stored row. Direct SQL, database cascades, and deletions while disabled emit no hooks. There is no background orphan cleanup; clean separately before reusing their addresses. Startup does not silently delete old data.
 
-Возможности пакета объявлены в manifest и разрешены в корневом package.json.
-`identity.profile` нужен для имени автора, `items.read` — проверки доступа к записи,
-`collections.manage` — собственных таблиц и миграций, `storage.own` — комментариев,
-`hooks.items/hooks.collections` — очистки, `settings` — настроек. Права `items.write`
-плагину не нужны.
+Settings → Plugins → Comments exposes allowNewComments and maxLength (100–10000), applying to subsequent requests. Disabling creation preserves reading/editing/deleting your own comments. Core checks limits on create/update; UI receives canCreate/maxLength.
 
-Подробный контракт: [жизненный цикл плагина](../kit/LIFECYCLE.md).
+Manifest/project approvals cover identity.profile, items.read, collections.manage, storage.own, hooks.items, hooks.collections, settings, and notifications. Items.write is unnecessary.
+
+See [plugin lifecycle](../kit/LIFECYCLE.md).

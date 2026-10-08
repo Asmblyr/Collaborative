@@ -1,267 +1,117 @@
-# Ассистент и внутренний MCP
+<a id="ассистент-и-внутреннии-mcp"></a>
 
-Путь запроса, инструментов и модельных обработчиков показан в
-[архитектуре ассистента](../development/assistant-architecture.md).
+# Assistant and internal MCP
 
-Ассистент опционален: Core подключается к OpenAI-совместимому провайдеру, ключ хранится на сервере. UI передаёт контекст текущей страницы; ответы передаются потоком. Переход на предложенную страницу выполняет пользователь кнопкой.
+See [assistant architecture](../development/assistant-architecture.md) for the request, tool, and model-handler pipeline.
 
-Инструменты могут исследовать доступную схему, искать/читать данные, формировать фильтры и выборки, подготавливать формы и вызывать явно объявленные model-handlers расширений. Названия для человека берутся из display metadata; технические имена используются для API.
+The assistant is optional. Core connects to an OpenAI-compatible provider and keeps the key on the server. The UI sends current-page context and streams responses. Users choose whether to navigate to suggested pages.
 
-Для обычного поиска ассистенту задан короткий сценарий: нужные записи и кнопка
-полной выборки. Подсчёты, рейтинги и дополнительные справочники запрашиваются
-для соответствующих вопросов; подробный анализ можно продолжить следующим
-сообщением. Это инструкция модели, а не гарантия длительности ответа провайдера.
+Tools inspect accessible schema, search/read data, build filters and selections, prepare forms, and call explicitly declared plugin model handlers. Human labels come from display metadata; API calls use technical names.
 
-## Границы
+Ordinary searches are instructed to return relevant records and a full-selection button. Counts, rankings, and extra dictionaries are requested when the question needs them; deeper analysis can follow in another message. This is a model instruction, not a provider-latency guarantee.
 
-Чат требует человека: superuser, хотя бы один data grant read/create/update либо активное личное Google-подключение. Право `assistant` позволяет управлять настройками, но само не даёт права чата/данных.
+<a id="границы"></a>
 
-Внутренний MCP — общий контракт инструментов для ассистента. Публичного внешнего MCP endpoint пока нет. Каждая операция выполняется с правами пользователя, дополнительно учитывая включение коллекции в MCP, в том числе для superuser. Нельзя выдавать модели сырой SQL или привилегированный storage.
+## Boundaries
 
-Для плагина разработчик оборачивает H3 handler в `defineModelContext<Input>` и задаёт аннотацию. HTTP и MCP используют тот же handler и проверку. Входной AccessGate не заменяет права на затронутые данные. `readOnly` должен запрещать запись в доступных инструментах.
+Chat requires a human who is a superuser, has at least one read/create/update data grant, or has an active personal Google connection. The assistant settings permission grants configuration access, not chat or data access.
 
-## Настройки и журнал
+Internal MCP is the assistant's shared tool contract. There is no public external MCP endpoint yet. Every operation uses the user's permissions and collection MCP enablement, including for superusers. Never expose raw SQL or privileged storage to the model.
 
-В разделе настроек доступны инструкции, модель и телеметрия: пользователь, время, запрошенная/фактическая модель, вызовы инструментов, входные/выходные токены, длительность и результат. Если провайдер не вернул usage, неизвестные значения не превращаются в ноль.
+Plugin developers wrap H3 handlers in `defineModelContext<Input>` with an annotation. HTTP and MCP use the same handler and checks. Entry AccessGate does not replace permissions on affected data. Read-only mode must prevent writes in available tools.
 
-Сводка ответа содержит `toolTrace`: до 32 вызовов с порядковым номером,
-именем объявленного инструмента, длительностью, результатом и фиксированным
-кодом ошибки. Аргументы, содержимое результатов и тексты исключений в эту
-диагностику не попадают. Старые ответы могут не содержать `toolTrace`.
-Счётчики токенов суммируются по обращениям к модели внутри одного ответа;
-это не размер одного контекста.
+<a id="настроики-и-журнал"></a>
 
-Общий таймаут одного ответа, включая сжатие истории и продолжения с
-инструментами, по умолчанию составляет 180 секунд. `OPENAI_API_TIMEOUT_MS`
-задаёт значение от 1000 до 300000 мс; явное значение сохраняется. Число
-обращений к модели остаётся ограниченным восемью, отмена пользователем
-прерывает текущую генерацию и инструменты.
-Прокси админки допускает до 310 секунд, чтобы не оборвать поток раньше
-максимального таймаута Core.
+## Settings and telemetry
 
-Ошибки инструментов возвращают безопасные `code` и `hint`, например
-`SCHEMA_REQUIRED` для чтения без описания коллекции и `INVALID_FILTER` для
-неверного фильтра. Идентичный неудачный вызов внутри ответа блокируется
-без повторного выполнения; модель переходит к итоговому сообщению.
-Повтор с исправленными аргументами допускается, пока остаются шаги.
-Для фильтров `reason` различает неверную структуру JSON, путь, оператор,
-тип значения, квантор и превышение ограничений; `hint` объясняет исправление
-без раскрытия отклонённых значений. Фильтр передаётся JSON-строкой группы
-`logic`/`children`. Пустая строка очищает условия запроса, настоящий JSON
-`null` наследует контекст; строка `"null"` отклоняется. Поиск другого клиента
-должен использовать его условие вместо условия открытой таблицы. Это
-инструкция модели; Core по-прежнему проверяет все права и фильтры.
-Смысловые условия вроде «активные» должны сохраняться в поиске, подсчёте
-и карточке через настроенный термин или явно заданный критерий. Если термин
-не определяет однозначный смысл, ассистент должен уточнить критерий.
-В аргументе поиска `q` строка `"null"` отклоняется как ошибочное обозначение
-пустого значения. Для наследования условий нужен JSON `null`, для очистки —
-пустая строка; поиск буквального слова возможен через `q="NULL"` или значение
-текстового фильтра. Это ограничение внутренних инструментов, HTTP/SDK-поиск
-не меняется. Унаследованный поиск из таблицы сохраняется целиком.
-Режим `order` (`relevance`/`field`) наследуется вместе с поиском и сохраняется
-в подборке: при её открытии таблица повторяет проверенный порядок результатов.
-Явная сортировка по полю переключает обычный порядок, `order=relevance`
-использует это поле только для равных совпадений.
+Settings include instructions, model, and telemetry: user, time, requested/actual model, tool calls, input/output tokens, duration, and outcome. Missing provider usage remains unknown rather than becoming zero.
 
-Если завершённый ответ сопровождается только `present_selection` или
-`present_plugin_result`, Core проверяет и создаёт карточки, затем показывает
-этот ответ без ещё одного обращения к модели. Ошибка карточки, пустой текст
-или дополнительные инструменты требуют обычного продолжения. Это не
-изменяет правила подтверждения записей или навигации пользователем.
+Response summaries include `toolTrace`: up to 32 calls with sequence, declared tool name, duration, result, and fixed error code. Arguments, result contents, and exception text are excluded. Older responses may lack this field. Token counts sum model calls within a response; they are not the size of one context.
 
-`describe_collection` описывает M2O, O2M и M2M. Для доступных связей ко многим
-`relation.relatedRead` указывает целевую коллекцию, поле фильтра, оператор,
-квантор и исходный ключ. Ассистент читает связанные записи отдельным запросом;
-поля alias нельзя включать в `fields`. Подсказки учитывают права чтения полей,
-включение коллекций в MCP и ограничения фильтрации связей при row rules.
+The default total response timeout is 180 seconds, including history compaction and tool continuations. `OPENAI_API_TIMEOUT_MS` accepts 1000–300000 ms and preserves explicit values. Each response allows at most eight model calls. User cancellation interrupts generation and tools. The public proxy permits 310 seconds so it does not cut off Core's maximum timeout.
 
-Системный справочник терминов связывает пользовательские слова со смыслом данных; конкретные привязки к коллекции пока настраивает superuser.
+Tool errors provide safe `code` and `hint`, such as SCHEMA_REQUIRED before describing a collection or INVALID_FILTER for malformed filters. An identical failed call is blocked from executing again within the response, prompting a final answer. Corrected arguments can be retried while steps remain.
 
-## Сессии и история
+Filter error `reason` distinguishes JSON structure, path, operator, value type, quantifier, and limit errors. Hints explain corrections without revealing rejected values. Filters are JSON strings with logic/children groups. Empty string clears conditions; actual JSON null inherits context; the string "null" is invalid.
 
-Ход работы отображается отдельно от ответа: время выполнения, небольшие серые
-статусы действий и публичные пояснения ассистента. После завершения этот блок
-сворачивается; внутри остаются шаги и статистика. Итоговый ответ содержит только
-финальное сообщение модели. Таблицы, карточки выборок и важные оговорки остаются
-в результате. Внутренние рассуждения, аргументы инструментов и их сырые результаты
-в блок хода работы не передаются.
+Searching for another client should replace the open table's client condition. This is a model instruction; Core still enforces all filters and permissions. Meaningful conditions such as “active” must persist in search, counts, and cards through a configured term or explicit criterion. Ambiguous terms require clarification.
 
-У текстового ответа появляется компактная кнопка копирования, когда генерация
-закончилась или была остановлена. Она копирует исходный текст ответа с Markdown,
-включая таблицы и код; ход работы, статистика и отдельные карточки действий в буфер
-не добавляются. После копирования появляется подтверждение. Если браузер не дал
-доступ к буферу обмена, интерфейс предлагает выделить и скопировать текст вручную.
-Иконки в шапке снабжены подсказками; новая сессия начинает отдельный разговор,
-сохраняя переписку и черновик предыдущей сессии.
+Tool search `q="null"` is rejected as a mistaken empty value. Use JSON null to inherit or an empty string to clear. Literal text can be searched with `q="NULL"` or a text-filter value. This restriction is internal to assistant tools; HTTP/SDK search is unchanged. Inherited table search is preserved in full.
 
-В узкой панели широкие таблицы прокручиваются по горизонтали внутри ответа;
-числа и идентификаторы не разбиваются для подгонки колонок. Область таблицы
-доступна с клавиатуры. Блоки кода также имеют отдельную горизонтальную прокрутку.
-При уменьшении высоты панели поле ввода и отступы становятся компактнее,
-сохраняя место для переписки; длинный черновик прокручивается внутри поля.
+Search `order` (relevance/field) is inherited and retained in selection cards, so opening them reproduces the validated order. Explicit field sorting selects field order; relevance order uses the field only for ties.
 
-API возвращает отдельный `activity`: до 64 записей `status`/`note`, до 8000
-символов в записи и 64 000 символов в сумме. Новые сообщения сохраняют его
-отдельно от `content`; при восстановлении истории блок доступен для раскрытия.
-Перед продолжением и сжатием диалога используются только завершённые сообщения,
-без `activity`. Старые сохранённые ответы остаются неизменными.
+When a completed response contains only present_selection or present_plugin_result calls, Core validates/creates cards and displays its text without another model call. Invalid cards, empty text, or additional tools require normal continuation. Write confirmation and user-controlled navigation are unchanged.
 
-NDJSON дополнен событием `activity`. `text-delta` с `provisional=true` относится
-к текущему незавершённому шагу и показывается в ходе работы; такой текст ещё
-не является итоговым ответом. При завершении модельного шага Core либо сохраняет
-его как публичное пояснение, либо передаёт финальный текст с `reset=true`.
-`reset` заменяет текущий текст ответа. Остановка сохраняет полученные публичные
-пояснения отдельно, а уже подтверждённую часть итогового ответа — в `content`.
+describe_collection describes M2O, O2M, and M2M. For accessible to-many relations, relation.relatedRead gives the target collection, filter field, operator, quantifier, and source key. Related records are read separately; alias fields cannot appear in fields. Hints respect field reads, MCP enablement, and relationship-filter limitations under row rules.
 
-Пустой диалог показывает приветственную карточку с двумя действиями: поиск и
-объяснение структуры, а на странице коллекции — фильтр и объяснение полей.
-При отключённом контексте предлагаются общие вопросы о проектировании данных;
-инструменты базы и Google остаются доступны, если отдельно включён доступ к данным.
-Нажатие подставляет редактируемый вопрос в поле ввода; отправка остаётся за
-пользователем. Карточка также открывает личные подключения Google Drive и Sheets
-и исчезает после начала переписки.
+The shared glossary maps user terminology to data meaning. Collection-specific mappings currently require a superuser.
 
-В карточке сохранённой записи доступна кнопка «Спросить об этой записи».
-Ассистент открывается внутри редактора, включая вложенные карточки и импортированные
-materialized view. Сворачивание ассистента не закрывает карточку и сохраняет текст
-ввода. Контекст показывает коллекцию и ID записи; после закрытия карточки снова
-используется контекст страницы.
+<a id="сессии-и-история"></a>
 
-Над вводом показан контекст следующего вопроса. Если он отличается от последнего
-отправленного вопроса, появляется компактная подсказка о смене истории для ответа.
-Переходы между контекстами отмечены разделителями в ленте и сохраняются при открытии
-истории сессии. Значок справки объясняет изоляцию истории, её сжатие и режим без
-контекста страницы. Поиск и фильтр внутри той же таблицы не создают отдельную историю.
-Переход во время генерации не меняет уже отправленный запрос: подсказка показывает
-его прежний контекст, а новое место применяется к следующему вопросу.
+## Sessions and history
 
-В снимок передаётся только идентификатор сохранённой записи. Core проверяет
-доступность коллекции в MCP и право чтения конкретной строки до обращения к модели.
-Значения полей ассистент запрашивает обычными инструментами с актуальными правами
-пользователя. Несохранённые значения формы и новые записи в черновике не передаются.
-Условия открытой таблицы не переносятся в контекст записи, кнопка применения фильтра
-таблицы в карточке недоступна.
+Work progress is separate from the answer: elapsed time, compact gray action statuses, and public assistant notes. After completion it collapses, retaining steps and statistics. The final answer contains only the model's final message, including tables, selection cards, and important caveats. Internal reasoning, tool arguments, and raw results are not exposed in progress.
 
-API-контекст записи: `{ page: "items", workspaceId: null, collection: "articles", record: { id: "1" } }`.
-`record` принимает только строковый `id` до 255 символов; Core дополнительно проверяет
-тип первичного ключа. `record` и `table` взаимно исключают друг друга. Для выключенной
-в MCP коллекции снимок не содержит запись, её данные и структуру прочитать нельзя.
-Существующий контекст таблицы остаётся совместимым.
+A compact Copy button appears after completion or stopping. It copies original Markdown, including tables and code, excluding progress, metrics, and separate action cards. Success is acknowledged; denied clipboard access prompts manual selection/copying. Header icons have tooltips. New session starts a separate conversation while preserving the previous conversation and draft.
 
-Контекст страницы и доступ к данным управляются отдельно. Переключатель над вводом
-включает только сведения о текущей странице, коллекции, записи и условиях таблицы.
-В окне «Подключения ассистента» доступен переключатель «Доступ к данным и
-подключениям»: он разрешает инструменты базы, личного Google и расширений для
-следующих вопросов. Выключение не удаляет подключённые аккаунты и не останавливает
-уже отправленный запрос. Проверки прав пользователя, публикации коллекций в MCP
-и подтверждения записи в Google сохраняются.
+Wide tables scroll horizontally inside narrow responses without splitting numbers or identifiers. The table area is keyboard accessible, and code blocks scroll independently. Short panels use a compact composer and spacing, preserving room for messages; long drafts scroll inside the input.
 
-Новый необязательный параметр `/assistant/messages`:
-`dataAccess: { enabled: true, workspaceId: null }`. С `context: null` инструменты
-работают без сведений о текущей странице: модель должна явно найти/указать
-коллекцию, условия поиска и фильтра не наследуются, предложение фильтра открытой
-таблицы недоступно. `enabled: false` отключает все инструменты, независимо от
-контекста. При переданном контексте `workspaceId` должен совпадать с ним; это
-привязка разговора, а не дополнительные права и не ограничитель каталога коллекций.
-Без `dataAccess` прежние клиенты сохраняют старое поведение: отсутствие контекста
-отключает инструменты. Некорректный параметр отклоняется, а не приводит к включению.
+The API returns separate `activity`: up to 64 status/note entries, 8000 characters each and 64000 total. New messages save activity separately from content and restore it as expandable history. Continuation and compaction use completed messages only, excluding activity. Older stored answers are unchanged.
 
-Рабочая история и резюме разделены по режиму доступа и пространству даже без
-контекста страницы. Выключение доступа не скрывает уже видимую переписку, но для
-нового ответа не используются сообщения и резюме режима с доступом к данным.
-Возврат к прежнему режиму продолжает его историю. Повтор вопроса сохраняет снимок
-страницы исходного запроса. Доступ при повторе не расширяется: если пользователь
-его выключил после сбоя, инструменты остаются отключёнными и при повторе.
+NDJSON includes activity events. A text-delta with provisional=true belongs to the unfinished step and appears in progress, not yet the final answer. On step completion, Core keeps it as a public note or sends final text with reset=true, replacing current answer text. Stopping preserves public notes separately and confirmed answer text in content.
 
-Переписка виджета хранится в PostgreSQL и принадлежит текущему пользователю.
-Кнопка «История сессий» открывает предыдущие диалоги; после перезагрузки
-восстанавливается последняя сессия. «Новая сессия» создаёт отдельный пустой
-контекст, сохраняя прежнюю переписку в истории. Есть удаление сессии и загрузка
-более ранних сообщений. История других пользователей недоступна, в том числе
-superuser.
+An empty conversation shows a welcome card with search and structure actions, or filter/field explanations on collection pages. Without page context, it suggests general data-design questions. Database and Google tools remain available if data access is separately enabled. Clicking a suggestion fills an editable prompt; the user still sends it. The card also opens personal Google Drive/Sheets connections and disappears once conversation begins.
 
-Неотправленный текст хранится отдельно для каждой сессии в памяти открытой
-админки. При создании нового разговора поле ввода пустое, а черновик прежней
-сессии остаётся доступен через историю с отметкой «Черновик» и короткую подсказку
-«Вернуться к черновику» после создания нового разговора. Возврат к сессии
-восстанавливает её ввод; загрузка более ранних сообщений его не меняет.
-Ошибка создания или открытия сессии не очищает текущий текст. Текст, введённый
-до появления первой сессии, привязывается к ней. Удаление сессии удаляет её
-черновик после успешного ответа сервера.
+Saved records offer Ask about this record. The assistant opens inside the editor, including nested cards and imported materialized views. Collapsing it keeps the record card and draft open. Context shows collection and record ID; closing the card restores page context.
 
-Черновики не отправляются в API или модели и не сохраняются в браузерное
-хранилище. Сворачивание ассистента их сохраняет, перезагрузка страницы или
-выход из открытой админки — очищает. Сохранение переписки в PostgreSQL
-не включает неотправленный ввод.
+The composer shows context for the next question. A change from the previous question displays a compact history-context hint. Context transitions have separators in the conversation and persist in restored history. Help explains isolation, compaction, and working without page context. Search/filter changes within one table do not create a separate history. Navigation during generation leaves the submitted context unchanged; the new location applies to the next question.
 
-Хранятся тексты сообщений, публичный ход работы, привязка к контексту страницы, результат
-завершения/остановки и метрики ответа. Исходный контекст страницы, результаты
-инструментов, служебные токены подключений и внутренние рассуждения модели в
-историю не копируются. Текст переписки сохраняется таким, каким его отправили
-пользователь и ассистент.
-Интерактивные карточки фильтров, форм и подтверждений записи доступны в текущем
-ответе; при восстановлении истории они не активируются повторно. Для нового
-действия нужно снова обратиться к ассистенту.
+A record snapshot sends only its saved identifier. Before contacting the model, Core checks MCP enablement and read access to that row. Tools fetch field values with current user permissions. Unsaved form values and new draft records are excluded. Table conditions are not inherited by record context, and Apply table filter is unavailable inside a record card.
 
-Перед обращением к модели Core собирает завершённые пары сообщений текущего
-контекста. При превышении 24 000 символов, 25 сообщений или 50 000 байт
-сериализованной истории старая часть сжимается той же моделью без инструментов.
-Резюме ограничено 4000 символами; последние сообщения и текущий вопрос
-сохраняются в рабочем контексте. Полная переписка при этом остаётся в базе.
-Резюме ведётся отдельно для контекста каждой страницы и каждой записи и не переносится в новую
-сессию. Видимая переписка остаётся общей, но модель получает завершённые сообщения
-только текущего контекста. Его содержимое является данными разговора и не даёт разрешений на действия.
-Запросы сжатия входят в телеметрию и общий лимит восьми обращений к модели.
+Record context is `{ page: "items", workspaceId: null, collection: "articles", record: { id: "1" } }`. Record accepts only a string ID up to 255 characters, additionally validated against primary-key type. Record and table are mutually exclusive. A collection disabled in MCP omits record context and denies its data/schema tools. Existing table context remains compatible.
 
-POST /assistant/messages поддерживает сохранённый режим с conversationId,
-messageId, content и необязательными settings/context. Повтор завершённого
-запроса с тем же messageId возвращает сохранённый текст без повторного обращения
-к модели. Изменение тела с тем же ID запрещено. Прежний формат messages остаётся
-совместимым и не сохраняет диалог. API сессий: GET/POST /assistant/conversations,
-GET/DELETE /assistant/conversations/:id; пагинация передаёт before.
+Page context and data access have separate controls. The composer switch enables page, collection, record, and table-condition information. Data and connections in Assistant connections enables database, personal Google, and plugin tools for future questions. Disabling it neither deletes accounts nor stops an already submitted request. User grants, MCP enablement, and Google write confirmation still apply.
 
-Одновременно в сессии выполняется один запрос. При отключении клиента
-генерация останавливается; полученный к этому моменту текст сохраняется при
-обработке остановки. После аварийного завершения процесса незавершённый ответ
-отмечается прерванным по истечении одиннадцати минут. Сжатие и ответ делят
-общий настроенный таймаут запроса. Генерации в фоне и возобновления
-потока после перезагрузки нет. Удаление пользователя удаляет его личные сессии;
-HISTORY_RETENTION_DAYS также очищает неактивные сессии по времени последнего
-сообщения, если срок хранения явно включён.
+The optional /assistant/messages parameter `dataAccess: { enabled: true, workspaceId: null }` enables tools with context:null, without page information. The model must explicitly find/select a collection; search/filter conditions are not inherited and suggesting a filter for the open table is unavailable. Enabled:false disables every tool regardless of context. With context present, workspaceId must match. This binds conversation context; it adds neither permissions nor a collection-catalog restriction.
 
-Лимиты общие для реплик через PostgreSQL: по умолчанию 100 запросов на пользователя в сутки UTC и два одновременных запроса. Настраиваются `ASSISTANT_DAILY_REQUESTS` и `ASSISTANT_CONCURRENT_REQUESTS`. В одном запросе максимум восемь обращений к модели, 100 000 байт сериализованного контекста перед каждым обращением и настроенный предел выходных токенов. Последнее доступное обращение резервируется для итогового ответа без инструментов, учитывая уже выполненное сжатие истории. При нехватке шагов модель должна объяснить, какие сведения ещё не получены. Если провайдер всё же возвращает вызов инструмента на итоговом шаге, Core его не выполняет. Это ограничение количества/объёма, не денежный бюджет провайдера. История сохраняется по умолчанию; `HISTORY_RETENTION_DAYS` явно включает очистку по возрасту.
+Clients omitting dataAccess preserve previous behavior: no context means no tools. Invalid parameters are rejected rather than enabling access.
 
-При подтверждённом отключении ассистента его закрытый виджет скрыт. Если панель
-уже открыта, она сохраняет диалог и ввод и сообщает об отключении. Сетевая ошибка,
-таймаут или некорректный ответ проверки статуса не скрывают ассистента: в панели
-появляется сообщение и кнопка «Повторить». Повтор проверяет подключение и не
-отправляет сообщение модели. До успешной проверки отправка новых вопросов
-недоступна, но текст можно редактировать. Последняя известная конфигурация и
-пользовательские параметры сохраняются при техническом сбое.
+Working history and summaries are partitioned by access mode and workspace even without page context. Turning access off keeps visible messages but excludes the data-enabled mode's messages/summaries from new responses. Returning to that mode resumes its history. Retrying keeps the original page snapshot and never broadens access: if the user disabled tools after failure, retry keeps them disabled.
 
-401 и 403 показывают отдельные сообщения об истёкшей сессии или отсутствии прав.
-При первоначальном подтверждённом отсутствии доступа закрытый виджет не
-отображается. Ручная проверка и события фокуса/смены настроек отменяют предыдущую
-проверку; устаревший ответ не заменяет новый. Проверка ограничена восемью секундами.
+Widget conversations are stored in PostgreSQL and owned by the current user. Session history opens previous conversations; reload restores the latest session. New session creates an empty context and retains earlier history. Sessions can be deleted and older messages loaded. Other users' history is inaccessible, including to superusers.
 
-Реальные обсуждения записей остаются
-в плагине комментариев, а [уведомления](./notifications.md) доступны отдельным
-колокольчиком в шапке админки и работают независимо от AI.
+Unsent text stays separately per session in the open admin's memory. New conversations start empty; previous drafts remain in history with a Draft marker and a Return to draft hint. Reopening restores input, and loading older messages does not change it. Failed session creation/opening preserves the current text. Input written before the first session is attached to it. Successful session deletion also removes its draft.
 
-Данные, попавшие в контекст/результат инструмента, отправляются настроенному провайдеру. Выбор провайдера, объём передачи и договорные требования — эксплуатационное решение. Текст записи и результат плагина могут содержать prompt injection: модельный ответ не считается границей авторизации.
+Drafts are never sent to the API/model or browser storage. Collapsing preserves them; reloading or leaving the admin clears them. PostgreSQL history excludes unsent input.
+
+Stored history includes message text, public progress, page-context association, completion/stop outcome, and metrics. It excludes raw page snapshots, tool results, connection tokens, and internal reasoning. Text stays as sent by the user/assistant. Interactive filter, form, and write-confirmation cards work only in the current response and are not reactivated from history. Ask again for a new action.
+
+Before model calls, Core collects completed message pairs for the current context. Exceeding 24000 characters, 25 messages, or 50000 serialized bytes triggers compaction of older history using the same model without tools. Summaries are capped at 4000 characters, preserving recent messages and the current question. Full conversation history remains in the database.
+
+Each page/record context has its own summary, which is not transferred to a new session. The visible transcript is shared, but the model receives completed messages only from the current context. Conversation content grants no authorization. Compaction counts toward telemetry and the eight-call limit.
+
+POST /assistant/messages supports persisted conversationId, messageId, content, and optional settings/context. Repeating a completed messageId returns saved text without another model call; changing its body is forbidden. The legacy messages format remains compatible but does not persist conversation. Session API: GET/POST /assistant/conversations and GET/DELETE /assistant/conversations/:id, with before pagination.
+
+Only one request runs per session. Client disconnect stops generation; received text is saved when handling cancellation. After a process crash, incomplete responses become interrupted after eleven minutes. Compaction and answering share one configured timeout. Background generation and stream resumption after reload are unsupported.
+
+Deleting a user deletes personal conversations. When explicitly configured, HISTORY_RETENTION_DAYS removes inactive sessions by last-message time.
+
+PostgreSQL shares limits across replicas: defaults are 100 requests per user per UTC day and two concurrent requests, controlled by ASSISTANT_DAILY_REQUESTS and ASSISTANT_CONCURRENT_REQUESTS. Each request permits eight model calls, 100000 serialized context bytes before each call, and the configured output-token limit.
+
+The last available call is reserved for a final answer without tools, counting compaction. If steps run out, the model should explain missing information. Core never executes a tool returned on that final step. These are volume/count limits, not a monetary provider budget. History is retained by default; age cleanup requires HISTORY_RETENTION_DAYS.
+
+Confirmed assistant disablement hides the closed widget. An already open panel preserves conversation/input and shows that it is disabled. Network errors, timeouts, or invalid status responses keep the panel visible with Retry. Retry checks the connection without sending a model message. New questions stay disabled until a successful check, while input remains editable. Technical failures preserve the last known configuration and user settings.
+
+401 and 403 have distinct expired-session/access-denied messages. Initially confirmed lack of access hides the closed widget. Manual checks and focus/settings changes cancel prior checks; stale responses cannot replace newer results. Status checks time out after eight seconds.
+
+Record discussions remain in the Comments plugin. [Notifications](./notifications.md) use a separate header bell and work independently of AI.
+
+Context and tool-result data go to the configured provider. Provider choice, transfer scope, and contractual requirements are operator decisions. Record text and plugin results may contain prompt injection; model output is never an authorization boundary.
 
 ## Google Workspace
 
-[Личное подключение Google Drive и Sheets](./google-workspace.md) добавляет чтение по запросу и предложения записи с подтверждением. Активное подключение также разрешает чат человеку без data grants, сохраняя ограничения данных Core.
+[Personal Google Drive and Sheets connections](./google-workspace.md) add on-demand reads and confirmed write proposals. An active connection also permits chat without data grants while preserving Core access limits.
 
-Карточки Google-записи различают выполнение, отклонение, отказ до записи и
-неизвестный результат. Итог можно открыть повторно и обновить отдельным чтением
-статуса; подтверждение не повторяется. При наличии ссылка ведёт в файл или таблицу
-Google. Просмотр ограничен сроком предложения и владельцем подключения; подробнее —
-в [описании Google Workspace](./google-workspace.md).
+Write cards distinguish completion, rejection, pre-write failure, and unknown outcome. Results can be reopened and refreshed through a read-only status request without repeating confirmation. Links open the Google file/spreadsheet when available. Viewing remains owner- and lifetime-bound; see [Google Workspace](./google-workspace.md).
 
-Отмена ответа доступна через любую реплику Core: запрос сохраняется в PostgreSQL,
-активный процесс проверяет его каждые 500 мс. При перезапуске процесса поток
-прерывается; бесшовное продолжение генерации не поддерживается. Подготовленные формы
-плагинов сохраняются в PostgreSQL на 20 минут и проверяют владельца при открытии.
+Cancellation works through any Core replica: PostgreSQL stores the request, and the active process checks every 500 ms. Process restart interrupts the stream; seamless generation continuation is unsupported. Prepared plugin forms are stored in PostgreSQL for twenty minutes and check ownership when opened.

@@ -1,44 +1,44 @@
-# Права и политики
+<a id="права-и-политики"></a>
 
-## Модель
+# Permissions and policies
 
-Permission — самостоятельная настройка доступа. Policy объединяет любое количество permissions; одно permission можно связать с несколькими policies. Пользователь получает несколько policies, их разрешения объединяются. Отдельных deny-правил нет.
+<a id="модель"></a>
 
-У permission одна цель: коллекция **либо** раздел настроек. Для коллекции задаются action `create/read/update/delete`, поля и необязательный `rowFilter`. Без условия разрешение действует для всех записей. Для раздела — `section`, `action: read | update`, `fields: ["*"]`. `update` включает просмотр; `read` не разрешает изменения.
+## Model
 
-Прямое изменение общего permission влияет на все использующие его политики. Редактор конфигурации политики сохраняет её собственный набор атомарно, не меняя чужую политику через случайное редактирование общего экземпляра.
+A permission is an independent access rule. A policy groups any number of permissions, and one permission may belong to several policies. A user can receive several policies; their grants are combined. There are no deny rules.
 
-## Проверка
+Each permission targets either a collection or a settings section. Collection grants specify `create/read/update/delete`, fields, and an optional `rowFilter`. Without a condition, they apply to every row. Settings grants specify `section`, `action: read | update`, and `fields: ["*"]`. Update includes viewing; read does not allow changes.
 
-Core загружает активного principal и актуальные grants из БД. Отзыв политики не требует перевыпуска пользовательского токена. Действие, поля и связанные записи проверяются в сервисах, которыми пользуются HTTP, Kit и внутренний MCP.
+Editing a shared permission directly affects all policies using it. The policy configuration editor saves its own set atomically without accidentally modifying another policy through a shared permission.
 
-Первичный ключ остаётся идентификатором читаемой записи. Запись без read может успешно вернуть `data: null`. System routes не являются обычными items: для них собственные проверки допуска.
+<a id="проверка"></a>
 
-## Приложения в политиках
+## Enforcement
 
-Приложение с включённым управлением через политики появляется во вкладке
-«Приложения» редактора политики. «Разрешить вход» допускает пользователя к SSO;
-галочки ниже назначают права внешнего сервиса из его настроенного каталога.
-Несколько политик объединяются, deny-правил нет. Отсутствие назначения запрещает
-вход даже superuser; superuser Collaborative не означает администратора внешнего сервиса.
+Core loads the active principal and current database grants. Revoking a policy does not require replacing a user's token. Services shared by HTTP, Kit, and internal MCP enforce actions, fields, and related-record access.
 
-`GET /policies/applications` возвращает каталог для редактора и требует человеческого
-доступа `policies/read` или `update`. Полная конфигурация `POST /policies` и
-`PATCH /policies/:id` принимает необязательное поле
-`applications: [{ appId, scopes }]`. Пустой `scopes` разрешает только вход,
-пустой `applications` снимает все назначения приложений этой политики.
-Пропуск `applications` при обновлении сохраняет назначения. Права приложения,
-права данных и пользователи сохраняются одной транзакцией. `GET /policies/:id`
-возвращает этот же список. Неизвестные приложения и разрешения отклоняются.
+The primary key remains the identifier of a readable record. A successful write without read permission can return `data: null`. System routes have their own access checks and are not ordinary items.
 
-Состав меняет только человек-superuser. Ограниченное назначение готовых политик
-действует и для их прав на приложения: менеджеру нужен явный разрешённый набор,
-он не меняет себя или superuser. OAuth-права не дают доступ к Core API.
-Подробности токенов и сроков отзыва — в [интеграциях](./integrations.md#доступ-через-политики).
+<a id="приложения-в-политиках"></a>
 
-## Условия записей
+## Applications in policies
 
-В редакторе политики нажмите действие коллекции: «Нет доступа», «Все записи» или «По условию». Условие состоит из поля, оператора и значения. Поиск поля учитывает его название и техническое имя; оператор зависит от типа. Значением может быть литерал или совместимый параметр из поиска. Параметры и их описание раскрываются по мере необходимости. Группы поддерживают И/ИЛИ; выбор полей свёрнут отдельно. «Применить» возвращает правило в черновик; доступ изменяется после общего сохранения политики.
+An application with policy-managed access appears in the policy editor's Applications tab. Allow sign-in admits the user to SSO; the checkboxes below assign external-service permissions from its configured catalog. Grants from multiple policies combine without deny rules. No assignment means no sign-in, including for a Collaborative superuser: that role does not imply external-service administration.
+
+`GET /policies/applications` supplies the editor catalog and requires a human with policies/read or update. Full configuration through `POST /policies` and `PATCH /policies/:id` accepts optional `applications: [{ appId, scopes }]`. Empty `scopes` allows sign-in only; empty `applications` clears the policy's application assignments. Omitting applications on update preserves them.
+
+Application grants, data grants, and users save in one transaction. `GET /policies/:id` returns the same list. Unknown applications and permissions are rejected.
+
+Only a human superuser may edit a policy's contents. Delegating an existing policy also delegates its application rights: managers need an explicit allowed set and cannot change themselves or superusers. OAuth grants do not grant Core API access. See [integrations](./integrations.md#policy-managed-access) for token and revocation behavior.
+
+<a id="условия-записеи"></a>
+
+## Row conditions
+
+Click a collection action in the policy editor and select No access, All records, or Conditional. Each condition has a field, operator, and value. Field search matches labels and technical names; operators depend on type. Values can be literals or compatible context parameters with discoverable descriptions. Groups support AND/OR. Field selection is a separate collapsed section.
+
+Apply updates the draft; access changes only after saving the whole policy.
 
 ```json
 {
@@ -63,50 +63,58 @@ Core загружает активного principal и актуальные gra
 }
 ```
 
-`rowFilter: null` явно снимает условие. При PATCH permission отсутствие `rowFilter` сохраняет старое условие. Настройки `section` условий не поддерживают. Общий permission разделяется между политиками; редактор конфигурации учитывает условие при выборе экземпляра и сохраняет независимость других политик.
+`rowFilter: null` explicitly removes a condition. Omitting it when patching a permission preserves the old condition. Settings sections do not support conditions. The configuration editor considers the condition when selecting a shared permission, keeping other policies independent.
 
-Каталог параметров принадлежит Core/Contracts: `user.id`, `user.email`, `service.id`, `actor.id`, `request.now`. Значения берутся из аутентифицированного principal и времени сервера; клиент не может передать контекст. Несовместимый тип отклоняется при сохранении. Если параметр отсутствует для участника запроса, недействительно **всё правило**, в том числе его ветки ИЛИ. Повреждённое или устаревшее условие также не открывает доступ.
+Core/Contracts owns the parameter catalog: `user.id`, `user.email`, `service.id`, `actor.id`, and `request.now`. Values come from the authenticated principal and server time; clients cannot supply context. Incompatible types are rejected on save. A missing principal parameter invalidates the **entire rule**, including OR branches. Corrupt or outdated conditions also fail closed.
 
-Поддерживаются прямые скалярные поля, включая ID, внешний ключ M:1 и timestamps. Операторы совпадают с обычным фильтром по этому типу; `exists/notExists`, поля через точку, JSON, repeaters и массивы файлов в этой версии не поддерживаются. Группы непустые, глубина до 3, до 20 условий/30 узлов, JSON до 8192 символов. Литералы — строки; списки значений — массивы строк.
+Conditions support direct scalar fields, including ID, M:1 foreign keys, and timestamps, with the ordinary operators for each type. `exists/notExists`, dotted paths, JSON, repeaters, and file arrays are unsupported. Groups must be nonempty: maximum depth 3, 20 conditions/30 nodes, and 8192 JSON characters. Literals are strings; value lists are arrays of strings.
 
-Чтение ограничивает SQL до пагинации и count. Поля каждой записи проецируются по сработавшим правилам: разрешение «title всем» вместе с «body своим» не открывает чужой body. Фильтр, сортировка и агрегаты по условно доступному полю работают только по строкам, в которых разрешено это поле. Поиск проверяет каждое искомое поле отдельно. Те же границы применяются к labels, связанным спискам/кандидатам, файлам, Kit и MCP.
+Read rules restrict SQL before pagination and counting. Fields are projected per row using the matching rules: “title for everyone” plus “body for my records” never reveals someone else's body. Filters, sorting, and aggregates on conditionally readable fields apply only to rows where that field is readable. Search checks each field separately. Labels, relationship lists/candidates, files, Kit, and MCP share these boundaries.
 
-Создание проверяет итоговую запись с серверными defaults. Проверяются только поля, переданные пользователем; defaults не требуют самостоятельного field grant. Изменение проверяет исходную и итоговую запись по тем же сработавшим веткам для изменяемых полей. Выход из области разрешения, например смена автора при праве «редактировать свои», откатывает всю транзакцию. Bulk и вложенный draft также откатываются целиком при отказе. Удаление проверяет исходную запись. Результат записи возвращает только читаемые поля либо `data: null`.
+Create checks the resulting record with server defaults. Only user-supplied fields require field grants; defaults need no separate grant. Update checks both the original and resulting row against the same matching branches for changed fields. Leaving the allowed scope, such as changing the author under an “edit my records” rule, rolls back the transaction. Bulk writes and nested drafts also roll back entirely on denial. Delete checks the original row. Write responses return readable fields only, or `data: null`.
 
-### Границы первой версии
+<a id="границы-первои-версии"></a>
 
-- Related search и фильтры по полям через связь отключены, если исходная, целевая или промежуточная коллекция использует условное чтение. Прямой внешний ключ и списки отношений продолжают работать с проверкой строк. Это предотвращает утечку через EXISTS до поддержки условий на пути связи.
-- История хранит diff, а не полное состояние каждого старого объекта. Поэтому условные grants не открывают историю: видны только поля из безусловных read grants. При отсутствии таких grants история пуста, включая удалённые записи. Поддержка истории по условиям требует полных исторических снимков.
-- Superuser обходит условия. Доверенный `storage.own` остаётся отдельной ограниченной capability плагина; обычный `items` проверяет права вызывающего.
+### Initial limitations
 
-## Сильные административные права
+- Related search and filters across relationships are disabled when the source, target, or junction collection has conditional read rules. Direct foreign keys and relationship lists still work with row checks. This prevents EXISTS-based leaks until path-level conditions are supported.
+- History stores diffs, not full historical snapshots. Conditional grants therefore do not expose history: only fields from unconditional read grants appear. Without those grants, history is empty, including for deleted records.
+- Superusers bypass row conditions. Trusted plugin `storage.own` remains a separate restricted capability; ordinary `items` checks the caller's access.
 
-- Состав политик, permissions, создание и удаление политик меняет только человек-superuser.
-- `policies/update` позволяет назначать и снимать готовые политики из явного разрешённого набора пользователя. Менеджер не меняет собственные назначения и назначения superuser.
-- `services/update` позволяет управлять сервисами, если все их текущие и запрошенные политики входят в разрешённый набор. Ключи и федерации проверяют ту же границу.
-- `users/update` позволяет приглашать пользователей и видеть их доступ; само по себе не разрешает изменение политик.
-- `superuser` обходит обычные data/settings grants, но не проверки корректности и защиты структуры.
+<a id="сильные-административные-права"></a>
 
-Права настроек не дают чтение записей коллекций и DDL автоматически. Сервисные токены не могут использовать настройки, даже если связанная политика содержит section grants.
+## Administrative privileges
 
-## Пока отсутствует
+- Only a human superuser can change policy contents or permissions, or create/delete policies.
+- `policies/update` allows assignment and removal of existing policies from the manager's explicit allowed set. Managers cannot change their own or superusers' assignments.
+- `services/update` allows service management only when all current and requested policies are in that set. Keys and federations enforce the same boundary.
+- `users/update` allows invitations and viewing access; it does not itself allow changing policies.
+- `superuser` bypasses ordinary data/settings grants, not validation or structural safeguards.
 
-Запрет через deny. Фильтр таблицы, workspace, скрытая коллекция и MCP enable — разные механизмы; они не заменяют permissions.
+Settings grants do not automatically provide collection reads or DDL. Service tokens cannot use settings, even if their policy contains section grants.
 
-## Ограниченное назначение политик
+<a id="пока-отсутствует"></a>
 
-Администратор открывает пользователя → панель доступа → «Разрешено назначать», выбирает готовые политики и сохраняет набор. Это отдельная настройка конкретного пользователя, не permission внутри политики. Назначение другой политики не переносит чужое право делегирования. По умолчанию набор пуст; собственные права пользователя не являются разрешением выдавать их другим.
+## Unsupported behavior
 
-Нужны оба допуска: `policies/update` для назначений людям либо `services/update` для сервисов, и ID политики в разрешённом наборе. `read` разрешает просмотр. Назначение самому себе, изменение состава политики и редактирование разрешённого набора доступны только superuser.
+There are no deny rules. Table filters, workspaces, hidden collections, and MCP enablement are distinct features and do not replace permissions.
 
-`PUT /users/:id/delegation` принимает только `{ policyIds }` и доступен superuser. `PUT /policies/:id/users` принимает только `{ userIds }` и атомарно заменяет назначения одной готовой политики. Индивидуальные PUT/DELETE назначений проверяют те же ограничения. Чужие политики целевого пользователя не заменяются. Существующие собственные назначения и назначения superuser в bulk-запросе можно сохранить без изменения.
+<a id="ограниченное-назначение-политик"></a>
 
-Сервис с хотя бы одной политикой вне набора доступен менеджеру только для просмотра. Нельзя выпустить или отозвать ключ, изменить федерацию, отключить аккаунт или удалить его закрытые политики через PUT. Сервис без политик не имеет прав на данные; менеджер может настроить его в пределах своего набора. Повторное приглашение не выдаётся менеджеру для аккаунта с закрытыми политиками либо с собственным правом делегирования.
+## Bounded policy delegation
 
-Список `GET /users` содержит `hasDelegation`: признак непустого личного разрешённого набора. UI скрывает для менеджера кнопку повторного приглашения у таких пользователей, собственного аккаунта и аккаунтов с политиками вне набора. Сам набор редактируется только в панели доступа администратором; сервер перепроверяет ограничения независимо от кнопок.
+An administrator opens a user's access panel, selects existing policies under Allowed to assign, and saves the set. This is a per-user setting, not a permission inside a policy. Assigning a policy does not inherit another user's delegation rights. The set is empty by default; having a policy yourself does not allow you to give it to others.
 
-Проверки читают актуальное состояние из БД; отзыв набора действует со следующим запросом без смены токена. Разрешение делегировать не даёт права читать данные по выбранным политикам. Сервисные токены не управляют политиками или делегированием.
+Both checks must pass: policies/update for human assignments or services/update for services, and the policy ID in the allowed set. Read grants allow viewing. Self-assignment, policy-content changes, and editing allowed sets require a superuser.
 
-Миграция `20261003040000_policy_delegations.cjs` создаёт пустой набор для существующих менеджеров; прежние grants и назначения сохраняются. Непривилегированные менеджеры теряют неограниченное изменение политик: администратор должен явно настроить разрешённый набор. Down отказывается удалять непустые настройки делегирования.
+`PUT /users/:id/delegation` accepts only `{ policyIds }` and requires a superuser. `PUT /policies/:id/users` accepts only `{ userIds }` and atomically replaces assignments of one existing policy. Individual PUT/DELETE assignments enforce the same restrictions without replacing the target user's other policies. Bulk requests may preserve existing self/superuser assignments unchanged.
 
-Отзыв набора ограничивает будущие административные операции; уже выданные ключи и назначенные получателям политики автоматически не отзываются. Их нужно отзывать отдельно. Изменение администратором состава разрешённой политики меняет её права у всех получателей.
+A service with any policy outside the manager's set is read-only to that manager. They cannot issue/revoke keys, change federation, disable the account, or remove protected policies through PUT. A service without policies has no data access and may be configured within the manager's allowed set. Managers cannot reissue invitations for accounts with protected policies or their own delegation rights.
+
+`GET /users` includes `hasDelegation`, indicating a nonempty personal allowed set. The UI hides re-invitation for those accounts, the manager's own account, and accounts with policies outside the set. Only administrators edit the set in the access panel; the server independently rechecks every restriction.
+
+Checks use current database state, so revocation applies on the next request without token replacement. Delegation does not grant data access through the selected policies. Service tokens cannot manage policies or delegation.
+
+Migration `20261003040000_policy_delegations.cjs` creates empty sets for existing managers and preserves their grants and assignments. Non-superuser managers lose unrestricted policy editing; administrators must explicitly configure their allowed set. Down refuses to remove nonempty delegation settings.
+
+Revocation restricts future administrative actions. Existing keys and assigned policies are not automatically revoked and must be withdrawn separately. Administrator changes to an allowed policy affect all its recipients.

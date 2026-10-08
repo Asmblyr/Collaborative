@@ -18,6 +18,12 @@ docs/reference/routes.md
 docs/reference/*-guide.md
 docs/reference/kit-*.md
 docs/reference/plugin-color.md
+docs/ru/reference/sdk
+docs/ru/reference/kit
+docs/ru/reference/routes.md
+docs/ru/reference/*-guide.md
+docs/ru/reference/kit-*.md
+docs/ru/reference/plugin-color.md
 docs/archive.md
 /infra/
 /plugins/

@@ -1,40 +1,34 @@
-# HTTP API и OpenAPI
+<a id="http-api-и-openapi"></a>
 
-Публичный API: `http://localhost:3000/api`, обслуживается непосредственно Core.
-Самостоятельный Core на `http://localhost:3001` поддерживает те же маршруты как
-без префикса, так и с `/api`. Роут плагина: `/api/<namespace>/...` на общем домене.
-Браузер использует HttpOnly-сессию; SDK и внешние приложения — Bearer-токены.
+# HTTP API and OpenAPI
 
-- <a href="/api/index.html" target="_blank" rel="noopener">Открыть интерактивный справочник</a>
-- [Скачать OpenAPI 3.1 JSON](/openapi.json)
-- [Матрица маршрутов и доступа](./routes.md)
+The public API at `http://localhost:3000/api` is served directly by Core. Standalone Core at `http://localhost:3001` supports the same routes with or without /api. Plugin routes use /api/&lt;namespace&gt;/… on the common domain. Browsers use HttpOnly sessions; SDK/external applications use Bearer tokens.
+
+- <a href="/api/index.html" target="_blank" rel="noopener">Open interactive reference</a>
+- [Download OpenAPI 3.1 JSON](/openapi.json)
+- [Route/access matrix](./routes.md)
 - [HTTP SDK](./sdk-guide.md)
 
-Для первого запроса и типизированного клиента начните с
-[подключения SDK](./sdk-guide.md#подключение-клиента). Там же описаны
-[фильтры и пагинация](./sdk-guide.md#реализованные-методы),
-[сохранение связей](./sdk-guide.md#запись-и-сохранение-связей) и
-[ошибки](./sdk-guide.md#ошибки-и-отмена). Поведение коллекций и пределы поиска
-описаны в [данных](../features/data.md), права — в
-[матрице доступа](../security/access-matrix.md).
+Start with [client setup](./sdk-guide.md#connect-a-client), [filters/pagination](./sdk-guide.md#available-methods), [relationship saves](./sdk-guide.md#writes-and-relationships), and [errors](./sdk-guide.md#errors-and-cancellation). See [data](../features/data.md) for collection/search limits and [access matrix](../security/access-matrix.md) for authorization.
 
-Справочник работает без CDN. Выполнение запросов отключено, чтобы просмотр документации не менял данные. Внешний Swagger validator и сохранение авторизации отключены.
+The reference runs without a CDN. Request execution, external Swagger validation, and authorization persistence are disabled so browsing documentation does not mutate data.
 
-## Полнота
+<a id="полнота"></a>
 
-В спецификации перечислены все статические REST-маршруты Core. Для ключевых операций items/auth/settings описаны JSON-контракты; остальные помечены `x-contract-level: route-only` и содержат путь, метод, параметры пути, требования доступа и source file. Они не претендуют на полное описание тела/ответа. Генерировать полный SDK по этой спецификации пока рано.
+## Coverage
 
-`ALL /oauth/*` вынесен в `x-delegated-routes`: реальные protocol endpoints публикует discovery oidc-provider. Динамические маршруты установленных плагинов определяются их файлами и build index; в статический Core OpenAPI не добавляются автоматически.
+All static Core REST routes are listed. Key items/auth/settings operations include JSON contracts; others are explicitly x-contract-level:route-only, documenting method, path, path parameters, access, and source file without claiming full body/response schemas. Do not generate a complete SDK from this incomplete specification.
 
-## Авторизация и ошибки
+ALL /oauth/\* is under x-delegated-routes. OIDC discovery supplies actual protocol endpoints. Dynamic plugin routes come from files/build indexes and are not automatically included in static Core OpenAPI.
 
-Прямой API использует `Authorization: Bearer <accessToken>`. Основной access token непрозрачен; OAuth token внешнего приложения не подходит. Системные настройки требуют человека и соответствующий section grant. Bearer security scheme описывает передачу токена, а не достаточность прав.
+<a id="авторизация-и-ошибки"></a>
 
-Обычно 400 — некорректный ввод, 401 — нет действительной учётной записи, 403 — недостаточно прав, 404 — ресурс не найден/не раскрывается, 409 — конфликт, 429 — лимит, 503 — зависимость недоступна. Не все endpoints имеют одинаковую обёртку ответа: auth token pair передаётся напрямую, items/users обычно через data.
+## Authentication and errors
 
-Ошибки Core имеют единый JSON-формат `{ code, message, details, requestId }`.
-`details` сейчас пустой объект; закрытые значения записи и внутренние ошибки в
-него не попадают. Сохраняйте `requestId` при диагностике. Прокси UI может
-сформировать собственную ошибку, если Core вообще недоступен.
+Use Authorization: Bearer &lt;accessToken&gt;. Core access tokens are opaque; external-application OAuth tokens do not work here. Settings require a human and the relevant section grant. The Bearer security scheme describes transport, not sufficient permissions.
 
-Схема данных коллекции динамическая. Даже успешный create/update может вернуть `data: null` без read grant. Типы больших ID/total остаются строками. Подробный клиентский контракт — в SDK.
+Typical statuses: 400 invalid input, 401 unauthenticated, 403 denied, 404 missing/not disclosed, 409 conflict, 429 rate limit, and 503 dependency unavailable. Response envelopes vary: auth token pairs are direct; items/users usually use data.
+
+Core errors use { code, message, details, requestId }. Details is currently empty and excludes protected values/internal errors. Preserve requestId for diagnostics. Infrastructure may return a different error if Core is unreachable.
+
+Collection schemas are dynamic. Successful create/update may return data:null without read grants. Large IDs/totals remain strings. SDK documentation describes the client contract.
