@@ -130,6 +130,7 @@ async function main() {
     "core-all",
     "core-unit",
     "core-integration",
+    "core-registry",
     "core-assistant",
     "core-sso",
     "core-browser",
@@ -278,6 +279,13 @@ async function main() {
         ].includes(name);
       if (suite === "core-security") {
         return name === "test/http-access-surface.integration.test.ts";
+      }
+      if (suite === "core-registry") {
+        return [
+          "test/extension-registry.test.ts",
+          "test/extension-registry.integration.test.ts",
+          "test/http-access-surface.integration.test.ts",
+        ].includes(name);
       }
       if (suite === "core-unit") return !name.endsWith(".integration.test.ts");
       if (suite === "core-integration")
