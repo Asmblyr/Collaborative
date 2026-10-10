@@ -44,6 +44,11 @@ import {
   sourceEndpoints,
   type PendingEndpoint,
 } from "./route-index.js";
+import {
+  parseRegistryPackage,
+  type RegistryPackage,
+} from "./registry-manifest.js";
+import { resolveRegistryPackages } from "./registry-resolver.js";
 
 const packageNamePattern = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 
@@ -75,6 +80,49 @@ function configuredPlugins(value: unknown): string[] {
   return names;
 }
 
+/** Reads the trusted project allowlist and manifests without executing package code. */
+export async function readConfiguredRegistryPackages(
+  projectPackage: URL,
+  tolerateInvalid = false,
+): Promise<RegistryPackage[]> {
+  const project = JSON.parse(await readFile(projectPackage, "utf8"));
+  const names = configuredPlugins(project);
+  const resolve = createRequire(projectPackage).resolve;
+  const packages: RegistryPackage[] = [];
+  for (const name of names) {
+    try {
+      const manifestPath = await realpath(resolve(`${name}/package.json`));
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+      validateManifest(manifest, name);
+      const entry = parseRegistryPackage(manifest, name);
+      try {
+        approvedCapabilities(project, entry.manifest, name);
+      } catch (error) {
+        entry.approvalIssue =
+          error instanceof Error ? error.message : "Capability approval failed";
+      }
+      packages.push(entry);
+    } catch (cause) {
+      if (tolerateInvalid) {
+        packages.push({
+          name,
+          version: "0.0.0",
+          description: null,
+          manifest: { version: 1 },
+          validationIssue:
+            cause instanceof Error ? cause.message : String(cause),
+        });
+        continue;
+      }
+      throw new Error(
+        `Cannot load plugin ${name}; check its manifest, exports and build`,
+        { cause },
+      );
+    }
+  }
+  return packages;
+}
+
 function validateManifest(value: unknown, name: string): string | undefined {
   if (
     !isRecord(value) ||
@@ -100,10 +148,54 @@ function validateManifest(value: unknown, name: string): string | undefined {
 
 export async function loadPlugins(
   projectPackage: URL,
-  { sourcePlugins = false }: { sourcePlugins?: boolean } = {},
+  {
+    sourcePlugins = false,
+    disabledPackages = [],
+    registryPackages,
+    onFailure,
+  }: {
+    sourcePlugins?: boolean;
+    disabledPackages?: readonly string[];
+    registryPackages?: readonly RegistryPackage[];
+    onFailure?: (name: string, error: string) => void;
+  } = {},
 ): Promise<LoadedPlugin[]> {
   const project = JSON.parse(await readFile(projectPackage, "utf8"));
-  const names = configuredPlugins(project);
+  const allowlist = new Set(configuredPlugins(project));
+  if (registryPackages?.some((entry) => !allowlist.has(entry.name))) {
+    throw new Error("Registry packages must belong to asmblyr.plugins");
+  }
+  const configured =
+    registryPackages ?? (await readConfiguredRegistryPackages(projectPackage));
+  const disabled = new Set(disabledPackages);
+  const active = configured.filter((entry) => !disabled.has(entry.name));
+  const resolution = resolveRegistryPackages(
+    active,
+    typeof project.version === "string" ? project.version : "0.0.0",
+  );
+  const errors = Object.entries(resolution.issues);
+  if (errors.length && !onFailure) {
+    const details = errors
+      .map(([name, messages]) => `${name}: ${messages.join("; ")}`)
+      .join(" | ");
+    const namespaceIssue = errors
+      .flatMap(([, messages]) => messages)
+      .find((message) => message.startsWith("Namespace "));
+    throw new Error(
+      `Plugin dependency or compatibility check failed: ${details}`,
+      {
+        cause: new Error(
+          namespaceIssue
+            ? `Duplicate plugin namespace: ${namespaceIssue}`
+            : details,
+        ),
+      },
+    );
+  }
+  const names = resolution.order;
+  const registryByName = new Map(
+    configured.map((entry) => [entry.name, entry]),
+  );
   const resolve = createRequire(projectPackage).resolve;
   const projectDirectory = path.dirname(fileURLToPath(projectPackage));
   const entries: {
@@ -118,15 +210,37 @@ export async function loadPlugins(
     hooks: PendingHook[];
     settings?: URL;
     capabilities: PluginCapability[];
+    registry: RegistryPackage;
   }[] = [];
   const namespaces = new Set<string>();
+  const failed = new Set<string>();
 
   // Validate every package before executing any plugin code.
   for (const name of names) {
+    const registryEntry = registryByName.get(name)!;
+    const resolutionIssue = resolution.issues[name]?.join("; ");
+    const preflightIssue =
+      registryEntry.validationIssue ??
+      registryEntry.approvalIssue ??
+      resolutionIssue;
+    if (preflightIssue && onFailure) {
+      failed.add(name);
+      onFailure(name, preflightIssue);
+      continue;
+    }
     try {
       const manifestPath = await realpath(resolve(`${name}/package.json`));
       const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
       const namespace = validateManifest(manifest, name);
+      const registry = registryByName.get(name)!;
+      const currentRegistry = parseRegistryPackage(manifest, name);
+      if (
+        registry.version !== currentRegistry.version ||
+        JSON.stringify(registry.manifest) !==
+          JSON.stringify(currentRegistry.manifest)
+      ) {
+        throw new Error(`Plugin ${name}: manifest changed during discovery`);
+      }
       const capabilities = approvedCapabilities(
         project,
         manifest.asmblyr.manifest,
@@ -228,8 +342,14 @@ export async function loadPlugins(
         hooks,
         settings,
         capabilities,
+        registry,
       });
     } catch (cause) {
+      if (onFailure) {
+        failed.add(name);
+        onFailure(name, cause instanceof Error ? cause.message : String(cause));
+        continue;
+      }
       throw new Error(
         `Cannot load plugin ${name}; check its manifest, exports and build`,
         {
@@ -252,23 +372,43 @@ export async function loadPlugins(
     hooks,
     settings,
     capabilities,
+    registry,
   } of entries) {
-    const module: { default?: unknown } = await import(url.href);
-    const definition = parsePluginDefinition(module.default, name);
-    plugins.push({
-      translations,
-      name,
-      namespace,
-      hasUi,
-      definition,
-      capabilities,
-      hooks: await importHooks(hooks),
-      settings: await importSettings(settings),
-      endpoints: await importEndpoints(routes, name),
-      collections: await importCollections(collections, namespace),
-      migrations: await importMigrations(migrations),
-    });
-    validatePluginCapabilities(plugins[plugins.length - 1]);
+    const unavailable = Object.keys(registry.manifest.dependencies ?? {}).find(
+      (dependency) => failed.has(dependency),
+    );
+    if (unavailable && onFailure) {
+      failed.add(name);
+      onFailure(name, `Required dependency ${unavailable} failed to start`);
+      continue;
+    }
+    try {
+      const module: { default?: unknown } = await import(url.href);
+      const definition = parsePluginDefinition(module.default, name);
+      const plugin: LoadedPlugin = {
+        translations,
+        name,
+        namespace,
+        hasUi,
+        definition,
+        capabilities,
+        registry,
+        hooks: await importHooks(hooks),
+        settings: await importSettings(settings),
+        endpoints: await importEndpoints(routes, name),
+        collections: await importCollections(collections, namespace),
+        migrations: await importMigrations(migrations),
+      };
+      validatePluginCapabilities(plugin);
+      plugins.push(plugin);
+    } catch (cause) {
+      if (onFailure) {
+        failed.add(name);
+        onFailure(name, cause instanceof Error ? cause.message : String(cause));
+        continue;
+      }
+      throw cause;
+    }
   }
   return plugins;
 }
