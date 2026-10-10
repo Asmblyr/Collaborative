@@ -20,6 +20,7 @@ import { profileDisplayContract } from "./profile-display-contract.mjs";
 import { systemCollectionsContract } from "./system-collections-contract.mjs";
 import { oauthPolicyContract } from "./oauth-policy-contract.mjs";
 import { userReferenceContract } from "./user-reference-contract.mjs";
+import { extensionRegistryContract } from "./extension-registry-contract.mjs";
 const object = { type: "object", additionalProperties: true };
 const json = (schema) => ({ "application/json": { schema } });
 const response = (schema, description = "Успех") => ({
@@ -74,6 +75,8 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const extensionRegistry = extensionRegistryContract(key);
+  if (extensionRegistry) return extensionRegistry;
   const userReference = userReferenceContract(key);
   if (userReference) return userReference;
   const oauthPolicy = oauthPolicyContract(key);

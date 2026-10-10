@@ -1,6 +1,6 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 226 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 235 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
@@ -160,6 +160,15 @@
 | `GET /settings/assistant` | Человек: assistant/read ИЛИ update; superuser bypass | `apps/core/src/settings/routes.ts` |
 | `PUT /settings/assistant` | Человек: assistant/update; superuser bypass | `apps/core/src/settings/routes.ts` |
 | `GET /settings/assistant/telemetry` | Человек: assistant/read ИЛИ update; superuser bypass | `apps/core/src/settings/routes.ts` |
+| `GET /settings/extension-registry` | Человек: plugins/read либо update; superuser bypass; только настроенные пакеты | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id` | Человек: plugins/read либо update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/dependencies` | Человек: plugins/read либо update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `POST /settings/extension-registry/:id/disable` | Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска | `apps/core/src/plugins/registry-routes.ts` |
+| `POST /settings/extension-registry/:id/enable` | Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/health` | Человек: plugins/read либо update; snapshot текущего процесса | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/history` | Человек: plugins/read либо update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/permissions` | Человек: plugins/read либо update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/versions` | Человек: plugins/read либо update; только установленная версия | `apps/core/src/plugins/registry-routes.ts` |
 | `GET /settings/integrations` | Только активная человеческая сессия superuser; безопасные параметры и наличие ключей, без значений секретов | `apps/core/src/integrations/routes.ts` |
 | `PUT /settings/integrations/:section` | Только superuser; полный запрет изменения env-группы, revision, атомарное перешифрование при смене защиты | `apps/core/src/integrations/routes.ts` |
 | `POST /settings/integrations/:section/test` | Только superuser; credential rate limit, проверка соединения без сохранения настроек | `apps/core/src/integrations/routes.ts` |
