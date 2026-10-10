@@ -1,10 +1,16 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { createApp } from "./app.js";
 import { ssoFromEnv } from "./auth/sso/config.js";
 import { SsoService } from "./auth/sso/service.js";
 import { SsoProtocol } from "./auth/sso/protocol.js";
 import { oauthFromEnv } from "./oauth/config.js";
-import { loadPlugins } from "./plugins/load.js";
+import { loadPlugins, readConfiguredRegistryPackages } from "./plugins/load.js";
+import {
+  disabledExtensionPackages,
+  recordExtensionStartup,
+} from "./plugins/registry-state.js";
 import { passkeysFromEnv } from "./auth/passkeys/config.js";
 import { limitsFromEnv } from "./operations/limits.js";
 import { cleanupOperations } from "./operations/retention.js";
@@ -29,6 +35,31 @@ const sso = new SsoService(
     console.warn("SSO provider failure", JSON.stringify(diagnostic));
   }),
 );
+const projectPackage = new URL("../../../package.json", import.meta.url);
+const projectMetadata = JSON.parse(await readFile(projectPackage, "utf8"));
+const registryPackages = await readConfiguredRegistryPackages(
+  projectPackage,
+  true,
+);
+const registryInstanceId = randomUUID();
+const registryFailures = new Map<string, string>();
+let disabledPackages: string[] = [];
+const registryDatabase = process.env.DATABASE_URL
+  ? knex({
+      client: "pg",
+      connection: process.env.DATABASE_URL,
+      pool: { min: 0, max: 1 },
+    })
+  : null;
+if (registryDatabase) {
+  disabledPackages = await disabledExtensionPackages(registryDatabase);
+}
+const plugins = await loadPlugins(projectPackage, {
+  sourcePlugins: process.argv.includes("--plugin-sources"),
+  disabledPackages,
+  registryPackages,
+  onFailure: (name, error) => registryFailures.set(name, error),
+});
 const app = createApp({
   trustProxy: process.env.TRUST_PROXY?.split(",")
     .map((value) => value.trim())
@@ -41,13 +72,27 @@ const app = createApp({
   integrations: { env: process.env },
   sso,
   oauth: await oauthFromEnv(process.env),
-  plugins: await loadPlugins(
-    new URL("../../../package.json", import.meta.url),
-    {
-      sourcePlugins: process.argv.includes("--plugin-sources"),
-    },
-  ),
+  registryPackages,
+  registryFailures,
+  registryInstanceId,
+  coreVersion: projectMetadata.version,
+  plugins,
 });
+for (const entry of registryPackages) {
+  const error = registryFailures.get(entry.name);
+  if (!error) {
+    continue;
+  }
+  app.log.error({
+    event:
+      entry.validationIssue || entry.approvalIssue
+        ? "extension.validation.failed"
+        : "extension.startup.failed",
+    packageName: entry.name,
+    instanceId: registryInstanceId,
+    error,
+  });
+}
 const publicPort =
   process.env.PUBLIC_PORT ??
   (process.argv.includes("--with-ui") ? "3000" : undefined);
@@ -99,6 +144,7 @@ const cleanupTimer = setInterval(async () => {
 cleanupTimer.unref();
 app.addHook("onClose", async () => {
   clearInterval(cleanupTimer);
+  await registryDatabase?.destroy();
   await maintenance?.destroy();
 });
 let stopping = false;
@@ -114,6 +160,29 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 try {
   await app.listen({ port, host });
+  if (registryDatabase) {
+    await recordExtensionStartup(
+      registryDatabase,
+      registryPackages,
+      new Set(plugins.map((plugin) => plugin.name)),
+      registryFailures,
+      registryInstanceId,
+    );
+  }
+  for (const plugin of plugins) {
+    app.log.info({
+      event: "extension.startup.succeeded",
+      packageName: plugin.name,
+      instanceId: registryInstanceId,
+    });
+  }
+  app.log.info({
+    event: "extension.reconciliation.completed",
+    instanceId: registryInstanceId,
+    loaded: plugins.length,
+    failed: registryFailures.size,
+    disabled: disabledPackages.length,
+  });
   if (publicServer && publicPort) {
     await new Promise<void>((resolve, reject) => {
       publicServer.once("error", reject);
