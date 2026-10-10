@@ -41,7 +41,8 @@
     "openai": "^7.23.0",
     "openid-client": "6.8.8",
     "pg": "^8.23.0",
-    "sanitize-html": "^2.17.7"
+    "sanitize-html": "^2.17.7",
+    "semver": "^7.8.5"
   },
   "devDependencies": {
     "@asmblyr-collaborative/sdk": "workspace:*",
@@ -49,6 +50,7 @@
     "@types/oidc-provider": "9.12.1",
     "@types/pg": "^8.23.1",
     "@types/sanitize-html": "^2.16.1",
+    "@types/semver": "^7.8.0",
     "eslint": "^9.39.5",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
