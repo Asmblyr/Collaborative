@@ -4,6 +4,8 @@
 
 Typed Collaborative HTTP client for browsers and Node.js 22+. Every operation calls the main API. Runtime dependencies do not include H3, Knex, PostgreSQL, the TypeScript compiler, or a plugin loader. Use the separate @asmblyr-collaborative/kit to develop extensions.
 
+`client.extensions` reads the trusted extension registry with `list`, `get`, `versions`, `dependencies`, `permissions`, `health`, and `history`. `enable` and `disable` change desired activation and return `restartRequired`; Core must restart before server code is loaded or unloaded. The methods require a human `plugins` settings grant (`read` for inspection, `update` for changes). Package installation and updates remain deployment operations.
+
 <a id="профиль-пользователя"></a>
 
 ## User profile

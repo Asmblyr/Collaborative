@@ -10044,6 +10044,1672 @@
         "x-source": "apps/core/src/settings/routes.ts"
       }
     },
+    "/settings/extension-registry": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_extension_registry",
+        "summary": "GET /settings/extension-registry",
+        "description": "Человек: plugins/read либо update; superuser bypass; только настроенные пакеты. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "title",
+                "version",
+                "status"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "packageName": {
+                            "type": "string"
+                          },
+                          "namespace": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "category": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "publisher": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "version": {
+                            "type": "string"
+                          },
+                          "latestAvailableVersion": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "manifestVersion": {
+                            "const": 1
+                          },
+                          "status": {
+                            "enum": [
+                              "healthy",
+                              "disabled",
+                              "restart_required",
+                              "incompatible",
+                              "failed"
+                            ]
+                          },
+                          "desiredState": {
+                            "enum": [
+                              "enabled",
+                              "disabled"
+                            ]
+                          },
+                          "actualState": {
+                            "enum": [
+                              "enabled",
+                              "disabled",
+                              "failed"
+                            ]
+                          },
+                          "instanceId": {
+                            "type": "string"
+                          },
+                          "pendingRestart": {
+                            "type": "boolean"
+                          },
+                          "lastError": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "loaded": {
+                            "type": "boolean"
+                          },
+                          "desiredEnabled": {
+                            "type": "boolean"
+                          },
+                          "restartRequired": {
+                            "type": "boolean"
+                          },
+                          "compatible": {
+                            "type": "boolean"
+                          },
+                          "issues": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "capabilities": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "dependencies": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          },
+                          "optionalDependencies": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          },
+                          "compatibility": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "collaborative"
+                                ],
+                                "properties": {
+                                  "collaborative": {
+                                    "type": "string"
+                                  },
+                                  "node": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "enable": {
+                                "type": "boolean"
+                              },
+                              "disable": {
+                                "type": "boolean"
+                              },
+                              "configure": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "enable",
+                              "disable",
+                              "configure"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "packageName",
+                          "namespace",
+                          "title",
+                          "description",
+                          "category",
+                          "publisher",
+                          "version",
+                          "latestAvailableVersion",
+                          "manifestVersion",
+                          "status",
+                          "desiredState",
+                          "actualState",
+                          "instanceId",
+                          "pendingRestart",
+                          "lastError",
+                          "loaded",
+                          "desiredEnabled",
+                          "restartRequired",
+                          "compatible",
+                          "issues",
+                          "capabilities",
+                          "dependencies",
+                          "optionalDependencies",
+                          "compatibility",
+                          "actions"
+                        ]
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page",
+                    "limit",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_extension_registry_id",
+        "summary": "GET /settings/extension-registry/:id",
+        "description": "Человек: plugins/read либо update; superuser bypass. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "packageName": {
+                          "type": "string"
+                        },
+                        "namespace": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "category": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "publisher": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "latestAvailableVersion": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "manifestVersion": {
+                          "const": 1
+                        },
+                        "status": {
+                          "enum": [
+                            "healthy",
+                            "disabled",
+                            "restart_required",
+                            "incompatible",
+                            "failed"
+                          ]
+                        },
+                        "desiredState": {
+                          "enum": [
+                            "enabled",
+                            "disabled"
+                          ]
+                        },
+                        "actualState": {
+                          "enum": [
+                            "enabled",
+                            "disabled",
+                            "failed"
+                          ]
+                        },
+                        "instanceId": {
+                          "type": "string"
+                        },
+                        "pendingRestart": {
+                          "type": "boolean"
+                        },
+                        "lastError": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loaded": {
+                          "type": "boolean"
+                        },
+                        "desiredEnabled": {
+                          "type": "boolean"
+                        },
+                        "restartRequired": {
+                          "type": "boolean"
+                        },
+                        "compatible": {
+                          "type": "boolean"
+                        },
+                        "issues": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "capabilities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "dependencies": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "optionalDependencies": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "compatibility": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "collaborative"
+                              ],
+                              "properties": {
+                                "collaborative": {
+                                  "type": "string"
+                                },
+                                "node": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "enable": {
+                              "type": "boolean"
+                            },
+                            "disable": {
+                              "type": "boolean"
+                            },
+                            "configure": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "enable",
+                            "disable",
+                            "configure"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "packageName",
+                        "namespace",
+                        "title",
+                        "description",
+                        "category",
+                        "publisher",
+                        "version",
+                        "latestAvailableVersion",
+                        "manifestVersion",
+                        "status",
+                        "desiredState",
+                        "actualState",
+                        "instanceId",
+                        "pendingRestart",
+                        "lastError",
+                        "loaded",
+                        "desiredEnabled",
+                        "restartRequired",
+                        "compatible",
+                        "issues",
+                        "capabilities",
+                        "dependencies",
+                        "optionalDependencies",
+                        "compatibility",
+                        "actions"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}/dependencies": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_extension_registry_id_dependencies",
+        "summary": "GET /settings/extension-registry/:id/dependencies",
+        "description": "Человек: plugins/read либо update; superuser bypass. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "required": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "optional": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "required",
+                        "optional"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}/disable": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "post__settings_extension_registry_id_disable",
+        "summary": "POST /settings/extension-registry/:id/disable",
+        "description": "Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "packageName": {
+                          "type": "string"
+                        },
+                        "namespace": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "category": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "publisher": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "latestAvailableVersion": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "manifestVersion": {
+                          "const": 1
+                        },
+                        "status": {
+                          "enum": [
+                            "healthy",
+                            "disabled",
+                            "restart_required",
+                            "incompatible",
+                            "failed"
+                          ]
+                        },
+                        "desiredState": {
+                          "enum": [
+                            "enabled",
+                            "disabled"
+                          ]
+                        },
+                        "actualState": {
+                          "enum": [
+                            "enabled",
+                            "disabled",
+                            "failed"
+                          ]
+                        },
+                        "instanceId": {
+                          "type": "string"
+                        },
+                        "pendingRestart": {
+                          "type": "boolean"
+                        },
+                        "lastError": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loaded": {
+                          "type": "boolean"
+                        },
+                        "desiredEnabled": {
+                          "type": "boolean"
+                        },
+                        "restartRequired": {
+                          "type": "boolean"
+                        },
+                        "compatible": {
+                          "type": "boolean"
+                        },
+                        "issues": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "capabilities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "dependencies": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "optionalDependencies": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "compatibility": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "collaborative"
+                              ],
+                              "properties": {
+                                "collaborative": {
+                                  "type": "string"
+                                },
+                                "node": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "enable": {
+                              "type": "boolean"
+                            },
+                            "disable": {
+                              "type": "boolean"
+                            },
+                            "configure": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "enable",
+                            "disable",
+                            "configure"
+                          ]
+                        },
+                        "changed": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "packageName",
+                        "namespace",
+                        "title",
+                        "description",
+                        "category",
+                        "publisher",
+                        "version",
+                        "latestAvailableVersion",
+                        "manifestVersion",
+                        "status",
+                        "desiredState",
+                        "actualState",
+                        "instanceId",
+                        "pendingRestart",
+                        "lastError",
+                        "loaded",
+                        "desiredEnabled",
+                        "restartRequired",
+                        "compatible",
+                        "issues",
+                        "capabilities",
+                        "dependencies",
+                        "optionalDependencies",
+                        "compatibility",
+                        "actions",
+                        "changed"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}/enable": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "post__settings_extension_registry_id_enable",
+        "summary": "POST /settings/extension-registry/:id/enable",
+        "description": "Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "packageName": {
+                          "type": "string"
+                        },
+                        "namespace": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "category": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "publisher": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "latestAvailableVersion": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "manifestVersion": {
+                          "const": 1
+                        },
+                        "status": {
+                          "enum": [
+                            "healthy",
+                            "disabled",
+                            "restart_required",
+                            "incompatible",
+                            "failed"
+                          ]
+                        },
+                        "desiredState": {
+                          "enum": [
+                            "enabled",
+                            "disabled"
+                          ]
+                        },
+                        "actualState": {
+                          "enum": [
+                            "enabled",
+                            "disabled",
+                            "failed"
+                          ]
+                        },
+                        "instanceId": {
+                          "type": "string"
+                        },
+                        "pendingRestart": {
+                          "type": "boolean"
+                        },
+                        "lastError": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "loaded": {
+                          "type": "boolean"
+                        },
+                        "desiredEnabled": {
+                          "type": "boolean"
+                        },
+                        "restartRequired": {
+                          "type": "boolean"
+                        },
+                        "compatible": {
+                          "type": "boolean"
+                        },
+                        "issues": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "capabilities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "dependencies": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "optionalDependencies": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "compatibility": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "collaborative"
+                              ],
+                              "properties": {
+                                "collaborative": {
+                                  "type": "string"
+                                },
+                                "node": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "enable": {
+                              "type": "boolean"
+                            },
+                            "disable": {
+                              "type": "boolean"
+                            },
+                            "configure": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "enable",
+                            "disable",
+                            "configure"
+                          ]
+                        },
+                        "changed": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "packageName",
+                        "namespace",
+                        "title",
+                        "description",
+                        "category",
+                        "publisher",
+                        "version",
+                        "latestAvailableVersion",
+                        "manifestVersion",
+                        "status",
+                        "desiredState",
+                        "actualState",
+                        "instanceId",
+                        "pendingRestart",
+                        "lastError",
+                        "loaded",
+                        "desiredEnabled",
+                        "restartRequired",
+                        "compatible",
+                        "issues",
+                        "capabilities",
+                        "dependencies",
+                        "optionalDependencies",
+                        "compatibility",
+                        "actions",
+                        "changed"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}/health": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_extension_registry_id_health",
+        "summary": "GET /settings/extension-registry/:id/health",
+        "description": "Человек: plugins/read либо update; snapshot текущего процесса. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "status": {
+                          "type": "string"
+                        },
+                        "issues": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "restartRequired": {
+                          "type": "boolean"
+                        },
+                        "desiredState": {
+                          "enum": [
+                            "enabled",
+                            "disabled"
+                          ]
+                        },
+                        "actualState": {
+                          "enum": [
+                            "enabled",
+                            "disabled",
+                            "failed"
+                          ]
+                        },
+                        "pendingRestart": {
+                          "type": "boolean"
+                        },
+                        "lastError": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "instanceId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "issues",
+                        "restartRequired",
+                        "desiredState",
+                        "actualState",
+                        "pendingRestart",
+                        "lastError",
+                        "instanceId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}/history": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_extension_registry_id_history",
+        "summary": "GET /settings/extension-registry/:id/history",
+        "description": "Человек: plugins/read либо update; superuser bypass. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "package_name": {
+                            "type": "string"
+                          },
+                          "action": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "type": "string"
+                          },
+                          "error_code": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "error_message": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "actor_id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "instance_id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "package_name",
+                          "action",
+                          "result",
+                          "error_code",
+                          "error_message",
+                          "actor_id",
+                          "instance_id",
+                          "created_at"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}/permissions": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_extension_registry_id_permissions",
+        "summary": "GET /settings/extension-registry/:id/permissions",
+        "description": "Человек: plugins/read либо update; superuser bypass. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "declared": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "approvalIssue": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "declared",
+                        "approvalIssue"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
+    "/settings/extension-registry/{id}/versions": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_extension_registry_id_versions",
+        "summary": "GET /settings/extension-registry/:id/versions",
+        "description": "Человек: plugins/read либо update; только установленная версия. Источник: apps/core/src/plugins/registry-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64url идентификатор имени пакета"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успех; private, no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "version": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "const": "project-package"
+                          },
+                          "installed": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "version",
+                          "source",
+                          "installed"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "401": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "403": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "404": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "409": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          },
+          "default": {
+            "description": "Ошибка авторизации, проверки или конфликта"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/plugins/registry-routes.ts"
+      }
+    },
     "/settings/integrations": {
       "get": {
         "tags": [

@@ -34,6 +34,14 @@ pnpm exec asm schema check --offline
 Credentials не сохраняются в генерируемых файлах. Требуется HTTPS, кроме localhost;
 HTTP-редиректы отклоняются.
 
+Команды расширений используют API реестра и требуют явный пользовательский токен
+с правом `plugins/read` или `plugins/update`. Токен браузерного согласия с
+`schema:read` для них не подходит. Выполните `asm extensions list`, затем
+`asm extensions info <id>` с полученным ID. Команды
+`asm extensions enable <id> --yes` и `asm extensions disable <id> --yes`
+сохраняют желаемое состояние; для применения нужен перезапуск Core. CLI не
+устанавливает, не обновляет и не удаляет npm-пакеты.
+
 Connect создаёт asmblyr.config.json, asmblyr.schema.json и asmblyr.schema.ts,
 не перезаписывая существующие файлы. Schema pull обновляет подключение.
 --config, --schema-file и --types-file выбирают относительные пути проекта.

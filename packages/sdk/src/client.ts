@@ -20,10 +20,12 @@ import type { ClientSchema, FieldDefinitions } from "./query/definition.js";
 import { createFluentClient, type FluentClient } from "./query/client.js";
 import { createPluginsClient, type PluginsClient } from "./plugins.js";
 import { createUsersClient, type UsersClient } from "./users.js";
+import { createExtensionsClient, type ExtensionsClient } from "./extensions.js";
 
 export interface AsmblyrClient<Schema extends object = DynamicSchema> {
   readonly items: ItemsClient<Schema>;
   readonly users: UsersClient<Schema>;
+  readonly extensions: ExtensionsClient;
   readonly presence: PresenceClient;
   readonly realtime: ReturnType<typeof createRealtimeClient>;
   readonly notifications: NotificationsClient;
@@ -71,6 +73,7 @@ export function createClient<Schema extends object = DynamicSchema>(
       : {}),
     items,
     users: createUsersClient<Schema>(transport),
+    extensions: createExtensionsClient(transport),
     presence: createPresenceClient(transport),
     realtime: createRealtimeClient(options, transport),
     notifications: createNotificationsClient(transport),

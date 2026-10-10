@@ -65,6 +65,11 @@ export type {
   UserProfileExtensionResult,
 } from "./users.js";
 export type { ApiErrorBody } from "./api-error.js";
+export type {
+  ExtensionEntry,
+  ExtensionHistoryEntry,
+  ExtensionListResult,
+} from "./extension-registry.js";
 export type { NotificationItem, NotificationResult } from "./notifications.js";
 export type {
   SchemaValueType,

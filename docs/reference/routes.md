@@ -1,6 +1,6 @@
 # HTTP route matrix
 
-Generated from Core and the reviewed access catalog. 226 declarations.
+Generated from Core and the reviewed access catalog. 235 declarations.
 
 This describes access boundaries; integration tests verify enforcement. Dynamic plugin routes and internal oidc-provider endpoints are not listed individually.
 
@@ -160,6 +160,15 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `GET /settings/assistant` | Human with assistant/read or update; superuser bypass | `apps/core/src/settings/routes.ts` |
 | `PUT /settings/assistant` | Human with assistant/update; superuser bypass | `apps/core/src/settings/routes.ts` |
 | `GET /settings/assistant/telemetry` | Human with assistant/read or update; superuser bypass | `apps/core/src/settings/routes.ts` |
+| `GET /settings/extension-registry` | Human with plugins/read or update; superuser bypass; configured packages only | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id` | Human with plugins/read or update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/dependencies` | Human with plugins/read or update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `POST /settings/extension-registry/:id/disable` | Human with plugins/update; superuser bypass; saves desired state until restart | `apps/core/src/plugins/registry-routes.ts` |
+| `POST /settings/extension-registry/:id/enable` | Human with plugins/update; superuser bypass; saves desired state until restart | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/health` | Human with plugins/read or update; current process snapshot | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/history` | Human with plugins/read or update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/permissions` | Human with plugins/read or update; superuser bypass | `apps/core/src/plugins/registry-routes.ts` |
+| `GET /settings/extension-registry/:id/versions` | Human with plugins/read or update; installed version only | `apps/core/src/plugins/registry-routes.ts` |
 | `GET /settings/integrations` | Active human superuser only; safe parameters and key-presence flags, without secret values | `apps/core/src/integrations/routes.ts` |
 | `PUT /settings/integrations/:section` | Superuser only; environment groups cannot change; revision checks and atomic re-encryption on protection changes | `apps/core/src/integrations/routes.ts` |
 | `POST /settings/integrations/:section/test` | Superuser only; credential rate limit; test without saving settings | `apps/core/src/integrations/routes.ts` |
