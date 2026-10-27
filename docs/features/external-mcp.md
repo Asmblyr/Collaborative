@@ -57,7 +57,9 @@ they are not a bulk export API.
 
 Writes use technical field names and scalar relation IDs, ordinary validation,
 audit history and transactional plugin hooks. They do not delete records, change
-schema or accept nested record creation. `prepare_update` returns original typed
+schema or accept nested record creation. Supply a primary key only for a text-key
+collection; Core generates other key types using its ordinary creation rules.
+`prepare_update` returns original typed
 values for changed fields; pass them unchanged as `expectedValues`. A concurrent
 change returns `ITEM_CHANGED`; review the record before preparing a new update.
 

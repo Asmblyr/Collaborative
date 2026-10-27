@@ -60,7 +60,13 @@ export async function executeWriteTool(
     }
     const effective = await mcpActionAccess(trx, access);
     const action = tool === "create_item" ? "create" : "update";
-    assertWritableFields(values, requireGrant(effective, name, action));
+    assertWritableFields(
+      values,
+      requireGrant(effective, name, action),
+      action === "create" && schema.settings.primaryKey.type === "text"
+        ? schema.settings.primaryKey.name
+        : undefined,
+    );
     for (const field of Object.keys(values)) {
       const relation = schema.fields.get(field)?.relation;
       if (

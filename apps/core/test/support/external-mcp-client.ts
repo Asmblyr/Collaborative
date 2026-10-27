@@ -6,7 +6,11 @@ import type { mcpFixture } from "./assistant-mcp-fixture.js";
 export const resource = "http://localhost:3000/api/mcp";
 type Fixture = Awaited<ReturnType<typeof mcpFixture>>;
 
-export async function authorize(fixture: Fixture, write = false) {
+export async function authorize(
+  fixture: Fixture,
+  write = false,
+  target = fixture.names.posts,
+) {
   const { app, db, names, headers } = fixture;
   const register = await app.inject({
     method: "POST",
@@ -48,7 +52,7 @@ export async function authorize(fixture: Fixture, write = false) {
     [names.posts, names.people].sort(),
   );
   const collection = await db("asmblyr_collections")
-    .where({ name: names.posts })
+    .where({ name: target })
     .first("id");
   const decision = await app.inject({
     method: "POST",
@@ -125,7 +129,10 @@ export function injectedFetch(fixture: Fixture): typeof fetch {
   };
 }
 
-export async function grantWrites(fixture: Fixture) {
+export async function grantWrites(
+  fixture: Fixture,
+  collection = fixture.names.posts,
+) {
   const { app, db, access, names } = fixture;
   const assignment = await db("asmblyr_user_policies")
     .where({ user_id: access.principal.id })
@@ -135,9 +142,9 @@ export async function grantWrites(fixture: Fixture) {
       method: "POST",
       url: "/permissions",
       payload: {
-        collection: names.posts,
+        collection,
         action,
-        fields: ["title", "author_id"],
+        fields: collection === names.posts ? ["title", "author_id"] : ["title"],
         ...(action === "update"
           ? {
               rowFilter: {
