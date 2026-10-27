@@ -18,8 +18,6 @@ export function ItemViewMenu({
   all,
   visible,
   onToggle,
-  onSave,
-  saving,
   onImport,
   views,
   onApplyView,
@@ -28,8 +26,6 @@ export function ItemViewMenu({
   all: ItemColumn[];
   visible: ItemColumn[];
   onToggle: (name: string, show: boolean) => void;
-  onSave: () => void;
-  saving: boolean;
   onImport?: () => void;
   views: TableView[];
   onApplyView: (view: TableView) => void;
@@ -118,13 +114,6 @@ export function ItemViewMenu({
           <Save />
           {copy("Сохранить как… / управлять видами ")}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={saving}
-          onSelect={onSave}
-        >
-          <Save aria-hidden="true" />{" "}
-          {saving ? copy("Сохраняем…") : copy("Запомнить сортировку и размер")}
-        </DropdownMenuItem>
         {onImport && (
           <DropdownMenuItem onSelect={onImport}>
             <Download aria-hidden="true" />{" "}
@@ -133,7 +122,7 @@ export function ItemViewMenu({
         )}
         <p className="px-2 py-2 text-xs leading-relaxed text-muted-foreground">
           {copy(
-            "Столбцы сохраняются автоматически. Именованные виды запоминают все настройки таблицы. ",
+            "Колонки, сортировка, фильтры и размер страницы сохраняются автоматически. Именованные виды остаются отдельными шаблонами.",
           )}
         </p>
       </DropdownMenuContent>

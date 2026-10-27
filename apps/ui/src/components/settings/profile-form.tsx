@@ -1,26 +1,19 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CurrentUser } from "@asmblyr-collaborative/contracts";
-import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
-import { Label } from "@/components/ui/label";
+import type {
+  CurrentUser,
+  UserFormResult,
+} from "@asmblyr-collaborative/contracts";
+import { ItemForm } from "@/components/items/item-form";
+import type { Collection } from "@/components/items/types";
+import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
 import { useEditorState } from "@/components/collections/editor-lifecycle";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { ProfileAvatar } from "./profile-avatar";
-
-function draft(user: CurrentUser) {
-  return {
-    firstName: user.firstName ?? "",
-    lastName: user.lastName ?? "",
-    displayName: user.displayName ?? "",
-    description: user.description ?? "",
-    avatarId: user.avatarId,
-  };
-}
+import { ProfileExtensionFields } from "./profile-extension-fields";
 
 export function ProfileForm({
   user,
@@ -39,140 +32,57 @@ export function ProfileForm({
 }) {
   const copy = useUiCopy();
   const router = useRouter();
-  const id = useId();
-  const [values, setValues] = useState(() => draft(user));
-  const [saved, setSaved] = useState(() => JSON.stringify(draft(user)));
+  const formEndpoint =
+    endpoint === "/api/users/me"
+      ? `${endpoint}/form`
+      : endpoint.replace(/\/profile$/, "/form");
+  const [form, setForm] = useState<UserFormResult | null>(null);
+  const [catalog, setCatalog] = useState<Collection[]>([]);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [avatarId, setAvatarId] = useState(user.avatarId);
   const [pending, setPending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const busy = pending || uploading;
-  const dirty = JSON.stringify(values) !== saved;
-  useEditorState(dirty, busy);
-  const disabled = readOnly || busy;
-  function input(
-    field: "firstName" | "lastName" | "displayName",
-    label: string,
-    autoComplete?: string,
-  ) {
-    return (
-      <div className="space-y-2">
-        <Label htmlFor={`${id}-${field}`}>{copy(label)}</Label>
-        <Input
-          id={`${id}-${field}`}
-          autoComplete={autoComplete}
-          maxLength={120}
-          type="text"
-          disabled={disabled}
-          value={values[field]}
-          onChange={(event) =>
-            setValues((current) => ({
-              ...current,
-              [field]: event.target.value,
-            }))
-          }
-        />
-      </div>
-    );
-  }
+  const [dirty, setDirty] = useState(0);
+  const [revision, setRevision] = useState(0);
+  const localized = useLocalizedCatalog(catalog);
+  const avatarDirty = avatarId !== (form ? form.user.avatarId : user.avatarId);
+  const canEdit = Boolean(
+    form &&
+      !readOnly &&
+      (form.canEditAvatar ||
+        form.fields.some((field) => !form.readOnlyFields.includes(field.name))),
+  );
+  const canEditFields = Boolean(
+    form &&
+      !readOnly &&
+      form.fields.some((field) => !form.readOnlyFields.includes(field.name)),
+  );
+  useEditorState(dirty > 0 || avatarDirty, pending || uploading);
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      apiRequest<UserFormResult>(formEndpoint),
+      apiRequest<Collection[]>("/api/collections"),
+    ])
+      .then(([next, collections]) => {
+        if (active) {
+          setForm(next);
+          setAvatarId(next.user.avatarId);
+          setCatalog(collections);
+        }
+      })
+      .catch((cause) => {
+        if (active) {
+          setError((cause as Error).message);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [formEndpoint]);
   return (
-    <form
-      className="space-y-5"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        if (disabled || !dirty) {
-          return;
-        }
-        setPending(true);
-        setMessage("");
-        setError("");
-        try {
-          const result = await apiRequest<CurrentUser>(
-            endpoint,
-            "PATCH",
-            values,
-          );
-          const next = draft(result);
-          setValues(next);
-          setSaved(JSON.stringify(next));
-          setMessage(copy("Профиль сохранён"));
-          onSaved?.(result);
-          router.refresh();
-        } catch (cause) {
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : copy("Не удалось сохранить профиль"),
-          );
-        } finally {
-          setPending(false);
-        }
-      }}
-    >
-      <ProfileAvatar
-        avatarId={values.avatarId}
-        pictureUrl={user.pictureUrl}
-        canUpload={!readOnly}
-        canChoose={canChooseAvatar && !readOnly}
-        disabled={disabled}
-        container={container}
-        onBusy={setUploading}
-        onChange={(avatarId) =>
-          setValues((current) => ({ ...current, avatarId }))
-        }
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        {input("firstName", "Имя", "given-name")}
-        {input("lastName", "Фамилия", "family-name")}
-      </div>
-      {input("displayName", "Отображаемое имя", "nickname")}
-      <p className="-mt-3 text-xs text-muted-foreground">
-        {copy("Если не задано, показываем имя и фамилию, затем почту.")}
-      </p>
-      <div className="space-y-2">
-        <Label htmlFor={`${id}-email`}>{copy("Электронная почта")}</Label>
-        <Input
-          id={`${id}-email`}
-          value={user.email}
-          readOnly
-          autoComplete="email"
-          className="bg-muted/40"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${id}-description`}>{copy("О себе")}</Label>
-        <Textarea
-          id={`${id}-description`}
-          maxLength={2000}
-          rows={3}
-          disabled={disabled}
-          value={values.description}
-          onChange={(event) =>
-            setValues((current) => ({
-              ...current,
-              description: event.target.value,
-            }))
-          }
-        />
-      </div>
-      {!readOnly && (
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            size="sm"
-            disabled={busy || !dirty}
-          >
-            {pending ? copy("Сохраняем…") : copy("Сохранить изменения")}
-          </Button>
-          {message && (
-            <p
-              role="status"
-              className="text-sm text-muted-foreground"
-            >
-              {message}
-            </p>
-          )}
-        </div>
-      )}
+    <div className="space-y-5">
       {error && (
         <p
           role="alert"
@@ -181,6 +91,102 @@ export function ProfileForm({
           {error}
         </p>
       )}
-    </form>
+      {!form && !error && <p role="status">{copy("Загружаем профиль…")}</p>}
+      {form && (
+        <>
+          <ProfileAvatar
+            avatarId={avatarId}
+            pictureUrl={form.user.pictureUrl}
+            canUpload={Boolean(form.canEditAvatar && !readOnly)}
+            canChoose={canChooseAvatar && form.canEditAvatar && !readOnly}
+            disabled={pending || uploading || readOnly || !form.canEditAvatar}
+            container={container}
+            onBusy={setUploading}
+            onChange={setAvatarId}
+          />
+          <ItemForm
+            key={revision}
+            fields={form.fields.map((field) => ({
+              ...field,
+              presentation: {
+                description: "",
+                placeholder: "",
+                interface: "auto",
+                width: "full",
+                order: 0,
+                group: "",
+                ...field.presentation,
+                label:
+                  field.managed && !field.name.startsWith("@display:")
+                    ? copy(field.presentation?.label || field.name)
+                    : field.presentation?.label || field.name,
+              },
+            }))}
+            catalog={localized}
+            item={{ id: user.id, ...form.values }}
+            primaryKey={{ name: "id", type: "uuid" }}
+            formLayout={form.layout}
+            plainGroups
+            readOnlyFields={
+              readOnly
+                ? form.fields.map((field) => field.name)
+                : form.readOnlyFields
+            }
+            pending={pending || uploading}
+            embedded
+            hideActions={!canEdit || (!canEditFields && !avatarDirty)}
+            preview={readOnly}
+            allowUnchanged={avatarDirty}
+            portalContainer={container}
+            onDirtyChange={setDirty}
+            onBusyChange={setUploading}
+            onCancel={() => {
+              setAvatarId(form.user.avatarId);
+              setRevision((value) => value + 1);
+              setDirty(0);
+            }}
+            onSave={async (values) => {
+              setPending(true);
+              setMessage("");
+              try {
+                const result = await apiRequest<UserFormResult>(
+                  formEndpoint,
+                  "PATCH",
+                  { values, ...(avatarDirty ? { avatarId } : {}) },
+                );
+                setForm(result);
+                setAvatarId(result.user.avatarId);
+                setDirty(0);
+                setRevision((value) => value + 1);
+                setMessage(copy("Профиль сохранён"));
+                onSaved?.(result.user);
+                router.refresh();
+              } finally {
+                setPending(false);
+              }
+            }}
+          />
+          {!canEditFields && (
+            <p className="text-xs text-muted-foreground">
+              {copy("Для изменения этих полей обратитесь к администратору.")}
+            </p>
+          )}
+          {message && (
+            <p
+              role="status"
+              className="text-sm text-muted-foreground"
+            >
+              {message}
+            </p>
+          )}
+          <ProfileExtensionFields
+            userId={user.id}
+            endpoint={formEndpoint.replace(/\/form$/, "/extension")}
+            readOnly={readOnly}
+            container={container}
+          />
+        </>
+      )}
+    </div>
   );
 }

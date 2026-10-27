@@ -20,6 +20,10 @@ import { ItemPagination } from "./item-pagination";
 import { useRecordLocation } from "./use-record-location";
 import { ItemsTable } from "./items-table";
 import { useTableViews } from "./use-table-views";
+import {
+  useTableQueryPreferences,
+  TablePreferencesNotice,
+} from "./use-table-query-preferences";
 import { useItemSelection } from "./use-item-selection";
 import { useItemColumns } from "./use-item-columns";
 import { useColumnVisibilityMotion } from "./use-column-visibility-motion";
@@ -98,11 +102,17 @@ export function ItemsWorkspace({
     change: changeColumnVisibility,
   } = useColumnVisibilityMotion();
   const [viewEditor, setViewEditor] = useState(false);
-  const { views, savingView, saveView, reloadViews } = useTableViews({
+  const queryPreferences = useTableQueryPreferences(
+    userId,
+    collection.name,
+    page,
+    filter,
+    preferences,
+  );
+  const { views, reloadViews } = useTableViews({
     collection,
     userId,
     workspaceId,
-    page,
     setMessage,
   });
   const canRead = Boolean(collection.access.read);
@@ -198,6 +208,10 @@ export function ItemsWorkspace({
         onApply={(nextFilter) => navigate({ number: 1 }, nextFilter)}
       />
       <h1 className="sr-only">{collection.displayName || collection.name}</h1>
+      <TablePreferencesNotice
+        status={queryPreferences.status}
+        retry={queryPreferences.retry}
+      />
       {!collection.access.read && createButton && (
         <div className="flex justify-end">{createButton}</div>
       )}
@@ -266,8 +280,6 @@ export function ItemsWorkspace({
               <ItemViewMenu
                 all={columns.all}
                 visible={columns.visible}
-                saving={savingView}
-                onSave={saveView}
                 views={views}
                 onManageViews={() => setViewEditor(true)}
                 onApplyView={(view) => {

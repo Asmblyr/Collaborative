@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useId, useState } from "react";
 import { ChevronRight, LockKeyhole } from "lucide-react";
-import type { SystemCollection } from "@asmblyr-collaborative/contracts";
+import type {
+  SystemCollection,
+  UserFormConfiguration,
+} from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { Collection } from "@/components/items/types";
 import { apiRequest } from "@/lib/api-request";
@@ -18,6 +21,8 @@ import {
 import { SystemFieldDelete } from "./system-field-delete";
 import { SystemRecords } from "./system-records";
 import { SystemRelationForm } from "./system-relation-form";
+import { UserFormDesigner } from "./user-form-designer";
+import { UserVirtualField } from "./user-virtual-field";
 
 export type Selection =
   | {
@@ -27,7 +32,9 @@ export type Selection =
       type?: DataFieldType | "m2o";
     }
   | { collection: string; kind: "delete"; field: string }
-  | { collection: string; kind: "records" };
+  | { collection: string; kind: "records" }
+  | { collection: string; kind: "form" }
+  | { collection: string; kind: "virtual"; field?: string };
 
 export function SystemCollections({
   catalog,
@@ -40,27 +47,49 @@ export function SystemCollections({
   const regionId = useId();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<SystemCollection[]>([]);
+  const [virtualFields, setVirtualFields] = useState<
+    UserFormConfiguration["fields"]
+  >([]);
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selection, setSelection] = useState<Selection | null>(null);
   const models = useLocalizedCatalog(
-    data.map((collection) =>
-      systemCollectionModel(
+    data.map((collection) => {
+      const model = systemCollectionModel(
         collection,
         copy(systemCollectionLabels[collection.name]),
-      ),
-    ),
+      );
+      return collection.name === "users"
+        ? {
+            ...model,
+            fields: [
+              ...model.fields,
+              ...virtualFields.map((field) => ({
+                ...field,
+                managed: false,
+                type: "alias",
+              })),
+            ],
+          }
+        : model;
+    }),
   );
   useEffect(() => {
     if (!open) {
       return;
     }
     let active = true;
-    apiRequest<SystemCollection[]>("/api/system-collections")
-      .then((collections) => {
+    Promise.all([
+      apiRequest<SystemCollection[]>("/api/system-collections"),
+      apiRequest<UserFormConfiguration>("/api/system-collections/users/form"),
+    ])
+      .then(([collections, form]) => {
         if (active) {
           setData(collections);
+          setVirtualFields(
+            form.fields.filter((field) => field.name.startsWith("@display:")),
+          );
           setError("");
           setLoading(false);
         }
@@ -90,7 +119,11 @@ export function SystemCollections({
     setRevision((value) => value + 1);
   }
   let title = copy("Добавить поле");
-  if (selection?.kind === "records") {
+  if (selection?.kind === "virtual") {
+    title = copy("Виртуальное поле");
+  } else if (selection?.kind === "form") {
+    title = copy("Форма профиля");
+  } else if (selection?.kind === "records") {
     title = copy("Дополнительные данные");
   } else if (selection?.kind === "delete") {
     title = copy("Удалить поле");
@@ -162,6 +195,7 @@ export function SystemCollections({
       )}
       <EditorDialog
         open={Boolean(selection)}
+        size={selection?.kind === "form" ? "wide" : "default"}
         title={title}
         eyebrow={model?.displayName ?? ""}
         onClose={() => setSelection(null)}
@@ -179,6 +213,25 @@ export function SystemCollections({
             close();
             refresh();
           };
+          if (selection.kind === "form") {
+            return model ? (
+              <UserFormDesigner
+                model={model}
+                catalog={catalog}
+                container={container}
+                onSaved={saved}
+              />
+            ) : null;
+          }
+          if (selection.kind === "virtual") {
+            return (
+              <UserVirtualField
+                fieldId={selection.field?.slice("@display:".length)}
+                container={container}
+                onSaved={saved}
+              />
+            );
+          }
           if (selection.kind === "records") {
             return (
               <SystemRecords

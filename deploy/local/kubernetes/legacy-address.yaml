@@ -1,0 +1,19 @@
+# Core redirects this old public host through AUTH_UI_ALIASES before authentication.
+# The canonical app ingress belongs to Helm. No Traefik CRD provider is required.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: collaborative-legacy-address
+  namespace: collaborative
+spec:
+  ingressClassName: asmblyr
+  rules:
+    - host: collaborative.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: local-collaborative-core
+                port: { number: 3001 }

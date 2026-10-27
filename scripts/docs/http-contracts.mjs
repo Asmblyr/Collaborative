@@ -18,6 +18,7 @@ import { tablePreferencesContract } from "./table-preferences-contract.mjs";
 import { userProfileContract } from "./user-profile-contract.mjs";
 import { profileDisplayContract } from "./profile-display-contract.mjs";
 import { systemCollectionsContract } from "./system-collections-contract.mjs";
+import { userFormContract } from "./user-form-contract.mjs";
 import { oauthPolicyContract } from "./oauth-policy-contract.mjs";
 import { userReferenceContract } from "./user-reference-contract.mjs";
 const object = { type: "object", additionalProperties: true };
@@ -74,6 +75,8 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const userForm = userFormContract(key);
+  if (userForm) return userForm;
   const userReference = userReferenceContract(key);
   if (userReference) return userReference;
   const oauthPolicy = oauthPolicyContract(key);

@@ -23,6 +23,10 @@ helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | quote }}
   value: {{ required "publicUrl is required" .Values.publicUrl | trimSuffix "/" | quote }}
 - name: SESSION_COOKIE_PREFIX
   value: {{ .Values.sessionCookiePrefix | quote }}
+- name: SESSION_COOKIE_DOMAIN
+  value: {{ .Values.sessionCookieDomain | quote }}
+- name: AUTH_UI_ALIASES
+  value: {{ join "," .Values.publicUrlAliases | quote }}
 - name: HOST
   value: "0.0.0.0"
 - name: PORT
@@ -30,7 +34,7 @@ helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | quote }}
 - name: PUBLIC_PORT
   value: ""
 {{- range $key, $value := .Values.coreEnv }}
-{{- if has $key (list "AUTH_UI_URL" "SESSION_COOKIE_PREFIX" "PORT" "HOST" "PUBLIC_PORT" "UI_URL" "NODE_ENV") }}
+{{- if has $key (list "AUTH_UI_URL" "AUTH_UI_ALIASES" "SESSION_COOKIE_PREFIX" "SESSION_COOKIE_DOMAIN" "PORT" "HOST" "PUBLIC_PORT" "UI_URL" "NODE_ENV") }}
 {{- fail (printf "%s is managed by the chart" $key) }}
 {{- end }}
 - name: {{ $key }}

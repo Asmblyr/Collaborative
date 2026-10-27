@@ -65,6 +65,11 @@ export type {
   UserProfileExtensionResult,
 } from "./users.js";
 export type { ApiErrorBody } from "./api-error.js";
+export type {
+  UserFieldSelfAccess,
+  UserFormConfiguration,
+  UserFormResult,
+} from "./user-form.js";
 export type { NotificationItem, NotificationResult } from "./notifications.js";
 export type {
   SchemaValueType,

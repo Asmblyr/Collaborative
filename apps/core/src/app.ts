@@ -24,6 +24,7 @@ import { registerUserRoutes } from "./auth/user-routes.js";
 import { registerProfileRoutes } from "./auth/profile-routes.js";
 import { registerProfileExtensionRoutes } from "./auth/profile-extension-routes.js";
 import { registerProfileDisplayRoutes } from "./auth/profile-display-routes.js";
+import { registerUserFormRoutes } from "./auth/user-form-routes.js";
 import { registerProfileAvatarRoutes } from "./auth/profile-avatar-routes.js";
 import { registerServiceRoutes } from "./services/routes.js";
 import { registerServiceActivity } from "./services/activity.js";
@@ -84,12 +85,15 @@ import {
   registerBrowserCookies,
 } from "./auth/browser/cookies.js";
 import { registerBrowserRoutes } from "./auth/browser/routes.js";
+import { registerCanonicalOrigin } from "./auth/browser/canonical-origin.js";
 import { registerBrowserSso } from "./auth/browser/sso.js";
 import { registerBrowserGoogle } from "./auth/browser/google.js";
 
 interface AppOptions {
   trustProxy?: string[];
   sessionCookiePrefix?: string;
+  sessionCookieDomain?: string;
+  publicOriginAliases?: string[];
   monitoringSink?: MonitoringSinkFactory;
   operationLimits?: OperationLimits;
   passkeys?: PasskeyConfig;
@@ -108,6 +112,8 @@ interface AppOptions {
 export function createApp({
   trustProxy,
   sessionCookiePrefix,
+  sessionCookieDomain,
+  publicOriginAliases = [],
   monitoringSink,
   databaseUrl,
   logger = true,
@@ -140,7 +146,12 @@ export function createApp({
       return path.startsWith("/") ? path : `/${path}`;
     },
   });
-  const browser = browserConfig(passkeys.origin, sessionCookiePrefix);
+  const browser = browserConfig(
+    passkeys.origin,
+    sessionCookiePrefix,
+    sessionCookieDomain,
+  );
+  registerCanonicalOrigin(app, browser.origin, publicOriginAliases);
   registerBrowserCookies(app, browser);
   registerErrorHandler(app);
   registerServiceActivity(app);
@@ -252,6 +263,7 @@ export function createApp({
   registerProfileAvatarRoutes(app, database, storageSource);
   registerProfileExtensionRoutes(app, database, hooks.mutation);
   registerProfileDisplayRoutes(app, database);
+  registerUserFormRoutes(app, database);
   registerPresenceRoutes(app, database);
   registerRealtimeRoutes(app, database, realtime);
   const lockCleanup = database

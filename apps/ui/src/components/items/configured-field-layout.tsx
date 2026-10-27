@@ -24,6 +24,7 @@ export function ConfiguredFieldLayout({
   values,
   forced,
   reveal,
+  plainGroups = false,
   children,
 }: {
   layout?: FormLayout | null;
@@ -31,6 +32,7 @@ export function ConfiguredFieldLayout({
   values: Record<string, string>;
   forced: Set<string>;
   reveal?: string;
+  plainGroups?: boolean;
   children: (field: CollectionField) => ReactNode;
 }) {
   const copy = useUiCopy();
@@ -60,6 +62,7 @@ export function ConfiguredFieldLayout({
             key={node.id}
             node={node}
             reveal={reveal}
+            plain={plainGroups}
           >
             {render(node.children)}
           </FormSection>
@@ -123,10 +126,12 @@ export function ConfiguredFieldLayout({
 function FormSection({
   node,
   reveal,
+  plain,
   children,
 }: {
   node: Extract<FormNode, { kind: "group" }>;
   reveal?: string;
+  plain: boolean;
   children: ReactNode;
 }) {
   const id = useId();
@@ -136,10 +141,10 @@ function FormSection({
   );
   return (
     <section
-      className="min-w-0 rounded-xl border bg-muted/10 @min-[420px]:col-span-2"
+      className={`min-w-0 @min-[420px]:col-span-2 ${plain ? "space-y-3" : "rounded-xl border bg-muted/10"}`}
       aria-labelledby={`${id}-label`}
     >
-      <div className="px-4 py-3">
+      <div className={plain ? undefined : "px-4 py-3"}>
         {node.collapsible ? (
           <Button
             id={`${id}-label`}
@@ -171,7 +176,7 @@ function FormSection({
       <div
         id={id}
         hidden={node.collapsible && !open}
-        className="@container px-4 pb-4"
+        className={plain ? "@container" : "@container px-4 pb-4"}
       >
         {children}
       </div>

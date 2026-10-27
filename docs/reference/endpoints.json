@@ -644,7 +644,7 @@
     "public": false
   },
   "PATCH /users/me": {
-    "access": "Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость",
+    "access": "Active human session; own non-avatar profile fields need explicit field write grants or users/update. Own avatar remains freely editable. Credentials, email and privileges remain protected.",
     "public": false
   },
   "GET /users/me/identities": {
@@ -902,5 +902,29 @@
   "GET /users/references": {
     "access": "Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены",
     "public": false
+  },
+  "GET /system-collections/users/form": {
+    "public": false,
+    "access": "Human superuser only; safe user form fields, layout and owner grants, without authentication columns."
+  },
+  "PUT /system-collections/users/form": {
+    "public": false,
+    "access": "Human superuser only; safe layout and explicit native/custom owner-field grants. Native fields default to read only, custom fields to hidden. Does not grant user administration or related-row access."
+  },
+  "GET /users/me/form": {
+    "public": false,
+    "access": "Active human session; own safe profile, explicitly granted custom fields and legacy virtual values. Hidden values and conditions are omitted."
+  },
+  "PATCH /users/me/form": {
+    "public": false,
+    "access": "Active human session; own field writes follow explicit grants, native fields also allow users/update. Own avatar is freely editable. Security, appearance and personal applications use independent endpoints."
+  },
+  "GET /users/:id/form": {
+    "public": false,
+    "access": "Active human session with users/read; safe profile and existing virtual grants. Raw custom columns require a superuser."
+  },
+  "PATCH /users/:id/form": {
+    "public": false,
+    "access": "Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected."
   }
 }

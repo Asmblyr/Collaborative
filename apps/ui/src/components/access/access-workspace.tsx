@@ -8,8 +8,6 @@ import type { AccessData } from "@/lib/access-data";
 import { PageHeader } from "@/components/layout/page-header";
 import { PoliciesPanel } from "./policies-panel";
 import { UsersPanel } from "./users-panel";
-import { ProfileExtensionSettings } from "./profile-extension-settings";
-import { ProfileDisplaySettings } from "./profile-display-settings";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Permission, type Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -81,15 +79,8 @@ export function AccessWorkspace({
             ? copy("Приглашения и доступ участников команды.")
             : copy("Разрешения на данные и разделы настроек.")
         }
-      >
-        {section === "users" && canManageSystemFields && !readOnly && (
-          <ProfileDisplaySettings />
-        )}
-      </PageHeader>
+      ></PageHeader>
       <SettingsReadOnlyNotice readOnly={readOnly} />
-      {section === "users" && canManagePolicies && !readOnly && (
-        <ProfileExtensionSettings />
-      )}
       {message && (
         <p
           role="alert"

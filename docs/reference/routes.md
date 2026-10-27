@@ -1,6 +1,6 @@
 # HTTP route matrix
 
-Generated from Core and the reviewed access catalog. 226 declarations.
+Generated from Core and the reviewed access catalog. 232 declarations.
 
 This describes access boundaries; integration tests verify enforcement. Dynamic plugin routes and internal oidc-provider endpoints are not listed individually.
 
@@ -182,6 +182,8 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `GET /system-collections/:name/records` | Active human superuser. Allowed system entities and registered custom fields only; built-in columns protected | `apps/core/src/system-collections/routes.ts` |
 | `GET /system-collections/:name/records/:id` | Active human superuser. Allowed system entities and registered custom fields only; built-in columns protected | `apps/core/src/system-collections/routes.ts` |
 | `PATCH /system-collections/:name/records/:id` | Active human superuser. Allowed system entities and registered custom fields only; built-in columns protected | `apps/core/src/system-collections/routes.ts` |
+| `GET /system-collections/users/form` | Human superuser only; safe user form fields, layout and owner grants, without authentication columns. | `apps/core/src/auth/user-form-routes.ts` |
+| `PUT /system-collections/users/form` | Human superuser only; safe layout and explicit native/custom owner-field grants. Native fields default to read only, custom fields to hidden. Does not grant user administration or related-row access. | `apps/core/src/auth/user-form-routes.ts` |
 | `GET /table-views/:collection` | Human with collection access; personal owner, shared views editable by superusers | `apps/core/src/preferences/table-view-routes.ts` |
 | `POST /table-views/:collection` | Human with collection access; personal owner, shared views editable by superusers | `apps/core/src/preferences/table-view-routes.ts` |
 | `DELETE /table-views/:collection/:id` | Human with collection access; personal owner, shared views editable by superusers | `apps/core/src/preferences/table-view-routes.ts` |
@@ -194,16 +196,20 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `PUT /users/:id/delegation` | Human superuser only: explicit allowed set of existing policies for a user's assignments | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/extension` | Active user with users/read and ordinary collection read grants | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/extension` | Active user with users/update and ordinary collection read/create/update grants | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/:id/form` | Active human session with users/read; safe profile and existing virtual grants. Raw custom columns require a superuser. | `apps/core/src/auth/user-form-routes.ts` |
+| `PATCH /users/:id/form` | Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected. | `apps/core/src/auth/user-form-routes.ts` |
 | `POST /users/:id/invitation` | Human superuser OR users/update; re-invitation within the allowed set only, excluding accounts with their own delegation | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/profile` | Active user with users/read; public profile information without credentials | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/profile` | Active user with users/update; profile fields only, without status/privilege changes | `apps/core/src/auth/profile-extension-routes.ts` |
 | `GET /users/:id/profile-display` | Active human with users/read or superuser; configured target-user profile projection | `apps/core/src/auth/profile-display-routes.ts` |
 | `POST /users/:id/recovery` | Fresh human superuser; another active ordinary user only. One-time 30-minute recovery link, audited and not delegated | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/me` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/auth/profile-routes.ts` |
-| `PATCH /users/me` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/auth/profile-routes.ts` |
+| `PATCH /users/me` | Active human session; own non-avatar profile fields need explicit field write grants or users/update. Own avatar remains freely editable. Credentials, email and privileges remain protected. | `apps/core/src/auth/profile-routes.ts` |
 | `POST /users/me/avatar` | Own human session; private raster image up to 2 MiB, configured storage, and credential rate limit | `apps/core/src/auth/profile-avatar-routes.ts` |
 | `GET /users/me/extension` | Own human session and ordinary collection read grants; hidden rows/fields remain hidden | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/me/extension` | Own human session; read plus create/update, with ordinary row/field/relation/file rules | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/me/form` | Active human session; own safe profile, explicitly granted custom fields and legacy virtual values. Hidden values and conditions are omitted. | `apps/core/src/auth/user-form-routes.ts` |
+| `PATCH /users/me/form` | Active human session; own field writes follow explicit grants, native fields also allow users/update. Own avatar is freely editable. Security, appearance and personal applications use independent endpoints. | `apps/core/src/auth/user-form-routes.ts` |
 | `GET /users/me/identities` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/auth/sso/routes.ts` |
 | `DELETE /users/me/identities/:id` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/auth/sso/routes.ts` |
 | `GET /users/me/oauth-apps` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/oauth/consent-routes.ts` |

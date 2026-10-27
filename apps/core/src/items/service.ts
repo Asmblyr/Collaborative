@@ -300,7 +300,7 @@ export async function deleteItem(
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
-        error.code === "23503"
+        (error.code === "23503" || error.code === "23001")
       ) {
         throw new ItemError("Item is referenced by related records", 409);
       }
