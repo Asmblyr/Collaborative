@@ -27,6 +27,7 @@ interface ItemFormProps {
   aliasFields?: CollectionField[];
   renderAlias?: (field: CollectionField) => ReactNode;
   formLayout?: FormLayout | null;
+  plainGroups?: boolean;
   readOnlyFields?: string[];
   preview?: boolean;
   catalog: Collection[];
@@ -56,6 +57,7 @@ export function ItemForm({
   aliasFields = [],
   renderAlias,
   formLayout,
+  plainGroups = false,
   readOnlyFields = [],
   preview = false,
   catalog,
@@ -304,6 +306,7 @@ export function ItemForm({
           ),
         ]}
         layout={formLayout}
+        plainGroups={plainGroups}
         values={conditionValues}
         forced={forced}
         reveal={issue.field}

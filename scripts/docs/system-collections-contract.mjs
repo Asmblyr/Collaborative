@@ -55,6 +55,7 @@ const collection = object({
   name: { enum: names },
   fields: { type: "array", items: field },
 });
+export const systemCollectionFieldSchema = field;
 const values = {
   type: "object",
   additionalProperties: jsonValue,

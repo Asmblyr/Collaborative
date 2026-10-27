@@ -153,7 +153,7 @@ test("user references create native FKs and validate record and draft writes", a
   );
   await assert.rejects(
     db("asmblyr_users").where({ id: member.id }).delete(),
-    (error: { code?: string }) => error.code === "23503",
+    (error: { code?: string }) => ["23503", "23001"].includes(error.code ?? ""),
   );
   await call("DELETE", `/items/${name}/${restricted.id}`, undefined, 204);
   await call("DELETE", `/collections/${name}`, undefined, 204);

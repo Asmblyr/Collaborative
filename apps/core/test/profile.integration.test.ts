@@ -9,7 +9,7 @@ import { createApp } from "../src/app.js";
 import { issueUserTokens } from "../src/auth/tokens.js";
 import { passwordOptions } from "../src/auth/users.js";
 
-test("own profile and password changes work without data privileges", async (t) => {
+test("own profile needs an explicit field grant; password changes work without profile privileges", async (t) => {
   assert.ok(process.env.DATABASE_URL);
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
   const app = createApp({
@@ -64,6 +64,20 @@ test("own profile and password changes work without data privileges", async (t) 
               method: "PATCH",
               url: "/users/me",
               headers,
+              payload: { displayName: "Denied" },
+            })
+          ).statusCode,
+          403,
+        );
+        await db("public.asmblyr_user_form")
+          .where({ id: 1 })
+          .update({ self_access: JSON.stringify({ displayName: "write" }) });
+        assert.equal(
+          (
+            await app.inject({
+              method: "PATCH",
+              url: "/users/me",
+              headers,
               payload: { displayName: " Test Name " },
             })
           ).statusCode,
@@ -78,6 +92,9 @@ test("own profile and password changes work without data privileges", async (t) 
           (await app.inject({ method: "GET", url: "/users/me" })).statusCode,
           401,
         );
+        await db("public.asmblyr_user_form")
+          .where({ id: 1 })
+          .update({ self_access: "{}" });
       },
     );
     await t.test(

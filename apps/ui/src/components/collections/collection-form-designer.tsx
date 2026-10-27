@@ -2,7 +2,7 @@
 
 import { useEditorDraft } from "./editor-lifecycle";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, FolderPlus, PanelTop, Plus, Settings2 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
@@ -42,11 +42,17 @@ export function CollectionFormDesigner({
   catalog,
   container,
   onSaved,
+  onSave,
+  plainGroups,
+  renderFieldSettings,
 }: {
   collection: Collection;
   catalog: Collection[];
   container: HTMLElement | null;
   onSaved: () => void;
+  onSave?: (layout: FormLayout | null) => Promise<void>;
+  plainGroups?: boolean;
+  renderFieldSettings?: (field: string, disabled: boolean) => ReactNode;
 }) {
   const copy = useUiCopy();
 
@@ -71,11 +77,15 @@ export function CollectionFormDesigner({
     setPending(true);
     setError("");
     try {
-      await requestJson(
-        `/api/collections/${encodeURIComponent(collection.name)}/form`,
-        "PUT",
-        value,
-      );
+      if (onSave) {
+        await onSave(value);
+      } else {
+        await requestJson(
+          `/api/collections/${encodeURIComponent(collection.name)}/form`,
+          "PUT",
+          value,
+        );
+      }
       router.refresh();
       onSaved();
     } catch (cause) {
@@ -85,7 +95,7 @@ export function CollectionFormDesigner({
     }
   }
   return (
-    <div className="space-y-5">
+    <div className="@container space-y-5">
       <p className="text-sm text-muted-foreground">
         {copy(
           "Организуйте поля для создания, редактирования и просмотра записи. Настройка общая для коллекции; каждый пользователь увидит только доступные ему поля. ",
@@ -197,7 +207,7 @@ export function CollectionFormDesigner({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="grid min-h-80 gap-5 lg:grid-cols-[minmax(240px,0.9fr)_minmax(280px,1.1fr)]">
+          <div className="grid min-h-80 gap-5 @min-[640px]:grid-cols-[minmax(240px,0.9fr)_minmax(280px,1.1fr)]">
             <div className="min-w-0 space-y-4 rounded-xl border p-3">
               <FormDesignerTree
                 layout={layout}
@@ -229,6 +239,8 @@ export function CollectionFormDesigner({
                 onChange={setLayout}
                 onSelect={setSelected}
               />
+              {selectedNode?.kind === "field" &&
+                renderFieldSettings?.(selectedNode.field, pending)}
             </div>
           </div>
         </TabsContent>
@@ -248,6 +260,7 @@ export function CollectionFormDesigner({
               catalog={catalog}
               primaryKey={collection.primaryKey}
               formLayout={layout}
+              plainGroups={plainGroups}
               embedded
               preview
               pending={false}

@@ -56,6 +56,21 @@ test("browser settings preserve permissions, credentials and Origin checks", asy
       body: JSON.stringify({ displayName: "forbidden" }),
     });
     assert.equal(blocked.status, 403);
+    const deniedProfile = await fetch(`${origin}/api/users/me`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify({ displayName: "not granted" }),
+    });
+    assert.equal(deniedProfile.status, 403);
+    const granted = await fetch(`${origin}/api/system-collections/users/form`, {
+      method: "PUT",
+      headers: headers(admin),
+      body: JSON.stringify({
+        layout: null,
+        selfAccess: { displayName: "write" },
+      }),
+    });
+    assert.equal(granted.status, 200);
     const profile = await fetch(`${origin}/api/users/me`, {
       method: "PATCH",
       headers: headers(),
@@ -172,6 +187,9 @@ test("browser settings preserve permissions, credentials and Origin checks", asy
       401,
     );
   } finally {
+    await db("public.asmblyr_user_form")
+      .where({ id: 1 })
+      .update({ self_access: "{}" });
     await db("asmblyr_security_events")
       .whereIn(
         "actor_id",

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, Unlink } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { resolveRelationChoiceFilter } from "@asmblyr-collaborative/contracts";
 import { RecordChooser } from "./record-chooser";
@@ -79,6 +79,9 @@ export function RelationPicker({
             selected={value ? [value] : []}
             id={id}
             onChange={(ids) => onChange(ids[0] ?? "")}
+            onClear={
+              field.nullable && !field.required ? () => onChange("") : undefined
+            }
             disabled={disabled || filter === null}
             candidateFilter={filter}
             portalContainer={portalContainer}
@@ -103,22 +106,7 @@ export function RelationPicker({
             <ArrowUpRight />
           </Button>
         )}
-        {value && field.nullable && !field.required && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            disabled={disabled}
-            aria-label={copy("Отвязать {{value0}}", { value0: field.name })}
-            onClick={() => onChange("")}
-          >
-            <Unlink className="size-4" />
-          </Button>
-        )}
       </div>
-      <p className="text-xs text-muted-foreground">
-        {target.displayName || target.name}
-      </p>
     </div>
   );
 }

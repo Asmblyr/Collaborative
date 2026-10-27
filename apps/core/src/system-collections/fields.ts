@@ -140,6 +140,13 @@ export async function deleteSystemField(db: Knex, name: string, field: string) {
       await customFields(transaction, name)
         .where({ field_name: column })
         .delete();
+      if (name === "users") {
+        await transaction("public.asmblyr_user_form")
+          .where({ id: 1 })
+          .update({
+            self_access: transaction.raw("self_access - ?", [column]),
+          });
+      }
     });
   } catch (error) {
     if (postgresCode(error) === "2BP01") {

@@ -14,6 +14,7 @@ import { readUserProfile } from "./profile-repository.js";
 import { files } from "../files/repository.js";
 import { loadPrincipalAccess } from "../permissions/access.js";
 import { requireFileRead } from "../files/references.js";
+import { requireProfileWrite } from "./profile-write-access.js";
 
 export async function getProfile(
   db: Knex,
@@ -30,6 +31,7 @@ export async function updateProfile(
 ) {
   const changes = parseProfile(value);
   return db.transaction(async (trx) => {
+    await requireProfileWrite(trx, user, targetId, changes);
     await readUserProfile(trx, targetId);
     if (changes.avatar_id) {
       const access = await loadPrincipalAccess(trx, { ...user, kind: "user" });

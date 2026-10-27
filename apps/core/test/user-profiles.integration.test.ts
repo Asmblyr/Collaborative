@@ -46,6 +46,16 @@ test("universal profiles preserve optional fields, protect account data and samp
     return response.json().data;
   }
   const before = await call("GET", "/users/me");
+  await db("public.asmblyr_user_form")
+    .where({ id: 1 })
+    .update({
+      self_access: JSON.stringify({
+        firstName: "write",
+        lastName: "write",
+        displayName: "write",
+        description: "write",
+      }),
+    });
   assert.equal(before.firstName, null);
   assert.ok(before.lastLoginAt && before.lastActiveAt && before.updatedAt);
   await call("PATCH", "/users/me", {
@@ -90,6 +100,9 @@ test("universal profiles preserve optional fields, protect account data and samp
   assert.equal(adminView.password_hash, undefined);
   await call("PATCH", `/users/${member.id}/profile`, { description: null }, 0);
   assert.equal((await call("GET", "/users/me")).description, null);
+  await db("public.asmblyr_user_form")
+    .where({ id: 1 })
+    .update({ self_access: "{}" });
   assert.equal(
     (
       await call("PATCH", "/users/me/preferences", {

@@ -10,6 +10,7 @@ import { objectInput } from "../shared/input.js";
 import { defaultTableView } from "./table-view-service.js";
 import type { ColumnPreferences as Columns } from "@asmblyr-collaborative/contracts";
 import { columnWidths } from "./column-widths.js";
+import { tableFilter } from "./table-filter.js";
 
 interface Sort {
   field: string;
@@ -67,7 +68,15 @@ export async function getTablePreferences(
   const ctx = await context(db, name, access);
   const row = await db(table)
     .where({ user_id: access.principal.id, collection_id: ctx.id })
-    .first<{ columns: Columns | null; page_size: number; sort: Sort | null }>();
+    .select("columns", "page_size", "sort", "filter")
+    .select(db.raw('"filter" IS NOT NULL AS has_filter'))
+    .first<{
+      columns: Columns | null;
+      page_size: number;
+      sort: Sort | null;
+      filter: unknown;
+      has_filter: boolean;
+    }>();
   const defaults = (await defaultTableView(db, name, access))?.definition;
   const sort =
     row?.sort && ctx.names.includes(row.sort.field)
@@ -79,6 +88,9 @@ export async function getTablePreferences(
     columns: reconcile(row?.columns ?? defaults?.columns ?? null, ctx.names),
     pageSize: row?.page_size ?? defaults?.pageSize ?? 25,
     sort,
+    ...(row?.has_filter
+      ? { filter: await tableFilter(db, name, access, row.filter, true) }
+      : {}),
   };
 }
 
@@ -88,9 +100,14 @@ export async function saveTablePreferences(
   access: Access,
   value: unknown,
 ) {
-  const body = objectInput(value, ["columns", "pageSize", "sort"]);
+  const body = objectInput(value, ["columns", "pageSize", "sort", "filter"]);
   const ctx = await context(db, name, access);
   const update: Record<string, unknown> = {};
+  if ("filter" in body) {
+    update.filter = JSON.stringify(
+      await tableFilter(db, name, access, body.filter),
+    );
+  }
   if ("columns" in body) {
     const columns = objectInput(body.columns, ["order", "hidden", "widths"]);
     for (const key of ["order", "hidden"]) {

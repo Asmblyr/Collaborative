@@ -13306,6 +13306,433 @@
         }
       }
     },
+    "/system-collections/users/form": {
+      "get": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "get__system_collections_users_form",
+        "summary": "GET /system-collections/users/form",
+        "description": "Human superuser only; safe user form fields, layout and owner grants, without authentication columns.. Source: apps/core/src/auth/user-form-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        },
+                        "layout": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "description": "Version 1 FormLayout: 1–12 tabs containing field/group nodes, at most three nested group levels. Fields and condition references must belong to the safe profile schema.",
+                              "properties": {
+                                "version": {
+                                  "const": 1
+                                },
+                                "tabs": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 12,
+                                  "items": {
+                                    "type": "object"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "version",
+                                "tabs"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "selfAccess": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "enum": [
+                              "read",
+                              "write"
+                            ]
+                          },
+                          "description": "Explicit owner grants for native profile fields (firstName, lastName, displayName, description) and registered custom columns. Native fields default to read only; custom fields default to hidden. Own avatar is freely editable. Does not grant user administration or related-row access."
+                        }
+                      },
+                      "required": [
+                        "fields",
+                        "layout",
+                        "selfAccess"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization or entity error."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-form-routes.ts"
+      },
+      "put": {
+        "tags": [
+          "system-collections"
+        ],
+        "operationId": "put__system_collections_users_form",
+        "summary": "PUT /system-collections/users/form",
+        "description": "Human superuser only; safe layout and explicit native/custom owner-field grants. Native fields default to read only, custom fields to hidden. Does not grant user administration or related-row access.. Source: apps/core/src/auth/user-form-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        },
+                        "layout": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "description": "Version 1 FormLayout: 1–12 tabs containing field/group nodes, at most three nested group levels. Fields and condition references must belong to the safe profile schema.",
+                              "properties": {
+                                "version": {
+                                  "const": 1
+                                },
+                                "tabs": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 12,
+                                  "items": {
+                                    "type": "object"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "version",
+                                "tabs"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "selfAccess": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "enum": [
+                              "read",
+                              "write"
+                            ]
+                          },
+                          "description": "Explicit owner grants for native profile fields (firstName, lastName, displayName, description) and registered custom columns. Native fields default to read only; custom fields default to hidden. Own avatar is freely editable. Does not grant user administration or related-row access."
+                        }
+                      },
+                      "required": [
+                        "fields",
+                        "layout",
+                        "selfAccess"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization or entity error."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-form-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "layout": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "description": "Version 1 FormLayout: 1–12 tabs containing field/group nodes, at most three nested group levels. Fields and condition references must belong to the safe profile schema.",
+                        "properties": {
+                          "version": {
+                            "const": 1
+                          },
+                          "tabs": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 12,
+                            "items": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "required": [
+                          "version",
+                          "tabs"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "selfAccess": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "enum": [
+                        "read",
+                        "write"
+                      ]
+                    },
+                    "description": "Explicit owner grants for native profile fields (firstName, lastName, displayName, description) and registered custom columns. Native fields default to read only; custom fields default to hidden. Own avatar is freely editable. Does not grant user administration or related-row access."
+                  }
+                },
+                "required": [
+                  "layout",
+                  "selfAccess"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/table-views/{collection}": {
       "get": {
         "tags": [
@@ -14036,6 +14463,710 @@
                     "description": "Schema-validated create/update values. Primary key and account fields cannot be supplied."
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/form": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_id_form",
+        "summary": "GET /users/:id/form",
+        "description": "Active human session with users/read; safe profile and existing virtual grants. Raw custom columns require a superuser.. Source: apps/core/src/auth/user-form-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "canEditAvatar": {
+                          "type": "boolean"
+                        },
+                        "user": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "email",
+                            "superuser",
+                            "hasPassword",
+                            "displayName",
+                            "firstName",
+                            "lastName",
+                            "description",
+                            "pictureUrl",
+                            "avatarId",
+                            "createdAt",
+                            "updatedAt",
+                            "lastLoginAt",
+                            "lastActiveAt"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            },
+                            "superuser": {
+                              "type": "boolean"
+                            },
+                            "hasPassword": {
+                              "type": "boolean"
+                            },
+                            "displayName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "firstName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "description": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "pictureUrl": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2048,
+                                  "format": "uri",
+                                  "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "avatarId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastActiveAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        },
+                        "layout": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "description": "Version 1 FormLayout: 1–12 tabs containing field/group nodes, at most three nested group levels. Fields and condition references must belong to the safe profile schema.",
+                              "properties": {
+                                "version": {
+                                  "const": 1
+                                },
+                                "tabs": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 12,
+                                  "items": {
+                                    "type": "object"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "version",
+                                "tabs"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "values": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "JSON values keyed by safe profile field names. Date, datetime, decimal and bigint values use strings. Hidden fields and condition literals are omitted."
+                        },
+                        "readOnlyFields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "canEditAvatar",
+                        "user",
+                        "fields",
+                        "layout",
+                        "values",
+                        "readOnlyFields"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization or entity error."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-form-routes.ts"
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "patch__users_id_form",
+        "summary": "PATCH /users/:id/form",
+        "description": "Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected.. Source: apps/core/src/auth/user-form-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "canEditAvatar": {
+                          "type": "boolean"
+                        },
+                        "user": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "email",
+                            "superuser",
+                            "hasPassword",
+                            "displayName",
+                            "firstName",
+                            "lastName",
+                            "description",
+                            "pictureUrl",
+                            "avatarId",
+                            "createdAt",
+                            "updatedAt",
+                            "lastLoginAt",
+                            "lastActiveAt"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            },
+                            "superuser": {
+                              "type": "boolean"
+                            },
+                            "hasPassword": {
+                              "type": "boolean"
+                            },
+                            "displayName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "firstName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "description": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "pictureUrl": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2048,
+                                  "format": "uri",
+                                  "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "avatarId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastActiveAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        },
+                        "layout": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "description": "Version 1 FormLayout: 1–12 tabs containing field/group nodes, at most three nested group levels. Fields and condition references must belong to the safe profile schema.",
+                              "properties": {
+                                "version": {
+                                  "const": 1
+                                },
+                                "tabs": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 12,
+                                  "items": {
+                                    "type": "object"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "version",
+                                "tabs"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "values": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "JSON values keyed by safe profile field names. Date, datetime, decimal and bigint values use strings. Hidden fields and condition literals are omitted."
+                        },
+                        "readOnlyFields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "canEditAvatar",
+                        "user",
+                        "fields",
+                        "layout",
+                        "values",
+                        "readOnlyFields"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization or entity error."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-form-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "JSON values keyed by safe profile field names. Date, datetime, decimal and bigint values use strings. Hidden fields and condition literals are omitted."
+                  },
+                  "avatarId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "values"
+                ]
               }
             }
           }
@@ -14936,7 +16067,7 @@
         ],
         "operationId": "patch__users_me",
         "summary": "PATCH /users/me",
-        "description": "Human, own profile/resource only; workspace additionally checks visibility. Source: apps/core/src/auth/profile-routes.ts",
+        "description": "Active human session; own non-avatar profile fields need explicit field write grants or users/update. Own avatar remains freely editable. Credentials, email and privileges remain protected.. Source: apps/core/src/auth/profile-routes.ts",
         "security": [
           {
             "bearerAuth": []
@@ -15493,6 +16624,692 @@
                     "description": "Schema-validated create/update values. Primary key and account fields cannot be supplied."
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/form": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_me_form",
+        "summary": "GET /users/me/form",
+        "description": "Active human session; own safe profile, explicitly granted custom fields and legacy virtual values. Hidden values and conditions are omitted.. Source: apps/core/src/auth/user-form-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "canEditAvatar": {
+                          "type": "boolean"
+                        },
+                        "user": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "email",
+                            "superuser",
+                            "hasPassword",
+                            "displayName",
+                            "firstName",
+                            "lastName",
+                            "description",
+                            "pictureUrl",
+                            "avatarId",
+                            "createdAt",
+                            "updatedAt",
+                            "lastLoginAt",
+                            "lastActiveAt"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            },
+                            "superuser": {
+                              "type": "boolean"
+                            },
+                            "hasPassword": {
+                              "type": "boolean"
+                            },
+                            "displayName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "firstName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "description": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "pictureUrl": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2048,
+                                  "format": "uri",
+                                  "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "avatarId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastActiveAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        },
+                        "layout": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "description": "Version 1 FormLayout: 1–12 tabs containing field/group nodes, at most three nested group levels. Fields and condition references must belong to the safe profile schema.",
+                              "properties": {
+                                "version": {
+                                  "const": 1
+                                },
+                                "tabs": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 12,
+                                  "items": {
+                                    "type": "object"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "version",
+                                "tabs"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "values": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "JSON values keyed by safe profile field names. Date, datetime, decimal and bigint values use strings. Hidden fields and condition literals are omitted."
+                        },
+                        "readOnlyFields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "canEditAvatar",
+                        "user",
+                        "fields",
+                        "layout",
+                        "values",
+                        "readOnlyFields"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization or entity error."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-form-routes.ts"
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "patch__users_me_form",
+        "summary": "PATCH /users/me/form",
+        "description": "Active human session; own field writes follow explicit grants, native fields also allow users/update. Own avatar is freely editable. Security, appearance and personal applications use independent endpoints.. Source: apps/core/src/auth/user-form-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "canEditAvatar": {
+                          "type": "boolean"
+                        },
+                        "user": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "email",
+                            "superuser",
+                            "hasPassword",
+                            "displayName",
+                            "firstName",
+                            "lastName",
+                            "description",
+                            "pictureUrl",
+                            "avatarId",
+                            "createdAt",
+                            "updatedAt",
+                            "lastLoginAt",
+                            "lastActiveAt"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email"
+                            },
+                            "superuser": {
+                              "type": "boolean"
+                            },
+                            "hasPassword": {
+                              "type": "boolean"
+                            },
+                            "displayName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "firstName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastName": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "description": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "pictureUrl": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 2048,
+                                  "format": "uri",
+                                  "description": "Public HTTPS URL, no credentials or fragment. Exported in OAuth profile claims."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "avatarId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastActiveAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "managed": {
+                                "type": "boolean"
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "nullable": {
+                                "type": "boolean"
+                              },
+                              "defaultValue": {
+                                "description": "JSON value; dates, datetime, decimal and bigint use strings."
+                              },
+                              "presentation": {
+                                "type": "object",
+                                "description": "Standard field presentation (labels/translations, interface, choices, constraints, layout and display). Behavior rules, sensitive history and relation filters are rejected.",
+                                "additionalProperties": true
+                              },
+                              "relation": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "m2o"
+                                  },
+                                  "collection": {
+                                    "type": "string"
+                                  },
+                                  "primaryKey": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "enum": [
+                                          "serial",
+                                          "bigserial",
+                                          "uuid",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "type"
+                                    ]
+                                  },
+                                  "onDelete": {
+                                    "const": "setNull"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "collection",
+                                  "primaryKey",
+                                  "onDelete"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type",
+                              "managed",
+                              "required",
+                              "nullable"
+                            ]
+                          }
+                        },
+                        "layout": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "description": "Version 1 FormLayout: 1–12 tabs containing field/group nodes, at most three nested group levels. Fields and condition references must belong to the safe profile schema.",
+                              "properties": {
+                                "version": {
+                                  "const": 1
+                                },
+                                "tabs": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 12,
+                                  "items": {
+                                    "type": "object"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "version",
+                                "tabs"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "values": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "JSON values keyed by safe profile field names. Date, datetime, decimal and bigint values use strings. Hidden fields and condition literals are omitted."
+                        },
+                        "readOnlyFields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "canEditAvatar",
+                        "user",
+                        "fields",
+                        "layout",
+                        "values",
+                        "readOnlyFields"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "401": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "403": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "404": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "409": {
+            "description": "Validation, authentication, authorization or entity error."
+          },
+          "default": {
+            "description": "Validation, authentication, authorization or entity error."
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-form-routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "JSON values keyed by safe profile field names. Date, datetime, decimal and bigint values use strings. Hidden fields and condition literals are omitted."
+                  },
+                  "avatarId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "values"
+                ]
               }
             }
           }
@@ -16545,7 +18362,7 @@
         ],
         "operationId": "get__users_me_table_preferences_collection",
         "summary": "GET /users/me/table-preferences/:collection",
-        "description": "Human caller with read access to the collection; only their own table preferences. PATCH merges supplied properties. Columns are reconciled against readable fields on GET; missing personal settings fall back to a visible default view. Resizing does not require record update permission.",
+        "description": "Human caller with read access to the collection; only their own table preferences. PATCH merges supplied properties. Columns and saved filters are checked against current readable fields on GET; missing personal settings fall back to a visible default view. The UI automatically saves columns, sort, filter and page size. Resizing and preference changes do not require record update permission.",
         "security": [
           {
             "bearerAuth": []
@@ -16666,6 +18483,199 @@
                               ]
                             }
                           }
+                        },
+                        "filter": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "logic",
+                                "children"
+                              ],
+                              "properties": {
+                                "logic": {
+                                  "enum": [
+                                    "and",
+                                    "or"
+                                  ]
+                                },
+                                "children": {
+                                  "type": "array",
+                                  "maxItems": 20,
+                                  "items": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "field",
+                                          "op"
+                                        ],
+                                        "properties": {
+                                          "field": {
+                                            "type": "string"
+                                          },
+                                          "op": {
+                                            "type": "string"
+                                          },
+                                          "value": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "maxLength": 255
+                                              },
+                                              {
+                                                "type": "array",
+                                                "minItems": 1,
+                                                "maxItems": 20,
+                                                "items": {
+                                                  "type": "string",
+                                                  "maxLength": 255
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          "quantifier": {
+                                            "enum": [
+                                              "some",
+                                              "none"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "logic",
+                                          "children"
+                                        ],
+                                        "properties": {
+                                          "logic": {
+                                            "enum": [
+                                              "and",
+                                              "or"
+                                            ]
+                                          },
+                                          "children": {
+                                            "type": "array",
+                                            "maxItems": 20,
+                                            "items": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "object",
+                                                  "additionalProperties": false,
+                                                  "required": [
+                                                    "field",
+                                                    "op"
+                                                  ],
+                                                  "properties": {
+                                                    "field": {
+                                                      "type": "string"
+                                                    },
+                                                    "op": {
+                                                      "type": "string"
+                                                    },
+                                                    "value": {
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "string",
+                                                          "maxLength": 255
+                                                        },
+                                                        {
+                                                          "type": "array",
+                                                          "minItems": 1,
+                                                          "maxItems": 20,
+                                                          "items": {
+                                                            "type": "string",
+                                                            "maxLength": 255
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    "quantifier": {
+                                                      "enum": [
+                                                        "some",
+                                                        "none"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "additionalProperties": false,
+                                                  "required": [
+                                                    "logic",
+                                                    "children"
+                                                  ],
+                                                  "properties": {
+                                                    "logic": {
+                                                      "enum": [
+                                                        "and",
+                                                        "or"
+                                                      ]
+                                                    },
+                                                    "children": {
+                                                      "type": "array",
+                                                      "maxItems": 20,
+                                                      "items": {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                          "field",
+                                                          "op"
+                                                        ],
+                                                        "properties": {
+                                                          "field": {
+                                                            "type": "string"
+                                                          },
+                                                          "op": {
+                                                            "type": "string"
+                                                          },
+                                                          "value": {
+                                                            "anyOf": [
+                                                              {
+                                                                "type": "string",
+                                                                "maxLength": 255
+                                                              },
+                                                              {
+                                                                "type": "array",
+                                                                "minItems": 1,
+                                                                "maxItems": 20,
+                                                                "items": {
+                                                                  "type": "string",
+                                                                  "maxLength": 255
+                                                                }
+                                                              }
+                                                            ]
+                                                          },
+                                                          "quantifier": {
+                                                            "enum": [
+                                                              "some",
+                                                              "none"
+                                                            ]
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Ordinary item filter AST, validated against current field/relation read permissions (30 total nodes, 8192 serialized characters). null explicitly remembers no filter. Omission preserves the previous filter. GET omits this property until a personal filter has been saved; an inaccessible saved filter is returned as null without revealing its definition."
                         }
                       }
                     }
@@ -16699,7 +18709,7 @@
         ],
         "operationId": "patch__users_me_table_preferences_collection",
         "summary": "PATCH /users/me/table-preferences/:collection",
-        "description": "Human caller with read access to the collection; only their own table preferences. PATCH merges supplied properties. Columns are reconciled against readable fields on GET; missing personal settings fall back to a visible default view. Resizing does not require record update permission.",
+        "description": "Human caller with read access to the collection; only their own table preferences. PATCH merges supplied properties. Columns and saved filters are checked against current readable fields on GET; missing personal settings fall back to a visible default view. The UI automatically saves columns, sort, filter and page size. Resizing and preference changes do not require record update permission.",
         "security": [
           {
             "bearerAuth": []
@@ -16820,6 +18830,199 @@
                               ]
                             }
                           }
+                        },
+                        "filter": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "logic",
+                                "children"
+                              ],
+                              "properties": {
+                                "logic": {
+                                  "enum": [
+                                    "and",
+                                    "or"
+                                  ]
+                                },
+                                "children": {
+                                  "type": "array",
+                                  "maxItems": 20,
+                                  "items": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "field",
+                                          "op"
+                                        ],
+                                        "properties": {
+                                          "field": {
+                                            "type": "string"
+                                          },
+                                          "op": {
+                                            "type": "string"
+                                          },
+                                          "value": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "maxLength": 255
+                                              },
+                                              {
+                                                "type": "array",
+                                                "minItems": 1,
+                                                "maxItems": 20,
+                                                "items": {
+                                                  "type": "string",
+                                                  "maxLength": 255
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          "quantifier": {
+                                            "enum": [
+                                              "some",
+                                              "none"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                          "logic",
+                                          "children"
+                                        ],
+                                        "properties": {
+                                          "logic": {
+                                            "enum": [
+                                              "and",
+                                              "or"
+                                            ]
+                                          },
+                                          "children": {
+                                            "type": "array",
+                                            "maxItems": 20,
+                                            "items": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "object",
+                                                  "additionalProperties": false,
+                                                  "required": [
+                                                    "field",
+                                                    "op"
+                                                  ],
+                                                  "properties": {
+                                                    "field": {
+                                                      "type": "string"
+                                                    },
+                                                    "op": {
+                                                      "type": "string"
+                                                    },
+                                                    "value": {
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "string",
+                                                          "maxLength": 255
+                                                        },
+                                                        {
+                                                          "type": "array",
+                                                          "minItems": 1,
+                                                          "maxItems": 20,
+                                                          "items": {
+                                                            "type": "string",
+                                                            "maxLength": 255
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    "quantifier": {
+                                                      "enum": [
+                                                        "some",
+                                                        "none"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "additionalProperties": false,
+                                                  "required": [
+                                                    "logic",
+                                                    "children"
+                                                  ],
+                                                  "properties": {
+                                                    "logic": {
+                                                      "enum": [
+                                                        "and",
+                                                        "or"
+                                                      ]
+                                                    },
+                                                    "children": {
+                                                      "type": "array",
+                                                      "maxItems": 20,
+                                                      "items": {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                          "field",
+                                                          "op"
+                                                        ],
+                                                        "properties": {
+                                                          "field": {
+                                                            "type": "string"
+                                                          },
+                                                          "op": {
+                                                            "type": "string"
+                                                          },
+                                                          "value": {
+                                                            "anyOf": [
+                                                              {
+                                                                "type": "string",
+                                                                "maxLength": 255
+                                                              },
+                                                              {
+                                                                "type": "array",
+                                                                "minItems": 1,
+                                                                "maxItems": 20,
+                                                                "items": {
+                                                                  "type": "string",
+                                                                  "maxLength": 255
+                                                                }
+                                                              }
+                                                            ]
+                                                          },
+                                                          "quantifier": {
+                                                            "enum": [
+                                                              "some",
+                                                              "none"
+                                                            ]
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Ordinary item filter AST, validated against current field/relation read permissions (30 total nodes, 8192 serialized characters). null explicitly remembers no filter. Omission preserves the previous filter. GET omits this property until a personal filter has been saved; an inaccessible saved filter is returned as null without revealing its definition."
                         }
                       }
                     }
@@ -16921,6 +19124,199 @@
                         ]
                       }
                     }
+                  },
+                  "filter": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "logic",
+                          "children"
+                        ],
+                        "properties": {
+                          "logic": {
+                            "enum": [
+                              "and",
+                              "or"
+                            ]
+                          },
+                          "children": {
+                            "type": "array",
+                            "maxItems": 20,
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "field",
+                                    "op"
+                                  ],
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "op": {
+                                      "type": "string"
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "maxLength": 255
+                                        },
+                                        {
+                                          "type": "array",
+                                          "minItems": 1,
+                                          "maxItems": 20,
+                                          "items": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "quantifier": {
+                                      "enum": [
+                                        "some",
+                                        "none"
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "logic",
+                                    "children"
+                                  ],
+                                  "properties": {
+                                    "logic": {
+                                      "enum": [
+                                        "and",
+                                        "or"
+                                      ]
+                                    },
+                                    "children": {
+                                      "type": "array",
+                                      "maxItems": 20,
+                                      "items": {
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                              "field",
+                                              "op"
+                                            ],
+                                            "properties": {
+                                              "field": {
+                                                "type": "string"
+                                              },
+                                              "op": {
+                                                "type": "string"
+                                              },
+                                              "value": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "string",
+                                                    "maxLength": 255
+                                                  },
+                                                  {
+                                                    "type": "array",
+                                                    "minItems": 1,
+                                                    "maxItems": 20,
+                                                    "items": {
+                                                      "type": "string",
+                                                      "maxLength": 255
+                                                    }
+                                                  }
+                                                ]
+                                              },
+                                              "quantifier": {
+                                                "enum": [
+                                                  "some",
+                                                  "none"
+                                                ]
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                              "logic",
+                                              "children"
+                                            ],
+                                            "properties": {
+                                              "logic": {
+                                                "enum": [
+                                                  "and",
+                                                  "or"
+                                                ]
+                                              },
+                                              "children": {
+                                                "type": "array",
+                                                "maxItems": 20,
+                                                "items": {
+                                                  "type": "object",
+                                                  "additionalProperties": false,
+                                                  "required": [
+                                                    "field",
+                                                    "op"
+                                                  ],
+                                                  "properties": {
+                                                    "field": {
+                                                      "type": "string"
+                                                    },
+                                                    "op": {
+                                                      "type": "string"
+                                                    },
+                                                    "value": {
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "string",
+                                                          "maxLength": 255
+                                                        },
+                                                        {
+                                                          "type": "array",
+                                                          "minItems": 1,
+                                                          "maxItems": 20,
+                                                          "items": {
+                                                            "type": "string",
+                                                            "maxLength": 255
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    "quantifier": {
+                                                      "enum": [
+                                                        "some",
+                                                        "none"
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Ordinary item filter AST, validated against current field/relation read permissions (30 total nodes, 8192 serialized characters). null explicitly remembers no filter. Omission preserves the previous filter. GET omits this property until a personal filter has been saved; an inaccessible saved filter is returned as null without revealing its definition."
                   }
                 }
               }

@@ -11,6 +11,7 @@ import {
   saveTablePreferences,
 } from "../src/preferences/table-preferences.js";
 import type { Access } from "../src/permissions/access.js";
+import { featureFixture } from "./support/feature-fixture.js";
 
 test("personal preferences isolate users and reconcile schema/grants", async () => {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
@@ -128,5 +129,139 @@ test("personal preferences isolate users and reconcile schema/grants", async () 
       .delete();
     await app.close();
     await db.destroy();
+  }
+});
+
+test("table filters persist per user and collection, reset explicitly and revalidate revoked fields", async () => {
+  const f = await featureFixture();
+  const name = `${f.prefix}_filters`;
+  const second = `${f.prefix}_other`;
+  f.names.push(name, second);
+  const { call, memberHeaders } = f;
+  try {
+    for (const collection of [name, second]) {
+      await call(
+        "POST",
+        "/collections",
+        {
+          name: collection,
+          fields: [
+            { name: "title", type: "text" },
+            { name: "secret", type: "text" },
+          ],
+        },
+        201,
+      );
+    }
+    const policy = await f.grant(name, "read");
+    await f.grant(second, "read");
+    const path = `/users/me/table-preferences/${name}`;
+    const filter = {
+      logic: "and",
+      children: [{ field: "title", op: "contains", value: "demo" }],
+    };
+    assert.equal(
+      Object.hasOwn(
+        await call("GET", path, undefined, 200, memberHeaders),
+        "filter",
+      ),
+      false,
+    );
+    await Promise.all([
+      call("PATCH", path, { filter }, 200, memberHeaders),
+      call(
+        "PATCH",
+        path,
+        {
+          columns: {
+            order: ["title", "id", "secret"],
+            hidden: [],
+            widths: { title: 320 },
+          },
+        },
+        200,
+        memberHeaders,
+      ),
+      call(
+        "PATCH",
+        path,
+        { pageSize: 50, sort: { field: "title", direction: "desc" } },
+        200,
+        memberHeaders,
+      ),
+    ]);
+    const saved = await call("GET", path, undefined, 200, memberHeaders);
+    assert.deepEqual(saved.filter, filter);
+    assert.equal(saved.pageSize, 50);
+    assert.equal(saved.sort.direction, "desc");
+    assert.equal(saved.columns.widths.title, 320);
+    assert.equal(Object.hasOwn(await call("GET", path), "filter"), false);
+    assert.equal(
+      Object.hasOwn(
+        await call(
+          "GET",
+          `/users/me/table-preferences/${second}`,
+          undefined,
+          200,
+          memberHeaders,
+        ),
+        "filter",
+      ),
+      false,
+    );
+
+    await call("PATCH", path, { filter: null }, 200, memberHeaders);
+    assert.equal(
+      (await call("GET", path, undefined, 200, memberHeaders)).filter,
+      null,
+    );
+    await call("PATCH", path, { pageSize: 100 }, 200, memberHeaders);
+    assert.equal(
+      (await call("GET", path, undefined, 200, memberHeaders)).filter,
+      null,
+    );
+    await call("PATCH", path, { filter: [] }, 400, memberHeaders);
+    await call(
+      "PATCH",
+      path,
+      {
+        filter: {
+          logic: "and",
+          children: [{ field: "missing", op: "eq", value: "x" }],
+        },
+      },
+      400,
+      memberHeaders,
+    );
+
+    const privateFilter = {
+      logic: "and",
+      children: [{ field: "secret", op: "eq", value: "private" }],
+    };
+    await call("PATCH", path, { filter: privateFilter }, 200, memberHeaders);
+    await call("DELETE", `/policies/${policy}`, undefined, 204);
+    await f.grant(name, "read", ["title"]);
+    const restricted = await call("GET", path, undefined, 200, memberHeaders);
+    assert.equal(restricted.filter, null);
+    assert.ok(!JSON.stringify(restricted).includes("private"));
+    await call(
+      "PATCH",
+      path,
+      { filter: privateFilter, pageSize: 10 },
+      403,
+      memberHeaders,
+    );
+    assert.equal(
+      (await call("GET", path, undefined, 200, memberHeaders)).pageSize,
+      100,
+    );
+    await call("PATCH", path, { filter }, 200, memberHeaders);
+    await f.db.schema.alterTable(name, (table) => table.dropColumn("title"));
+    assert.equal(
+      (await call("GET", path, undefined, 200, memberHeaders)).filter,
+      null,
+    );
+  } finally {
+    await f.close();
   }
 });

@@ -1,6 +1,6 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 226 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 232 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
@@ -182,6 +182,8 @@
 | `GET /system-collections/:name/records` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `GET /system-collections/:name/records/:id` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `PATCH /system-collections/:name/records/:id` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
+| `GET /system-collections/users/form` | Human superuser only; safe user form fields, layout and owner grants, without authentication columns. | `apps/core/src/auth/user-form-routes.ts` |
+| `PUT /system-collections/users/form` | Human superuser only; safe layout and explicit native/custom owner-field grants. Native fields default to read only, custom fields to hidden. Does not grant user administration or related-row access. | `apps/core/src/auth/user-form-routes.ts` |
 | `GET /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `POST /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `DELETE /table-views/:collection/:id` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
@@ -194,16 +196,20 @@
 | `PUT /users/:id/delegation` | Только человек-superuser: явный набор готовых политик, которые пользователь вправе назначать | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/extension` | Активный пользователь с users/read и обычными read-правами коллекции | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/extension` | Активный пользователь с users/update и обычными read/create/update-правами коллекции | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/:id/form` | Active human session with users/read; safe profile and existing virtual grants. Raw custom columns require a superuser. | `apps/core/src/auth/user-form-routes.ts` |
+| `PATCH /users/:id/form` | Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected. | `apps/core/src/auth/user-form-routes.ts` |
 | `POST /users/:id/invitation` | Человек: superuser ИЛИ users/update; повторное приглашение только в пределах разрешённого набора, без доступа к аккаунтам с собственным делегированием | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/profile` | Активный пользователь с users/read; публичные сведения профиля без credentials | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/profile` | Активный пользователь с users/update; только поля профиля, без изменения статуса и привилегий | `apps/core/src/auth/profile-extension-routes.ts` |
 | `GET /users/:id/profile-display` | Активный человек с users/read или superuser; настроенная проекция профиля целевого пользователя | `apps/core/src/auth/profile-display-routes.ts` |
 | `POST /users/:id/recovery` | Свежий человек-superuser; только другой активный обычный пользователь. Одноразовая ссылка на 30 минут, аудит; не делегируется | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
-| `PATCH /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
+| `PATCH /users/me` | Active human session; own non-avatar profile fields need explicit field write grants or users/update. Own avatar remains freely editable. Credentials, email and privileges remain protected. | `apps/core/src/auth/profile-routes.ts` |
 | `POST /users/me/avatar` | Собственная человеческая сессия; приватное растровое изображение до 2 MiB, настроенное файловое хранилище и credential rate limit | `apps/core/src/auth/profile-avatar-routes.ts` |
 | `GET /users/me/extension` | Собственная человеческая сессия и обычные read-права коллекции; скрытые поля и строки не раскрываются | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/me/extension` | Собственная человеческая сессия; read и create/update, обычные правила строк, полей, связей и файлов | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/me/form` | Active human session; own safe profile, explicitly granted custom fields and legacy virtual values. Hidden values and conditions are omitted. | `apps/core/src/auth/user-form-routes.ts` |
+| `PATCH /users/me/form` | Active human session; own field writes follow explicit grants, native fields also allow users/update. Own avatar is freely editable. Security, appearance and personal applications use independent endpoints. | `apps/core/src/auth/user-form-routes.ts` |
 | `GET /users/me/identities` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/sso/routes.ts` |
 | `DELETE /users/me/identities/:id` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/sso/routes.ts` |
 | `GET /users/me/oauth-apps` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/oauth/consent-routes.ts` |

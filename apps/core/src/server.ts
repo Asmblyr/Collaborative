@@ -34,6 +34,10 @@ const app = createApp({
     .map((value) => value.trim())
     .filter(Boolean),
   sessionCookiePrefix: process.env.SESSION_COOKIE_PREFIX,
+  sessionCookieDomain: process.env.SESSION_COOKIE_DOMAIN,
+  publicOriginAliases: process.env.AUTH_UI_ALIASES?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
   operationLimits: limitsFromEnv(process.env),
   passkeys: passkeysFromEnv(process.env),
   databaseUrl: process.env.DATABASE_URL,

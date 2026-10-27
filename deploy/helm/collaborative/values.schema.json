@@ -15,13 +15,24 @@
             "maxLength": 40,
             "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
           },
-          "secretName": { "type": "string", "minLength": 1 }
+          "secretName": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
     "publicUrl": {
       "type": "string",
       "pattern": "^https?://[^/]+/?$"
+    },
+    "publicUrlAliases": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^https?://[^/]+/?$"
+      }
     },
     "existingSecret": {
       "type": "string",
@@ -30,6 +41,11 @@
     "sessionCookiePrefix": {
       "type": "string",
       "pattern": "^[a-zA-Z0-9_]{1,40}$"
+    },
+    "sessionCookieDomain": {
+      "type": "string",
+      "maxLength": 253,
+      "pattern": "^$|^\\.?[a-zA-Z0-9][a-zA-Z0-9.-]*\\.[a-zA-Z0-9][a-zA-Z0-9-]*$"
     },
     "coreEnv": {
       "type": "object",

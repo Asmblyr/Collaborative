@@ -1,8 +1,9 @@
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { ApiError, createClient } from "@asmblyr-collaborative/sdk";
 import type { CurrentUser } from "@asmblyr-collaborative/contracts";
+import { uniqueSessionCookie } from "./session-cookie";
 export { safeNext } from "./safe-next";
 
 export const COOKIE_PREFIX = process.env.SESSION_COOKIE_PREFIX ?? "asmblyr";
@@ -13,6 +14,10 @@ export const SESSION_COOKIE = `${COOKIE_PREFIX}_session`;
 const coreUrl = process.env.CORE_URL ?? "http://127.0.0.1:3001";
 
 export type SessionUser = CurrentUser;
+
+export async function requestSessionToken(): Promise<string | undefined> {
+  return uniqueSessionCookie((await headers()).get("cookie"), SESSION_COOKIE);
+}
 
 export function coreAddress(path: string): URL {
   return new URL(path, coreUrl);
@@ -43,8 +48,7 @@ export const loadSessionUser = cache(
 export async function requireSession(
   path: string,
 ): Promise<{ user: SessionUser; token: string }> {
-  const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
+  const token = await requestSessionToken();
   if (!token) {
     sessionRedirect(path);
   }

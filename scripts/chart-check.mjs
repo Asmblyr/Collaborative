@@ -9,6 +9,10 @@ const values = [
   "--set",
   "existingSecret=private-core",
   "--set",
+  "sessionCookieDomain=example.test",
+  "--set",
+  "publicUrlAliases[0]=http://legacy.example.test",
+  "--set",
   "core.replicas=2",
   "--set",
   "ui.replicas=2",
@@ -36,16 +40,23 @@ const ui = deployments.find((entry) =>
 assert.ok(ui);
 assert.doesNotMatch(
   ui,
-  /private-core|private-oauth|secret-oauth|DATABASE_URL|SECRETS_LOCAL_KEY|ASMBLYR_SETUP_TOKEN|envFrom/,
+  /private-core|private-oauth|secret-oauth|DATABASE_URL|SECRETS_LOCAL_KEY|ASMBLYR_SETUP_TOKEN|SESSION_COOKIE_DOMAIN|envFrom/,
 );
 const core = deployments.find((entry) =>
   /name: verify-collaborative-core/.test(entry),
 );
 const migration = documents.find((entry) => /kind: Job/.test(entry));
+assert.match(core, /name: SESSION_COOKIE_DOMAIN\s+value: "example.test"/);
+assert.match(
+  core,
+  /name: AUTH_UI_ALIASES\s+value: "http:\/\/legacy.example.test"/,
+);
+assert.doesNotMatch(migration, /SESSION_COOKIE_DOMAIN/);
 for (const document of [core, migration]) {
   assert.match(document, /mountPath: \/run\/secrets\/oauth/);
   assert.match(document, /secretName: "private-oauth"/);
   assert.match(document, /readOnly: true/);
+  assert.match(document, /fsGroup: 1000/);
 }
 for (const deployment of deployments) {
   assert.match(deployment, /replicas: 2/);
@@ -84,4 +95,14 @@ assert.throws(() =>
 );
 console.log(
   "Chart routing, replicas, probes, secret isolation and invalid values: passed",
+);
+assert.throws(() =>
+  helm(
+    "template",
+    "invalid",
+    chart,
+    ...values,
+    "--set",
+    "coreEnv.SESSION_COOKIE_DOMAIN=other.test",
+  ),
 );

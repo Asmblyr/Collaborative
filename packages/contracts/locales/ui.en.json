@@ -2190,5 +2190,17 @@
   "copy.836426d3": "Remove row",
   "copy.2ed86957": "Show to the profile owner",
   "copy.8298baf8": "Add row",
-  "copy.688d1e21": "Configured rows are visible to user managers. The checkbox also lets the profile owner see the selected value without granting access to the whole directory. These values cannot be edited in the profile."
+  "copy.688d1e21": "Configured rows are visible to user managers. The checkbox also lets the profile owner see the selected value without granting access to the whole directory. These values cannot be edited in the profile.",
+  "copy.e0133a44": "Profile form",
+  "copy.c48736b8": "Profile owner access",
+  "copy.fc17f990": "Hide",
+  "copy.3e49765e": "View and edit",
+  "copy.ab2e9b4d": "Applies only to your own profile. Related records follow their access policies.",
+  "copy.af9a8568": "Displays an existing field or relationship value without copying data. This field is read-only.",
+  "copy.73fdfffe": "Shows only the selected value to the owner, without granting directory access.",
+  "copy.1ff5c4aa": "Remove virtual field",
+  "copy.cf8ab045": "Contact an administrator to change these fields.",
+  "copy.913709bd": "Clear {{value0}}",
+  "copy.362cb02b": "Could not save table settings.",
+  "copy.98c7a65f": "Columns, sorting, filters and page size save automatically. Named views remain separate templates."
 }

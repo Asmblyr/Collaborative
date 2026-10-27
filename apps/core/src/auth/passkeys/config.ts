@@ -6,9 +6,11 @@ export interface PasskeyConfig {
 
 export function passkeysFromEnv(env: NodeJS.ProcessEnv): PasskeyConfig {
   const origin = new URL(env.AUTH_UI_URL ?? "http://localhost:3000");
+  const localhost =
+    origin.hostname === "localhost" || origin.hostname.endsWith(".localhost");
   if (
     origin.protocol !== "https:" &&
-    !(origin.protocol === "http:" && origin.hostname === "localhost")
+    !(origin.protocol === "http:" && localhost)
   ) {
     throw new Error("Passkeys require HTTPS or localhost");
   }
