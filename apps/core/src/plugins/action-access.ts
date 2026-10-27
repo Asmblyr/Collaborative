@@ -65,5 +65,9 @@ export async function mcpActionAccess(
   for (const collection of blockedDeletes(relations, enabled)) {
     grants.delete(`${collection}:delete`);
   }
-  return { principal: { ...access.principal, superuser: false }, grants };
+  return {
+    ...access,
+    principal: { ...access.principal, superuser: false },
+    grants,
+  };
 }

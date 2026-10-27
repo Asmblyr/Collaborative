@@ -1,12 +1,19 @@
 <a id="ассистент-и-внутреннии-mcp"></a>
 
-# Assistant and internal MCP
+# Assistant and MCP
 
 See [assistant architecture](../development/assistant-architecture.md) for the request, tool, and model-handler pipeline.
 
 The assistant is optional. Core connects to an OpenAI-compatible provider and keeps the key on the server. The UI sends current-page context and streams responses. Users choose whether to navigate to suggested pages.
 
 Tools inspect accessible schema, search/read data, build filters and selections, prepare forms, and call explicitly declared plugin model handlers. Human labels come from display metadata; API calls use technical names.
+
+The shared data kernel also exposes `create_item`, `prepare_update` and
+`update_item` when the user has the corresponding rights. The model is instructed
+to modify records only on an explicit user request. Core enforces current field
+and row rights, validation, transactional hooks, audit history, original-value
+conflict checks and stable operation IDs for retries. These tools do not change
+schema or delete records. Details are in the [MCP guide](./external-mcp.md).
 
 Ordinary searches are instructed to return relevant records and a full-selection button. Counts, rankings, and extra dictionaries are requested when the question needs them; deeper analysis can follow in another message. This is a model instruction, not a provider-latency guarantee.
 
@@ -16,7 +23,7 @@ Ordinary searches are instructed to return relevant records and a full-selection
 
 Chat requires a human who is a superuser, has at least one read/create/update data grant, or has an active personal Google connection. The assistant settings permission grants configuration access, not chat or data access.
 
-Internal MCP is the assistant's shared tool contract. There is no public external MCP endpoint yet. Every operation uses the user's permissions and collection MCP enablement, including for superusers. Never expose raw SQL or privileged storage to the model.
+Internal MCP is the assistant's shared tool contract. The [external MCP](./external-mcp.md) uses the same kernel through a user-authorized HTTP adapter. Every operation uses the user's permissions and collection MCP enablement, including for superusers. Never expose raw SQL or privileged storage to the model.
 
 Plugin developers wrap H3 handlers in `defineModelContext<Input>` with an annotation. HTTP and MCP use the same handler and checks. Entry AccessGate does not replace permissions on affected data. Read-only mode must prevent writes in available tools.
 

@@ -21,6 +21,7 @@ import { systemCollectionsContract } from "./system-collections-contract.mjs";
 import { userFormContract } from "./user-form-contract.mjs";
 import { oauthPolicyContract } from "./oauth-policy-contract.mjs";
 import { userReferenceContract } from "./user-reference-contract.mjs";
+import { mcpContract } from "./mcp-contract.mjs";
 const object = { type: "object", additionalProperties: true };
 const json = (schema) => ({ "application/json": { schema } });
 const response = (schema, description = "Успех") => ({
@@ -75,6 +76,8 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const mcp = mcpContract(key);
+  if (mcp) return mcp;
   const userForm = userFormContract(key);
   if (userForm) return userForm;
   const userReference = userReferenceContract(key);

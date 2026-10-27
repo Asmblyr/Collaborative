@@ -16,6 +16,8 @@ import { toolDefinitions } from "./tool-definitions.js";
 import { describeTerms } from "../terms/filters.js";
 import { executeAggregateTool } from "./aggregate-tool.js";
 import { ToolArgumentError } from "./errors.js";
+import { executeWriteTool } from "./write-tools.js";
+import type { MutationFactory } from "../items/mutation-context.js";
 export { unavailableToolResult } from "./errors.js";
 
 /** One server-created identity and schema snapshot map per assistant turn. */
@@ -24,11 +26,35 @@ export function createToolSession(
   access: Access,
   reloadAccess: () => Promise<Access>,
   pinnedCollections: ReadonlyMap<string, string> = new Map(),
+  options: {
+    mutations?: MutationFactory;
+    source?: string;
+    schemas?: {
+      load(name: string): Promise<string | undefined>;
+      save(name: string, id: string): Promise<void>;
+    };
+  } = {},
 ) {
   requireHuman(access);
   const principalId = access.principal.id;
   const identities = new Map(pinnedCollections);
   const described = new Set<string>();
+
+  function definitions(current: Access) {
+    return toolDefinitions.filter((tool) => {
+      const action =
+        tool.name === "create_item"
+          ? "create"
+          : ["prepare_update", "update_item"].includes(tool.name)
+            ? "update"
+            : null;
+      return (
+        !action ||
+        current.principal.superuser ||
+        [...current.grants.keys()].some((key) => key.endsWith(`:${action}`))
+      );
+    });
+  }
 
   async function authorize(signal?: AbortSignal): Promise<Access> {
     signal?.throwIfAborted();
@@ -45,7 +71,9 @@ export function createToolSession(
     signal?: AbortSignal,
   ): Promise<object> {
     const currentAccess = await authorize(signal);
-    const definition = toolDefinitions.find((tool) => tool.name === name);
+    const definition = definitions(currentAccess).find(
+      (tool) => tool.name === name,
+    );
     if (!definition) throw new ItemError("Tool unavailable", 400);
     const body = { ...objectInput(args, definition.parameters.required) };
     // Older internal clients predate terms/order. The advertised model schema
@@ -77,6 +105,35 @@ export function createToolSession(
     const collection = toolCollectionName(body.collection);
     const parameters = { ...body };
     delete parameters.collection;
+    if (
+      name !== "describe_collection" &&
+      !described.has(collection) &&
+      options.schemas
+    ) {
+      const saved = await options.schemas.load(collection);
+      if (saved) {
+        identities.set(collection, saved);
+        described.add(collection);
+      }
+    }
+    if (["create_item", "prepare_update", "update_item"].includes(name)) {
+      const id = identities.get(collection);
+      if (!id || !described.has(collection))
+        throw new ToolArgumentError(
+          "SCHEMA_REQUIRED",
+          "Call describe_collection before writing records.",
+        );
+      return executeWriteTool(
+        db,
+        currentAccess,
+        collection,
+        id,
+        name,
+        parameters,
+        options,
+        signal,
+      );
+    }
     if (isDataTool(name) || name === "aggregate_items") {
       const id = identities.get(collection);
       if (!described.has(collection) || !id) {
@@ -114,6 +171,7 @@ export function createToolSession(
     if (name === "describe_collection") {
       identities.set(collection, id);
       described.add(collection);
+      await options.schemas?.save(collection, id);
       return {
         ...(await describeCollection(db, collection, data, currentAccess)),
         ...(await describeTerms(db, collection, data, currentAccess)),
@@ -128,5 +186,5 @@ export function createToolSession(
     return validateToolFilter(collection, body.filter, data, currentAccess);
   }
 
-  return { authorize, execute };
+  return { authorize, definitions, execute };
 }

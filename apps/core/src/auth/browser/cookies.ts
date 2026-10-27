@@ -128,6 +128,11 @@ export function registerBrowserCookies(
     return payload;
   });
   app.addHook("onRequest", async (request, reply) => {
+    // External MCP requires its own audience-bound bearer, never ambient cookies.
+    const path = request.url.split("?")[0];
+    if (path === "/mcp" || path.startsWith("/mcp/oauth/")) {
+      return;
+    }
     // The OAuth provider owns its own protocol cookies and client authentication.
     if (
       request.url.startsWith("/oauth/") &&

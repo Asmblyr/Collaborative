@@ -926,5 +926,65 @@
   "PATCH /users/:id/form": {
     "public": false,
     "access": "Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected."
+  },
+  "GET /.well-known/oauth-protected-resource/api/mcp": {
+    "access": "Public MCP/OAuth discovery metadata; no credentials or user data.",
+    "public": true
+  },
+  "GET /.well-known/oauth-authorization-server": {
+    "access": "Public MCP/OAuth discovery metadata; no credentials or user data.",
+    "public": true
+  },
+  "GET /mcp": {
+    "access": "MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens.",
+    "public": false
+  },
+  "POST /mcp": {
+    "access": "MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens.",
+    "public": false
+  },
+  "DELETE /mcp": {
+    "access": "MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens.",
+    "public": false
+  },
+  "OPTIONS /mcp": {
+    "access": "Public CORS preflight without credentials; no data access.",
+    "public": true
+  },
+  "OPTIONS /mcp/oauth/:operation": {
+    "access": "Public CORS preflight without credentials; no data access.",
+    "public": true
+  },
+  "POST /mcp/oauth/register": {
+    "access": "Public rate-limited OAuth client registration; exact HTTPS or HTTP loopback callbacks, no grant.",
+    "public": true
+  },
+  "GET /mcp/oauth/authorize": {
+    "access": "Public OAuth authorization entry; registered callback, S256 challenge and exact MCP resource. Redirects to human login and explicit consent.",
+    "public": true
+  },
+  "POST /mcp/oauth/token": {
+    "access": "One-use code with PKCE or rotating refresh token; exact client/resource and active approving human/session. Purpose-bound MCP credentials only.",
+    "public": true
+  },
+  "POST /mcp/oauth/revoke": {
+    "access": "Owning client ID and access/refresh credential revoke that connection; unknown credentials also succeed.",
+    "public": true
+  },
+  "GET /mcp/authorizations/:request": {
+    "access": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.",
+    "public": false
+  },
+  "POST /mcp/authorizations/:request": {
+    "access": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.",
+    "public": false
+  },
+  "GET /users/me/mcp-connections": {
+    "access": "Active human session; own MCP endpoint and active connections, without tokens or another user's clients.",
+    "public": false
+  },
+  "DELETE /users/me/mcp-connections/:id": {
+    "access": "Active human session; revoke only own MCP connection and all its access/refresh credentials immediately.",
+    "public": false
   }
 }

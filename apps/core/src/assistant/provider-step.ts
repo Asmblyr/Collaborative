@@ -12,6 +12,7 @@ import { responseMetadata } from "./telemetry/usage.js";
 import { requestChatCompletion } from "./provider-chat.js";
 import { requestResponse } from "./provider-responses.js";
 import { finalAnswerInstructions } from "./budget.js";
+import { strictToolSchema } from "./tool-strict-schema.js";
 
 export interface ToolCall {
   id: string;
@@ -87,7 +88,7 @@ export function providerConversation(
                   tools: definitions.map((d) => ({
                     type: "function" as const,
                     ...d,
-                    strict: true,
+                    strict: strictToolSchema(d.parameters),
                   })),
                   parallel_tool_calls: false,
                   ...(finalize ? { tool_choice: "none" as const } : {}),
@@ -176,7 +177,12 @@ export function providerConversation(
           ? {
               tools: definitions.map((d) => ({
                 type: "function" as const,
-                function: { ...d, ...(config.zai ? {} : { strict: true }) },
+                function: {
+                  ...d,
+                  ...(config.zai
+                    ? {}
+                    : { strict: strictToolSchema(d.parameters) }),
+                },
               })),
               tool_choice: finalize ? "none" : "auto",
               ...(config.zai ? {} : { parallel_tool_calls: false }),

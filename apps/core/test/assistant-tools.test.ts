@@ -141,7 +141,7 @@ for (const api of ["responses", "chat-completions"] as const)
         assert.equal(sent.tools, undefined);
         assert.equal(sent.tool_choice, undefined);
       } else {
-        assert.equal(sent.tools.length, 9);
+        assert.equal(sent.tools.length, 12);
         if (i === 7) assert.equal(sent.tool_choice, "none");
       }
       if (i > 0) {

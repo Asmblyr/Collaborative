@@ -76,6 +76,7 @@ export async function updateAuthorizedItem(
   id: string,
   values: unknown,
   mutation: MutationContext = mutationContext(access),
+  expectedValues?: Record<string, unknown>,
 ): Promise<ItemMutationResult> {
   mutation = { ...mutation, access };
   const allowed = requireGrant(access, collection, "update");
@@ -88,6 +89,7 @@ export async function updateAuthorizedItem(
       values,
       mutation,
       allowed,
+      expectedValues,
     );
     return readableResult(transaction, access, collection, item);
   });

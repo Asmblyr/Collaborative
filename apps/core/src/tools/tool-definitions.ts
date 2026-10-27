@@ -1,4 +1,5 @@
 import { aggregateProperties } from "./aggregate-definition.js";
+import { writeToolDefinitions } from "./write-definitions.js";
 
 export interface ToolDefinition {
   name: string;
@@ -77,6 +78,7 @@ function define(
 }
 
 export const toolDefinitions: ToolDefinition[] = [
+  ...writeToolDefinitions,
   define(
     "list_collections",
     "Find collections readable by the current user and enabled for MCP. Returns only names and descriptions, no records. Search matches technical and display names. Hidden navigation and workspaces do not grant or revoke access.",

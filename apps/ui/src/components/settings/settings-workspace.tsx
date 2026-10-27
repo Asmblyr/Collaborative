@@ -15,6 +15,7 @@ import { PasswordForm } from "./password-form";
 import { ProfileForm } from "./profile-form";
 import { SessionsPanel } from "./sessions-panel";
 import { ConnectedAppsPanel } from "./connected-apps-panel";
+import { McpConnectionsPanel } from "./mcp-connections-panel";
 import { GoogleConnectionPanel } from "./google-connection-panel";
 import { AppearanceSettings } from "./appearance-settings";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
@@ -148,7 +149,10 @@ export function SettingsWorkspace({
             value="applications"
             className="rounded-xl border bg-card p-5 sm:p-6"
           >
-            <ConnectedAppsPanel />
+            <McpConnectionsPanel />
+            <div className="mt-6">
+              <ConnectedAppsPanel />
+            </div>
             <div className="mt-5">
               <GoogleConnectionPanel feedback={connectionStatus} />
             </div>

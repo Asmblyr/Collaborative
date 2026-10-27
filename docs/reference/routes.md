@@ -1,11 +1,13 @@
 # HTTP route matrix
 
-Generated from Core and the reviewed access catalog. 232 declarations.
+Generated from Core and the reviewed access catalog. 247 declarations.
 
 This describes access boundaries; integration tests verify enforcement. Dynamic plugin routes and internal oidc-provider endpoints are not listed individually.
 
 | Method and path | Access | Source in the repository |
 | --- | --- | --- |
+| `GET /.well-known/oauth-authorization-server` | Public MCP/OAuth discovery metadata; no credentials or user data. | `apps/core/src/mcp/routes.ts` |
+| `GET /.well-known/oauth-protected-resource/api/mcp` | Public MCP/OAuth discovery metadata; no credentials or user data. | `apps/core/src/mcp/routes.ts` |
 | `GET /assistant/conversations` | Active human with chat access; own conversations only | `apps/core/src/assistant/history-routes.ts` |
 | `POST /assistant/conversations` | Active human with chat access; creates an own conversation with empty context | `apps/core/src/assistant/history-routes.ts` |
 | `DELETE /assistant/conversations/:id` | Active human with chat access; own idle conversation only | `apps/core/src/assistant/history-routes.ts` |
@@ -109,6 +111,17 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `POST /items/:collection/commit` | Active principal; own read/create/update grants and fields of every affected record. expectedValues requires reading changed fields; conflict rolls back the whole commit | `apps/core/src/items/relation-routes.ts` |
 | `GET /materialized-views` | Human superuser; discovers existing public materialized views without registration/REFRESH, excluding Core/plugin objects | `apps/core/src/collections/materialized-routes.ts` |
 | `POST /materialized-views` | Human superuser; atomically imports a populated public materialized view with supported fields and a stable unique key. Presentation/location metadata only, no SQL/DDL/REFRESH or grants to others | `apps/core/src/collections/materialized-routes.ts` |
+| `DELETE /mcp` | MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens. | `apps/core/src/mcp/routes.ts` |
+| `GET /mcp` | MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens. | `apps/core/src/mcp/routes.ts` |
+| `OPTIONS /mcp` | Public CORS preflight without credentials; no data access. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp` | MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens. | `apps/core/src/mcp/routes.ts` |
+| `GET /mcp/authorizations/:request` | Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/authorizations/:request` | Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights. | `apps/core/src/mcp/routes.ts` |
+| `OPTIONS /mcp/oauth/:operation` | Public CORS preflight without credentials; no data access. | `apps/core/src/mcp/routes.ts` |
+| `GET /mcp/oauth/authorize` | Public OAuth authorization entry; registered callback, S256 challenge and exact MCP resource. Redirects to human login and explicit consent. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/oauth/register` | Public rate-limited OAuth client registration; exact HTTPS or HTTP loopback callbacks, no grant. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/oauth/revoke` | Owning client ID and access/refresh credential revoke that connection; unknown credentials also succeed. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/oauth/token` | One-use code with PKCE or rotating refresh token; exact client/resource and active approving human/session. Purpose-bound MCP credentials only. | `apps/core/src/mcp/routes.ts` |
 | `GET /monitoring/browser` | Active human session; public browser DSN and permitted flags only, never server DSN. Service tokens rejected | `apps/core/src/monitoring/routes.ts` |
 | `GET /notifications` | Active human session; own enabled-plugin notifications, with record access rechecked | `apps/core/src/notifications/routes.ts` |
 | `POST /notifications/:id/read` | Active human session; own notification and current record access | `apps/core/src/notifications/routes.ts` |
@@ -212,6 +225,8 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `PATCH /users/me/form` | Active human session; own field writes follow explicit grants, native fields also allow users/update. Own avatar is freely editable. Security, appearance and personal applications use independent endpoints. | `apps/core/src/auth/user-form-routes.ts` |
 | `GET /users/me/identities` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/auth/sso/routes.ts` |
 | `DELETE /users/me/identities/:id` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/auth/sso/routes.ts` |
+| `GET /users/me/mcp-connections` | Active human session; own MCP endpoint and active connections, without tokens or another user's clients. | `apps/core/src/mcp/routes.ts` |
+| `DELETE /users/me/mcp-connections/:id` | Active human session; revoke only own MCP connection and all its access/refresh credentials immediately. | `apps/core/src/mcp/routes.ts` |
 | `GET /users/me/oauth-apps` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/oauth/consent-routes.ts` |
 | `DELETE /users/me/oauth-apps/:id` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/oauth/consent-routes.ts` |
 | `GET /users/me/passkeys` | Own active human session; public passkey information only | `apps/core/src/auth/passkeys/routes.ts` |

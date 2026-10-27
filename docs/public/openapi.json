@@ -16,6 +16,164 @@
     }
   ],
   "paths": {
+    "/.well-known/oauth-authorization-server": {
+      "get": {
+        "tags": [
+          ".well-known"
+        ],
+        "operationId": "get__well_known_oauth_authorization_server",
+        "summary": "GET /.well-known/oauth-authorization-server",
+        "description": "Public MCP/OAuth discovery metadata; no credentials or user data.. Source: apps/core/src/mcp/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "issuer": {
+                      "type": "string"
+                    },
+                    "authorization_endpoint": {
+                      "type": "string"
+                    },
+                    "token_endpoint": {
+                      "type": "string"
+                    },
+                    "registration_endpoint": {
+                      "type": "string"
+                    },
+                    "revocation_endpoint": {
+                      "type": "string"
+                    },
+                    "response_types_supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "grant_types_supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "token_endpoint_auth_methods_supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "code_challenge_methods_supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "scopes_supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "issuer",
+                    "authorization_endpoint",
+                    "token_endpoint",
+                    "registration_endpoint",
+                    "revocation_endpoint",
+                    "response_types_supported",
+                    "grant_types_supported",
+                    "token_endpoint_auth_methods_supported",
+                    "code_challenge_methods_supported",
+                    "scopes_supported"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts",
+        "servers": [
+          {
+            "url": "http://localhost:3000"
+          },
+          {
+            "url": "http://localhost:3001"
+          }
+        ]
+      }
+    },
+    "/.well-known/oauth-protected-resource/api/mcp": {
+      "get": {
+        "tags": [
+          ".well-known"
+        ],
+        "operationId": "get__well_known_oauth_protected_resource_api_mcp",
+        "summary": "GET /.well-known/oauth-protected-resource/api/mcp",
+        "description": "Public MCP/OAuth discovery metadata; no credentials or user data.. Source: apps/core/src/mcp/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resource": {
+                      "type": "string"
+                    },
+                    "authorization_servers": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "scopes_supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "bearer_methods_supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "resource",
+                    "authorization_servers",
+                    "scopes_supported",
+                    "bearer_methods_supported"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts",
+        "servers": [
+          {
+            "url": "http://localhost:3000"
+          },
+          {
+            "url": "http://localhost:3001"
+          }
+        ]
+      }
+    },
     "/assistant/conversations": {
       "get": {
         "tags": [
@@ -6709,6 +6867,879 @@
                     }
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "delete": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "delete__mcp",
+        "summary": "DELETE /mcp",
+        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads user/session, approved collection IDs and live field/row permissions. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the same data kernel as the website. This JSON-RPC envelope is not a generated REST tool client.",
+        "security": [
+          {
+            "mcpBearer": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "405": {
+            "description": "GET SSE / DELETE sessions are unsupported"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      },
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "get__mcp",
+        "summary": "GET /mcp",
+        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads user/session, approved collection IDs and live field/row permissions. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the same data kernel as the website. This JSON-RPC envelope is not a generated REST tool client.",
+        "security": [
+          {
+            "mcpBearer": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "405": {
+            "description": "GET SSE / DELETE sessions are unsupported"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      },
+      "options": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "options__mcp",
+        "summary": "OPTIONS /mcp",
+        "description": "Public CORS preflight without credentials; no data access.. Source: apps/core/src/mcp/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Public CORS discovery without credentials; authenticated MCP calls validate the canonical/registered callback origin"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      },
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "post__mcp",
+        "summary": "POST /mcp",
+        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads user/session, approved collection IDs and live field/row permissions. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the same data kernel as the website. This JSON-RPC envelope is not a generated REST tool client.",
+        "security": [
+          {
+            "mcpBearer": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Notification accepted; empty body"
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "405": {
+            "description": "GET SSE / DELETE sessions are unsupported"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jsonrpc": {
+                    "const": "2.0"
+                  },
+                  "id": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  },
+                  "method": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "jsonrpc",
+                  "method"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/authorizations/{request}": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "get__mcp_authorizations_request",
+        "summary": "GET /mcp/authorizations/:request",
+        "description": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.. Source: apps/core/src/mcp/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "redirectUri": {
+                          "type": "string"
+                        },
+                        "scopes": {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "mcp:read",
+                              "mcp:write"
+                            ]
+                          }
+                        },
+                        "collections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label",
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "redirectUri",
+                        "scopes",
+                        "collections"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      },
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "post__mcp_authorizations_request",
+        "summary": "POST /mcp/authorizations/:request",
+        "description": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.. Source: apps/core/src/mcp/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "redirectUri": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "redirectUri"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "approved": {
+                    "type": "boolean"
+                  },
+                  "write": {
+                    "type": "boolean"
+                  },
+                  "collectionIds": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "approved",
+                  "write",
+                  "collectionIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/{operation}": {
+      "options": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "options__mcp_oauth_operation",
+        "summary": "OPTIONS /mcp/oauth/:operation",
+        "description": "Public CORS preflight without credentials; no data access.. Source: apps/core/src/mcp/routes.ts",
+        "security": [],
+        "parameters": [
+          {
+            "name": "operation",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Public CORS discovery without credentials; authenticated MCP calls validate the canonical/registered callback origin"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      }
+    },
+    "/mcp/oauth/authorize": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "get__mcp_oauth_authorize",
+        "summary": "GET /mcp/oauth/authorize",
+        "description": "Public OAuth authorization entry; registered callback, S256 challenge and exact MCP resource. Redirects to human login and explicit consent.. Source: apps/core/src/mcp/routes.ts",
+        "security": [],
+        "parameters": [
+          {
+            "name": "response_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "const": "code"
+            }
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "const": "S256"
+            }
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the signed-in website consent page; no token until explicit user approval"
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      }
+    },
+    "/mcp/oauth/register": {
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "post__mcp_oauth_register",
+        "summary": "POST /mcp/oauth/register",
+        "description": "Dynamic public-client registration. Exact HTTPS or HTTP loopback callbacks; no remote metadata fetching, client secrets or access grant.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "client_name": {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    "redirect_uris": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 8,
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "token_endpoint_auth_method": {
+                      "const": "none"
+                    },
+                    "grant_types": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "authorization_code",
+                          "refresh_token"
+                        ]
+                      }
+                    },
+                    "response_types": {
+                      "type": "array",
+                      "items": {
+                        "const": "code"
+                      }
+                    },
+                    "client_id": {
+                      "type": "string"
+                    },
+                    "scope": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "client_name",
+                    "redirect_uris",
+                    "token_endpoint_auth_method",
+                    "grant_types",
+                    "response_types",
+                    "client_id",
+                    "scope"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_name": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "redirect_uris": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "token_endpoint_auth_method": {
+                    "const": "none"
+                  },
+                  "grant_types": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "authorization_code",
+                        "refresh_token"
+                      ]
+                    }
+                  },
+                  "response_types": {
+                    "type": "array",
+                    "items": {
+                      "const": "code"
+                    }
+                  }
+                },
+                "required": [
+                  "redirect_uris"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/revoke": {
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "post__mcp_oauth_revoke",
+        "summary": "POST /mcp/oauth/revoke",
+        "description": "Owning client ID and access/refresh credential revoke that connection; unknown credentials also succeed.. Source: apps/core/src/mcp/routes.ts",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Owning client connection revoked; unknown token also succeeds without disclosure"
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "token": {
+                    "type": "string"
+                  },
+                  "token_type_hint": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "client_id",
+                  "token"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "token": {
+                    "type": "string"
+                  },
+                  "token_type_hint": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "client_id",
+                  "token"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/oauth/token": {
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "operationId": "post__mcp_oauth_token",
+        "summary": "POST /mcp/oauth/token",
+        "description": "Authorization code requires exact redirect, S256 verifier and approved resource. Refresh rotates; consumed credential reuse revokes the connection. Access <=300 seconds, connection <=30 days capped by parent session. All persisted credentials are hashes.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string"
+                    },
+                    "refresh_token": {
+                      "type": "string"
+                    },
+                    "token_type": {
+                      "const": "Bearer"
+                    },
+                    "expires_in": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 300
+                    },
+                    "scope": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "access_token",
+                    "refresh_token",
+                    "token_type",
+                    "expires_in",
+                    "scope"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": {
+                    "enum": [
+                      "authorization_code",
+                      "refresh_token"
+                    ]
+                  },
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "resource": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "redirect_uri": {
+                    "type": "string"
+                  },
+                  "code_verifier": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 128
+                  },
+                  "refresh_token": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "grant_type",
+                  "client_id",
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": {
+                    "enum": [
+                      "authorization_code",
+                      "refresh_token"
+                    ]
+                  },
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "resource": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "redirect_uri": {
+                    "type": "string"
+                  },
+                  "code_verifier": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 128
+                  },
+                  "refresh_token": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "grant_type",
+                  "client_id",
+                  "resource"
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -17377,6 +18408,185 @@
         "x-source": "apps/core/src/auth/sso/routes.ts"
       }
     },
+    "/users/me/mcp-connections": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "get__users_me_mcp_connections",
+        "summary": "GET /users/me/mcp-connections",
+        "description": "Active human session; own MCP endpoint and active connections, without tokens or another user's clients.. Source: apps/core/src/mcp/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "connections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "scopes": {
+                                "type": "array",
+                                "items": {
+                                  "enum": [
+                                    "mcp:read",
+                                    "mcp:write"
+                                  ]
+                                }
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "lastUsedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "expiresAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "collections": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "label"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "scopes",
+                              "createdAt",
+                              "lastUsedAt",
+                              "expiresAt",
+                              "collections"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "url",
+                        "connections"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      }
+    },
+    "/users/me/mcp-connections/{id}": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "delete__users_me_mcp_connections_id",
+        "summary": "DELETE /users/me/mcp-connections/:id",
+        "description": "Active human session; revoke only own MCP connection and all its access/refresh credentials immediately.. Source: apps/core/src/mcp/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Own connection revoked immediately, including access/refresh tokens"
+          },
+          "400": {
+            "description": "Invalid OAuth request, scope, resource, code or verifier"
+          },
+          "401": {
+            "description": "Invalid or revoked user session / MCP credential"
+          },
+          "403": {
+            "description": "User, collection or origin access denied"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-contract-level": "documented",
+        "x-source": "apps/core/src/mcp/routes.ts"
+      }
+    },
     "/users/me/oauth-apps": {
       "get": {
         "tags": [
@@ -20257,6 +21467,11 @@
       }
     },
     "securitySchemes": {
+      "mcpBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Purpose-bound MCP OAuth token; browser cookies, ordinary API tokens and service tokens are rejected."
+      },
       "browserSession": {
         "type": "apiKey",
         "in": "cookie",

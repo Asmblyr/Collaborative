@@ -42,7 +42,7 @@ export function AssistantContextControl({
   } else if (enabled) {
     detail = context.record
       ? copy("Сохранённые данные · черновик не передаётся")
-      : copy("{{value0}} · чтение данных и фильтры", {
+      : copy("{{value0}} · работа с данными по запросу", {
           value0: workspaceName ?? copy("Все коллекции"),
         });
   }

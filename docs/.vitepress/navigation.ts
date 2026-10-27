@@ -37,6 +37,7 @@ const groups: [english: string, russian: string, entries: Entry[]][] = [
         "/features/integrations",
       ],
       ["Assistant and MCP", "Ассистент и MCP", "/features/assistant"],
+      ["External MCP", "Внешний MCP", "/features/external-mcp"],
       ["Google Workspace", "Google Workspace", "/features/google-workspace"],
       [
         "Discussions and notifications",
