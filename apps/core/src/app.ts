@@ -284,7 +284,7 @@ export function createApp({
   registerPolicyRoutes(app, database);
   registerPermissionRoutes(app, database);
   registerFileRoutes(app, database, storageSource);
-  registerMcpRoutes(app, database, browser.origin, hooks.mutation);
+  registerMcpRoutes(app, database, browser.origin, hooks.mutation, actions);
   registerAssistantRoutes(
     app,
     database,

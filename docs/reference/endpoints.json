@@ -936,15 +936,15 @@
     "public": true
   },
   "GET /mcp": {
-    "access": "MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens.",
+    "access": "MCP-purpose bearer only; active human/session, current account action/field/row permissions and published extension gates. General read/write mode; no collection selection. MCP publication still applies. No cookies, service or ordinary API tokens.",
     "public": false
   },
   "POST /mcp": {
-    "access": "MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens.",
+    "access": "MCP-purpose bearer only; active human/session, current account action/field/row permissions and published extension gates. General read/write mode; no collection selection. MCP publication still applies. No cookies, service or ordinary API tokens.",
     "public": false
   },
   "DELETE /mcp": {
-    "access": "MCP-purpose bearer only; current human/session, approved collection IDs, read/create/update field and row permissions, MCP publication. No cookies, service or ordinary API tokens.",
+    "access": "MCP-purpose bearer only; active human/session, current account action/field/row permissions and published extension gates. General read/write mode; no collection selection. MCP publication still applies. No cookies, service or ordinary API tokens.",
     "public": false
   },
   "OPTIONS /mcp": {
@@ -972,11 +972,11 @@
     "public": true
   },
   "GET /mcp/authorizations/:request": {
-    "access": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.",
+    "access": "Active human session; inspect or approve/deny a pending MCP request. Consent chooses general read/write only. Live account and extension permissions apply automatically, without collection selection. Write cannot exceed requested/current rights.",
     "public": false
   },
   "POST /mcp/authorizations/:request": {
-    "access": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.",
+    "access": "Active human session; inspect or approve/deny a pending MCP request. Consent chooses general read/write only. Live account and extension permissions apply automatically, without collection selection. Write cannot exceed requested/current rights.",
     "public": false
   },
   "GET /users/me/mcp-connections": {

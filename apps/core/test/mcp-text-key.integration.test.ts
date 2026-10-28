@@ -9,7 +9,7 @@ test("MCP keeps native text-key creation and updates without requiring a primary
   const fixture = await mcpFixture(t);
   const collection = fixture.names.people;
   await grantWrites(fixture, collection);
-  const auth = await authorize(fixture, true, collection);
+  const auth = await authorize(fixture, true);
   const external = await sdk(fixture, auth.tokens.access_token);
   t.after(() => external.client.close());
   const described = await external.tool("describe_collection", { collection });

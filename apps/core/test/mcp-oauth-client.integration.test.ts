@@ -61,15 +61,16 @@ test("official SDK discovers OAuth, dynamically registers, obtains consent and e
   });
   assert.equal(start.statusCode, 302, start.body);
   const request = new URL(start.headers.location!).searchParams.get("request");
-  const collection = await fixture
-    .db("asmblyr_collections")
-    .where({ name: fixture.names.posts })
-    .first("id");
+  const consent = await fixture.app.inject({
+    url: `/mcp/authorizations/${request}`,
+    headers: fixture.headers,
+  });
+  assert.deepEqual(consent.json().data.scopes, ["mcp:read", "mcp:write"]);
   const decision = await fixture.app.inject({
     method: "POST",
     url: `/mcp/authorizations/${request}`,
     headers: fixture.headers,
-    payload: { approved: true, write: false, collectionIds: [collection.id] },
+    payload: { approved: true, write: false },
   });
   assert.equal(decision.statusCode, 200, decision.body);
   const callback = new URL(decision.json().data.redirectUri);
@@ -124,6 +125,10 @@ test("MCP OAuth binds PKCE/resource/client, rotates refresh tokens, rejects repl
   assert.match(
     String(unauthorized.headers["www-authenticate"]),
     /resource_metadata=/,
+  );
+  assert.doesNotMatch(
+    String(unauthorized.headers["www-authenticate"]),
+    /scope=/,
   );
   const auth = await authorize(fixture);
   assert.equal(auth.tokens.scope, "mcp:read");

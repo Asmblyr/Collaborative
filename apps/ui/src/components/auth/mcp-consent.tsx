@@ -9,7 +9,6 @@ interface Authorization {
   name: string;
   redirectUri: string;
   scopes: string[];
-  collections: { id: string; name: string; label: string }[];
 }
 
 export function McpConsent({
@@ -21,7 +20,6 @@ export function McpConsent({
 }) {
   const copy = useUiCopy();
   const [info, setInfo] = useState<Authorization | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
   const [write, setWrite] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
@@ -55,7 +53,7 @@ export function McpConsent({
       const result = await apiRequest<{ redirectUri: string }>(
         `/api/mcp/authorizations/${encodeURIComponent(request)}`,
         "POST",
-        { approved, write, collectionIds: selected },
+        { approved, write },
       );
       const target = new URL(result.redirectUri);
       const expected = new URL(info.redirectUri);
@@ -101,7 +99,7 @@ export function McpConsent({
           </div>
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Клиент сможет читать схемы, записи и аналитику выбранных коллекций в пределах ваших текущих прав.",
+              "Коллекции и действия расширений доступны по текущим правам вашего аккаунта. Новые разрешения и ограничения применяются автоматически.",
             )}
           </p>
           <fieldset
@@ -109,51 +107,27 @@ export function McpConsent({
             disabled={pending}
           >
             <legend className="mb-3 font-medium">
-              {copy("Доступные коллекции")}
+              {copy("Права подключения")}
             </legend>
-            {info.collections.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                {copy(
-                  "Нет доступных коллекций. Администратор должен разрешить MCP и выдать вам права чтения.",
-                )}
-              </p>
+            {[false, ...(info.scopes.includes("mcp:write") ? [true] : [])].map(
+              (mode) => (
+                <label
+                  key={String(mode)}
+                  className="flex cursor-pointer items-center gap-3 rounded-md border p-3"
+                >
+                  <input
+                    type="radio"
+                    name="mcp-access"
+                    checked={write === mode}
+                    onChange={() => setWrite(mode)}
+                  />
+                  <span>
+                    {mode ? copy("Чтение и запись") : copy("Только чтение")}
+                  </span>
+                </label>
+              ),
             )}
-            {info.collections.map((collection) => (
-              <label
-                key={collection.id}
-                className="flex cursor-pointer items-center gap-3 rounded-md border p-3"
-              >
-                <input
-                  type="checkbox"
-                  checked={selected.includes(collection.id)}
-                  onChange={(event) =>
-                    setSelected((current) =>
-                      event.target.checked
-                        ? [...current, collection.id]
-                        : current.filter((id) => id !== collection.id),
-                    )
-                  }
-                />
-                <span>{collection.label}</span>
-              </label>
-            ))}
           </fieldset>
-          {info.scopes.includes("mcp:write") && (
-            <label className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={write}
-                disabled={pending}
-                onChange={(event) => setWrite(event.target.checked)}
-              />
-              <span className="text-sm">
-                {copy(
-                  "Разрешить создание и изменение записей, если это разрешено моими правами",
-                )}
-              </span>
-            </label>
-          )}
           <p className="text-xs text-muted-foreground">
             {copy(
               "Подключение действует до 30 дней и прекращается при отзыве исходного сеанса. Отозвать его можно в настройках → Приложения.",
@@ -168,7 +142,7 @@ export function McpConsent({
               {copy("Отмена")}
             </Button>
             <Button
-              disabled={pending || !selected.length}
+              disabled={pending}
               onClick={() => decide(true)}
             >
               {pending ? copy("Подключение…") : copy("Разрешить")}

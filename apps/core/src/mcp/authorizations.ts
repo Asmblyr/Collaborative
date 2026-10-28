@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { Knex } from "knex";
 import type { AuthenticatedUser } from "../auth/tokens.js";
-import { loadPrincipalAccess } from "../permissions/access.js";
 import { securityEvent } from "../auth/security-events.js";
 import { objectInput } from "../shared/input.js";
-import { sessionPrincipal, readableCollections } from "./access.js";
+import { sessionPrincipal } from "./access.js";
 import {
   authorization,
   registration,
@@ -73,21 +72,15 @@ async function pending(db: Knex, request: string) {
   return row;
 }
 
-export async function authorizationInfo(
-  db: Knex,
-  request: string,
-  actor: AuthenticatedUser,
-) {
+export async function authorizationInfo(db: Knex, request: string) {
   const row = await pending(db, request);
   const client = await db("public.asmblyr_mcp_clients")
     .where({ id: row.client_id })
     .first();
-  const access = await loadPrincipalAccess(db, { ...actor, kind: "user" });
   return {
     name: client.name,
     redirectUri: row.redirect_uri,
     scopes: row.scopes as string[],
-    collections: await readableCollections(db, access),
   };
 }
 
@@ -97,16 +90,8 @@ export async function decideAuthorization(
   actor: AuthenticatedUser,
   value: unknown,
 ) {
-  const input = objectInput(value, ["approved", "write", "collectionIds"]);
-  if (
-    typeof input.approved !== "boolean" ||
-    typeof input.write !== "boolean" ||
-    !Array.isArray(input.collectionIds) ||
-    input.collectionIds.length > 100 ||
-    input.collectionIds.some(
-      (id) => typeof id !== "string" || !/^[a-f0-9-]{36}$/.test(id),
-    )
-  ) {
+  const input = objectInput(value, ["approved", "write"]);
+  if (typeof input.approved !== "boolean" || typeof input.write !== "boolean") {
     throw new McpOAuthError("invalid_request");
   }
   return db.transaction(async (trx) => {
@@ -133,18 +118,7 @@ export async function decideAuthorization(
       callback.searchParams.set("error", "access_denied");
       return { redirectUri: callback.href };
     }
-    const selected = [...new Set(input.collectionIds as string[])];
-    const available = await readableCollections(
-      trx,
-      await loadPrincipalAccess(trx, principal),
-    );
-    if (
-      !selected.length ||
-      selected.some(
-        (id) => !available.some((collection) => collection.id === id),
-      ) ||
-      (input.write && !row.scopes.includes("mcp:write"))
-    ) {
+    if (input.write && !row.scopes.includes("mcp:write")) {
       throw new McpOAuthError("access_denied", 403);
     }
     const id = randomUUID();
@@ -159,7 +133,6 @@ export async function decideAuthorization(
       scopes: JSON.stringify(
         input.write ? ["mcp:read", "mcp:write"] : ["mcp:read"],
       ),
-      collection_ids: JSON.stringify(selected),
       resource: row.resource,
       expires_at: new Date(
         Math.min(
@@ -179,7 +152,7 @@ export async function decideAuthorization(
       });
     await securityEvent(trx, actor.id, "mcp.connected", id, {
       write: input.write,
-      collectionCount: selected.length,
+      access: "account",
     });
     callback.searchParams.set("code", code);
     return { redirectUri: callback.href };

@@ -6,12 +6,8 @@ import type { mcpFixture } from "./assistant-mcp-fixture.js";
 export const resource = "http://localhost:3000/api/mcp";
 type Fixture = Awaited<ReturnType<typeof mcpFixture>>;
 
-export async function authorize(
-  fixture: Fixture,
-  write = false,
-  target = fixture.names.posts,
-) {
-  const { app, db, names, headers } = fixture;
+export async function authorize(fixture: Fixture, write = false) {
+  const { app, headers } = fixture;
   const register = await app.inject({
     method: "POST",
     url: "/mcp/oauth/register",
@@ -44,21 +40,16 @@ export async function authorize(
     headers,
   });
   assert.equal(info.statusCode, 200, info.body);
-  assert.deepEqual(
-    info
-      .json()
-      .data.collections.map((item: { name: string }) => item.name)
-      .sort(),
-    [names.posts, names.people].sort(),
-  );
-  const collection = await db("asmblyr_collections")
-    .where({ name: target })
-    .first("id");
+  assert.deepEqual(Object.keys(info.json().data).sort(), [
+    "name",
+    "redirectUri",
+    "scopes",
+  ]);
   const decision = await app.inject({
     method: "POST",
     url: `/mcp/authorizations/${pending}`,
     headers,
-    payload: { approved: true, write, collectionIds: [collection.id] },
+    payload: { approved: true, write },
   });
   assert.equal(decision.statusCode, 200, decision.body);
   const callback = new URL(decision.json().data.redirectUri);

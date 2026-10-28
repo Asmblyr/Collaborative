@@ -6880,7 +6880,7 @@
         ],
         "operationId": "delete__mcp",
         "summary": "DELETE /mcp",
-        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads user/session, approved collection IDs and live field/row permissions. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the same data kernel as the website. This JSON-RPC envelope is not a generated REST tool client.",
+        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads the user/session and current account action/field/row permissions. OAuth restricts general read/write mode, without collection selection. Published extension models use the same handlers and gates as the website. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the shared website kernel. This JSON-RPC envelope is not a generated REST tool client.",
         "security": [
           {
             "mcpBearer": []
@@ -6913,7 +6913,7 @@
         ],
         "operationId": "get__mcp",
         "summary": "GET /mcp",
-        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads user/session, approved collection IDs and live field/row permissions. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the same data kernel as the website. This JSON-RPC envelope is not a generated REST tool client.",
+        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads the user/session and current account action/field/row permissions. OAuth restricts general read/write mode, without collection selection. Published extension models use the same handlers and gates as the website. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the shared website kernel. This JSON-RPC envelope is not a generated REST tool client.",
         "security": [
           {
             "mcpBearer": []
@@ -6966,7 +6966,7 @@
         ],
         "operationId": "post__mcp",
         "summary": "POST /mcp",
-        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads user/session, approved collection IDs and live field/row permissions. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the same data kernel as the website. This JSON-RPC envelope is not a generated REST tool client.",
+        "description": "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads the user/session and current account action/field/row permissions. OAuth restricts general read/write mode, without collection selection. Published extension models use the same handlers and gates as the website. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the shared website kernel. This JSON-RPC envelope is not a generated REST tool client.",
         "security": [
           {
             "mcpBearer": []
@@ -7048,7 +7048,7 @@
         ],
         "operationId": "get__mcp_authorizations_request",
         "summary": "GET /mcp/authorizations/:request",
-        "description": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.. Source: apps/core/src/mcp/routes.ts",
+        "description": "Active human session; inspect or approve/deny a pending MCP request. Consent chooses general read/write only. Live account and extension permissions apply automatically, without collection selection. Write cannot exceed requested/current rights.. Source: apps/core/src/mcp/routes.ts",
         "security": [
           {
             "bearerAuth": []
@@ -7092,37 +7092,12 @@
                               "mcp:write"
                             ]
                           }
-                        },
-                        "collections": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "label": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "label",
-                              "name"
-                            ],
-                            "additionalProperties": false
-                          }
                         }
                       },
                       "required": [
                         "name",
                         "redirectUri",
-                        "scopes",
-                        "collections"
+                        "scopes"
                       ],
                       "additionalProperties": false
                     }
@@ -7157,7 +7132,7 @@
         ],
         "operationId": "post__mcp_authorizations_request",
         "summary": "POST /mcp/authorizations/:request",
-        "description": "Active human session; inspect or approve/deny a pending MCP request. Approval narrows to readable MCP-enabled collection IDs; optional write cannot exceed requested/current rights.. Source: apps/core/src/mcp/routes.ts",
+        "description": "Active human session; inspect or approve/deny a pending MCP request. Consent chooses general read/write only. Live account and extension permissions apply automatically, without collection selection. Write cannot exceed requested/current rights.. Source: apps/core/src/mcp/routes.ts",
         "security": [
           {
             "bearerAuth": []
@@ -7232,20 +7207,11 @@
                   },
                   "write": {
                     "type": "boolean"
-                  },
-                  "collectionIds": {
-                    "type": "array",
-                    "maxItems": 100,
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    }
                   }
                 },
                 "required": [
                   "approved",
-                  "write",
-                  "collectionIds"
+                  "write"
                 ],
                 "additionalProperties": false
               }
@@ -18473,26 +18439,6 @@
                               "expiresAt": {
                                 "type": "string",
                                 "format": "date-time"
-                              },
-                              "collections": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string",
-                                      "format": "uuid"
-                                    },
-                                    "label": {
-                                      "type": "string"
-                                    }
-                                  },
-                                  "required": [
-                                    "id",
-                                    "label"
-                                  ],
-                                  "additionalProperties": false
-                                }
                               }
                             },
                             "required": [
@@ -18501,8 +18447,7 @@
                               "scopes",
                               "createdAt",
                               "lastUsedAt",
-                              "expiresAt",
-                              "collections"
+                              "expiresAt"
                             ],
                             "additionalProperties": false
                           }

@@ -80,7 +80,10 @@ export class PluginActions {
   }
 
   private allowed(access: Access, action: PluginAction): boolean {
-    return action.access === "authenticated" || access.principal.superuser;
+    return (
+      (!access.readOnly || action.readOnly === true) &&
+      (action.access === "authenticated" || access.principal.superuser)
+    );
   }
 
   private find(

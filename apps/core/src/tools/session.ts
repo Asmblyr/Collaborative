@@ -50,8 +50,11 @@ export function createToolSession(
             : null;
       return (
         !action ||
-        current.principal.superuser ||
-        [...current.grants.keys()].some((key) => key.endsWith(`:${action}`))
+        (!current.readOnly &&
+          (current.principal.superuser ||
+            [...current.grants.keys()].some((key) =>
+              key.endsWith(`:${action}`),
+            )))
       );
     });
   }

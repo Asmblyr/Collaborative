@@ -29,19 +29,10 @@ export async function listConnections(
       "connection.id",
       "client.name",
       "connection.scopes",
-      "connection.collection_ids",
       "connection.created_at",
       "connection.last_used_at",
       "connection.expires_at",
     );
-  const ids = [
-    ...new Set(connections.flatMap((row) => row.collection_ids as string[])),
-  ];
-  const collections = ids.length
-    ? await db("public.asmblyr_collections")
-        .whereIn("id", ids)
-        .select("id", "name", "display_name")
-    : [];
   return {
     url: resource,
     connections: connections.map((row) => ({
@@ -51,13 +42,6 @@ export async function listConnections(
       createdAt: row.created_at,
       lastUsedAt: row.last_used_at,
       expiresAt: row.expires_at,
-      collections: (row.collection_ids as string[]).map((id) => {
-        const collection = collections.find((item) => item.id === id);
-        return {
-          id,
-          label: collection?.display_name || collection?.name || "—",
-        };
-      }),
     })),
   };
 }

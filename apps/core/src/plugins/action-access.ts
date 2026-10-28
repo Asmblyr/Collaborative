@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import type { Access } from "../permissions/access.js";
+import { grantFor, type Access } from "../permissions/access.js";
 
 interface RelationEffect {
   source_collection: string;
@@ -49,16 +49,12 @@ export async function mcpActionAccess(
   ]);
   const enabled = new Set(rows.map((row) => row.name));
   const grants = new Map<string, string[]>();
-  if (access.principal.superuser) {
-    for (const collection of enabled) {
-      for (const action of ["read", "create", "update", "delete"]) {
-        grants.set(`${collection}:${action}`, ["*"]);
+  for (const collection of enabled) {
+    for (const action of ["read", "create", "update", "delete"] as const) {
+      const fields = grantFor(access, collection, action);
+      if (fields) {
+        grants.set(`${collection}:${action}`, fields);
       }
-    }
-  } else {
-    for (const [key, fields] of access.grants) {
-      const collection = key.slice(0, key.lastIndexOf(":"));
-      if (enabled.has(collection)) grants.set(key, fields);
     }
   }
   // Conservative schema guard: no row/existence probe in a collection hidden from MCP.

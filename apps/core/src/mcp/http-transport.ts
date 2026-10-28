@@ -2,6 +2,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Knex } from "knex";
 import type { MutationFactory } from "../items/mutation-context.js";
+import type { PluginActions } from "../plugins/actions.js";
 import { createToolSession } from "../tools/session.js";
 import { authenticateMcp, connectionAccess } from "./access.js";
 import { createMcpServer } from "./server.js";
@@ -13,6 +14,7 @@ export async function handleMcp(
   request: FastifyRequest,
   reply: FastifyReply,
   mutations?: MutationFactory,
+  actions?: PluginActions,
 ) {
   const { row: connection } = await authenticateMcp(
     db,
@@ -74,7 +76,7 @@ export async function handleMcp(
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
   });
-  const server = createMcpServer(session);
+  const server = createMcpServer(session, actions);
   await server.connect(transport);
   try {
     const headers = new Headers();

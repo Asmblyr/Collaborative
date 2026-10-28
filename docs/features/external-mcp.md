@@ -2,8 +2,10 @@
 
 Settings → Applications shows the installation's `/api/mcp` address. Add it as a
 Streamable HTTP server in an MCP client with OAuth support. Sign in to your usual
-Collaborative account, choose collections and optionally allow record creation
-and updates. No administrator key or pasted user password is required.
+Collaborative account and choose **read only** or **read and write**. Collections
+and published extension actions follow your current account rights automatically;
+there is no collection picker or per-client catalog limit. No administrator key
+or pasted user password is required.
 
 For local Windows deployments, a browser may resolve `.localhost` while a native
 MCP client uses the system DNS resolver. Map the public hostname to loopback in
@@ -21,21 +23,26 @@ metadata is served at `/.well-known/oauth-protected-resource/api/mcp` and
 
 The website assistant's in-memory adapter and HTTP adapter use the same MCP
 server factory, tool definitions, dispatcher, data services and item writer.
-There is no second data implementation. External v1 exposes built-in data tools;
-website presentation tools, plugin actions and personal Google connections are
-not included in this grant.
+There is no second data implementation. Installed extensions explicitly published
+with `defineModelContext` use the same handlers, schemas, middleware and account
+gates through both adapters. Ordinary extension routes and website presentation
+tools are not published. Personal Google actions require the caller's own active
+connection and the extension's declared capability; remote write proposals still
+require their existing website confirmation.
 
 Each call checks the active human account, the approving session, client grant,
 current collection/action/field/row permissions and `mcp.enabled`. Even superusers
-must enable the collection for MCP. Client approvals only narrow user rights;
-policy changes take effect on the next call. Related collections must also be
-approved, readable and enabled. Grants store stable collection IDs, so recreating
-a collection with the same name does not inherit access. System users, private
+must enable the collection for MCP. The general OAuth mode only narrows user
+rights; new account grants and revocations take effect on the next call, including
+for existing connections. Historical collection selections no longer restrict
+access. Related collections must also be readable and enabled. Stored schema IDs
+require a fresh description if a collection is recreated. System users, private
 profile data, credentials and raw SQL are not exposed.
 
-The first version requires read access to every selected collection. Write-only
+Built-in data tools require collection read access. Write-only
 fields cannot be updated through conflict preconditions. Collection membership
-does not confer workspace or administrator access.
+does not confer workspace or administrator access. Read-only OAuth credentials
+hide and reject mutating tools, including extension actions and superuser calls.
 
 ## Tools
 
@@ -55,7 +62,7 @@ replicas. Queries and aggregation use the same bounds and exact-number handling
 as the [website assistant](./assistant.md). Record read previews are bounded;
 they are not a bulk export API.
 
-Writes use technical field names and scalar relation IDs, ordinary validation,
+Built-in writes use technical field names and scalar relation IDs, ordinary validation,
 audit history and transactional plugin hooks. They do not delete records, change
 schema or accept nested record creation. Supply a primary key only for a text-key
 collection; Core generates other key types using its ordinary creation rules.
@@ -89,7 +96,8 @@ the same Collaborative user and its permissions. Service accounts are not
 supported in v1.
 
 Integration tests use the official MCP client against the HTTP transport and
-compare it with the in-memory adapter. They cover permissions, conditional rows,
-client collection scope, writes, conflicts, retries, refresh rotation and
+compare it with the in-memory adapter. They cover live account permissions, over
+100 catalog entries, conditional rows, extension parity, read-only superusers,
+writes, conflicts, retries, refresh rotation and
 revocation. Run them through `node scripts/test.mjs core-mcp` with a disposable
 local test database.

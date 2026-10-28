@@ -66,10 +66,9 @@ test("external MCP uses user OAuth, official SDK, live ACL and the same data/wri
   });
   assert.ok(JSON.stringify(read).includes("Alpha"));
   assert.ok(!JSON.stringify(read).includes("hidden-post-value"));
-  assert.equal(
-    (await external.tool("describe_collection", { collection: names.people }))
-      .code,
-    "PERMISSION_DENIED",
+  assert.deepEqual(
+    await external.tool("describe_collection", { collection: names.people }),
+    await internal.call("describe_collection", { collection: names.people }),
   );
   const count = { collection: names.posts, q: "", filter: "", terms: null };
   assert.deepEqual(

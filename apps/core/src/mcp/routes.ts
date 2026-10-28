@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import type { Knex } from "knex";
 import type { MutationFactory } from "../items/mutation-context.js";
+import type { PluginActions } from "../plugins/actions.js";
 import { authenticateAccess } from "../auth/tokens.js";
 import { credentialRateLimit } from "../auth/rate-limit.js";
 import {
@@ -20,6 +21,7 @@ export function registerMcpRoutes(
   database: Knex | null,
   origin: string,
   mutations?: MutationFactory,
+  actions?: PluginActions,
 ) {
   const resource = `${origin}/api/mcp`;
   const metadata = `${origin}/.well-known/oauth-protected-resource/api/mcp`;
@@ -51,7 +53,7 @@ export function registerMcpRoutes(
         reply.header("Access-Control-Expose-Headers", "WWW-Authenticate");
         reply.header(
           "WWW-Authenticate",
-          `Bearer resource_metadata="${metadata}", scope="mcp:read"`,
+          `Bearer resource_metadata="${metadata}"`,
         );
       }
       return reply.code(error.statusCode).send({ error: error.error });
@@ -148,12 +150,9 @@ export function registerMcpRoutes(
   app.get<{ Params: { request: string } }>(
     "/mcp/authorizations/:request",
     async (request, reply) => {
-      const actor = await authenticateAccess(
-        db(),
-        request.headers.authorization,
-      );
+      await authenticateAccess(db(), request.headers.authorization);
       return protocol(reply, async () => ({
-        data: await authorizationInfo(db(), request.params.request, actor),
+        data: await authorizationInfo(db(), request.params.request),
       }));
     },
   );
@@ -196,7 +195,7 @@ export function registerMcpRoutes(
   const handler: import("fastify").RouteHandlerMethod = (request, reply) =>
     protocol(
       reply,
-      () => handleMcp(db(), resource, request, reply, mutations),
+      () => handleMcp(db(), resource, request, reply, mutations, actions),
       true,
     );
   const limits = { preHandler: credentialRateLimit(240) };

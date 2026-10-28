@@ -14,7 +14,8 @@ flowchart LR
   External[Внешний MCP-клиент] --> HTTP[OAuth и HTTP-адаптер]
   HTTP --> MCP
   MCP --> Items[Сервисы items и permissions]
-  Core --> Model[Model handlers расширений на сайте]
+  Core --> Model[Опубликованные model handlers расширений]
+  HTTP --> Model
   Model --> Items
   Items --> DB[(PostgreSQL)]
 ```
@@ -46,7 +47,7 @@ read/create/update либо активное личное Google-подключ�
 `defineModelAnnotation` задаёт название, описание, `AccessGate`, при необходимости
 `page` и `readOnly`. Сборщик Kit выводит runtime-схемы входа и выхода из типов
 TypeScript. Один обработчик и его middleware вызываются по HTTP, из ассистента
-и внутреннего MCP; ручного реестра в `plugin.ts` нет.
+и внутреннего/внешнего MCP; ручного реестра в `plugin.ts` нет.
 
 `AccessGate.authenticated` допускает запрос, но не выдаёт доступ к коллекциям.
 `useItems(event)` использует права вызывающего. Для `readOnly: true` запись через

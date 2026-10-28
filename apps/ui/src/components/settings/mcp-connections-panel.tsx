@@ -14,7 +14,6 @@ interface McpConnections {
     scopes: string[];
     lastUsedAt: string | null;
     expiresAt: string;
-    collections: { id: string; label: string }[];
   }[];
 }
 
@@ -83,7 +82,7 @@ export function McpConnectionsPanel() {
         <h2 className="font-semibold">{copy("Внешние ассистенты · MCP")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {copy(
-            "Добавьте этот адрес в MCP-клиент и войдите через Collaborative. Вы сами выбираете коллекции и разрешаете изменения.",
+            "Добавьте этот адрес в MCP-клиент и войдите через Collaborative. Выберите только режим доступа: чтение или чтение и запись.",
           )}
         </p>
       </div>
@@ -115,7 +114,7 @@ export function McpConnectionsPanel() {
           </div>
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Схемы, записи и аналитика используют те же права, что и ассистент на сайте. Доступ к изменению структуры и удалению записей не выдаётся.",
+              "Коллекции и действия расширений доступны по текущим правам вашего аккаунта. Новые разрешения и ограничения применяются автоматически.",
             )}
           </p>
           {data.connections.length === 0 && (
@@ -135,13 +134,11 @@ export function McpConnectionsPanel() {
                   <h3 className="font-medium break-words">{connection.name}</h3>
                   <p className="text-sm">
                     {connection.scopes.includes("mcp:write")
-                      ? copy("Чтение и изменение записей")
+                      ? copy("Чтение и запись")
                       : copy("Только чтение")}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {connection.collections
-                      .map((collection) => collection.label)
-                      .join(", ")}
+                    {copy("По текущим правам аккаунта и расширений")}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {copy("Доступ до {{date}}", {

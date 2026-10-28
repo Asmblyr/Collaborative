@@ -7,14 +7,20 @@ import { createApp } from "../../src/app.js";
 import { issueUserTokens } from "../../src/auth/tokens.js";
 import { loadAccess } from "../../src/permissions/access.js";
 import type { AssistantService } from "../../src/assistant/service.js";
+import type { LoadedPlugin } from "../../src/plugins/definition.js";
 import { authorizeTestApp } from "./authorized-app.js";
 
-export async function mcpFixture(t: TestContext, assistant?: AssistantService) {
+export async function mcpFixture(
+  t: TestContext,
+  assistant?: AssistantService,
+  plugins?: LoadedPlugin[],
+) {
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
   const app = createApp({
     databaseUrl: process.env.DATABASE_URL,
     logger: false,
     assistant,
+    plugins,
   });
   await authorizeTestApp(app, db);
   const suffix = randomUUID().replaceAll("-", "").slice(0, 10);

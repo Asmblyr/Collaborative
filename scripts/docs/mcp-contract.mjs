@@ -1,10 +1,5 @@
 const string = { type: "string" };
 const strings = { type: "array", items: string };
-const ids = {
-  type: "array",
-  maxItems: 100,
-  items: { type: "string", format: "uuid" },
-};
 const object = (
   properties,
   required = Object.keys(properties),
@@ -19,10 +14,6 @@ const body = (schema) => ({ required: true, content: json(schema) });
 const wrapped = (properties) => response(object({ data: object(properties) }));
 const scopes = { type: "array", items: { enum: ["mcp:read", "mcp:write"] } };
 const timestamp = { type: "string", format: "date-time" };
-const collection = object({
-  id: { type: "string", format: "uuid" },
-  label: string,
-});
 const connection = object({
   id: string,
   name: string,
@@ -30,7 +21,6 @@ const connection = object({
   createdAt: timestamp,
   lastUsedAt: { type: ["string", "null"], format: "date-time" },
   expiresAt: timestamp,
-  collections: { type: "array", items: collection },
 });
 const errors = {
   400: {
@@ -75,7 +65,7 @@ export function mcpContract(key) {
     const post = key.startsWith("POST");
     return {
       description:
-        "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads user/session, approved collection IDs and live field/row permissions. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the same data kernel as the website. This JSON-RPC envelope is not a generated REST tool client.",
+        "MCP 2025-11-25 Streamable HTTP, stateless JSON responses. Only purpose-bound MCP bearer tokens are accepted. Every tool reloads the user/session and current account action/field/row permissions. OAuth restricts general read/write mode, without collection selection. Published extension models use the same handlers and gates as the website. GET SSE and DELETE sessions are unsupported. Discover input/output contracts with tools/list; tools/call uses the shared website kernel. This JSON-RPC envelope is not a generated REST tool client.",
       security: [{ mcpBearer: [] }],
       ...(post
         ? {
@@ -245,10 +235,6 @@ export function mcpContract(key) {
           name: string,
           redirectUri: string,
           scopes,
-          collections: {
-            type: "array",
-            items: object({ ...collection.properties, name: string }),
-          },
         }),
         ...errors,
       },
@@ -260,7 +246,6 @@ export function mcpContract(key) {
         object({
           approved: { type: "boolean" },
           write: { type: "boolean" },
-          collectionIds: ids,
         }),
       ),
       responses: { 200: wrapped({ redirectUri: string }), ...errors },

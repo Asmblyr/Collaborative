@@ -2220,5 +2220,10 @@
   "copy.66841b4d": "Allow creating and updating records where my permissions allow it",
   "copy.062d9a93": "The connection lasts up to 30 days and ends when the original session is revoked. You can revoke it in Settings → Applications.",
   "copy.3628a75f": "{{value0}} · data operations on request",
-  "copy.d71cc14d": "Revoke access"
+  "copy.d71cc14d": "Revoke access",
+  "copy.d14c547f": "Collections and extension actions follow your current account permissions. New grants and restrictions apply automatically.",
+  "copy.feba9654": "Connection permissions",
+  "copy.3c148cf6": "Read and write",
+  "copy.e7617cac": "Using current account and extension permissions",
+  "copy.ab1e4694": "Add this address to your MCP client and sign in through Collaborative. Choose only the access mode: read only or read and write."
 }

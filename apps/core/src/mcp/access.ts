@@ -1,9 +1,5 @@
 import type { Knex } from "knex";
-import {
-  loadPrincipalAccess,
-  grantFor,
-  type Access,
-} from "../permissions/access.js";
+import { loadPrincipalAccess, type Access } from "../permissions/access.js";
 import type { Principal } from "../auth/principal.js";
 import { digest, McpOAuthError } from "./oauth-input.js";
 
@@ -60,7 +56,7 @@ export async function authenticateMcp(
   return result;
 }
 
-/** Materialize superuser grants before narrowing; row rules remain attached. */
+/** Reload account rights on every call; OAuth only restricts the general mode. */
 export async function connectionAccess(
   db: Knex,
   id: string,
@@ -68,35 +64,5 @@ export async function connectionAccess(
 ): Promise<Access> {
   const { row, principal } = await activeConnection(db, id, resource);
   const access = await loadPrincipalAccess(db, principal);
-  const collections = await db("public.asmblyr_collections")
-    .whereIn("id", row.collection_ids)
-    .where({ mcp_enabled: true })
-    .select("name");
-  const grants = new Map<string, string[]>();
-  const actions = row.scopes.includes("mcp:write")
-    ? (["read", "create", "update"] as const)
-    : (["read"] as const);
-  for (const collection of collections) {
-    for (const action of actions) {
-      const fields = grantFor(access, collection.name, action);
-      if (fields) {
-        grants.set(`${collection.name}:${action}`, fields);
-      }
-    }
-  }
-  return { ...access, principal: { ...principal, superuser: false }, grants };
-}
-
-export async function readableCollections(db: Knex, access: Access) {
-  const rows = await db("public.asmblyr_collections")
-    .where({ mcp_enabled: true })
-    .orderBy("name")
-    .select("id", "name", "display_name");
-  return rows
-    .filter((row) => grantFor(access, row.name, "read"))
-    .map((row) => ({
-      id: row.id,
-      name: row.name,
-      label: row.display_name || row.name,
-    }));
+  return { ...access, readOnly: !row.scopes.includes("mcp:write") };
 }

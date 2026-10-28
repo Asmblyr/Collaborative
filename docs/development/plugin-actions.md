@@ -2,7 +2,7 @@
 
 # Plugin actions: HTTP, MCP, and the assistant
 
-The current contract uses H3 v2 file routing, typed annotations, and one handler. The [external MCP v1](../features/external-mcp.md) publishes built-in data tools; plugin tools remain in the website adapter. See [Kit](../reference/kit-guide.md) for plugin development.
+The current contract uses H3 v2 file routing, typed annotations, and one handler. The [external MCP](../features/external-mcp.md) uses the same published model handlers and account gates as the website; read-only credentials also reject mutating actions. See [Kit](../reference/kit-guide.md) for plugin development.
 
 <a id="объявление"></a>
 
@@ -125,7 +125,7 @@ GET /extensions/:namespace/drafts/:id checks session, owner, namespace, and acti
 
 The assistant explains the result and calls present_plugin_result with a successful result ID from the current response. An Open page button appears; there is no automatic navigation. The result includes requiresUserClick:true. Forged IDs are rejected. A prepared form alone does not prove data changed.
 
-useAction reports dirty/busy state to the host, validates IDs/output schema, and protects the form during assistant navigation or snapshot replacement. A universal guard for all menu navigation is not yet implemented. Partial forms and reading current manual drafts are unsupported. Fine-grained action permissions and external exposure of plugin tools remain future work.
+useAction reports dirty/busy state to the host, validates IDs/output schema, and protects the form during assistant navigation or snapshot replacement. A universal guard for all menu navigation is not yet implemented. Partial forms and reading current manual drafts are unsupported. Fine-grained action permissions remain future work. External MCP shares published handlers and their existing account checks.
 
 <a id="проверка-изменении"></a>
 

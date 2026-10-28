@@ -14,7 +14,8 @@ flowchart LR
   External[External MCP client] --> HTTP[OAuth and HTTP adapter]
   HTTP --> MCP
   MCP --> Items[Items and permissions services]
-  Core --> Model[Website plugin model handlers]
+  Core --> Model[Published plugin model handlers]
+  HTTP --> Model
   Model --> Items
   Items --> DB[(PostgreSQL)]
 ```
@@ -44,7 +45,7 @@ tools may be sent to the configured model provider.
 wrap suitable handlers in `defineModelContext<Input>(defineHandler(...), annotation)`.
 `defineModelAnnotation` supplies a title, description, `AccessGate`, and optional
 `page` and `readOnly`. The Kit builder derives input/output runtime schemas from
-TypeScript types. HTTP, the assistant, and internal MCP call the same handler and
+TypeScript types. HTTP, the assistant, and internal/external MCP call the same handler and
 middleware; there is no manual registry in `plugin.ts`.
 
 `AccessGate.authenticated` admits a request but does not grant collection access.
