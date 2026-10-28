@@ -9,6 +9,7 @@ import { coreAddress, requireSession } from "@/lib/session";
 import type { TableView } from "@/components/items/table-view-dialog";
 import { defaultStateFilter } from "@/components/items/default-state-filter";
 import { getUiCopy } from "@/lib/ui-copy-server";
+import { workspaceViewQuery } from "@/lib/workspace-location";
 import { tableQueryDefaults } from "@/lib/table-query-defaults";
 
 async function LoadError({ message }: { message: string }) {
@@ -75,7 +76,9 @@ export default async function CollectionItemsPage({
           options,
         ),
         fetch(
-          coreAddress(`/table-views/${encodeURIComponent(name)}/default`),
+          coreAddress(
+            `/table-views/${encodeURIComponent(name)}/default${workspaceViewQuery(requested.workspace)}`,
+          ),
           options,
         ),
       ]);

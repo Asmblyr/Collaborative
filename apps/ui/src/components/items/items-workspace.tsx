@@ -67,7 +67,8 @@ export function ItemsWorkspace({
     catalog.find((entry) => entry.name === sourceCollection.name) ??
     sourceCollection;
   const router = useRouter();
-  const workspaceId = useWorkspace()?.active?.id;
+  const workspace = useWorkspace();
+  const workspaceId = workspace?.active?.id;
   const {
     recordId,
     listPath: pathname,
@@ -159,7 +160,7 @@ export function ItemsWorkspace({
     setCreating(false);
     setSelected(new Set());
     setConfirmDelete(false);
-    router.push(href, { scroll: false });
+    router.push(workspace?.href(href) ?? href, { scroll: false });
   }
 
   function openCreate() {

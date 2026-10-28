@@ -14,6 +14,7 @@ import { navigateWithEditorGuard } from "@/components/collections/use-editor-nav
 import { useUiCopy } from "@/lib/ui-copy";
 import { useNotifications } from "./use-notifications";
 import { notificationHref } from "./location";
+import { useWorkspace } from "@/components/workspaces/workspace-provider";
 
 export function NotificationBell({
   collections,
@@ -24,6 +25,7 @@ export function NotificationBell({
   const { locale } = useTranslations();
   const inbox = useNotifications();
   const router = useRouter();
+  const workspace = useWorkspace();
   const [open, setOpen] = useState(false);
   const unread = inbox.result?.unread ?? 0;
   const date = new Intl.DateTimeFormat(locale, {
@@ -37,7 +39,8 @@ export function NotificationBell({
       void inbox.read(item.id).then((success) => {
         if (!success) return;
         setOpen(false);
-        router.push(notificationHref(item), { scroll: false });
+        const href = notificationHref(item);
+        router.push(workspace?.href(href) ?? href, { scroll: false });
       });
     });
   }

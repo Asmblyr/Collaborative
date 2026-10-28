@@ -14737,7 +14737,7 @@
         ],
         "operationId": "get__table_views_collection",
         "summary": "GET /table-views/:collection",
-        "description": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/preferences/table-view-routes.ts",
+        "description": "Human account with collection read access. Personal and collection views plus views for the requested workspace containing this collection. Definitions are reconciled with readable fields. Reading does not change the saved workspace preference. Default priority: personal, workspace, collection.",
         "security": [
           {
             "bearerAuth": []
@@ -14754,14 +14754,207 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "workspaceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "all"
+                }
+              ]
+            },
+            "description": "Explicit workspace context. all excludes workspace-scoped views. Omission uses the account's saved workspace for compatibility. Unknown/nonmember workspace has no workspace views; no collection access is granted."
           }
         ],
         "responses": {
-          "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          "200": {
+            "description": "Permitted views",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "scope": {
+                            "enum": [
+                              "personal",
+                              "workspace",
+                              "collection"
+                            ]
+                          },
+                          "workspaceId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uuid"
+                          },
+                          "isDefault": {
+                            "type": "boolean"
+                          },
+                          "editable": {
+                            "type": "boolean"
+                          },
+                          "definition": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "columns": {
+                                    "type": "object",
+                                    "properties": {
+                                      "order": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "hidden": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "widths": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                          "type": "number"
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "order",
+                                      "hidden"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "sort": {
+                                    "type": "object",
+                                    "properties": {
+                                      "field": {
+                                        "type": "string"
+                                      },
+                                      "direction": {
+                                        "enum": [
+                                          "asc",
+                                          "desc"
+                                        ]
+                                      },
+                                      "order": {
+                                        "enum": [
+                                          "field",
+                                          "relevance"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "field",
+                                      "direction"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "pageSize": {
+                                    "enum": [
+                                      10,
+                                      25,
+                                      50,
+                                      100
+                                    ]
+                                  },
+                                  "filter": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "additionalProperties": true,
+                                    "description": "Validated logic/children filter tree; paths must remain readable."
+                                  },
+                                  "q": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "columns",
+                                  "sort",
+                                  "pageSize",
+                                  "filter",
+                                  "q"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "available": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "scope",
+                          "workspaceId",
+                          "isDefault",
+                          "editable",
+                          "definition",
+                          "available",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or repeated workspaceId"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Human account and collection read permission required"
+          },
+          "404": {
+            "description": "Collection not found"
           }
         },
-        "x-contract-level": "route-only",
+        "x-contract-level": "documented",
         "x-source": "apps/core/src/preferences/table-view-routes.ts"
       },
       "post": {
@@ -14889,7 +15082,7 @@
         ],
         "operationId": "get__table_views_collection_default",
         "summary": "GET /table-views/:collection/default",
-        "description": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/preferences/table-view-routes.ts",
+        "description": "Human account with collection read access. Personal and collection views plus views for the requested workspace containing this collection. Definitions are reconciled with readable fields. Reading does not change the saved workspace preference. Default priority: personal, workspace, collection.",
         "security": [
           {
             "bearerAuth": []
@@ -14906,14 +15099,211 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "workspaceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "all"
+                }
+              ]
+            },
+            "description": "Explicit workspace context. all excludes workspace-scoped views. Omission uses the account's saved workspace for compatibility. Unknown/nonmember workspace has no workspace views; no collection access is granted."
           }
         ],
         "responses": {
-          "default": {
-            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          "200": {
+            "description": "Permitted views",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "scope": {
+                              "enum": [
+                                "personal",
+                                "workspace",
+                                "collection"
+                              ]
+                            },
+                            "workspaceId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "uuid"
+                            },
+                            "isDefault": {
+                              "type": "boolean"
+                            },
+                            "editable": {
+                              "type": "boolean"
+                            },
+                            "definition": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "columns": {
+                                      "type": "object",
+                                      "properties": {
+                                        "order": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "hidden": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "widths": {
+                                          "type": "object",
+                                          "additionalProperties": {
+                                            "type": "number"
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "order",
+                                        "hidden"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "sort": {
+                                      "type": "object",
+                                      "properties": {
+                                        "field": {
+                                          "type": "string"
+                                        },
+                                        "direction": {
+                                          "enum": [
+                                            "asc",
+                                            "desc"
+                                          ]
+                                        },
+                                        "order": {
+                                          "enum": [
+                                            "field",
+                                            "relevance"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "field",
+                                        "direction"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "pageSize": {
+                                      "enum": [
+                                        10,
+                                        25,
+                                        50,
+                                        100
+                                      ]
+                                    },
+                                    "filter": {
+                                      "type": [
+                                        "object",
+                                        "null"
+                                      ],
+                                      "additionalProperties": true,
+                                      "description": "Validated logic/children filter tree; paths must remain readable."
+                                    },
+                                    "q": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "columns",
+                                    "sort",
+                                    "pageSize",
+                                    "filter",
+                                    "q"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "scope",
+                            "workspaceId",
+                            "isDefault",
+                            "editable",
+                            "definition",
+                            "available",
+                            "createdAt",
+                            "updatedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or repeated workspaceId"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Human account and collection read permission required"
+          },
+          "404": {
+            "description": "Collection not found"
           }
         },
-        "x-contract-level": "route-only",
+        "x-contract-level": "documented",
         "x-source": "apps/core/src/preferences/table-view-routes.ts"
       }
     },

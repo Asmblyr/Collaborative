@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { ChevronRight, Folder, Table2 } from "lucide-react";
 import { Collapsible } from "radix-ui";
 import { isCollectionPath } from "@/lib/item-location";

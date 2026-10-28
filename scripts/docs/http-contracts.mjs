@@ -22,6 +22,7 @@ import { userFormContract } from "./user-form-contract.mjs";
 import { oauthPolicyContract } from "./oauth-policy-contract.mjs";
 import { userReferenceContract } from "./user-reference-contract.mjs";
 import { mcpContract } from "./mcp-contract.mjs";
+import { tableViewsContract } from "./table-views-contract.mjs";
 const object = { type: "object", additionalProperties: true };
 const json = (schema) => ({ "application/json": { schema } });
 const response = (schema, description = "Успех") => ({
@@ -76,6 +77,10 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const tableViews = tableViewsContract(key);
+  if (tableViews) {
+    return tableViews;
+  }
   const mcp = mcpContract(key);
   if (mcp) return mcp;
   const userForm = userFormContract(key);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
+import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
@@ -20,6 +21,7 @@ export function SearchControl({
   const scoped = Boolean(collection || localLabel);
   const pathname = usePathname();
   const router = useRouter();
+  const workspace = useWorkspace();
   const params = useSearchParams();
   const input = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(() => params.get("q") ?? "");
@@ -90,7 +92,8 @@ export function SearchControl({
         scroll: false,
       });
     } else {
-      router.push(`/search${query ? `?q=${encodeURIComponent(query)}` : ""}`);
+      const target = `/search${query ? `?q=${encodeURIComponent(query)}` : ""}`;
+      router.push(workspace?.href(target) ?? target);
     }
     input.current?.blur();
   }

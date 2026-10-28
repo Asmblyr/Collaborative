@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { PanelsTopLeft } from "lucide-react";
 import {
   SidebarGroup,

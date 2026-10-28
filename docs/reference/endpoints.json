@@ -604,7 +604,7 @@
     "public": false
   },
   "GET /table-views/:collection": {
-    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "access": "Human account and collection read access. Personal/collection views plus the explicit workspaceId (UUID or all); omission uses personal saved workspace. Collection membership and field permissions are enforced. Reading does not change the personal selection.",
     "public": false
   },
   "POST /table-views/:collection": {
@@ -620,7 +620,7 @@
     "public": false
   },
   "GET /table-views/:collection/default": {
-    "access": "Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser",
+    "access": "Human account and collection read access. Personal/collection views plus the explicit workspaceId (UUID or all); omission uses personal saved workspace. Collection membership and field permissions are enforced. Reading does not change the personal selection.",
     "public": false
   },
   "GET /users": {

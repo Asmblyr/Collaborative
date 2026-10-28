@@ -197,11 +197,11 @@
 | `PATCH /system-collections/:name/records/:id` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `GET /system-collections/users/form` | Human superuser only; safe user form fields, layout and owner grants, without authentication columns. | `apps/core/src/auth/user-form-routes.ts` |
 | `PUT /system-collections/users/form` | Human superuser only; safe layout and explicit native/custom owner-field grants. Native fields default to read only, custom fields to hidden. Does not grant user administration or related-row access. | `apps/core/src/auth/user-form-routes.ts` |
-| `GET /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
+| `GET /table-views/:collection` | Human account and collection read access. Personal/collection views plus the explicit workspaceId (UUID or all); omission uses personal saved workspace. Collection membership and field permissions are enforced. Reading does not change the personal selection. | `apps/core/src/preferences/table-view-routes.ts` |
 | `POST /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `DELETE /table-views/:collection/:id` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `PUT /table-views/:collection/:id` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
-| `GET /table-views/:collection/default` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
+| `GET /table-views/:collection/default` | Human account and collection read access. Personal/collection views plus the explicit workspaceId (UUID or all); omission uses personal saved workspace. Collection membership and field permissions are enforced. Reading does not change the personal selection. | `apps/core/src/preferences/table-view-routes.ts` |
 | `GET /translations` | Активный пользователь или сервисный аккаунт; схема ограничена доступными вызывающему коллекциями и полями, статические каталоги активных плагинов, без записей и defaults | `apps/core/src/translations/routes.ts` |
 | `GET /users` | Человек: users/read или update ИЛИ policies/read или update; superuser bypass | `apps/core/src/auth/user-routes.ts` |
 | `POST /users` | Человек: users/update; superuser bypass | `apps/core/src/auth/user-routes.ts` |

@@ -193,6 +193,7 @@ async function main() {
         return [
           "test/preferences.integration.test.ts",
           "test/table-views-workspaces.integration.test.ts",
+          "test/table-views-location.integration.test.ts",
           "test/table-column-widths.integration.test.ts",
         ].includes(name);
       }

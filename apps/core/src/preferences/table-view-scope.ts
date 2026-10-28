@@ -15,7 +15,17 @@ export async function activeWorkspace(
   db: Knex,
   userId: string,
   collectionId: string,
+  requested?: string,
 ) {
+  if (requested === "all") {
+    return undefined;
+  }
+  if (requested !== undefined) {
+    const row = await db("asmblyr_workspace_collections")
+      .where({ workspace_id: parseId(requested), collection_id: collectionId })
+      .first("workspace_id");
+    return row?.workspace_id as string | undefined;
+  }
   const row = await db("asmblyr_user_workspace as s")
     .join(
       "asmblyr_workspace_collections as m",
