@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/api-request";
 import type { Collection } from "./types";
 import type { TableView } from "./table-view-dialog";
 import { useUiCopy } from "@/lib/ui-copy";
+import { workspaceViewQuery } from "@/lib/workspace-location";
 
 export function useTableViews({
   collection,
@@ -20,7 +21,7 @@ export function useTableViews({
   const copy = useUiCopy();
 
   const [views, setViews] = useState<TableView[]>([]);
-  const viewEndpoint = `/api/table-views/${encodeURIComponent(collection.name)}`;
+  const viewEndpoint = `/api/table-views/${encodeURIComponent(collection.name)}${workspaceViewQuery(workspaceId ?? "all")}`;
   const canRead = Boolean(collection.access.read);
   useEffect(() => {
     if (!canRead) return;

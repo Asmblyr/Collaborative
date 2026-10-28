@@ -20,6 +20,7 @@ import {
 } from "@asmblyr-collaborative/kit/ui/select";
 import type { ItemPage } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
+import { useWorkspace } from "@/components/workspaces/workspace-provider";
 
 function visiblePages(current: bigint, total: bigint): (bigint | null)[] {
   if (total <= BigInt(7))
@@ -66,6 +67,7 @@ export function ItemPagination({
   onSize: (size: number) => void;
 }) {
   const copy = useUiCopy();
+  const workspace = useWorkspace();
 
   const total = BigInt(page.total);
   const size = BigInt(page.size);
@@ -77,7 +79,8 @@ export function ItemPagination({
   const end = total < current * size ? total : current * size;
 
   function href(number: bigint): string {
-    return itemsPageHref(pathname, { ...page, number }, q, filter);
+    const target = itemsPageHref(pathname, { ...page, number }, q, filter);
+    return workspace?.href(target) ?? target;
   }
 
   function visit(event: MouseEvent<HTMLAnchorElement>, number: bigint) {

@@ -13,33 +13,24 @@ import { loadWorkspaces } from "@/lib/workspaces";
 import { loadLoginProviders } from "@/lib/sso-server";
 import { loadPluginExtensions } from "@/lib/plugin-extensions";
 import { getUiCopy } from "@/lib/ui-copy-server";
+import { settingsReturnHref } from "@/lib/settings-location";
 
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; sso?: string; connection?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const copy = await getUiCopy();
 
   const query = await searchParams;
-  const returnQuery = new URLSearchParams();
-  if (query.tab === "security" || query.tab === "applications") {
-    returnQuery.set("tab", query.tab);
-  }
-  if (typeof query.sso === "string" && query.sso.length <= 64) {
-    returnQuery.set("sso", query.sso);
-  }
-  const returnPath = returnQuery.size
-    ? `/settings?${returnQuery}`
-    : "/settings";
-  const { user, token } = await requireSession(returnPath);
+  const { user, token } = await requireSession(settingsReturnHref(query));
   const settings = await loadSettingsAccess(token);
   const providers = await loadLoginProviders();
   const ssoProps = {
     providers,
-    initialTab: query.tab,
-    ssoStatus: query.sso,
-    connectionStatus: query.connection,
+    ssoStatus: typeof query.sso === "string" ? query.sso : undefined,
+    connectionStatus:
+      typeof query.connection === "string" ? query.connection : undefined,
   };
   const { data, folders } = await loadCollections(token);
   const collections = collectionNavigationEntries(data);

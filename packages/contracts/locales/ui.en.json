@@ -2225,5 +2225,6 @@
   "copy.feba9654": "Connection permissions",
   "copy.3c148cf6": "Read and write",
   "copy.e7617cac": "Using current account and extension permissions",
-  "copy.ab1e4694": "Add this address to your MCP client and sign in through Collaborative. Choose only the access mode: read only or read and write."
+  "copy.ab1e4694": "Add this address to your MCP client and sign in through Collaborative. Choose only the access mode: read only or read and write.",
+  "copy.9babb5b7": "The workspace in this link is unavailable. Showing all permitted collections."
 }

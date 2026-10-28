@@ -1,16 +1,20 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { createContext, useContext, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api-request";
 import type { WorkspaceSnapshot } from "@/lib/workspaces";
 import { useUiCopy } from "@/lib/ui-copy";
+import { workspaceHref, workspaceSelection } from "@/lib/workspace-location";
+import { isCollectionPath } from "@/lib/item-location";
 
 function useWorkspaceState(initial: WorkspaceSnapshot) {
   const copy = useUiCopy();
 
   const router = useRouter(),
     pathname = usePathname();
+  const params = useSearchParams();
+  const query = params.toString();
   const [snapshot, setSnapshot] = useState(initial),
     [pending, setPending] = useState(false);
   const serverKey = JSON.stringify(initial);
@@ -22,27 +26,75 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
     setSnapshot(initial);
   }
   const [error, setError] = useState("");
-  const active =
-    snapshot.workspaces.find((w) => w.id === snapshot.selectedId) ?? null;
+  const [remembered, setRemembered] = useState(initial.selectedId);
+  const selection = workspaceSelection(
+    { ...snapshot, selectedId: remembered },
+    new URLSearchParams(query),
+  );
+  if (
+    params.has("workspace") &&
+    !selection.missing &&
+    remembered !== selection.id
+  ) {
+    setRemembered(selection.id);
+  }
+  const active = snapshot.workspaces.find((w) => w.id === selection.id) ?? null;
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("workspace")) {
+      window.history.replaceState(
+        null,
+        "",
+        workspaceHref(
+          window.location.pathname +
+            window.location.search +
+            window.location.hash,
+          active?.id ?? null,
+        ),
+      );
+    }
+  }, [pathname, query, active?.id]);
   async function reload() {
     setSnapshot(await apiRequest<WorkspaceSnapshot>("/api/workspaces"));
   }
   async function select(id: string | null) {
+    if (pending) {
+      return;
+    }
+    const previousHref = window.location.href;
     setPending(true);
     setError("");
     try {
       await apiRequest("/api/users/me/workspace", "PUT", { workspaceId: id });
       setSnapshot((s) => ({ ...s, selectedId: id }));
+      setRemembered(id);
+      if (window.location.href !== previousHref) {
+        return;
+      }
       const next = snapshot.workspaces.find((workspace) => workspace.id === id);
       if (
         next &&
         pathname.startsWith("/items/") &&
-        !next.collections.some(
-          (name) => pathname === `/items/${encodeURIComponent(name)}`,
-        )
-      )
-        router.push("/");
-      else router.refresh();
+        !next.collections.some((name) => isCollectionPath(pathname, name))
+      ) {
+        router.push(workspaceHref("/", id));
+      } else {
+        const href = workspaceHref(
+          window.location.pathname +
+            window.location.search +
+            window.location.hash,
+          id,
+          true,
+        );
+        if (
+          href !==
+          window.location.pathname +
+            window.location.search +
+            window.location.hash
+        ) {
+          window.history.pushState(null, "", href);
+        }
+        router.refresh();
+      }
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -55,11 +107,17 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
   }
   return {
     ...snapshot,
+    selectedId: selection.id,
     active,
     pending,
-    error,
+    error: selection.missing
+      ? copy(
+          "Workspace из ссылки недоступен. Показаны все доступные коллекции.",
+        )
+      : error,
     reload,
     select,
+    href: (target: string) => workspaceHref(target, active?.id ?? null),
     includes: (name: string) => !active || active.collections.includes(name),
   };
 }

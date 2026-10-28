@@ -19,26 +19,28 @@ export function registerTableViewRoutes(
       });
     return database;
   };
-  app.get<{ Params: { collection: string } }>(
-    "/table-views/:collection/default",
-    async (req) => ({
-      data: await defaultTableView(
-        db(),
-        req.params.collection,
-        await loadAccess(db(), req.headers.authorization),
-      ),
-    }),
-  );
-  app.get<{ Params: { collection: string } }>(
-    "/table-views/:collection",
-    async (req) => ({
-      data: await listTableViews(
-        db(),
-        req.params.collection,
-        await loadAccess(db(), req.headers.authorization),
-      ),
-    }),
-  );
+  app.get<{
+    Params: { collection: string };
+    Querystring: { workspaceId?: string };
+  }>("/table-views/:collection/default", async (req) => ({
+    data: await defaultTableView(
+      db(),
+      req.params.collection,
+      await loadAccess(db(), req.headers.authorization),
+      req.query.workspaceId,
+    ),
+  }));
+  app.get<{
+    Params: { collection: string };
+    Querystring: { workspaceId?: string };
+  }>("/table-views/:collection", async (req) => ({
+    data: await listTableViews(
+      db(),
+      req.params.collection,
+      await loadAccess(db(), req.headers.authorization),
+      req.query.workspaceId,
+    ),
+  }));
   app.post<{ Params: { collection: string } }>(
     "/table-views/:collection",
     async (req, reply) =>

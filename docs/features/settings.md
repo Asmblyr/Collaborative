@@ -26,6 +26,12 @@ To grant access, open a policy, select No access, View, or Edit for each setting
 
 A user with settings-only grants can open settings without data access. Users with neither see a no-access screen. Personal preferences remain at `/settings`.
 
+Personal settings tabs have shareable addresses: `/settings?tab=profile`,
+`tab=security`, `tab=appearance` and `tab=applications`. Switching tabs updates
+browser history without resetting unsaved profile fields. Direct links, reloads,
+login redirects and Back/Forward restore the selected tab. The optional
+`workspace` parameter is preserved alongside the tab.
+
 Legacy `/access`, `/services`, and `/oauth-apps` URLs redirect to the current sections. `GET /settings/access` exposes settings permissions; the policy editor uses the restricted `/settings/options/collections` catalog.
 
 Structure and workspace management are not delegated by these switches. Package installation and plugin capability approval remain project configuration. Every section supports read and update; update includes viewing, and policies combine grants. Policy and service management also enforce delegation rules.

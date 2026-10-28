@@ -1,6 +1,9 @@
 "use client";
 
 import { UserRound, ShieldCheck, Palette, AppWindow } from "lucide-react";
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { settingsTab, settingsTabHref } from "@/lib/settings-location";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,17 +32,27 @@ import { ProfileDates } from "./profile-dates";
 export function SettingsWorkspace({
   user,
   providers = [],
-  initialTab,
   ssoStatus,
   connectionStatus,
 }: {
   user: SessionUser;
   providers?: LoginProvider[];
-  initialTab?: string;
   ssoStatus?: string;
   connectionStatus?: string;
 }) {
   const { t } = useTranslations();
+  const params = useSearchParams();
+  const requestedTab = params.get("tab");
+  const tab = settingsTab(requestedTab);
+  useEffect(() => {
+    if (requestedTab !== tab) {
+      window.history.replaceState(
+        null,
+        "",
+        settingsTabHref(window.location.href, tab),
+      );
+    }
+  }, [requestedTab, tab]);
   const name = userDisplayName(user);
   const message = ssoMessage(ssoStatus);
   return (
@@ -75,10 +88,13 @@ export function SettingsWorkspace({
           <ProfileDates user={user} />
         </aside>
         <Tabs
-          defaultValue={
-            initialTab === "security" || initialTab === "applications"
-              ? initialTab
-              : "profile"
+          value={tab}
+          onValueChange={(value) =>
+            window.history.pushState(
+              null,
+              "",
+              settingsTabHref(window.location.href, settingsTab(value)),
+            )
           }
           className="min-w-0 space-y-5"
         >

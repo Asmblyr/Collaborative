@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { usePathname } from "next/navigation";
 import { Database, Files, Home, Settings2 } from "lucide-react";
 import type {
