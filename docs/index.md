@@ -24,7 +24,7 @@ The guides cover [data](./features/data.md), [permissions](./features/access.md)
 [users](./features/identity.md), [files](./features/files.md),
 [settings](./features/settings.md), [workspaces](./features/workspaces.md),
 [monitoring](./features/monitoring.md), [integrations](./features/integrations.md),
-[the assistant](./features/assistant.md),
+[the assistant](./features/assistant.md), [external MCP](./features/external-mcp.md), [external MCP](./features/external-mcp.md), [external MCP](./features/external-mcp.md),
 [discussions and notifications](./features/notifications.md),
 [localization](./features/localization.md), and [plugins](./features/plugins.md).
 Each describes the current contract and its limits.

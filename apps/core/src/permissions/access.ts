@@ -8,6 +8,8 @@ import { compileRowFilter, permissionContext } from "./row-filter.js";
 import type { CompiledRule } from "./row-access.js";
 
 export interface Access {
+  /** Credential-level restriction, including for superusers. */
+  readOnly?: boolean;
   readOnlyCollections?: Set<string>;
   principal: Principal;
   grants: Map<string, string[]>;
@@ -87,7 +89,10 @@ export function grantFor(
   collection: string,
   action: PermissionAction,
 ): string[] | null {
-  if (action !== "read" && access.readOnlyCollections?.has(collection)) {
+  if (
+    action !== "read" &&
+    (access.readOnly || access.readOnlyCollections?.has(collection))
+  ) {
     return null;
   }
   return access.principal.superuser

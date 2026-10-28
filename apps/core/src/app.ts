@@ -44,6 +44,7 @@ import { registerPolicyRoutes } from "./policies/routes.js";
 import { registerFileRoutes } from "./files/routes.js";
 import type { FileStorage } from "./files/storage/types.js";
 import { registerAssistantRoutes } from "./assistant/routes.js";
+import { registerMcpRoutes } from "./mcp/routes.js";
 import type { AssistantService } from "./assistant/service.js";
 import { registerSettingsAccessRoutes } from "./settings/access-routes.js";
 import { registerSettingsRoutes } from "./settings/routes.js";
@@ -283,6 +284,7 @@ export function createApp({
   registerPolicyRoutes(app, database);
   registerPermissionRoutes(app, database);
   registerFileRoutes(app, database, storageSource);
+  registerMcpRoutes(app, database, browser.origin, hooks.mutation, actions);
   registerAssistantRoutes(
     app,
     database,
@@ -290,6 +292,7 @@ export function createApp({
     actions,
     operationLimits,
     google,
+    hooks.mutation,
   );
   registerSettingsAccessRoutes(app, database);
   registerSettingsRoutes(app, database, assistantSource);

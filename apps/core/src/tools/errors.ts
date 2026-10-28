@@ -59,6 +59,16 @@ export function toolErrorResult(error: unknown): object {
     return connectionError;
   }
   if (error instanceof ItemError && error.statusCode === 409) {
+    if (error.code === "ITEM_CHANGED" || error.code === "OPERATION_REUSED") {
+      return {
+        code: error.code,
+        error: "The write was not applied.",
+        hint:
+          error.code === "ITEM_CHANGED"
+            ? "Read and review the changed record before preparing another update."
+            : "Use the original arguments with this operation ID; use a new ID only for a genuinely new operation.",
+      };
+    }
     return {
       code: "SCHEMA_CHANGED",
       error: "Collection schema changed.",
@@ -108,6 +118,8 @@ export function toolDiagnosticCode(result: object): string | null {
     "PERMISSION_DENIED",
     "REQUEST_UNAVAILABLE",
     "REPEATED_TOOL_ERROR",
+    "ITEM_CHANGED",
+    "OPERATION_REUSED",
   ]);
   return "code" in result &&
     typeof result.code === "string" &&

@@ -1,19 +1,10 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  type CallToolResult,
-} from "@modelcontextprotocol/sdk/types.js";
 import type { createToolSession } from "../tools/session.js";
 import { unavailableToolResult } from "../tools/session.js";
-import {
-  toolDefinitions,
-  type ToolDefinition,
-} from "../tools/tool-definitions.js";
+import type { ToolDefinition } from "../tools/tool-definitions.js";
 import type { PluginActions } from "../plugins/actions.js";
-import { toolErrorResult } from "../tools/errors.js";
+import { createMcpServer } from "./server.js";
 
 export interface InternalMcpClient {
   definitions: ToolDefinition[];
@@ -25,66 +16,13 @@ export interface InternalMcpClient {
   close(): Promise<void>;
 }
 
-function result(data: object, isError = false): CallToolResult {
-  return {
-    content: [{ type: "text", text: JSON.stringify(data) }],
-    structuredContent: data as Record<string, unknown>,
-    isError,
-  };
-}
-
-/** In-process MCP only: no socket, HTTP route, stdio endpoint or credentials in tool arguments. */
+/** Website adapter for the shared MCP server; it has no separate tool registry. */
 export async function connectInternalMcp(
   session: ReturnType<typeof createToolSession>,
   actions?: PluginActions,
 ): Promise<InternalMcpClient> {
-  const server = new Server(
-    { name: "asmblyr", version: "0.0.0" },
-    { capabilities: { tools: {} } },
-  );
-  const client = new Client({ name: "asmblyr-assistant", version: "0.0.0" });
-  server.setRequestHandler(ListToolsRequestSchema, async (_request, extra) => {
-    const access = await session.authorize(extra.signal);
-    return {
-      tools: [
-        ...toolDefinitions,
-        ...((await actions?.availableDefinitions(access)) ?? []),
-      ].map((tool) => ({
-        name: tool.name,
-        description: tool.description,
-        inputSchema: tool.parameters,
-        annotations: tool.annotations ?? {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: false,
-        },
-      })),
-    };
-  });
-  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
-    try {
-      if (actions?.hasTool(request.params.name)) {
-        const access = await session.authorize(extra.signal);
-        return result(
-          await actions.callTool(
-            access,
-            request.params.name,
-            request.params.arguments,
-            extra.signal,
-          ),
-        );
-      }
-      return result(
-        await session.execute(
-          request.params.name,
-          request.params.arguments,
-          extra.signal,
-        ),
-      );
-    } catch (error) {
-      return result(toolErrorResult(error), true);
-    }
-  });
+  const server = createMcpServer(session, actions);
+  const client = new Client({ name: "asmblyr-assistant", version: "0.1.0" });
   async function close(): Promise<void> {
     await client.close();
     await server.close();
@@ -122,8 +60,9 @@ export async function connectInternalMcp(
           );
           signal?.throwIfAborted();
           const content = response.content;
-          if (!Array.isArray(content) || content[0]?.type !== "text")
+          if (!Array.isArray(content) || content[0]?.type !== "text") {
             return unavailableToolResult;
+          }
           return JSON.parse(content[0].text) as object;
         } catch {
           return unavailableToolResult;

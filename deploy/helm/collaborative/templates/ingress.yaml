@@ -21,7 +21,7 @@ spec:
     - host: {{ $host | quote }}
       http:
         paths:
-          {{- range $path := list "/api" "/oauth" "/sign/sso" "/connections/google/callback" }}
+          {{- range $path := list "/api" "/oauth" "/sign/sso" "/connections/google/callback" "/.well-known/oauth-authorization-server" "/.well-known/oauth-protected-resource/api/mcp" }}
           - path: {{ $path }}
             pathType: Prefix
             backend:

@@ -1,4 +1,5 @@
 import { pageSnapshot } from "./page-context.js";
+import type { MutationFactory } from "../items/mutation-context.js";
 import type { Knex } from "knex";
 import type { PluginActions } from "../plugins/actions.js";
 import type { GoogleConnections } from "../connections/google/connections.js";
@@ -68,6 +69,7 @@ export async function createContextTools(
   actions?: PluginActions,
   google: GoogleConnections | null = null,
   dataAccess?: AssistantDataAccess,
+  mutations?: MutationFactory,
 ): Promise<AssistantTools | undefined> {
   const dataEnabled = assistantDataEnabled(context, dataAccess);
   if (!context && !dataEnabled) {
@@ -115,7 +117,9 @@ export async function createContextTools(
   if (context?.collection && page.collectionId) {
     pinned.set(context.collection, page.collectionId);
   }
-  const session = createToolSession(db, access, reloadAccess, pinned);
+  const session = createToolSession(db, access, reloadAccess, pinned, {
+    mutations,
+  });
   const mcp = await connectInternalMcp(session, actions);
   tools.close = () => mcp.close();
   tools.definitions = assistantToolDefinitions(

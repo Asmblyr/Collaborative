@@ -33,6 +33,7 @@ import {
   type OperationLimits,
 } from "../operations/limits.js";
 import type { GoogleConnections } from "../connections/google/connections.js";
+import type { MutationFactory } from "../items/mutation-context.js";
 
 export function registerAssistantRoutes(
   app: FastifyInstance,
@@ -41,6 +42,7 @@ export function registerAssistantRoutes(
   actions?: PluginActions,
   limits: OperationLimits = defaultOperationLimits,
   google: GoogleConnections | null = null,
+  mutations?: MutationFactory,
 ) {
   const requests = new AssistantRequests(database, () =>
     app.log.warn("Assistant cancellation check failed"),
@@ -158,6 +160,7 @@ export function registerAssistantRoutes(
               actions,
               google,
               dataAccess,
+              mutations,
             ),
           (progress) => emit?.({ type: "progress", progress }),
           emit
