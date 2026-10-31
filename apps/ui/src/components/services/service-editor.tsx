@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import {
   Tabs,
   TabsContent,
@@ -13,6 +13,8 @@ import {
   TabsTrigger,
 } from "@asmblyr-collaborative/kit/ui/tabs";
 import { apiRequest } from "@/lib/api-request";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
+import { showToast } from "@/components/ui/toast";
 import { ServiceKeys } from "./service-keys";
 import { ServiceFederations } from "./service-federations";
 import type { ServiceDetail, ServicePolicy } from "./types";
@@ -49,6 +51,14 @@ export function ServiceEditor({
   const [keyBusy, setKeyBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const baselineActive = account ? account.status !== "disabled" : true;
+  const dirty =
+    !readOnly &&
+    (name !== (account?.name ?? "") ||
+      description !== (account?.description ?? "") ||
+      active !== baselineActive ||
+      JSON.stringify(policyIds) !== JSON.stringify(account?.policyIds ?? []));
+  useEditorState(dirty, pending || keyBusy);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -71,7 +81,12 @@ export function ServiceEditor({
         },
       );
       setAccount(result);
+      setName(result.name);
+      setDescription(result.description);
+      setActive(result.status !== "disabled");
+      setPolicyIds(result.policyIds);
       setMessage(copy("Настройки сохранены"));
+      showToast(copy("Настройки сохранены"), "success");
       onSaved(result);
       if (!account) setTab("keys");
     } catch (error) {
@@ -97,19 +112,19 @@ export function ServiceEditor({
           value="settings"
           disabled={keyBusy}
         >
-          {copy("Настройки и доступ ")}
+          {copy("Настройки и доступ")}
         </TabsTrigger>
         <TabsTrigger
           value="keys"
           disabled={!account || pending || keyBusy}
         >
-          {copy("Ключи ")}
+          {copy("Ключи")}
         </TabsTrigger>
         <TabsTrigger
           value="federations"
           disabled={!account || pending || keyBusy}
         >
-          {copy("Федерации ")}
+          {copy("Федерации")}
         </TabsTrigger>
       </TabsList>
       <TabsContent
@@ -152,7 +167,7 @@ export function ServiceEditor({
                   {copy("Аккаунт активен")}
                 </Label>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {copy("Отключение завершит доступ всех его токенов. ")}
+                  {copy("Отключение завершит доступ всех его токенов.")}
                 </p>
               </div>
               <Switch
@@ -167,14 +182,14 @@ export function ServiceEditor({
               </h3>
               <p className="text-sm text-muted-foreground">
                 {copy(
-                  "Выберите, с какими данными может работать сервис. Без политик доступ к данным закрыт. ",
+                  "Выберите, с какими данными может работать сервис. Без политик доступ к данным закрыт.",
                 )}
               </p>
               <div className="max-h-64 space-y-1 overflow-auto rounded-lg border p-2">
                 {policies.length === 0 && (
                   <p className="p-3 text-sm text-muted-foreground">
                     {copy(
-                      "Создайте политику в разделе «Доступ», затем назначьте её здесь. ",
+                      "Создайте политику в разделе «Политики доступа», затем назначьте её здесь.",
                     )}
                   </p>
                 )}
@@ -203,7 +218,7 @@ export function ServiceEditor({
                       {!canManageAll &&
                         !delegatablePolicyIds.includes(policy.id) && (
                           <span className="ml-2 text-xs text-muted-foreground">
-                            {copy("Только администратор ")}
+                            {copy("Только администратор")}
                           </span>
                         )}
                     </span>

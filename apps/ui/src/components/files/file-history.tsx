@@ -83,8 +83,7 @@ export function FileHistory({ id }: { id: string }) {
             {new Date(event.createdAt).toLocaleString("ru-RU")}
           </time>
           <p className="break-all text-xs text-muted-foreground">
-            {copy("Автор: ")}
-            {event.actorId}
+            {copy("Автор:")} {event.actorId}
           </p>
           {Object.entries(event.changes).map(([key, value]) => (
             <div
@@ -113,7 +112,7 @@ export function FileHistory({ id }: { id: string }) {
       ))}
       {events.length === 100 && (
         <p className="text-xs text-muted-foreground">
-          {copy("Показаны последние 100 событий. ")}
+          {copy("Показаны последние 100 событий.")}
         </p>
       )}
     </div>

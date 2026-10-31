@@ -4,8 +4,13 @@ import { useState } from "react";
 import type { PluginSettingsSnapshot } from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { SettingInput } from "./setting-input";
-import { useEditorState } from "@/components/collections/editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 import { usePluginTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
+import { apiRequest } from "@/lib/api-request";
+import {
+  classifyRequestError,
+  localizedRequestError,
+} from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function PluginSettingsForm({
@@ -40,23 +45,11 @@ export function PluginSettingsForm({
     setError("");
     setMessage("");
     try {
-      const response = await fetch(path, {
+      const snapshot = await apiRequest<PluginSettingsSnapshot>(
+        path,
         method,
-        ...(method === "PUT"
-          ? {
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ values, revision: saved.revision }),
-            }
-          : {}),
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        setConflict(response.status === 409);
-        throw new Error(
-          result.message ?? copy("Не удалось сохранить настройки"),
-        );
-      }
-      const snapshot: PluginSettingsSnapshot = result.data;
+        method === "PUT" ? { values, revision: saved.revision } : undefined,
+      );
       setSaved(snapshot);
       setValues(snapshot.values);
       setConflict(false);
@@ -67,8 +60,12 @@ export function PluginSettingsForm({
           : copy("Загружена текущая версия настроек."),
       );
     } catch (cause) {
+      const classified = classifyRequestError(cause);
+      if (classified.kind === "conflict") {
+        setConflict(true);
+      }
       setError(
-        cause instanceof Error ? cause.message : copy("Настройки недоступны"),
+        localizedRequestError(cause, copy, "Не удалось сохранить настройки"),
       );
     } finally {
       setPending(false);
@@ -136,7 +133,7 @@ export function PluginSettingsForm({
           role="alert"
           className="text-sm text-destructive"
         >
-          {copy(error)}
+          {error}
         </p>
       )}
       {message && (
@@ -144,7 +141,7 @@ export function PluginSettingsForm({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {copy(message)}
+          {message}
         </p>
       )}
       {!readOnly && (
@@ -165,7 +162,7 @@ export function PluginSettingsForm({
               setMessage("");
             }}
           >
-            {copy("Отменить изменения ")}
+            {copy("Отменить изменения")}
           </Button>
           <Button
             type="button"
@@ -182,7 +179,7 @@ export function PluginSettingsForm({
               setMessage("");
             }}
           >
-            {copy("По умолчанию ")}
+            {copy("По умолчанию")}
           </Button>
           {conflict && (
             <Button
@@ -191,7 +188,7 @@ export function PluginSettingsForm({
               disabled={pending || readOnly}
               onClick={() => void request("GET")}
             >
-              {copy("Загрузить актуальные и заменить черновик ")}
+              {copy("Загрузить актуальные и заменить черновик")}
             </Button>
           )}
         </div>

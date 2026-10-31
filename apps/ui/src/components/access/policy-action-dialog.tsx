@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { PolicyConditionGroup } from "./policy-condition-group";
 import {
   conditionIsValid,
@@ -70,12 +70,13 @@ export function PolicyActionDialog({
       eyebrow={policyName || copy("Политика доступа")}
       hasUnsavedChanges={dirty}
       onClose={onClose}
-      footer={(close) => (
+      nested
+      footer={(requestClose, close) => (
         <div className="flex justify-end gap-2">
           <Button
             type="button"
             variant="outline"
-            onClick={close}
+            onClick={requestClose}
           >
             {readOnly ? copy("Закрыть") : copy("Отмена")}
           </Button>
@@ -99,7 +100,7 @@ export function PolicyActionDialog({
                 close();
               }}
             >
-              {copy("Применить ")}
+              {copy("Применить")}
             </Button>
           )}
         </div>
@@ -150,12 +151,12 @@ export function PolicyActionDialog({
             )}
             {mode === "all" && (
               <p className="text-sm text-muted-foreground">
-                {copy("Действие доступно для всех записей коллекции. ")}
+                {copy("Действие доступно для всех записей коллекции.")}
               </p>
             )}
             {mode === "none" && (
               <p className="text-sm text-muted-foreground">
-                {copy("Эта политика не разрешает выбранное действие. ")}
+                {copy("Эта политика не разрешает выбранное действие.")}
               </p>
             )}
             {mode !== "none" && action !== "delete" && (

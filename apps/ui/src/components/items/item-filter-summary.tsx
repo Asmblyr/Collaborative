@@ -105,7 +105,7 @@ export function ItemFilterSummary({
         className="ml-auto h-7 text-xs text-muted-foreground"
         onClick={() => onChange("", "")}
       >
-        {copy("Сбросить всё ")}
+        {copy("Сбросить всё")}
       </Button>
     </div>
   );

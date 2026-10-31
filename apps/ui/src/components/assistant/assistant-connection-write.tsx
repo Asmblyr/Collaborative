@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ConnectionWriteProposal } from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useConnectionWrite } from "./use-connection-write";
 import {

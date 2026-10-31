@@ -19,7 +19,7 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import type { Collection, CollectionFolder } from "@/components/items/types";
 import { CollectionsTable } from "./collections-table";
 import { SystemCollections } from "./system-collections";
-import { EditorDialog } from "./editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import type { CollectionLocation } from "@/lib/collection-tree";
 import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
@@ -132,14 +132,14 @@ export function CollectionsWorkspace({
               disabled={!online}
               onClick={() => setSelection({ kind: "folder" })}
             >
-              {copy("Создать папку ")}
+              {copy("Создать папку")}
             </Button>
             <Button
               type="button"
               disabled={!online}
               onClick={() => setSelection({ kind: "collection" })}
             >
-              {copy("Создать коллекцию ")}
+              {copy("Создать коллекцию")}
             </Button>
             <Tooltip>
               <TooltipTrigger asChild>

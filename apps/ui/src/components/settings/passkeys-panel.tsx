@@ -7,7 +7,7 @@ import {
 } from "@simplewebauthn/browser";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { requestJson as apiRequest } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -64,7 +64,7 @@ export function PasskeysPanel() {
       <h3 className="font-medium">Passkey</h3>
       <p className="text-sm text-muted-foreground">
         {copy(
-          "Вход с подтверждением на устройстве — отпечатком, лицом или PIN. Для изменения способов входа нужен вход за последние пять минут. ",
+          "Вход с подтверждением на устройстве — отпечатком, лицом или PIN. Для изменения способов входа нужен вход за последние пять минут.",
         )}
       </p>
       <ul className="divide-y">
@@ -90,7 +90,7 @@ export function PasskeysPanel() {
                 })
               }
             >
-              {copy("Удалить ")}
+              {copy("Удалить")}
             </Button>
           </li>
         ))}
@@ -144,7 +144,7 @@ export function PasskeysPanel() {
         asChild
       >
         <Link href="/login?reauth=1&next=%2Fsettings%3Ftab%3Dsecurity">
-          {copy("Подтвердить вход заново ")}
+          {copy("Подтвердить вход заново")}
         </Link>
       </Button>
     </section>

@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { UserProfileExtension } from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { useEditorState } from "@/components/collections/editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 import { ItemForm } from "@/components/items/item-form";
 import { ItemEditorDialog } from "@/components/items/item-editor-dialog";
 import type { RecordEditorRequest } from "@/components/items/record-editor-types";
@@ -32,33 +32,61 @@ export function ProfileExtensionFields({
   const [changedCount, setChangedCount] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [formRevision, setFormRevision] = useState(0);
   const [record, setRecord] = useState<RecordEditorRequest | null>(null);
   const localized = useLocalizedCatalog(catalog);
+  const dirtyRef = useRef(false);
+  const savingRef = useRef(false);
+  const loadedEndpointRef = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    dirtyRef.current = !extension?.exists && changedCount > 0;
+  }, [changedCount, extension?.exists]);
+
   useEditorState(!extension?.exists && changedCount > 0, pending || uploading);
   useEffect(() => {
-    let active = true;
-    apiRequest<UserProfileExtension<Item> | null>(endpoint)
+    const controller = new AbortController();
+    apiRequest<UserProfileExtension<Item> | null>(
+      endpoint,
+      "GET",
+      undefined,
+      controller.signal,
+    )
       .then(
         async (next) =>
           [
             next,
-            next ? await apiRequest<Collection[]>("/api/collections") : [],
+            next
+              ? await apiRequest<Collection[]>(
+                  "/api/collections",
+                  "GET",
+                  undefined,
+                  controller.signal,
+                )
+              : [],
           ] as const,
       )
       .then(([next, collections]) => {
-        if (active) {
-          setExtension(next);
-          setCatalog(collections);
-          setError("");
+        if (controller.signal.aborted || savingRef.current) {
+          return;
         }
+        const initialLoad = loadedEndpointRef.current !== endpoint;
+        if (!initialLoad && dirtyRef.current) {
+          setCatalog(collections);
+          return;
+        }
+        loadedEndpointRef.current = endpoint;
+        setExtension(next);
+        setCatalog(collections);
+        setError("");
       })
-      .catch((cause) => {
-        if (active) {
-          setError((cause as Error).message);
+      .catch((cause: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(cause instanceof Error ? cause.message : String(cause));
         }
       });
     return () => {
-      active = false;
+      controller.abort();
     };
   }, [endpoint, revision]);
   const collection = localized.find(
@@ -104,7 +132,7 @@ export function ProfileExtensionFields({
         </Button>
       ) : (
         <ItemForm
-          key={`${userId}-${revision}`}
+          key={`${userId}-${formRevision}`}
           fields={fields}
           formLayout={collection.formLayout}
           catalog={localized}
@@ -113,7 +141,10 @@ export function ProfileExtensionFields({
           preview={readOnly || !writable}
           embedded
           allowUnchanged
-          onDirtyChange={setChangedCount}
+          onDirtyChange={(count) => {
+            dirtyRef.current = count > 0;
+            setChangedCount(count);
+          }}
           onBusyChange={setUploading}
           portalContainer={container}
           readOnlyFields={fields
@@ -121,10 +152,13 @@ export function ProfileExtensionFields({
             .map((field) => field.name)}
           onOpenRelated={(name, id) => setRecord({ collection: name, id })}
           onCancel={() => {
+            dirtyRef.current = false;
             setChangedCount(0);
+            setFormRevision((value) => value + 1);
             setRevision((value) => value + 1);
           }}
           onSave={async (values) => {
+            savingRef.current = true;
             setPending(true);
             try {
               const result = await apiRequest<UserProfileExtension<Item>>(
@@ -132,9 +166,12 @@ export function ProfileExtensionFields({
                 "PATCH",
                 { collection: collection.name, values },
               );
+              dirtyRef.current = false;
+              setChangedCount(0);
               setExtension(result);
-              setRevision((value) => value + 1);
+              setFormRevision((value) => value + 1);
             } finally {
+              savingRef.current = false;
               setPending(false);
             }
           }}

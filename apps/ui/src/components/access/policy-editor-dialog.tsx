@@ -5,7 +5,7 @@ import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-con
 import { PolicySettingsPermissions } from "./policy-settings-permissions";
 import { useState, type FormEvent } from "react";
 import type { PolicyCollection } from "./types";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Tabs,
@@ -15,12 +15,13 @@ import {
 } from "@asmblyr-collaborative/kit/ui/tabs";
 import { PolicyUsersPicker } from "./policy-users-picker";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { policyDraft } from "./policy-draft";
 import { PolicyPermissionsMatrix } from "./policy-permissions-matrix";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Permission, type Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
+import { showToast } from "@/components/ui/toast";
 import {
   PolicyApplications,
   usePolicyApplications,
@@ -99,6 +100,7 @@ export function PolicyEditorDialog({
             },
       );
       await onChange();
+      showToast(copy("Настройки сохранены"), "success");
       close();
     } catch (cause) {
       setError((cause as Error).message);
@@ -125,6 +127,7 @@ export function PolicyEditorDialog({
     try {
       await accessRequest(`/policies/${policy.id}`, "DELETE");
       await onChange();
+      showToast(copy("Политика удалена"), "success");
       close();
     } catch (cause) {
       setError((cause as Error).message);
@@ -188,7 +191,7 @@ export function PolicyEditorDialog({
       }
       onClose={onClose}
     >
-      {(container, close) => (
+      {(container, close, requestClose) => (
         <PortalContainerContext.Provider value={container}>
           <form
             onSubmit={(event) => save(event, close)}
@@ -221,14 +224,14 @@ export function PolicyEditorDialog({
             {assignmentOnly && !readOnly && (
               <p className="text-xs text-muted-foreground">
                 {copy(
-                  "Можно назначать готовую политику другим пользователям. Состав прав меняет администратор. ",
+                  "Можно назначать готовую политику другим пользователям. Состав прав меняет администратор.",
                 )}
               </p>
             )}
             {!assignmentOnly && (
               <div className="space-y-3">
                 <Label htmlFor="policy-editor-name">
-                  {copy("Название политики ")}
+                  {copy("Название политики")}{" "}
                   <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -313,7 +316,7 @@ export function PolicyEditorDialog({
                   disabled={busy}
                   onClick={() => remove(close)}
                 >
-                  {copy("Удалить политику ")}
+                  {copy("Удалить политику")}
                 </Button>
               ) : (
                 <span />
@@ -323,7 +326,7 @@ export function PolicyEditorDialog({
                   type="button"
                   variant="outline"
                   disabled={busy}
-                  onClick={close}
+                  onClick={requestClose}
                 >
                   {readOnly ? copy("Закрыть") : copy("Отмена")}
                 </Button>

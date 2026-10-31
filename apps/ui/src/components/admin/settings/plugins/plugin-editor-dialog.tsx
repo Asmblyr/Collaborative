@@ -2,8 +2,8 @@
 
 import type { PluginSettingsSnapshot } from "@asmblyr-collaborative/contracts";
 import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
-import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Badge } from "@/components/ui/badge";
+import { EditorDialog } from "@/components/ui/editor-dialog";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { PluginSettingsForm } from "./settings-form";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 import {
@@ -65,7 +65,7 @@ export function PluginEditorDialog({
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  {copy("У этого плагина нет настраиваемых параметров. ")}
+                  {copy("У этого плагина нет настраиваемых параметров.")}
                 </p>
               )}
               <section className="space-y-3 border-t pt-5">
@@ -84,12 +84,12 @@ export function PluginEditorDialog({
                 </div>
                 {!plugin.capabilities.length && (
                   <p className="text-xs text-muted-foreground">
-                    {copy("Дополнительные возможности не запрошены. ")}
+                    {copy("Дополнительные возможности не запрошены.")}
                   </p>
                 )}
                 <p className="text-xs leading-5 text-muted-foreground">
                   {copy(
-                    "Список возможностей задаётся в конфигурации проекта. Изменение списка требует перезапуска Core. Доступ к данным дополнительно ограничен правами пользователя. ",
+                    "Список возможностей задаётся в конфигурации проекта. Изменение списка требует перезапуска Core. Доступ к данным дополнительно ограничен правами пользователя.",
                   )}
                 </p>
               </section>

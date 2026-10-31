@@ -203,7 +203,7 @@ export function FieldTypePicker({
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
-        {copy("Выберите, какое поле добавить в коллекцию. ")}
+        {copy("Выберите, какое поле добавить в коллекцию.")}
       </p>
       <div className="relative">
         <Search
@@ -278,7 +278,7 @@ export function FieldTypePicker({
           role="status"
           className="py-8 text-center text-sm text-muted-foreground"
         >
-          {copy("Тип поля не найден ")}
+          {copy("Тип поля не найден")}
         </p>
       )}
     </div>

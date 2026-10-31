@@ -12,13 +12,13 @@ export function describeFilter(
   copy: UiCopy = originalCopy,
 ): string {
   if ("logic" in node)
-    return `(${node.children.map((child) => describeFilter(child, labels, choices, copy)).join(node.logic === "and" ? copy(" И ") : copy(" ИЛИ "))})`;
+    return `(${node.children.map((child) => describeFilter(child, labels, choices, copy)).join(node.logic === "and" ? ` ${copy("И")} ` : ` ${copy("ИЛИ")} `)})`;
   const field = labels.get(node.field) ?? node.field.replaceAll(".", " → ");
   const quantifier =
     node.quantifier === "none"
-      ? copy("Ни одна связь: ")
+      ? `${copy("Ни одна связь:")} `
       : node.quantifier === "some"
-        ? copy("Хотя бы одна связь: ")
+        ? `${copy("Хотя бы одна связь:")} `
         : "";
   const labelFor = (value: string) =>
     choices.get(node.field)?.find((option) => option.value === value)?.label ??

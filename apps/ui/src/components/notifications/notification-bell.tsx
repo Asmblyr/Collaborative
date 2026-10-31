@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { navigateWithEditorGuard } from "@/components/collections/use-editor-navigation-guard";
+import { navigateWithEditorGuard } from "@/components/ui/use-editor-navigation-guard";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useNotifications } from "./use-notifications";
 import { notificationHref } from "./location";

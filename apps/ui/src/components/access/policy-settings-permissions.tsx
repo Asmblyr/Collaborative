@@ -27,7 +27,7 @@ export function PolicySettingsPermissions({
       <h3 className="font-semibold">{copy("Разделы настроек")}</h3>
       <p className="text-xs text-muted-foreground">
         {copy(
-          "Выберите уровень доступа. Изменение включает просмотр. Права на записи коллекций задаются отдельно. ",
+          "Выберите уровень доступа. Изменение включает просмотр. Права на записи коллекций задаются отдельно.",
         )}
       </p>
       <div className="divide-y rounded-lg border px-3">

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { CurrentUser } from "@asmblyr-collaborative/contracts";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { ProfileDates } from "@/components/settings/profile-dates";
 import { apiRequest } from "@/lib/api-request";

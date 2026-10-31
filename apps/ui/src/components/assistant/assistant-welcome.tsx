@@ -17,7 +17,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@asmblyr-collaborative/kit/ui/card";
 import { useUiCopy } from "@/lib/ui-copy";
 import type { PageContext } from "./assistant-context-types";
 import { AssistantConnections } from "./assistant-connections";

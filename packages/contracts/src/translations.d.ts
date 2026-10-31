@@ -9,9 +9,22 @@ export type TranslationCatalogs = Partial<
   Record<UiLocale, TranslationMessages>
 >;
 export const coreTranslations: Record<UiLocale, TranslationMessages>;
+export interface PluralForms {
+  one: string;
+  few?: string;
+  many?: string;
+  other?: string;
+}
+
 export function copyTranslationKey(source: string): string;
 export function translateCopy(
   source: string,
+  locale: UiLocale,
+  values?: Record<string, unknown>,
+): string;
+export function pluralizeCopy(
+  count: number,
+  forms: PluralForms,
   locale: UiLocale,
   values?: Record<string, unknown>,
 ): string;

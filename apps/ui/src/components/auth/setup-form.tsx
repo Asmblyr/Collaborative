@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function SetupForm() {
@@ -110,7 +110,7 @@ export function SetupForm() {
           disabled={pending}
         />
         <p className="text-xs text-muted-foreground">
-          {copy("Возьмите значение ASMBLYR_SETUP_TOKEN из конфигурации Core. ")}
+          {copy("Возьмите значение ASMBLYR_SETUP_TOKEN из конфигурации Core.")}
         </p>
       </div>
       {message && (

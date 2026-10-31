@@ -9,7 +9,7 @@ import type { Collection } from "@/components/items/types";
 import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
-import { useEditorState } from "./editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 import {
   systemCollectionModel,
   systemCollectionLabels,

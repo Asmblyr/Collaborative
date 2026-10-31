@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { X } from "lucide-react";
 import { parseTags, tagLimits } from "@asmblyr-collaborative/contracts";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";

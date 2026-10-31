@@ -3,6 +3,7 @@ import type {
   RealtimeConnectionState,
   RealtimeEvent,
 } from "@asmblyr-collaborative/contracts";
+import type { RealtimeConnection } from "@asmblyr-collaborative/sdk";
 import { asmblyr } from "./asmblyr";
 
 type Listener = (
@@ -14,10 +15,17 @@ const scopes = new Map<
   {
     listeners: Set<Listener>;
     close: () => void;
+    locks?: RealtimeConnection["locks"];
     state: RealtimeConnectionState;
     presence: Extract<RealtimeEvent, { type: "presence.changed" }> | null;
   }
 >();
+
+export function getRealtimeLocks(
+  scope: PresenceScope,
+): RealtimeConnection["locks"] | null {
+  return scopes.get(JSON.stringify(scope))?.locks ?? null;
+}
 
 /** One browser stream per scope, shared by presence and record editors. */
 export function subscribeRealtime(
@@ -31,6 +39,7 @@ export function subscribeRealtime(
     const listeners = new Set<Listener>();
     active = {
       listeners,
+      locks: connection.locks,
       state: connection.state,
       presence: null,
       close: () => connection.close(),

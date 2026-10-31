@@ -6,7 +6,7 @@ import type {
   IntegrationsSnapshot,
 } from "@asmblyr-collaborative/contracts";
 import { ChevronRight, Cloud, ShieldCheck, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { useUiCopy } from "@/lib/ui-copy";
 import { IntegrationEditor } from "./editor";
 import { integrationTitles } from "./titles";

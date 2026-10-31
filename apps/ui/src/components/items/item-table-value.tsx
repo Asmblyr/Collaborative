@@ -1,7 +1,7 @@
 "use client";
 
 import { Paperclip, Link2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { displayValue } from "./item-display";
 import type { ItemValue } from "./types";
 import type { ItemColumn } from "./use-item-columns";
@@ -95,8 +95,7 @@ export function ItemTableValue({
   if (column.presentation?.interface === "repeater" && Array.isArray(value))
     return (
       <span className="text-sm text-muted-foreground">
-        {copy("Элементов: ")}
-        {value.length}
+        {copy("Элементов:")} {value.length}
       </span>
     );
   if (

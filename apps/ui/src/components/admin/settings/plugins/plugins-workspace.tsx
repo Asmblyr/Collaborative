@@ -105,7 +105,7 @@ export function PluginsWorkspace({
         </div>
       ) : (
         <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-          {copy("Нет включённых плагинов. ")}
+          {copy("Нет включённых плагинов.")}
         </p>
       )}
       <PluginEditorDialog

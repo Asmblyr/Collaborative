@@ -1,8 +1,8 @@
 "use client";
 
 import { SearchPrioritySettings } from "./search-priority-settings";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function RelationSearchSettings({
@@ -29,11 +29,11 @@ export function RelationSearchSettings({
       <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
         <div className="space-y-1">
           <Label htmlFor="field-editor-relation-searchable">
-            {copy("Искать по связанной коллекции ")}
+            {copy("Искать по связанной коллекции")}
           </Label>
           <p className="text-xs text-muted-foreground">
             {copy(
-              "Поиск по этой коллекции и общий поиск учитывают доступные текстовые поля связанной коллекции, включённые в поиск. Переход выполняется только на один уровень. ",
+              "Поиск по этой коллекции и общий поиск учитывают доступные текстовые поля связанной коллекции, включённые в поиск. Переход выполняется только на один уровень.",
             )}
           </p>
         </div>

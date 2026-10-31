@@ -11,7 +11,7 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { apiRequest } from "@/lib/api-request";
 import { useAssistantContext } from "./assistant-context";
 import { selectionHref } from "./selection-location";
-import { navigateWithEditorGuard } from "@/components/collections/use-editor-navigation-guard";
+import { navigateWithEditorGuard } from "@/components/ui/use-editor-navigation-guard";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function AssistantSelectionCard({
@@ -72,13 +72,13 @@ export function AssistantSelectionCard({
         )}
       </div>
       <p className="text-xs leading-5 text-muted-foreground">
-        {copy("Открыть таблицу с условиями этой подборки ")}
+        {copy("Открыть таблицу с условиями этой подборки")}{" "}
         {selection.q
-          ? copy(" и поиском «{{value0}}»", { value0: selection.q })
+          ? ` ${copy("и поиском «{{value0}}»", { value0: selection.q })}`
           : ""}
         .
         {selection.count !== null &&
-          copy(" Количество указано на момент ответа.")}
+          ` ${copy("Количество указано на момент ответа.")}`}
       </p>
       <Button
         variant="secondary"
@@ -92,7 +92,7 @@ export function AssistantSelectionCard({
       </Button>
       {editorOpen && (
         <p className="text-xs text-muted-foreground">
-          {copy("Закройте редактор записи перед переходом. ")}
+          {copy("Закройте редактор записи перед переходом.")}
         </p>
       )}
       {error && (

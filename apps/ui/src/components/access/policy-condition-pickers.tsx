@@ -134,8 +134,7 @@ export function PolicyValuePicker({
         {mode === "literal" ? (
           <div className="space-y-3">
             <p className="text-sm font-medium">
-              {copy("Значение для ")}
-              {field.label}
+              {copy("Значение для")} {field.label}
             </p>
             <Input
               autoFocus
@@ -162,7 +161,7 @@ export function PolicyValuePicker({
                 size="sm"
                 onClick={() => setMode("quick")}
               >
-                {copy("Назад ")}
+                {copy("Назад")}
               </Button>
               <Button
                 type="button"
@@ -183,7 +182,7 @@ export function PolicyValuePicker({
                   });
                 }}
               >
-                {copy("Выбрать ")}
+                {copy("Выбрать")}
               </Button>
             </div>
           </div>
@@ -259,7 +258,7 @@ export function PolicyValuePicker({
                   entry.label.toLowerCase().includes(query.toLowerCase()),
                 ) && (
                   <p className="px-2 py-3 text-sm text-muted-foreground">
-                    {copy("Подходящих параметров нет ")}
+                    {copy("Подходящих параметров нет")}
                   </p>
                 )}
             </div>
@@ -272,7 +271,7 @@ export function PolicyValuePicker({
                   className="w-full justify-between text-sm font-normal"
                   onClick={() => setMode("parameters")}
                 >
-                  {copy("Все параметры… ")}
+                  {copy("Все параметры…")}
                   <ChevronRight className="size-4" />
                 </Button>
               )}
@@ -283,7 +282,7 @@ export function PolicyValuePicker({
                 className="w-full justify-start text-sm font-normal"
                 onClick={() => setMode("literal")}
               >
-                {copy("Задать значение… ")}
+                {copy("Задать значение…")}
               </Button>
             </div>
           </>

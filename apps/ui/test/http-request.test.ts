@@ -2,10 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   HttpError,
+  classifyRequestError,
+  localizedRequestError,
   requestErrorMessage,
   requestJson,
 } from "../src/lib/http-request";
+import { apiRequest } from "../src/lib/api-request";
 import { translateCopy } from "@asmblyr-collaborative/contracts/translations";
+import type { UiCopy } from "../src/lib/ui-copy-types";
 
 test("permission errors preserve HTTP details and have a localized access message", async (t) => {
   const fetch = t.mock.method(globalThis, "fetch", async () =>
@@ -122,4 +126,66 @@ test("a network failure never retries a potentially applied mutation", async (t)
     /fetch failed/,
   );
   assert.equal(fetch.mock.callCount(), 1);
+});
+
+test("classifyRequestError and localizedRequestError separate status categories from server messages", () => {
+  const enCopy: UiCopy = (source, values) =>
+    translateCopy(source, "en", values);
+
+  assert.equal(
+    classifyRequestError(new HttpError("Conflict", 409, "CONFLICT")).kind,
+    "conflict",
+  );
+  assert.equal(
+    classifyRequestError(new HttpError("Bad", 400, "INVALID")).kind,
+    "client_error",
+  );
+  assert.equal(
+    classifyRequestError(
+      new HttpError("Некорректный ответ сервера", 200, "INVALID_RESPONSE"),
+    ).kind,
+    "invalid_response",
+  );
+
+  assert.equal(
+    localizedRequestError(new HttpError("Unauthorized", 401), enCopy),
+    "Your session expired. Sign in again.",
+  );
+  assert.equal(
+    localizedRequestError(new HttpError("Forbidden", 403), enCopy),
+    "No access to this action or record.",
+  );
+  assert.equal(
+    localizedRequestError(new HttpError("Slug already exists", 409), enCopy),
+    "Slug already exists",
+  );
+  assert.equal(
+    localizedRequestError(
+      new TypeError("fetch failed"),
+      enCopy,
+      "Не удалось сохранить фильтр",
+    ),
+    translateCopy("Не удалось сохранить фильтр", "en"),
+  );
+});
+
+test("apiRequest unwraps data envelopes and forwards AbortSignal", async (t) => {
+  const controller = new AbortController();
+  let receivedSignal: AbortSignal | null | undefined;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (_url: string, options: RequestInit) => {
+      receivedSignal = options.signal;
+      return Response.json({ data: [{ id: "preset-1" }] });
+    },
+  );
+  const result = await apiRequest<Array<{ id: string }>>(
+    "/api/filter-presets/tasks",
+    "GET",
+    undefined,
+    controller.signal,
+  );
+  assert.deepEqual(result, [{ id: "preset-1" }]);
+  assert.equal(receivedSignal, controller.signal);
 });

@@ -37,7 +37,7 @@ export function ItemRecordNavigation({
           className="gap-1.5"
         >
           <FileText className="size-3.5" />
-          {copy("Карточка ")}
+          {copy("Карточка")}
         </TabsTrigger>
         <TabsTrigger
           value="history"
@@ -45,7 +45,7 @@ export function ItemRecordNavigation({
           className="gap-1.5"
         >
           <History className="size-3.5" />
-          {copy("История ")}
+          {copy("История")}
         </TabsTrigger>
         {panels}
       </TabsList>
@@ -63,7 +63,7 @@ export function ItemRecordNavigation({
             className="hidden text-muted-foreground sm:inline-flex"
             onClick={onOpenRelations}
           >
-            {copy("К связанным записям ")}
+            {copy("К связанным записям")}
             <ArrowDown className="size-3.5" />
           </Button>
         )}

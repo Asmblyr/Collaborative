@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import { useUiCopy } from "@/lib/ui-copy";
 import { apiRequest } from "@/lib/api-request";
 

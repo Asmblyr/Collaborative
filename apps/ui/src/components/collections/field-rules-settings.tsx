@@ -1,7 +1,7 @@
 "use client";
 
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import type {
   FieldRules,
   FieldPresentation,
@@ -77,7 +77,7 @@ export function FieldRulesSettings({
         ))}
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Скрытие относится к форме. Права на значение задаются в политике; режим чтения проверяется также в API. ",
+            "Скрытие относится к форме. Права на значение задаются в политике; режим чтения проверяется также в API.",
           )}
         </p>
       </div>
@@ -150,7 +150,7 @@ export function FieldRulesSettings({
           )}
           <p className="text-xs text-muted-foreground">
             {copy(
-              "Сервер копирует значение при сохранении. Пользователю нужны права на источник и изменяемое поле. ",
+              "Сервер копирует значение при сохранении. Пользователю нужны права на источник и изменяемое поле.",
             )}
           </p>
         </section>
@@ -187,7 +187,7 @@ export function FieldRulesSettings({
           </div>
           <p className="text-xs text-muted-foreground">
             {copy(
-              "Маскируется в интерфейсе и не записывается в историю. Старые значения в истории удаляются без восстановления. Сначала уберите default. Это не шифрование; доступ к самому значению задаётся политикой. ",
+              "Маскируется в интерфейсе и не записывается в историю. Старые значения в истории удаляются без восстановления. Сначала уберите default. Это не шифрование; доступ к самому значению задаётся политикой.",
             )}
           </p>
         </section>

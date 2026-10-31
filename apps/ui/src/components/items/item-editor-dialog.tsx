@@ -1,34 +1,19 @@
-﻿"use client";
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
-import { useRouter } from "next/navigation";
-import { ApiError } from "@asmblyr-collaborative/sdk";
-import { readEditorItem } from "@/lib/item-read";
-import { saveEditorDraft } from "@/lib/item-write";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { useMemo } from "react";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { ItemCreateDialog } from "./item-create-dialog";
 import { ItemRecordDialog } from "./item-record-dialog";
-import { recordLabel } from "./item-label";
-import { recordChoiceColumns } from "./record-choice-presentation";
-import {
-  draftChanges,
-  serializeDraft,
-  upsertRecord,
-  withFormValues,
-  withRecordSnapshot,
-  type RecordDraft,
-} from "./record-draft-model";
+import { draftChanges } from "./record-draft-model";
 import {
   draftPreviews,
   RecordDraftContext,
   useDraftPreviews,
 } from "./record-draft-context";
 import type { RecordEditorRequest } from "./record-editor-types";
-import type { Collection, Item } from "./types";
+import type { Collection } from "./types";
 import { DraftConflictReview } from "./draft-conflict-review";
-import { rebaseDraft, type ConflictChoices } from "./draft-conflicts";
-import { useDraftConflicts } from "./use-draft-conflicts";
+import { useItemRecordEditor } from "./use-item-record-editor";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemEditorDialog({
@@ -36,263 +21,66 @@ export function ItemEditorDialog({
   catalog,
   onClose,
   onChanged,
+  trail,
 }: {
   request: RecordEditorRequest;
   catalog: Collection[];
   onClose: (reason?: "navigation") => void;
   onChanged?: () => void;
+  trail?: readonly string[];
 }) {
   const copy = useUiCopy();
 
-  const router = useRouter();
   const inheritedPreviews = useDraftPreviews();
   const collection = catalog.find((entry) => entry.name === request.collection);
-  const [item, setItem] = useState<Item | null>(null);
-  const [label, setLabel] = useState(request.title ?? "");
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
-  const [revision, setRevision] = useState(0);
-  const [formRevision, setFormRevision] = useState(0);
-  const conflicts = useDraftConflicts(request.collection);
-  const [child, setChild] = useState<RecordEditorRequest | null>(null);
-  const [draft, setDraft] = useState<RecordDraft>(
-    () => request.draft ?? { id: request.id, values: {} },
-  );
-  const dirtyRef = useRef(
-    Boolean(
-      request.extraDirty || (request.draft && draftChanges(request.draft)),
-    ),
-  );
-  const loadedRecordRef = useRef<string | null>(null);
-  const onDirtyChange = useCallback((dirty: boolean) => {
-    dirtyRef.current = dirty;
-  }, []);
-  useEffect(() => {
-    if (!request.id) return;
-    const controller = new AbortController();
-    readEditorItem(
-      request.collection,
-      request.id,
-      controller.signal,
-      request.itemEndpoint,
-    )
-      .then((result) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        const recordKey = JSON.stringify([
-          request.collection,
-          request.id,
-          request.itemEndpoint,
-        ]);
-        const initialLoad = loadedRecordRef.current !== recordKey;
-        if (!initialLoad && (dirtyRef.current || request.extraDirty)) {
-          setError(
-            copy(
-              "Запись изменена другим участником. При сохранении проверьте конфликт.",
-            ),
-          );
-          return;
-        }
-        // Commit the snapshot and its conflict baseline before another input event.
-        flushSync(() => {
-          setItem(result.data);
-          setFormRevision((value) => value + 1);
-          setDraft((current) => ({
-            ...withRecordSnapshot(current, result.data, initialLoad),
-            collection: request.collection,
-            itemEndpoint: request.itemEndpoint,
-          }));
-          setLabel(result.label ?? request.title ?? "");
-          setError("");
-        });
-        loadedRecordRef.current = recordKey;
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted)
-          setError(
-            cause instanceof Error ? cause.message : copy("Ошибка соединения"),
-          );
-      });
-    return () => controller.abort();
-  }, [
-    request.collection,
-    request.extraDirty,
-    request.itemEndpoint,
-    request.id,
-    request.title,
-    revision,
-    copy,
-  ]);
 
-  async function save(values: Item, close: () => void) {
-    if (!collection) return;
-    setPending(true);
-    setError("");
-    const next = withFormValues(draft, values);
-    setDraft(next);
-    try {
-      if (request.onDraft) {
-        next.key ??= `draft:${crypto.randomUUID()}`;
-        next.preview = {
-          ...item,
-          ...request.initialValues,
-          ...values,
-          [collection.primaryKey.name]: request.id ?? next.key,
-        };
-        next.label = recordLabel(collection, {
-          ...next.preview,
-          [collection.primaryKey.name]:
-            request.id ?? values[collection.primaryKey.name] ?? next.key,
-        });
-        const primary = recordChoiceColumns(collection, catalog)[0];
-        const displayReadable =
-          !collection.displayField ||
-          collection.access.read?.includes("*") ||
-          collection.access.read?.includes(collection.displayField);
-        if (
-          primary?.relation &&
-          displayReadable &&
-          collection.displayField !== collection.primaryKey.name &&
-          (next.label === (request.id ?? next.key) ||
-            (!collection.displayTemplate &&
-              primary.name === collection.displayField))
-        ) {
-          const ref = next.references?.[primary.name];
-          if (ref?.label) next.label = ref.label;
-          else if (next.preview[primary.name] != null) {
-            const response = await fetch(
-              `/api/items/${encodeURIComponent(primary.relation.collection)}/${encodeURIComponent(String(next.preview[primary.name]))}`,
-            );
-            if (response.ok) {
-              const resolved = ((await response.json()) as { label?: string })
-                .label;
-              if (resolved && resolved !== String(next.preview[primary.name]))
-                next.label = resolved;
-            }
-          }
-        }
-        if (next.label === next.key) next.label = copy("Новая запись");
-        request.onDraft(next);
-        close();
-        return;
-      }
-      const id = await saveEditorDraft(
-        request.collection,
-        serializeDraft(next),
-      );
-      request.onSaved?.(id);
-      if (onChanged) onChanged();
-      else router.refresh();
-      close();
-    } catch (cause) {
-      if (cause instanceof ApiError && cause.code === "ITEM_CHANGED") {
-        try {
-          await conflicts.inspect(next);
-        } catch (readError) {
-          setError(
-            readError instanceof Error
-              ? readError.message
-              : copy(
-                  "Не удалось загрузить актуальные значения. Черновик сохранён в этом окне.",
-                ),
-          );
-        }
-        return;
-      }
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : copy("Ошибка соединения. Черновик остаётся в этом окне."),
-      );
-    } finally {
-      setPending(false);
-    }
-  }
+  const {
+    item,
+    label,
+    error,
+    pending,
+    formRevision,
+    conflicts,
+    child,
+    setChild,
+    draft,
+    setDraft,
+    onDirtyChange,
+    save,
+    resolveConflicts,
+    openRelated,
+    editRelation,
+    referenceChanged,
+    retryLoad,
+  } = useItemRecordEditor({
+    request,
+    collection,
+    catalog,
+    onChanged,
+  });
 
-  function resolveConflicts(choices: ConflictChoices) {
-    const review = conflicts.review;
-    if (!review) return;
-    const next = rebaseDraft(
-      request.collection,
-      review.draft,
-      review.snapshots,
-      choices,
-      (name, preview) => {
-        const schema = catalog.find((entry) => entry.name === name);
-        return schema
-          ? recordLabel(schema, preview)
-          : String(preview.id ?? copy("Запись"));
-      },
-      copy,
-    );
-    const root = review.snapshots.find((snapshot) => snapshot.path === "root");
-    setDraft(next);
-    if (root) {
-      setItem(root.current);
-    }
-    setFormRevision((value) => value + 1);
-    conflicts.clear();
-    setError("");
-  }
-
-  function openRelated(
-    name: string,
-    id?: string,
-    onSaved?: (id: string) => void,
-    field?: string,
-  ) {
-    const staged = field
-      ? draft.references?.[field]
-      : draft.records?.find(
-          (entry) => entry.collection === name && entry.record.id === id,
-        )?.record;
-    setChild({
-      collection: name,
-      id: staged?.id ?? (id?.startsWith("draft:") ? undefined : id),
-      draft: staged,
-      onDraft: (record) => {
-        setDraft((current) => {
-          if (!field) return upsertRecord(current, name, record);
-          const references = { ...current.references, [field]: record };
-          if (record.id && !draftChanges(record)) delete references[field];
-          return { ...current, references };
-        });
-        onSaved?.(record.id ?? record.key!);
-      },
-    });
-  }
-  function editRelation(next: RecordEditorRequest) {
-    if (next.onDraft) {
-      setChild(next);
-      return;
-    }
-    const staged = draft.records?.find(
-      (entry) =>
-        entry.collection === next.collection && entry.record.id === next.id,
-    )?.record;
-    setChild({
-      ...next,
-      draft: staged,
-      onDraft: (record) =>
-        setDraft((current) => upsertRecord(current, next.collection, record)),
-    });
-  }
-  function referenceChanged(field: string, value: string) {
-    setDraft((current) => {
-      const ref = current.references?.[field];
-      if (!ref || (ref.id ?? ref.key) === value) return current;
-      const references = { ...current.references };
-      delete references[field];
-      return { ...current, references };
-    });
-  }
   const previews = useMemo(
     () => draftPreviews(request.collection, draft, catalog, inheritedPreviews),
     [request.collection, draft, catalog, inheritedPreviews],
   );
   const extraDirty =
     request.extraDirty || draftChanges({ ...draft, values: {} }) > 0;
+  const currentStep =
+    draft.label ||
+    label ||
+    request.title ||
+    collection?.displayName ||
+    request.collection;
+  const nextTrail = [...(trail ?? []), currentStep];
+
+  const conflictReview = conflicts.review ? (
+    <DraftConflictReview
+      conflicts={conflicts.review.conflicts}
+      catalog={catalog}
+      onApply={resolveConflicts}
+    />
+  ) : undefined;
+
   return (
     <RecordDraftContext value={previews}>
       {!request.id && collection ? (
@@ -312,15 +100,8 @@ export function ItemEditorDialog({
           onOpenRelated={openRelated}
           onReferenceChange={referenceChanged}
           formRevision={formRevision}
-          conflictReview={
-            conflicts.review ? (
-              <DraftConflictReview
-                conflicts={conflicts.review.conflicts}
-                catalog={catalog}
-                onApply={resolveConflicts}
-              />
-            ) : undefined
-          }
+          trail={trail}
+          conflictReview={conflictReview}
           description={
             request.description ??
             (request.onDraft
@@ -345,28 +126,19 @@ export function ItemEditorDialog({
           onDraftChange={setDraft}
           onDirtyChange={onDirtyChange}
           draftMode={Boolean(request.onDraft)}
-          onRetry={() => {
-            setError("");
-            setRevision((value) => value + 1);
-          }}
+          onRetry={retryLoad}
           onOpenRelated={openRelated}
           onEditRelation={editRelation}
           onReferenceChange={referenceChanged}
           formRevision={formRevision}
-          conflictReview={
-            conflicts.review ? (
-              <DraftConflictReview
-                conflicts={conflicts.review.conflicts}
-                catalog={catalog}
-                onApply={resolveConflicts}
-              />
-            ) : undefined
-          }
+          trail={trail}
+          conflictReview={conflictReview}
         />
       ) : (
         <EditorDialog
           open
           busy={pending}
+          nested={Boolean(trail?.length)}
           title={copy("Запись")}
           eyebrow={request.collection}
           onClose={onClose}
@@ -379,6 +151,7 @@ export function ItemEditorDialog({
           key={`${child.collection}:${child.id ?? child.draft?.key ?? "new"}`}
           request={child}
           catalog={catalog}
+          trail={nextTrail}
           onClose={() => setChild(null)}
         />
       )}

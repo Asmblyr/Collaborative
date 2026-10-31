@@ -119,6 +119,7 @@ export function BuiltinFieldInput({
     return (
       <RichTextEditor
         id={id}
+        label={presentation.label || field.name}
         value={value}
         disabled={disabled}
         onChange={onChange}
@@ -197,7 +198,7 @@ export function BuiltinFieldInput({
                   )
                 }
               />
-              {v} {copy(" (архивный вариант) ")}
+              {v} {copy("(архивный вариант)")}
             </label>
           ))}
       </div>
@@ -241,7 +242,7 @@ export function BuiltinFieldInput({
           </SelectItem>
           {value && !options.some((o) => String(o.value) === value) && (
             <SelectItem value={`v:${value}`}>
-              {value} {copy(" (архивный вариант) ")}
+              {value} {copy("(архивный вариант)")}
             </SelectItem>
           )}
           {options.map((o) => (

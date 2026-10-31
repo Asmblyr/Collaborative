@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Monitor } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useAccountTheme } from "./account-theme";
@@ -71,7 +71,7 @@ export function SessionsPanel() {
         <h2 className="font-semibold">{copy("Активные сессии")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {copy(
-            "Устройства определяются приблизительно по браузеру при входе. ",
+            "Устройства определяются приблизительно по браузеру при входе.",
           )}
         </p>
       </div>
@@ -89,7 +89,7 @@ export function SessionsPanel() {
             variant="ghost"
             onClick={load}
           >
-            {copy("Повторить ")}
+            {copy("Повторить")}
           </Button>
         </div>
       )}
@@ -107,8 +107,7 @@ export function SessionsPanel() {
                   : session.clientLabel}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {copy("Вход: ")}
-                {formatDate(session.createdAt)}
+                {copy("Вход:")} {formatDate(session.createdAt)}
               </p>
               {session.refreshedAt && (
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -126,7 +125,7 @@ export function SessionsPanel() {
               disabled={pending}
               onClick={() => setConfirm(session.id)}
             >
-              {copy("Завершить ")}
+              {copy("Завершить")}
             </Button>
           )}
         </div>
@@ -137,7 +136,7 @@ export function SessionsPanel() {
           disabled={pending}
           onClick={() => setConfirm("others")}
         >
-          {copy("Завершить остальные сессии ")}
+          {copy("Завершить остальные сессии")}
         </Button>
       )}
       {confirm && (
@@ -154,7 +153,7 @@ export function SessionsPanel() {
               disabled={pending}
               onClick={() => revoke(confirm)}
             >
-              {copy("Подтвердить ")}
+              {copy("Подтвердить")}
             </Button>
             <Button
               variant="ghost"
@@ -162,7 +161,7 @@ export function SessionsPanel() {
               disabled={pending}
               onClick={() => setConfirm(null)}
             >
-              {copy("Отмена ")}
+              {copy("Отмена")}
             </Button>
           </div>
         </div>

@@ -1,8 +1,8 @@
 "use client";
 
 import { SearchPrioritySettings } from "./search-priority-settings";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function FieldSearchSettings({
@@ -37,7 +37,7 @@ export function FieldSearchSettings({
           </Label>
           <p className="text-xs text-muted-foreground">
             {copy(
-              "Поле учитывается в поиске по этой коллекции и в общем поиске, если доступно пользователю. ",
+              "Поле учитывается в поиске по этой коллекции и в общем поиске, если доступно пользователю.",
             )}
           </p>
         </div>
@@ -55,7 +55,7 @@ export function FieldSearchSettings({
           </Label>
           <p className="text-xs text-muted-foreground">
             {copy(
-              "GIN индекс помогает запросам от 3 символов на больших таблицах. Для полной пользы индексируйте и другие поля поиска. Индекс занимает место и замедляет запись. ",
+              "GIN индекс помогает запросам от 3 символов на больших таблицах. Для полной пользы индексируйте и другие поля поиска. Индекс занимает место и замедляет запись.",
             )}
           </p>
         </div>

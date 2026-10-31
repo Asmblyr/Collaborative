@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { requestErrorMessage, requestJson } from "@/lib/http-request";
 import type { Item, RelationPresentation } from "./types";
 
 export interface RelationRow {
@@ -53,14 +54,16 @@ export function useRelationPanel(endpoint: string, settings: string) {
           q: query.trim(),
           ...sort,
         });
-        fetch(`${endpoint}?${params}`, { signal: controller.signal })
-          .then(async (response) => {
-            const body = (await response.json()) as RelationResult & {
-              message?: string;
-            };
-            if (!response.ok)
-              throw new Error(body.message ?? "Не удалось загрузить связи");
-            if (controller.signal.aborted) return;
+        requestJson<RelationResult>(
+          `${endpoint}?${params}`,
+          "GET",
+          undefined,
+          controller.signal,
+        )
+          .then((body) => {
+            if (controller.signal.aborted) {
+              return;
+            }
             const lastPage = Math.max(
               1,
               Math.ceil(Number(body.page.total) / body.page.size),
@@ -76,9 +79,7 @@ export function useRelationPanel(endpoint: string, settings: string) {
           .catch((cause: unknown) => {
             if (!controller.signal.aborted) {
               setResult(null);
-              setError(
-                cause instanceof Error ? cause.message : "Ошибка соединения",
-              );
+              setError(requestErrorMessage(cause, "Ошибка соединения"));
               setLoaded(request);
             }
           });

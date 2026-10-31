@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import type { StoredFile } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -63,7 +63,7 @@ export function FileVisibility({
       </Select>
       <p className="text-xs text-muted-foreground">
         {copy(
-          "Изменение действует после сохранения. Отзыв ссылки прекращает новые скачивания; уже скачанный файл остаётся у получателя. ",
+          "Изменение действует после сохранения. Отзыв ссылки прекращает новые скачивания; уже скачанный файл остаётся у получателя.",
         )}
       </p>
       {file.visibility === "public" && file.status === "ready" && (
@@ -74,7 +74,7 @@ export function FileVisibility({
           disabled={disabled}
           onClick={() => void copyLink()}
         >
-          {copy("Копировать публичную ссылку ")}
+          {copy("Копировать публичную ссылку")}
         </Button>
       )}
       {message && (

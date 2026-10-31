@@ -138,7 +138,7 @@ export function FolderTableRow({
           </Button>
           {canDrop() && (
             <span className="text-xs text-primary">
-              {copy("В конец папки ")}
+              {copy("В конец папки")}
             </span>
           )}
           {(before || after) && (
@@ -202,14 +202,14 @@ export function FolderTableRow({
                     selectEditorAction(() => onCreateInFolder(folder.id))
                   }
                 >
-                  {copy("Создать коллекцию ")}
+                  {copy("Создать коллекцию")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() =>
                     selectEditorAction(() => onEditFolder(folder))
                   }
                 >
-                  {copy("Настроить ")}
+                  {copy("Настроить")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

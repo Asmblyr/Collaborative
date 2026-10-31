@@ -149,9 +149,9 @@ export function AssistantWidget() {
                     id={titleId}
                     tabIndex={-1}
                     className="truncate text-sm font-semibold outline-none"
-                    title={copy("Ассистент Asmblyr ")}
+                    title={`${copy("Ассистент Asmblyr")} `}
                   >
-                    {copy("Ассистент Asmblyr ")}
+                    {copy("Ассистент Asmblyr")}
                   </h2>
                   <p
                     id={descriptionId}

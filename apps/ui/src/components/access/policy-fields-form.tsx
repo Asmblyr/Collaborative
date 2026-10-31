@@ -59,10 +59,10 @@ export function PolicyFieldsForm({
       <div>
         <p className="font-medium">
           {collection.displayName || collection.name} ·{" "}
-          {copy(actionName[action])} {copy(" · поля ")}
+          {copy(actionName[action])} {copy("· поля")}
         </p>
         <p className="text-xs text-muted-foreground">
-          {copy("Эти поля будут доступны только для выбранного действия. ")}
+          {copy("Эти поля будут доступны только для выбранного действия.")}
         </p>
       </div>
       <div className="grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2">
@@ -90,7 +90,7 @@ export function PolicyFieldsForm({
             disabled={fields.length === 0}
             onClick={save}
           >
-            {copy("Применить поля ")}
+            {copy("Применить поля")}
           </Button>
         )}
         <Button

@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function InvitationForm() {
@@ -40,6 +40,7 @@ export function InvitationForm() {
         body: JSON.stringify({ token }),
       });
       if (!response.ok) {
+        setFromLink(false);
         setMessage(
           copy(
             "Ссылка недействительна или срок истёк. Попросите администратора выдать новую.",
@@ -78,13 +79,13 @@ export function InvitationForm() {
       {token.startsWith("asm_rec_") && (
         <p className="text-sm text-muted-foreground">
           {copy(
-            "Восстановление завершит старые сеансы и сбросит способы входа. После входа добавьте новый passkey или пароль. ",
+            "Восстановление завершит старые сеансы и сбросит способы входа. После входа добавьте новый passkey или пароль.",
           )}
         </p>
       )}
       <p className="text-sm text-muted-foreground">
         {copy(
-          "После входа настройте passkey или пароль, чтобы возвращаться в аккаунт. ",
+          "После входа настройте passkey или пароль, чтобы возвращаться в аккаунт.",
         )}
       </p>
       {message && (

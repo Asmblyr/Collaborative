@@ -19,6 +19,7 @@ import {
 import { CollectionStateFields } from "./collection-state-fields";
 import { CollectionTerms } from "@/components/terms/collection-terms";
 import { SchemaTranslationsEditor } from "./schema-translations-editor";
+import { showToast } from "@/components/ui/toast";
 import { useUiCopy } from "@/lib/ui-copy";
 import { requestErrorMessage, requestJson } from "@/lib/http-request";
 
@@ -73,7 +74,13 @@ export function CollectionSettingsForm({
     if (termsState.dirty || termsState.busy) return;
     const form = event.currentTarget as HTMLFormElement;
     if (!form.checkValidity()) {
-      setTab("state");
+      const invalid = form.querySelector<HTMLElement>(":invalid");
+      const targetTab = invalid
+        ?.closest<HTMLElement>("[data-settings-tab]")
+        ?.getAttribute("data-settings-tab");
+      if (targetTab) {
+        setTab(targetTab);
+      }
       requestAnimationFrame(() => form.reportValidity());
       return;
     }
@@ -96,6 +103,7 @@ export function CollectionSettingsForm({
             : {}),
         },
       );
+      showToast(copy("Настройки сохранены"), "success");
       onStateChange(false, false);
       router.refresh();
       onSaved();
@@ -123,14 +131,14 @@ export function CollectionSettingsForm({
               value="display"
               className="flex-1"
             >
-              {copy("Отображение ")}
+              {copy("Отображение")}
             </TabsTrigger>
             {collection.sourceKind !== "materialized-view" && (
               <TabsTrigger
                 value="state"
                 className="flex-1"
               >
-                {copy("Состояние ")}
+                {copy("Состояние")}
               </TabsTrigger>
             )}
             <TabsTrigger
@@ -142,6 +150,7 @@ export function CollectionSettingsForm({
           </TabsList>
           <TabsContent
             value="display"
+            data-settings-tab="display"
             forceMount
             className="space-y-6 data-[state=inactive]:hidden"
           >
@@ -177,6 +186,7 @@ export function CollectionSettingsForm({
           </TabsContent>
           <TabsContent
             value="mcp"
+            data-settings-tab="mcp"
             forceMount
             className="data-[state=inactive]:hidden"
           >
@@ -191,6 +201,7 @@ export function CollectionSettingsForm({
           {collection.sourceKind !== "materialized-view" && (
             <TabsContent
               value="state"
+              data-settings-tab="state"
               forceMount
               className="data-[state=inactive]:hidden"
             >

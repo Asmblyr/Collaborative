@@ -43,7 +43,7 @@ export default async function OAuthInteractionPage({
           {copy("Не удалось продолжить вход")}
         </h1>
         <p className="mt-3 text-muted-foreground">
-          {copy("Вернитесь в приложение и начните вход заново. ")}
+          {copy("Вернитесь в приложение и начните вход заново.")}
         </p>
       </main>
     );

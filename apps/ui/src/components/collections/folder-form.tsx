@@ -1,12 +1,12 @@
 "use client";
 
-import { useEditorDraft } from "./editor-lifecycle";
+import { useEditorDraft } from "@/components/ui/editor-lifecycle";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import type { CollectionFolder } from "@/components/items/types";
 import { useUiCopy } from "@/lib/ui-copy";
 import { requestErrorMessage, requestJson } from "@/lib/http-request";
@@ -95,7 +95,7 @@ export function FolderForm({
       {folder && (
         <p className="text-sm text-muted-foreground">
           {copy(
-            "Папка упорядочивает коллекции в интерфейсе. Права доступа задаются для самих коллекций. ",
+            "Папка упорядочивает коллекции в интерфейсе. Права доступа задаются для самих коллекций.",
           )}
         </p>
       )}
@@ -120,7 +120,7 @@ export function FolderForm({
           disabled={pending}
           onClick={onCancel}
         >
-          {copy("Отмена ")}
+          {copy("Отмена")}
         </Button>
         {folder && (
           <Button
@@ -130,7 +130,7 @@ export function FolderForm({
             onClick={remove}
             className="ml-auto text-destructive hover:text-destructive"
           >
-            {copy("Удалить папку ")}
+            {copy("Удалить папку")}
           </Button>
         )}
       </div>

@@ -49,7 +49,7 @@ export default async function FilesPage({
         role="alert"
         className="text-sm text-destructive"
       >
-        {copy("Не удалось загрузить файлы. Обновите страницу. ")}
+        {copy("Не удалось загрузить файлы. Обновите страницу.")}
       </p>
     );
   }

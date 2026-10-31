@@ -89,7 +89,7 @@ export function contextLabel(
 ): string {
   const label = pageContextLabel(context, collectionDisplayName, copy);
   return dataAccess?.enabled === false
-    ? `${label}${copy(" · без доступа к данным")}`
+    ? `${label}${` ${copy("· без доступа к данным")}`}`
     : label;
 }
 
@@ -111,10 +111,10 @@ function pageContextLabel(
     return `${title} · ${copy("Запись")} ${context.record.id}`;
   }
   if (context.table?.editorOpen) {
-    return `${title}${copy(" · открыт редактор")}`;
+    return `${title}${` ${copy("· открыт редактор")}`}`;
   }
   if (context.table?.selectedCount) {
-    return `${title}${copy(" · выбрано {{value0}}", { value0: context.table.selectedCount })}`;
+    return `${title}${` ${copy("· выбрано {{value0}}", { value0: context.table.selectedCount })}`}`;
   }
   return title;
 }

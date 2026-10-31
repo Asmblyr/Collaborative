@@ -5,6 +5,7 @@ export function accessRequest<T>(
   path: string,
   method = "GET",
   body?: unknown,
+  signal?: AbortSignal,
 ): Promise<T> {
-  return requestJson<T>(`/api${path}`, method, body);
+  return requestJson<T>(`/api${path}`, method, body, signal);
 }

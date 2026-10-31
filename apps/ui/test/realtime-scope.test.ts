@@ -6,7 +6,7 @@ import type {
   RealtimeEvent,
 } from "@asmblyr-collaborative/contracts";
 import { asmblyr } from "../src/lib/asmblyr";
-import { subscribeRealtime } from "../src/lib/realtime-scope";
+import { getRealtimeLocks, subscribeRealtime } from "../src/lib/realtime-scope";
 
 const scope: PresenceScope = {
   kind: "record",
@@ -41,10 +41,16 @@ function setup(t: TestContext) {
   const close = t.mock.fn();
   const unsubscribe = t.mock.fn();
   const unsubscribeState = t.mock.fn();
+  const locks = {
+    acquire: t.mock.fn(async () => ({})),
+    refresh: t.mock.fn(async () => ({})),
+    release: t.mock.fn(async () => undefined),
+  };
   const connect = t.mock.method(asmblyr.realtime, "connect", () => ({
     get state() {
       return state;
     },
+    locks,
     subscribe(_scope: PresenceScope, listener: typeof receive) {
       receive = listener;
       return unsubscribe;
@@ -61,6 +67,7 @@ function setup(t: TestContext) {
   return {
     close,
     connect,
+    locks,
     unsubscribe,
     unsubscribeState,
     emit: (event: RealtimeEvent) => receive(event),
@@ -159,4 +166,13 @@ test("the last subscriber closes the shared stream and a new subscription starts
   const next = live.subscribe();
   assert.equal(live.connect.mock.callCount(), 2);
   assert.deepEqual(next.listener.mock.calls[0].arguments, [null, "connected"]);
+});
+
+test("field locks share the active scope connection and clear after the last subscriber", (t) => {
+  const live = setup(t);
+  assert.equal(getRealtimeLocks(scope), null);
+  const sub = live.subscribe();
+  assert.equal(getRealtimeLocks(scope), live.locks);
+  sub.stop();
+  assert.equal(getRealtimeLocks(scope), null);
 });

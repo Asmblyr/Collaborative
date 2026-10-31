@@ -1,9 +1,9 @@
 "use client";
 
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import { ApplicationAccess } from "./application-access";
 import { ApplicationPermissions } from "./application-permissions";
 import {
@@ -29,6 +29,8 @@ interface Props {
   users: OAuthUser[];
   existing: boolean;
   portal: HTMLDialogElement | null;
+  tab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 export function ApplicationFields({
@@ -38,6 +40,8 @@ export function ApplicationFields({
   users,
   existing,
   portal,
+  tab,
+  onTabChange,
 }: Props) {
   const copy = useUiCopy();
 
@@ -49,7 +53,9 @@ export function ApplicationFields({
   }
   return (
     <Tabs
-      defaultValue="general"
+      defaultValue={tab ? undefined : "general"}
+      value={tab}
+      onValueChange={onTabChange}
       className="space-y-5"
     >
       <TabsList>
@@ -103,16 +109,16 @@ export function ApplicationFields({
               </SelectTrigger>
               <SelectContent container={portal}>
                 <SelectItem value="confidential">
-                  {copy("Серверное · с секретом ")}
+                  {copy("Серверное · с секретом")}
                 </SelectItem>
                 <SelectItem value="public">
-                  {copy("Публичное · без секрета, PKCE ")}
+                  {copy("Публичное · без секрета, PKCE")}
                 </SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Для LavinMQ выберите публичное. PKCE обязателен для обоих типов. ",
+                "Для LavinMQ выберите публичное. PKCE обязателен для обоих типов.",
               )}
             </p>
           </div>
@@ -130,7 +136,7 @@ export function ApplicationFields({
             />
             <p className="text-xs text-muted-foreground">
               {copy(
-                "По одному точному адресу на строку. HTTP разрешён только для localhost. ",
+                "По одному точному адресу на строку. HTTP разрешён только для localhost.",
               )}
             </p>
           </div>
@@ -140,7 +146,7 @@ export function ApplicationFields({
                 {copy("Приложение включено")}
               </Label>
               <p className="mt-1 text-xs text-muted-foreground">
-                {copy("Отключение запрещает новые входы и обмен кодов. ")}
+                {copy("Отключение запрещает новые входы и обмен кодов.")}
               </p>
             </div>
             <Switch
@@ -163,7 +169,7 @@ export function ApplicationFields({
             <p className="font-medium">{copy("Единый профиль")}</p>
             <p className="mt-2 text-muted-foreground">
               {copy(
-                "ID, почта, имя и изображение. Набор одинаков для всех приложений. Пароль и доступ к данным Asmblyr не передаются. ",
+                "ID, почта, имя и изображение. Набор одинаков для всех приложений. Пароль и доступ к данным Asmblyr не передаются.",
               )}
             </p>
           </div>
@@ -210,7 +216,7 @@ export function ApplicationFields({
         >
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Для обычного входа оставьте пустым. Если сервис проверяет JWT и права в нём, укажите его настройки ниже. ",
+              "Для обычного входа оставьте пустым. Если сервис проверяет JWT и права в нём, укажите его настройки ниже.",
             )}
           </p>
           <div className="space-y-2">
@@ -238,7 +244,7 @@ export function ApplicationFields({
           )}
           <p className="rounded-lg border p-4 text-xs leading-relaxed text-muted-foreground">
             {copy(
-              "Токены действуют 5 минут. Уже выданный JWT может приниматься сервисом до истечения этого срока. Для новых прав или отзыва доступа повторный вход обязателен. ",
+              "Токены действуют 5 минут. Уже выданный JWT может приниматься сервисом до истечения этого срока. Для новых прав или отзыва доступа повторный вход обязателен.",
             )}
           </p>
         </fieldset>

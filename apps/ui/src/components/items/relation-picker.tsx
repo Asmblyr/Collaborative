@@ -47,7 +47,7 @@ export function RelationPicker({
       <div className="space-y-1.5">
         <p className="break-all text-sm text-muted-foreground">
           {value || copy("Не задано")}{" "}
-          {copy(" · Нет доступа к связанной коллекции ")}
+          {copy("· Нет доступа к связанной коллекции")}
         </p>
         {value && field.nullable && !field.required && (
           <Button
@@ -57,7 +57,7 @@ export function RelationPicker({
             disabled={disabled}
             onClick={() => onChange("")}
           >
-            {copy("Отвязать ")}
+            {copy("Отвязать")}
           </Button>
         )}
       </div>

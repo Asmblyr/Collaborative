@@ -9,7 +9,7 @@ import type {
 import { ItemForm } from "@/components/items/item-form";
 import type { Collection } from "@/components/items/types";
 import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
-import { useEditorState } from "@/components/collections/editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { ProfileAvatar } from "./profile-avatar";

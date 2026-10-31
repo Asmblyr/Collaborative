@@ -144,7 +144,7 @@ export function SettingsNavigation({
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/settings">
-                {copy("Личные настройки профиля ↗ ")}
+                {copy("Личные настройки профиля ↗")}
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -180,7 +180,7 @@ export function SettingsNavigation({
             href="/settings"
             className="text-xs text-muted-foreground hover:text-foreground"
           >
-            {copy("Личные настройки профиля ↗ ")}
+            {copy("Личные настройки профиля ↗")}
           </Link>
         </div>
       </div>

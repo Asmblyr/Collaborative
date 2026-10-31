@@ -184,7 +184,7 @@ export function ItemFilterValue({
   if (hasNoValue(condition.op)) return null;
   const scalar = typeof condition.value === "string" ? condition.value : "";
   const values = Array.isArray(condition.value) ? condition.value : [];
-  const label = copy("Значение для ") + field.label;
+  const label = `${copy("Значение для")} ` + field.label;
   const choiceField = ["eq", "neq", "in", "notIn"].includes(condition.op)
     ? field
     : { ...field, options: undefined };
@@ -263,7 +263,7 @@ export function ItemFilterValue({
           <p className="text-sm font-medium">{field.label}</p>
           {multiple && !range && (
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {copy("Каждое значение отдельно, до 20 значений. ")}
+              {copy("Каждое значение отдельно, до 20 значений.")}
             </p>
           )}
         </div>
@@ -317,14 +317,14 @@ export function ItemFilterValue({
                   field={field}
                   value={value}
                   onChange={(next) => updateAt(index, next)}
-                  label={copy("Значение ") + (index + 1)}
+                  label={`${copy("Значение")} ` + (index + 1)}
                   autoFocus={index === Math.max(0, values.length - 1)}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={copy("Удалить значение ") + (index + 1)}
+                  aria-label={`${copy("Удалить значение")} ` + (index + 1)}
                   disabled={values.length === 0}
                   onClick={() =>
                     onChange(values.filter((_, position) => position !== index))
@@ -344,7 +344,7 @@ export function ItemFilterValue({
               disabled={values.length >= 20}
               onClick={() => onChange([...values, ""])}
             >
-              <Plus aria-hidden="true" /> {copy(" Ещё значение ")}
+              <Plus aria-hidden="true" /> {copy("Ещё значение")}
             </Button>
           </div>
         ) : (
@@ -362,7 +362,7 @@ export function ItemFilterValue({
             size="sm"
             onClick={() => setOpen(false)}
           >
-            {copy("Готово ")}
+            {copy("Готово")}
           </Button>
         </div>
       </PopoverContent>

@@ -9,22 +9,26 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
 import { EditorDiscardConfirmation } from "./editor-discard-confirmation";
 import { useEditorNavigationGuard } from "./use-editor-navigation-guard";
 import { EditorLifecycleContext, type EditorState } from "./editor-lifecycle";
 import { useUiCopy } from "@/lib/ui-copy";
 
-interface EditorDialogProps {
+export interface EditorDialogProps {
   open: boolean;
   title: string;
   eyebrow?: string;
   size?: "default" | "relation" | "junction" | "record" | "wide";
+  nested?: boolean;
   contentKey?: string;
   busy?: boolean;
   hasUnsavedChanges?: boolean;
   navigation?: ReactNode;
   onClose: (reason?: "navigation") => void;
-  footer?: ReactNode | ((close: () => void) => ReactNode);
+  footer?:
+    | ReactNode
+    | ((requestClose: () => void, close: () => void) => ReactNode);
   children: (
     portalContainer: HTMLDialogElement | null,
     close: () => void,
@@ -38,6 +42,7 @@ export function EditorDialog({
   title,
   eyebrow,
   size = "default",
+  nested = false,
   contentKey,
   busy: parentBusy = false,
   hasUnsavedChanges: parentDirty = false,
@@ -52,14 +57,19 @@ export function EditorDialog({
   const registerState = useCallback((id: string, state: EditorState | null) => {
     setForms((current) => {
       const next = { ...current };
-      if (state) next[id] = state;
-      else delete next[id];
+      if (state) {
+        next[id] = state;
+      } else {
+        delete next[id];
+      }
       return next;
     });
   }, []);
+
   const busy = parentBusy || Object.values(forms).some((form) => form.busy);
   const hasUnsavedChanges =
     parentDirty || Object.values(forms).some((form) => form.dirty);
+
   const [element, setElement] = useState<HTMLDialogElement | null>(null);
   const [closing, setClosing] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -69,14 +79,17 @@ export function EditorDialog({
   const titleId = useId();
   const leaveRef = useRef<(() => void) | null>(null);
   const navigatingRef = useRef(false);
+
   const confirmNavigation = useCallback((resume: () => void) => {
     leaveRef.current = resume;
     setConfirmDiscard(true);
   }, []);
+
   const discardForNavigation = useCallback(() => {
     navigatingRef.current = true;
     element?.close();
   }, [element]);
+
   useEditorNavigationGuard(
     element,
     open && !closing,
@@ -87,7 +100,9 @@ export function EditorDialog({
   );
 
   useEffect(() => {
-    if (!element) return;
+    if (!element) {
+      return;
+    }
     if (open && !element.open) {
       navigatingRef.current = false;
       openerRef.current =
@@ -96,25 +111,35 @@ export function EditorDialog({
           : null;
       element.showModal();
     }
-    if (!open && element.open) element.close();
+    if (!open && element.open) {
+      element.close();
+    }
   }, [open, element]);
 
   useEffect(() => {
-    if (open && contentRef.current) contentRef.current.scrollTop = 0;
+    if (open && contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
   }, [contentKey, open]);
 
   useEffect(() => {
-    if (!closing || !element) return;
+    if (!closing || !element) {
+      return;
+    }
     // Also finish if an animation is interrupted or unavailable.
     const timeout = window.setTimeout(() => element.close(), 220);
     return () => window.clearTimeout(timeout);
   }, [closing, element]);
 
   function close() {
-    if (!element?.open || closing) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    if (!element?.open || closing) {
+      return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       element.close();
-    else setClosing(true);
+    } else {
+      setClosing(true);
+    }
   }
 
   function closed() {
@@ -132,8 +157,9 @@ export function EditorDialog({
         opener?.isConnected &&
         (document.activeElement === document.body ||
           element?.contains(document.activeElement))
-      )
+      ) {
         opener.focus({ preventScroll: true });
+      }
     });
   }
 
@@ -142,11 +168,15 @@ export function EditorDialog({
   }
 
   function requestLeave(leave: () => void) {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     if (hasUnsavedChanges) {
       leaveRef.current = leave;
       setConfirmDiscard(true);
-    } else leave();
+    } else {
+      leave();
+    }
   }
 
   function continueEditing() {
@@ -163,6 +193,7 @@ export function EditorDialog({
       className={`editor-dialog ${size === "default" ? "" : `editor-dialog--${size}`} overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-2xl`}
       aria-labelledby={titleId}
       data-closing={closing || undefined}
+      data-nested={nested || undefined}
       onKeyDown={(event) => {
         // Handle Escape before the native CloseWatcher: repeated Escape can
         // otherwise produce a non-cancelable close and discard a draft.
@@ -171,29 +202,41 @@ export function EditorDialog({
           event.defaultPrevented ||
           !(event.target instanceof Element) ||
           event.target.closest("dialog") !== event.currentTarget
-        )
+        ) {
           return;
+        }
         event.preventDefault();
         event.stopPropagation();
-        if (confirmDiscard) continueEditing();
-        else requestClose();
+        if (confirmDiscard) {
+          continueEditing();
+        } else {
+          requestClose();
+        }
       }}
       onCancel={(event) => {
-        if (event.target !== event.currentTarget) return;
+        if (event.target !== event.currentTarget) {
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
-        if (confirmDiscard) continueEditing();
-        else requestClose();
+        if (confirmDiscard) {
+          continueEditing();
+        } else {
+          requestClose();
+        }
       }}
       onAnimationEnd={(event) => {
         if (
           event.target === event.currentTarget &&
           event.animationName === "editor-dialog-exit"
-        )
+        ) {
           element?.close();
+        }
       }}
       onClose={(event) => {
-        if (event.target !== event.currentTarget) return;
+        if (event.target !== event.currentTarget) {
+          return;
+        }
         event.stopPropagation();
         closed();
       }}
@@ -226,25 +269,29 @@ export function EditorDialog({
             onClick={requestClose}
             aria-label={copy("Закрыть редактор")}
           >
-            {copy("Закрыть ")}
+            {copy("Закрыть")}
           </Button>
         </div>
-        {open && navigation && (
-          <div className="shrink-0 border-b px-6 pb-4 pt-3">{navigation}</div>
-        )}
-        <div
-          ref={contentRef}
-          className="min-h-0 flex-1 overflow-y-auto px-6 py-6"
-        >
-          <EditorLifecycleContext.Provider value={registerState}>
-            {open && children(element, close, requestClose, requestLeave)}
-          </EditorLifecycleContext.Provider>
-        </div>
-        {open && footer && (
-          <div className="shrink-0 border-t bg-card px-6 py-4">
-            {typeof footer === "function" ? footer(close) : footer}
+        <PortalContainerContext.Provider value={element}>
+          {open && navigation && (
+            <div className="shrink-0 border-b px-6 pb-4 pt-3">{navigation}</div>
+          )}
+          <div
+            ref={contentRef}
+            className="min-h-0 flex-1 overflow-y-auto px-6 py-6"
+          >
+            <EditorLifecycleContext.Provider value={registerState}>
+              {open && children(element, close, requestClose, requestLeave)}
+            </EditorLifecycleContext.Provider>
           </div>
-        )}
+          {open && footer && (
+            <div className="shrink-0 border-t bg-card px-6 py-4">
+              {typeof footer === "function"
+                ? footer(requestClose, close)
+                : footer}
+            </div>
+          )}
+        </PortalContainerContext.Provider>
       </div>
       {confirmDiscard && (
         <EditorDiscardConfirmation
@@ -253,8 +300,11 @@ export function EditorDialog({
             const leave = leaveRef.current;
             leaveRef.current = null;
             setConfirmDiscard(false);
-            if (leave) leave();
-            else close();
+            if (leave) {
+              leave();
+            } else {
+              close();
+            }
           }}
         />
       )}

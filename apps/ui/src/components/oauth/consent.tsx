@@ -1,12 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
 const APPROVAL_DELAY_SECONDS = 2;
+
+function callbackOriginLabel(redirectUri: string): string {
+  try {
+    const parsed = new URL(redirectUri);
+    if (parsed.origin && parsed.origin !== "null") {
+      return parsed.origin;
+    }
+    return parsed.host
+      ? `${parsed.protocol}//${parsed.host}${parsed.pathname}`
+      : `${parsed.protocol}${parsed.pathname}`;
+  } catch {
+    return redirectUri;
+  }
+}
 
 export interface ConsentDetails {
   uid: string;
@@ -86,8 +101,7 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            {copy("Войти в ")}
-            {details.name}
+            {copy("Войти в")} {details.name}
           </h1>
           {details.description && (
             <p className="mt-2 text-sm text-muted-foreground">
@@ -95,25 +109,35 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
             </p>
           )}
         </div>
-        <div className="rounded-xl bg-muted/60 p-4">
-          <p className="text-xs text-muted-foreground">{copy("Ваш аккаунт")}</p>
-          <p className="mt-1 break-all font-medium">{details.email}</p>
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 p-4">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">
+              {copy("Ваш аккаунт")}
+            </p>
+            <p className="mt-1 break-all font-medium">{details.email}</p>
+          </div>
+          <Link
+            href={`/login?reauth=1&next=${encodeURIComponent(`/oauth/interaction/${encodeURIComponent(details.uid)}`)}`}
+            className="shrink-0 text-xs font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {copy("Сменить аккаунт")}
+          </Link>
         </div>
         {details.allowed ? (
           <div className="space-y-3 text-sm">
             <p>
               {copy(
-                "Приложение получит ваш ID, почту, имя и изображение профиля, если они заполнены. ",
+                "Приложение получит ваш ID, почту, имя и изображение профиля, если они заполнены.",
               )}
             </p>
             <p className="text-muted-foreground">
               {copy(
-                "Это подтверждение личности. Доступ к коллекциям Asmblyr приложению не предоставляется. ",
+                "Это подтверждение личности. Доступ к коллекциям Asmblyr приложению не предоставляется.",
               )}
             </p>
             <p className="text-muted-foreground">
               {copy(
-                "Разрешение сохранится для следующих входов. Отозвать его можно в настройках профиля, на вкладке «Приложения». ",
+                "Разрешение сохранится для следующих входов. Отозвать его можно в настройках профиля, на вкладке «Приложения».",
               )}
             </p>
             {serviceScopes.length > 0 && (
@@ -140,14 +164,14 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
             className="text-sm"
           >
             {copy(
-              "Вам пока не предоставлен доступ к этому приложению. Обратитесь к администратору. ",
+              "Вам пока не предоставлен доступ к этому приложению. Обратитесь к администратору.",
             )}
           </p>
         )}
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
           <ArrowUpRight className="size-3 shrink-0" />
           <span className="break-all">
-            {new URL(details.redirectUri).origin}
+            {callbackOriginLabel(details.redirectUri)}
           </span>
         </p>
         {error && (
@@ -165,7 +189,7 @@ export function OAuthConsent({ details }: { details: ConsentDetails }) {
             onClick={() => complete(false)}
             className="flex-1"
           >
-            {copy("Отмена ")}
+            {copy("Отмена")}
           </Button>
           {details.allowed && (
             <Button

@@ -1,8 +1,8 @@
 "use client";
 
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -34,7 +34,7 @@ export function CollectionNameField({
       />
       <p className="text-xs text-muted-foreground">
         {copy(
-          "Название в меню, списках и заголовках. Если оставить пустым, используется техническое имя. ",
+          "Название в меню, списках и заголовках. Если оставить пустым, используется техническое имя.",
         )}
       </p>
     </div>
@@ -61,12 +61,12 @@ export function CollectionVisibilityField({
           className="text-sm text-muted-foreground"
         >
           {copy(
-            "Убирает коллекцию из меню данных и глобального поиска. Подходит для промежуточных и служебных коллекций. ",
+            "Убирает коллекцию из меню данных и глобального поиска. Подходит для промежуточных и служебных коллекций.",
           )}
         </p>
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Связи и доступ по прямой ссылке продолжают работать с учётом прав. Администратор видит коллекцию в редакторе структуры. ",
+            "Связи и доступ по прямой ссылке продолжают работать с учётом прав. Администратор видит коллекцию в редакторе структуры.",
           )}
         </p>
       </div>
@@ -108,7 +108,7 @@ export function CollectionMcpFields({
             className="text-sm text-muted-foreground"
           >
             {copy(
-              "Ассистент сможет изучать структуру, искать и читать записи в пределах прав пользователя. ",
+              "Ассистент сможет изучать структуру, искать и читать записи в пределах прав пользователя.",
             )}
           </p>
         </div>
@@ -138,7 +138,7 @@ export function CollectionMcpFields({
         />
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Помогает ассистенту понять назначение данных. Не указывайте секреты и персональные данные. ",
+            "Помогает ассистенту понять назначение данных. Не указывайте секреты и персональные данные.",
           )}
         </p>
       </div>
@@ -148,7 +148,7 @@ export function CollectionMcpFields({
           className="rounded-lg bg-muted p-3 text-sm text-muted-foreground"
         >
           {copy(
-            "Структура и записи этой коллекции не будут доступны инструментам ассистента, включая поиск через связи. Описание сохранится до следующего включения. ",
+            "Структура и записи этой коллекции не будут доступны инструментам ассистента, включая поиск через связи. Описание сохранится до следующего включения.",
           )}
         </p>
       )}

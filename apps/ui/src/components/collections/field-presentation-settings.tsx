@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import {
   Select,
@@ -184,7 +184,7 @@ export function FieldPresentationSettings({
         />
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Меньшее число — выше. При одинаковом значении сохраняется порядок полей. ",
+            "Меньшее число — выше. При одинаковом значении сохраняется порядок полей.",
           )}
         </p>
       </div>

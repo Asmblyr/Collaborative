@@ -16,7 +16,7 @@ export function useTableViews({
   collection: Collection;
   userId: string;
   workspaceId?: string;
-  setMessage: (message: string) => void;
+  setMessage: (message: string, variant?: "success" | "error") => void;
 }) {
   const copy = useUiCopy();
 
@@ -39,7 +39,9 @@ export function useTableViews({
   function reloadViews() {
     void apiRequest<TableView[]>(viewEndpoint)
       .then(setViews)
-      .catch(() => setMessage(copy("Не удалось обновить список видов")));
+      .catch(() =>
+        setMessage(copy("Не удалось обновить список видов"), "error"),
+      );
   }
   return { views, reloadViews };
 }

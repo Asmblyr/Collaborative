@@ -7,7 +7,7 @@ import type { MaterializedViewCandidate } from "@asmblyr-collaborative/contracts
 import type { Collection, CollectionFolder } from "@/components/items/types";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,7 +19,7 @@ import { CollectionDisplayFields } from "./collection-display-form";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
-import { useEditorState } from "./editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 
 export function MaterializedConnectForm({
   view,

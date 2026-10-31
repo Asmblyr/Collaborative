@@ -21,7 +21,7 @@ export default async function SetupPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Создайте первого суперпользователя. После этого повторная настройка будет закрыта. ",
+              "Создайте первого суперпользователя. После этого повторная настройка будет закрыта.",
             )}
           </p>
         </div>
@@ -30,7 +30,7 @@ export default async function SetupPage() {
             role="alert"
             className="text-sm text-destructive"
           >
-            {copy("Core API недоступен. ")}
+            {copy("Core API недоступен.")}
           </p>
         ) : !status.configured ? (
           <p
@@ -38,7 +38,7 @@ export default async function SetupPage() {
             className="text-sm text-destructive"
           >
             {copy(
-              "Установите ASMBLYR_SETUP_TOKEN в конфигурации Core и перезапустите сервис. ",
+              "Установите ASMBLYR_SETUP_TOKEN в конфигурации Core и перезапустите сервис.",
             )}
           </p>
         ) : (

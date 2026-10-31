@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, CircleCheck, Database, Hash, Type } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { useUiCopy } from "@/lib/ui-copy";
 import { ConfiguredFieldLayout } from "./configured-field-layout";
 import { inputValue } from "./item-input-values";
@@ -62,7 +62,7 @@ export function MaterializedRecordCard({
         className="gap-1.5 text-muted-foreground"
       >
         <Database aria-hidden />
-        {copy("Представление")} · {copy("Только просмотр ")}
+        {copy("Представление")} · {copy("Только просмотр")}
       </Badge>
       <ConfiguredFieldLayout
         fields={visible.filter((field) => !field.presentation?.rules?.hidden)}

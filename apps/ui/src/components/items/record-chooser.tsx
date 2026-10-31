@@ -237,7 +237,7 @@ export function RecordChooser({
               role="status"
               className="p-3 text-sm text-muted-foreground"
             >
-              {copy("Загрузка… ")}
+              {copy("Загрузка…")}
             </p>
           ) : items.error ? (
             <div
@@ -251,7 +251,7 @@ export function RecordChooser({
                 variant="ghost"
                 onClick={items.retry}
               >
-                {copy("Повторить ")}
+                {copy("Повторить")}
               </Button>
             </div>
           ) : !options.length ? (
@@ -388,7 +388,7 @@ export function RecordChooser({
                 }}
               >
                 <Plus className="size-4" />
-                {copy("Создать запись ")}
+                {copy("Создать запись")}
               </Button>
             )
           )}

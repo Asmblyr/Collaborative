@@ -29,26 +29,24 @@ export function AssistantUsageSummary({
       aria-label={copy("Расход за сообщение")}
     >
       <p className="break-words">
-        {model} · {seconds} {copy(" с ")}
+        {model} · {seconds} {copy("с")}
       </p>
       <p>
-        {copy("Вызовы модели: ")}
-        {summary.modelCalls} {copy(" · инструментов: ")}
+        {copy("Вызовы модели:")} {summary.modelCalls} {copy("· инструментов:")}{" "}
         {summary.toolCalls}
         {summary.toolErrors > 0 &&
-          copy(" · ошибок инструментов: {{value0}}", {
+          ` ${copy("· ошибок инструментов: {{value0}}", {
             value0: summary.toolErrors,
-          })}
+          })}`}
       </p>
       <p className="tabular-nums">
-        {copy("Токены: вход ")}
-        {usageLabel(summary, "inputTokens", copy.locale)} {copy(" · выход")}{" "}
-        {usageLabel(summary, "outputTokens", copy.locale)}
+        {copy("Токены: вход")} {usageLabel(summary, "inputTokens", copy.locale)}{" "}
+        {copy("· выход")} {usageLabel(summary, "outputTokens", copy.locale)}
       </p>
       {partial && (
         <p>
           {copy(
-            "Расход известен не полностью. «≥» — сумма известных значений, «—» — нет данных. ",
+            "Расход известен не полностью. «≥» — сумма известных значений, «—» — нет данных.",
           )}
         </p>
       )}
