@@ -54,33 +54,60 @@ export function SystemCollectionList({
                     {copy("Поля")}: {collection.fields.length}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={
-                        !collection.fields.some((entry) => !entry.managed)
-                      }
-                      onClick={() =>
-                        setSelection({
-                          kind: "records",
-                          collection: collection.name,
-                        })
-                      }
-                    >
-                      {copy("Дополнительные данные")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setSelection({
-                          kind: "field",
-                          collection: collection.name,
-                        })
-                      }
-                    >
-                      {copy("Добавить поле")}
-                    </Button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {collection.name === "users" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setSelection({
+                              kind: "virtual",
+                              collection: "users",
+                            })
+                          }
+                        >
+                          {copy("Виртуальное поле")}
+                        </Button>
+                      )}
+                      {collection.name === "users" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setSelection({ kind: "form", collection: "users" })
+                          }
+                        >
+                          {copy("Форма профиля")}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={
+                          !collection.fields.some((entry) => !entry.managed)
+                        }
+                        onClick={() =>
+                          setSelection({
+                            kind: "records",
+                            collection: collection.name,
+                          })
+                        }
+                      >
+                        {copy("Дополнительные данные")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setSelection({
+                            kind: "field",
+                            collection: collection.name,
+                          })
+                        }
+                      >
+                        {copy("Добавить поле")}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
                 {isExpanded && (
@@ -102,14 +129,18 @@ export function SystemCollectionList({
                         }
                         onEditField={(name) =>
                           setSelection({
-                            kind: "field",
+                            kind: name.startsWith("@display:")
+                              ? "virtual"
+                              : "field",
                             collection: collection.name,
                             field: name,
                           })
                         }
                         onDeleteField={(name) =>
                           setSelection({
-                            kind: "delete",
+                            kind: name.startsWith("@display:")
+                              ? "virtual"
+                              : "delete",
                             collection: collection.name,
                             field: name,
                           })

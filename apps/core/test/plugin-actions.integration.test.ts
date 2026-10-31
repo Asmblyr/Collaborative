@@ -189,6 +189,6 @@ test("HTTP and assistant/internal MCP use one calculation; drafts recheck sessio
   );
   assert.equal(
     (await app.inject({ method: "GET", url: "/mcp", headers })).statusCode,
-    404,
+    401,
   );
 });

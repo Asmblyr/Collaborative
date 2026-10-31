@@ -2,7 +2,11 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
-import { translateCopy } from "@asmblyr-collaborative/contracts/translations";
+import {
+  pluralizeCopy,
+  translateCopy,
+  type PluralForms,
+} from "@asmblyr-collaborative/contracts/translations";
 
 /** Translate application-owned copy, keeping user labels and values untouched. */
 export function useUiCopy() {
@@ -12,7 +16,14 @@ export function useUiCopy() {
       Object.assign(
         (source: string, values?: Record<string, unknown>) =>
           translateCopy(source, locale, values),
-        { locale },
+        {
+          locale,
+          plural: (
+            count: number,
+            forms: PluralForms,
+            values?: Record<string, unknown>,
+          ) => pluralizeCopy(count, forms, locale, values),
+        },
       ),
     [locale],
   );

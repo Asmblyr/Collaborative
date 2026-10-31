@@ -1,7 +1,7 @@
 import type { Collection } from "../collections/types.js";
 import type { Knex } from "knex";
 import { resolveFilterField } from "../items/filter-fields.js";
-import type { Access } from "../permissions/access.js";
+import { grantFor, type Access } from "../permissions/access.js";
 import { relationDescriptions } from "./relation-description.js";
 import type { CollectionData } from "./collection-data.js";
 import { aggregateOperationsFor } from "./aggregate-fields.js";
@@ -103,6 +103,21 @@ export async function describeCollection(
             ? { options: field.presentation.options }
             : {}),
           readableValue: data.schema.fields.has(field.name),
+          writable: Object.fromEntries(
+            ["create", "update"].map((action) => {
+              const grant = grantFor(
+                access,
+                name,
+                action as "create" | "update",
+              );
+              return [
+                action,
+                Boolean(
+                  grant && (grant.includes("*") || grant.includes(field.name)),
+                ),
+              ];
+            }),
+          ),
           ...(reference ? { relation: reference } : {}),
         };
       }),

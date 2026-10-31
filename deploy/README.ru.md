@@ -41,6 +41,10 @@ Compose запускает миграции отдельным коротким 
 Next не проксирует API. UI получает только внутренний `CORE_URL` и общий
 `SESSION_COOKIE_PREFIX`, без секретов PostgreSQL, S3 и провайдеров.
 Если меняете префикс cookies, задайте `SESSION_COOKIE_PREFIX` в окружении Compose.
+
+Опциональный Core `SESSION_COOKIE_DOMAIN` (`sessionCookieDomain` в Helm) делает основную browser cookie общей для явно доверенных продуктов на родительском домене. По умолчанию cookie host-only. Используйте HTTPS и регистрируемый родительский домен, не public suffix: все получающие поддомены и серверы имеют доступ к credential. Имена собственных независимых сессий должны различаться. Второй продукт проверяет сессию Core и связывает точный subject со своим аккаунтом и ACL; cookie не объединяет хранилища или права администратора. Cookie испытаний passkey/SSO остаются host-only. При смене хоста нужно один раз войти на новом origin; сессии БД не отзываются. См. [вход](../docs/ru/features/identity.md).
+
+`AUTH_UI_ALIASES` (origins через запятую; в Helm `publicUrlAliases`) перенаправляет настроенные старые хосты на `AUTH_UI_URL` до авторизации. Все пути alias, включая страницы, направляйте на HTTP-порт Core. GET/HEAD сохраняют исходные путь и query во временном redirect. Изменяющие запросы получают `421 CANONICAL_ORIGIN_REQUIRED`; API-клиенты используют canonical origin. Cookie и token не переносятся на новый хост, forwarded host headers не выбирают адрес перехода.
 Для production закрепляйте **оба** образа одной версии по digest.
 
 ## Kubernetes и Helm
@@ -193,3 +197,10 @@ docker compose --env-file /private/local.env -p asmblyr-local -f deploy/local/co
 Адрес по умолчанию `http://localhost:3300`. Для остановки без удаления данных
 используйте `down` без `-v`. Эксплуатационные сценарии и копирование описаны в
 [руководстве эксплуатации](../docs/ru/development/operations.md).
+
+Установка раздельных образов, PostgreSQL и локального ingress в Docker Desktop
+kind описана в [руководстве Kubernetes](local/kubernetes/README.ru.md).
+
+История миграций сохраняется. При удалении кода интеграции её прежние миграции
+и таблицы метаданных остаются: обновление не удаляет данные и не включает
+интеграцию. Не удаляйте применённые файлы миграций из существующей установки.

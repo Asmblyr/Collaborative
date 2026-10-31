@@ -13,7 +13,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@asmblyr-collaborative/kit/ui/tabs";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useUiCopy } from "@/lib/ui-copy";
 import { SecretFields } from "../integrations/secret-fields";
 

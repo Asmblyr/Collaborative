@@ -25,9 +25,9 @@ export function PolicyUsersPicker({
       <div>
         <h3 className="font-semibold">{copy("Пользователи")}</h3>
         <p className="text-xs text-muted-foreground">
-          {copy("Назначьте политику одному или нескольким пользователям. ")}
+          {copy("Назначьте политику одному или нескольким пользователям.")}{" "}
           {protectedUserId &&
-            copy(" Собственное назначение меняет администратор.")}
+            ` ${copy("Собственное назначение меняет администратор.")}`}
         </p>
       </div>
       <div className="divide-y rounded-lg border">
@@ -46,7 +46,7 @@ export function PolicyUsersPicker({
         ))}
         {!shown.length && (
           <p className="px-3 py-2 text-xs text-muted-foreground">
-            {copy("Пока нет пользователей для назначения. ")}
+            {copy("Пока нет пользователей для назначения.")}
           </p>
         )}
       </div>

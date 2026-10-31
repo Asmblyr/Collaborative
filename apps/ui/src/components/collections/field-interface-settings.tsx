@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useFieldInterfaces } from "@/components/plugins/field-registry";
 import { PluginUiHost as FieldBoundary } from "@/components/plugins/ui-host";
 import {
@@ -127,7 +127,7 @@ export function FieldInterfaceSettings({
                 key={entry.id}
                 value={entry.id}
               >
-                {entry.title} {copy(" · расширение ")}
+                {entry.title} {copy("· расширение")}
               </SelectItem>
             ))}
             {unavailable && (
@@ -135,7 +135,7 @@ export function FieldInterfaceSettings({
                 value={extension.id}
                 disabled
               >
-                {extension.id} {copy(" · недоступен ")}
+                {extension.id} {copy("· недоступен")}
               </SelectItem>
             )}
           </SelectContent>
@@ -144,7 +144,7 @@ export function FieldInterfaceSettings({
       {unavailable && (
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Расширение отключено или не поддерживает это поле. Настройки сохранены; используется обычный ввод. ",
+            "Расширение отключено или не поддерживает это поле. Настройки сохранены; используется обычный ввод.",
           )}
         </p>
       )}
@@ -157,7 +157,7 @@ export function FieldInterfaceSettings({
               className="text-sm text-destructive"
             >
               {copy(
-                "Не удалось открыть настройки расширения. Сохранённые параметры не изменены. ",
+                "Не удалось открыть настройки расширения. Сохранённые параметры не изменены.",
               )}
             </p>
           }

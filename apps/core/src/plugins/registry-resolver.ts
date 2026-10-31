@@ -13,7 +13,7 @@ export function resolveRegistryPackages(
   nodeVersion = process.version,
 ): Resolution {
   const byName = new Map(packages.map((entry) => [entry.name, entry]));
-  const issues: Record<string, string[]> = {};
+  const issues: Record<string, string[]> = Object.create(null);
   const order: string[] = [];
   const visiting = new Set<string>();
   const visited = new Set<string>();

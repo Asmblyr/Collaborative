@@ -4,7 +4,7 @@ import { Download, Trash2 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Tabs,
   TabsContent,
@@ -12,6 +12,8 @@ import {
   TabsTrigger,
 } from "@asmblyr-collaborative/kit/ui/tabs";
 import { apiRequest } from "@/lib/api-request";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
+import { showToast } from "@/components/ui/toast";
 import { FilePreview } from "./file-preview";
 import { FileHistory } from "./file-history";
 import { FileVisibility } from "./file-visibility";
@@ -42,6 +44,12 @@ export function FileEditor({
   const [visibility, setVisibility] = useState<"private" | "public">(
     file.visibility ?? "private",
   );
+  const dirty =
+    !readOnly &&
+    (title !== file.title ||
+      description !== file.description ||
+      visibility !== (file.visibility ?? "private"));
+  useEditorState(dirty, pending);
   async function mutate(remove: boolean) {
     if (readOnly) {
       return;
@@ -52,6 +60,7 @@ export function FileEditor({
     try {
       if (remove) {
         await apiRequest(`/api/files/${file.id}`, "DELETE");
+        showToast(copy("Файл удалён"), "success");
         onDelete();
       } else {
         const saved = await apiRequest<StoredFile>(
@@ -59,8 +68,12 @@ export function FileEditor({
           "PATCH",
           { title, description, visibility },
         );
+        setTitle(saved.title);
+        setDescription(saved.description);
+        setVisibility(saved.visibility ?? "private");
         onChange(saved);
         setHistoryKey((n) => n + 1);
+        showToast(copy("Изменения сохранены"), "success");
       }
     } catch (reason) {
       setError(
@@ -169,7 +182,7 @@ export function FileEditor({
                   download
                 >
                   <Download aria-hidden />
-                  {copy("Скачать ")}
+                  {copy("Скачать")}
                 </a>
               </Button>
             )}
@@ -186,7 +199,7 @@ export function FileEditor({
                 onClick={() => setConfirm(true)}
               >
                 <Trash2 aria-hidden />
-                {copy("Удалить файл ")}
+                {copy("Удалить файл")}
               </Button>
             ) : (
               <div className="space-y-3 rounded-lg border border-destructive/30 p-4">
@@ -194,7 +207,7 @@ export function FileEditor({
                   {copy("Удалить «")}
                   {file.filename}
                   {copy(
-                    "»? Файл будет удалён из хранилища без возможности восстановления. ",
+                    "»? Файл будет удалён из хранилища без возможности восстановления.",
                   )}
                 </p>
                 <div className="flex gap-2">
@@ -203,14 +216,14 @@ export function FileEditor({
                     disabled={pending}
                     onClick={() => void mutate(true)}
                   >
-                    {copy("Удалить ")}
+                    {copy("Удалить")}
                   </Button>
                   <Button
                     variant="outline"
                     disabled={pending}
                     onClick={() => setConfirm(false)}
                   >
-                    {copy("Отмена ")}
+                    {copy("Отмена")}
                   </Button>
                 </div>
               </div>

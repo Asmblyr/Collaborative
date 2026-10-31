@@ -1,8 +1,11 @@
 "use client";
 
 import { UserRound, ShieldCheck, Palette, AppWindow } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { settingsTab, settingsTabHref } from "@/lib/settings-location";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Tabs,
   TabsContent,
@@ -15,6 +18,7 @@ import { PasswordForm } from "./password-form";
 import { ProfileForm } from "./profile-form";
 import { SessionsPanel } from "./sessions-panel";
 import { ConnectedAppsPanel } from "./connected-apps-panel";
+import { McpConnectionsPanel } from "./mcp-connections-panel";
 import { GoogleConnectionPanel } from "./google-connection-panel";
 import { AppearanceSettings } from "./appearance-settings";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
@@ -23,24 +27,38 @@ import { ssoMessage, type LoginProvider } from "@/lib/sso";
 import { PasskeysPanel } from "./passkeys-panel";
 import { InitialPasswordForm } from "./initial-password-form";
 import { userDisplayName, userAvatarUrl } from "@/lib/user-profile";
-import { ProfileExtensionFields } from "./profile-extension-fields";
 import { ProfileDates } from "./profile-dates";
-import { ProfileDisplay } from "./profile-display";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function SettingsWorkspace({
   user,
   providers = [],
-  initialTab,
   ssoStatus,
   connectionStatus,
 }: {
   user: SessionUser;
   providers?: LoginProvider[];
-  initialTab?: string;
   ssoStatus?: string;
   connectionStatus?: string;
 }) {
+  const copy = useUiCopy();
   const { t } = useTranslations();
+  const params = useSearchParams();
+  const requestedTab = params.get("tab");
+  const tab = settingsTab(requestedTab);
+  const [securityVisited, setSecurityVisited] = useState(tab === "security");
+  if (tab === "security" && !securityVisited) {
+    setSecurityVisited(true);
+  }
+  useEffect(() => {
+    if (requestedTab !== tab) {
+      window.history.replaceState(
+        null,
+        "",
+        settingsTabHref(window.location.href, tab),
+      );
+    }
+  }, [requestedTab, tab]);
   const name = userDisplayName(user);
   const message = ssoMessage(ssoStatus);
   return (
@@ -73,15 +91,21 @@ export function SettingsWorkspace({
           >
             {t(user.superuser ? "settings.admin" : "settings.user")}
           </Badge>
-          <ProfileDisplay compact />
           <ProfileDates user={user} />
         </aside>
         <Tabs
-          defaultValue={
-            initialTab === "security" || initialTab === "applications"
-              ? initialTab
-              : "profile"
-          }
+          value={tab}
+          onValueChange={(value) => {
+            const nextTab = settingsTab(value);
+            if (nextTab === "security") {
+              setSecurityVisited(true);
+            }
+            window.history.pushState(
+              null,
+              "",
+              settingsTabHref(window.location.href, nextTab),
+            );
+          }}
           className="min-w-0 space-y-5"
         >
           <TabsList className="h-auto w-full justify-start overflow-x-auto">
@@ -124,11 +148,10 @@ export function SettingsWorkspace({
               {t("settings.personalHint")}
             </p>
             <ProfileForm user={user} />
-            <ProfileExtensionFields userId={user.id} />
           </TabsContent>
           <TabsContent
             value="security"
-            forceMount
+            forceMount={securityVisited ? true : undefined}
             className="rounded-xl border bg-card p-5 data-[state=inactive]:hidden sm:p-6"
           >
             <h2 className="mb-1 font-semibold">{t("settings.password")}</h2>
@@ -140,19 +163,26 @@ export function SettingsWorkspace({
                 role="status"
                 className="mb-5 rounded-lg bg-muted p-3 text-sm"
               >
-                {message}
+                {copy(message)}
               </p>
             )}
             {user.hasPassword ? <PasswordForm /> : <InitialPasswordForm />}
-            <PasskeysPanel />
-            <IdentitiesPanel providers={providers} />
-            <SessionsPanel />
+            {securityVisited && (
+              <>
+                <PasskeysPanel />
+                <IdentitiesPanel providers={providers} />
+                <SessionsPanel />
+              </>
+            )}
           </TabsContent>
           <TabsContent
             value="applications"
             className="rounded-xl border bg-card p-5 sm:p-6"
           >
-            <ConnectedAppsPanel />
+            <McpConnectionsPanel />
+            <div className="mt-6">
+              <ConnectedAppsPanel />
+            </div>
             <div className="mt-5">
               <GoogleConnectionPanel feedback={connectionStatus} />
             </div>

@@ -1,8 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { isIP } from "node:net";
 
 export interface BrowserConfig {
   origin: string;
   prefix: string;
+  sessionDomain?: string;
 }
 declare module "fastify" {
   interface FastifyInstance {
@@ -18,11 +20,30 @@ export function isPrivateCookie(value: string, prefix: string): boolean {
 export function browserConfig(
   origin: string,
   prefix = "asmblyr",
+  domain?: string,
 ): BrowserConfig {
   if (!/^[a-zA-Z0-9_]{1,40}$/.test(prefix)) {
     throw new Error("Invalid SESSION_COOKIE_PREFIX");
   }
-  return { origin: new URL(origin).origin, prefix };
+  const url = new URL(origin);
+  if (!domain) {
+    return { origin: url.origin, prefix };
+  }
+  const sessionDomain = domain.replace(/^\./, "").toLowerCase();
+  if (
+    isIP(sessionDomain) ||
+    !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
+      sessionDomain,
+    ) ||
+    sessionDomain.length > 253 ||
+    (url.hostname !== sessionDomain &&
+      !url.hostname.endsWith(`.${sessionDomain}`))
+  ) {
+    throw new Error(
+      "SESSION_COOKIE_DOMAIN must be a parent domain of AUTH_UI_URL, never an IP or top-level domain",
+    );
+  }
+  return { origin: url.origin, prefix, sessionDomain };
 }
 
 export function cookieValue(
@@ -44,11 +65,12 @@ export function setCookie(
   value: string,
   seconds: number,
   path = "/",
+  domain?: string,
 ): void {
   const secure = config.origin.startsWith("https:") ? "; Secure" : "";
   reply.header(
     "set-cookie",
-    `${name}=${value}; Path=${path}; HttpOnly; SameSite=Lax; Max-Age=${Math.max(0, Math.floor(seconds))}${secure}`,
+    `${name}=${value}; Path=${path}; HttpOnly; SameSite=Lax; Max-Age=${Math.max(0, Math.floor(seconds))}${secure}${domain ? `; Domain=${domain}` : ""}`,
   );
 }
 
@@ -58,6 +80,17 @@ export function clearSessionCookies(
 ): void {
   for (const suffix of ["session", "access", "refresh"]) {
     setCookie(reply, config, `${config.prefix}_${suffix}`, "", 0);
+  }
+  if (config.sessionDomain) {
+    setCookie(
+      reply,
+      config,
+      `${config.prefix}_session`,
+      "",
+      0,
+      "/",
+      config.sessionDomain,
+    );
   }
 }
 
@@ -95,6 +128,11 @@ export function registerBrowserCookies(
     return payload;
   });
   app.addHook("onRequest", async (request, reply) => {
+    // External MCP requires its own audience-bound bearer, never ambient cookies.
+    const path = request.url.split("?")[0];
+    if (path === "/mcp" || path.startsWith("/mcp/oauth/")) {
+      return;
+    }
     // The OAuth provider owns its own protocol cookies and client authentication.
     if (
       request.url.startsWith("/oauth/") &&

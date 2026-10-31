@@ -95,7 +95,7 @@ export function PreparedPluginPage({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {copy("Открываем подготовленную форму… ")}
+          {copy("Открываем подготовленную форму…")}
         </p>
       )}
       {error && (
@@ -108,7 +108,7 @@ export function PreparedPluginPage({
             variant="outline"
             onClick={() => setRetry((value) => value + 1)}
           >
-            {copy("Повторить ")}
+            {copy("Повторить")}
           </Button>
         </div>
       )}
@@ -116,7 +116,7 @@ export function PreparedPluginPage({
         <div className="space-y-3 rounded-xl border p-4">
           <p className="text-sm">
             {copy(
-              "Есть новый подготовленный расчёт. Открыть его вместо ваших текущих значений? ",
+              "Есть новый подготовленный расчёт. Открыть его вместо ваших текущих значений?",
             )}
           </p>
           <div className="flex gap-2">
@@ -128,13 +128,13 @@ export function PreparedPluginPage({
                 setCandidate(undefined);
               }}
             >
-              {copy("Открыть новый расчёт ")}
+              {copy("Открыть новый расчёт")}
             </Button>
             <Button
               variant="outline"
               onClick={() => setCandidate(undefined)}
             >
-              {copy("Оставить текущий ")}
+              {copy("Оставить текущий")}
             </Button>
           </div>
         </div>

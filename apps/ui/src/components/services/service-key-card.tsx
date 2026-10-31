@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { useUiCopy } from "@/lib/ui-copy";
 import type { ServiceKey } from "./types";
 
@@ -81,7 +81,7 @@ export function ServiceKeyCard({
             <>
               <p className="w-full text-xs text-destructive">
                 {copy(
-                  "Выданные по этому ключу токены сразу перестанут работать. ",
+                  "Выданные по этому ключу токены сразу перестанут работать.",
                 )}
               </p>
               <Button
@@ -90,7 +90,7 @@ export function ServiceKeyCard({
                 disabled={pending || secretVisible}
                 onClick={onRevoke}
               >
-                {copy("Подтвердить отзыв ")}
+                {copy("Подтвердить отзыв")}
               </Button>
               <Button
                 size="sm"
@@ -98,7 +98,7 @@ export function ServiceKeyCard({
                 disabled={pending}
                 onClick={() => onConfirm(false)}
               >
-                {copy("Отмена ")}
+                {copy("Отмена")}
               </Button>
             </>
           ) : (
@@ -108,7 +108,7 @@ export function ServiceKeyCard({
               disabled={pending || secretVisible}
               onClick={() => onConfirm(true)}
             >
-              {copy("Отозвать ключ ")}
+              {copy("Отозвать ключ")}
             </Button>
           )}
         </div>

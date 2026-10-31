@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cn } from "cn";
 import { Tooltip as TooltipPrimitive } from "radix-ui";
+import { usePortalContainer } from "@asmblyr-collaborative/kit/ui/portal-container";
 
 function TooltipProvider({
   delayDuration = 0,
@@ -43,13 +44,18 @@ function TooltipContent({
   className,
   sideOffset = 0,
   children,
+  container,
   portalContainer,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content> & {
+  container?: HTMLElement | null;
   portalContainer?: HTMLElement | null;
 }) {
+  const inheritedContainer = usePortalContainer();
   return (
-    <TooltipPrimitive.Portal container={portalContainer}>
+    <TooltipPrimitive.Portal
+      container={container ?? portalContainer ?? inheritedContainer}
+    >
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
         sideOffset={sideOffset}

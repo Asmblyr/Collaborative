@@ -102,13 +102,13 @@ export function RelationRows({
         {onLink && (
           <DropdownMenuItem onSelect={() => onLink(row)}>
             <Settings2 />
-            {copy("Параметры связи ")}
+            {copy("Параметры связи")}
           </DropdownMenuItem>
         )}
         {result.abilities.detach && (
           <DropdownMenuItem onSelect={() => onDetach(row)}>
             <Unlink />
-            {copy("Отвязать запись ")}
+            {copy("Отвязать запись")}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

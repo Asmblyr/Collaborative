@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link2 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import type { LinkedIdentity, LoginProvider } from "@/lib/sso";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -73,7 +73,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
         <h2 className="font-semibold">{copy("Подключённые аккаунты")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {copy(
-            "Добавьте ещё один способ входа в свой аккаунт. Почта и права доступа останутся прежними. ",
+            "Добавьте ещё один способ входа в свой аккаунт. Почта и права доступа останутся прежними.",
           )}
         </p>
       </div>
@@ -90,7 +90,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
       )}
       {identities && !entries.length && (
         <p className="text-sm text-muted-foreground">
-          {copy("Провайдеры входа пока не настроены. ")}
+          {copy("Провайдеры входа пока не настроены.")}
         </p>
       )}
       {identities &&
@@ -122,7 +122,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
                 disabled={pending}
                 onClick={() => setConfirm(identity.id)}
               >
-                {copy("Отключить ")}
+                {copy("Отключить")}
               </Button>
             ) : (
               <form
@@ -140,7 +140,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
                   type="submit"
                   disabled={pending}
                 >
-                  {copy("Подключить ")}
+                  {copy("Подключить")}
                 </Button>
               </form>
             )}
@@ -150,7 +150,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
         <div className="space-y-3 rounded-lg bg-muted p-4">
           <p className="text-sm">
             {copy(
-              "Отключить этот способ входа? Аккаунт Asmblyr и открытые сессии сохранятся. ",
+              "Отключить этот способ входа? Аккаунт Asmblyr и открытые сессии сохранятся.",
             )}
           </p>
           <div className="flex gap-2">
@@ -160,7 +160,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
               disabled={pending}
               onClick={() => unlink(confirm)}
             >
-              {copy("Отключить ")}
+              {copy("Отключить")}
             </Button>
             <Button
               variant="ghost"
@@ -168,7 +168,7 @@ export function IdentitiesPanel({ providers }: { providers: LoginProvider[] }) {
               disabled={pending}
               onClick={() => setConfirm(null)}
             >
-              {copy("Отмена ")}
+              {copy("Отмена")}
             </Button>
           </div>
         </div>

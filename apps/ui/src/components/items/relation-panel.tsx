@@ -1,16 +1,10 @@
 "use client";
 
 import { useId, useState } from "react";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Link2,
-  Plus,
-} from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { RecordChooser } from "./record-chooser";
+import { RelationPanelHeader } from "./relation-panel-header";
+import { RelationPanelPagination } from "./relation-panel-pagination";
 import { RelationRows } from "./relation-rows";
 import { RelationCreateDialog } from "./relation-create-dialog";
 import { RelationDraftRows } from "./relation-draft-rows";
@@ -95,6 +89,7 @@ export function RelationPanel({
     catalog,
     result?.display.columns,
   ).find((column) => !omitted.includes(column.name))?.name;
+
   function stageCreate(record: RecordDraft, link?: RecordDraft) {
     const key = record.key ?? `draft:${crypto.randomUUID()}`;
     onDraftChange({
@@ -105,6 +100,7 @@ export function RelationPanel({
       ],
     });
   }
+
   function editNew(key?: string, record?: RecordDraft) {
     onEdit({
       collection: target.name,
@@ -125,145 +121,37 @@ export function RelationPanel({
       aria-label={label}
       aria-busy={busy}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/30 px-4 py-3">
-        <div className="min-w-0">
-          <h4 className="text-sm font-semibold">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="-ml-2 h-auto py-1"
-              aria-expanded={expanded}
-              aria-controls={contentId}
-              onClick={() => setExpanded(!expanded)}
-            >
-              <ChevronDown
-                className={`size-4 text-muted-foreground ${expanded ? "" : "-rotate-90"}`}
-              />
-              {label}
-              {result && (
-                <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-normal tabular-nums text-muted-foreground">
-                  {result.page.total}
-                </span>
-              )}
-            </Button>
-          </h4>
-          {field.presentation?.description && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {field.presentation.description}
-            </p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          {result?.abilities.attach && result.display.allowSelect && (
-            <RecordChooser
-              collection={target}
-              catalog={catalog}
-              title={label}
-              previewColumns={result.display.columns}
-              excludedIds={draft.attach?.map((entry) => entry.id)}
-              candidatesEndpoint={`${endpoint}/candidates`}
-              description={
-                relation?.kind === "o2m"
-                  ? copy(
-                      "Показаны только непривязанные записи. Занятые записи нужно сначала отвязать в прежней карточке.",
-                    )
-                  : copy("Записи, уже добавленные в эту карточку, скрыты.")
-              }
-              emptyMessage={
-                relation?.kind === "o2m"
-                  ? copy(
-                      "Нет свободных записей. Создайте новую или сначала отвяжите существующую в другой карточке.",
-                    )
-                  : copy("Нет доступных записей для добавления.")
-              }
-              labelField={
-                field.presentation?.relation?.labelField
-                  ? (result.display.labelField ?? undefined)
-                  : undefined
-              }
-              selected={state.selected}
-              onChange={state.setSelected}
-              onChoose={
-                hasLinkForm && junction
-                  ? (choice) => {
-                      onEdit({
-                        collection: junction.name,
-                        title: copy("Параметры новой связи"),
-                        description: copy(
-                          "Заполните параметры, чтобы связать выбранную запись с текущей.",
-                        ),
-                        omitFields: keys,
-                        onDraft: (record) =>
-                          onDraftChange({
-                            ...draft,
-                            attach: [
-                              ...(draft.attach ?? []),
-                              {
-                                id: choice.id,
-                                label: choice.label,
-                                preview: choice.item,
-                                record,
-                              },
-                            ],
-                          }),
-                      });
-                    }
-                  : undefined
-              }
-              multiple={!hasLinkForm}
-              portalContainer={portalContainer}
-              trigger={
-                <>
-                  <Link2 className="size-4" />
-                  {copy("Добавить существующую ")}
-                </>
-              }
-              pending={pending}
-              disabled={busy}
-              actionError={copy(error)}
-              onApply={
-                hasLinkForm
-                  ? undefined
-                  : async (choices) => {
-                      onDraftChange({
-                        ...draft,
-                        attach: [
-                          ...(draft.attach ?? []),
-                          ...choices
-                            .filter(
-                              (choice) =>
-                                !draft.attach?.some(
-                                  (entry) => entry.id === choice.id,
-                                ),
-                            )
-                            .map((choice) => ({
-                              id: choice.id,
-                              label: choice.label,
-                              preview: choice.item,
-                            })),
-                        ],
-                      });
-                      state.setSelected([]);
-                      return true;
-                    }
-              }
-            />
-          )}
-          {result?.abilities.create && result.display.allowCreate && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={() => (hasLinkForm ? setCreating(true) : editNew())}
-            >
-              <Plus />
-              {copy("Создать ")}
-            </Button>
-          )}
-        </div>
-      </div>
+      <RelationPanelHeader
+        label={label}
+        description={field.presentation?.description}
+        expanded={expanded}
+        contentId={contentId}
+        onToggleExpanded={() => setExpanded(!expanded)}
+        result={result}
+        endpoint={endpoint}
+        field={field}
+        target={target}
+        junction={junction}
+        catalog={catalog}
+        keys={keys}
+        hasLinkForm={hasLinkForm}
+        selected={state.selected}
+        onSelectedChange={state.setSelected}
+        draft={draft}
+        onDraftChange={onDraftChange}
+        onEdit={onEdit}
+        onCreateClick={() => {
+          if (hasLinkForm) {
+            setCreating(true);
+          } else {
+            editNew();
+          }
+        }}
+        portalContainer={portalContainer}
+        pending={pending}
+        busy={busy}
+        error={error}
+      />
       <div
         id={contentId}
         hidden={!expanded}
@@ -294,7 +182,7 @@ export function RelationPanel({
               variant="ghost"
               onClick={refresh}
             >
-              {copy("Повторить ")}
+              {copy("Повторить")}
             </Button>
           </div>
         )}
@@ -303,7 +191,7 @@ export function RelationPanel({
             role="status"
             className="p-4 text-sm text-muted-foreground"
           >
-            {copy("Загрузка… ")}
+            {copy("Загрузка…")}
           </p>
         ) : !result?.data.length ? (
           !error && (
@@ -380,104 +268,20 @@ export function RelationPanel({
           busy={busy}
           onChange={onDraftChange}
           onEdit={editNew}
-          onEditAttributes={
-            junction
-              ? (kind, id) => {
-                  const staged =
-                    kind === "create"
-                      ? draft.create?.find((entry) => entry.key === id)?.link
-                      : kind === "attach"
-                        ? draft.attach?.find((entry) => entry.id === id)?.record
-                        : draft.links?.find((entry) => entry.id === id)?.record;
-                  if (!staged) return;
-                  onEdit({
-                    collection: junction.name,
-                    id: kind === "link" ? id : undefined,
-                    draft: staged,
-                    omitFields: keys,
-                    title: copy("Параметры связи"),
-                    itemEndpoint:
-                      kind === "link"
-                        ? `${endpoint}/links/${encodeURIComponent(id)}`
-                        : undefined,
-                    onDraft: (record) =>
-                      onDraftChange(
-                        kind === "create"
-                          ? {
-                              ...draft,
-                              create: draft.create?.map((entry) =>
-                                entry.key === id
-                                  ? { ...entry, link: record }
-                                  : entry,
-                              ),
-                            }
-                          : kind === "attach"
-                            ? {
-                                ...draft,
-                                attach: draft.attach?.map((entry) =>
-                                  entry.id === id
-                                    ? { ...entry, record }
-                                    : entry,
-                                ),
-                              }
-                            : {
-                                ...draft,
-                                links: draft.links?.flatMap((entry) =>
-                                  entry.id === id
-                                    ? draftChanges(record)
-                                      ? [{ ...entry, record }]
-                                      : []
-                                    : [entry],
-                                ),
-                              },
-                      ),
-                  });
-                }
-              : undefined
-          }
+          junction={junction}
+          omitFields={keys}
+          endpoint={endpoint}
+          onEditRecord={onEdit}
         />
         {result && Number(result.page.total) > result.page.size && (
-          <div className="flex items-center justify-between gap-2 border-t px-3 py-2">
-            <span className="text-xs text-muted-foreground">
-              {copy("Всего: ")}
-              {result.page.total}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label={copy("Предыдущая страница {{value0}}", {
-                  value0: field.name,
-                })}
-                disabled={busy || page === 1}
-                onClick={() => state.setPage(page - 1)}
-              >
-                <ChevronLeft />
-              </Button>
-              <span className="text-xs tabular-nums">
-                {page} /{" "}
-                {Math.max(
-                  1,
-                  Math.ceil(Number(result.page.total) / result.page.size),
-                )}
-              </span>
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label={copy("Следующая страница {{value0}}", {
-                  value0: field.name,
-                })}
-                disabled={
-                  busy || page * result.page.size >= Number(result.page.total)
-                }
-                onClick={() => state.setPage(page + 1)}
-              >
-                <ChevronRight />
-              </Button>
-            </div>
-          </div>
+          <RelationPanelPagination
+            fieldName={field.name}
+            page={page}
+            size={result.page.size}
+            total={result.page.total}
+            busy={busy}
+            onPageChange={state.setPage}
+          />
         )}
       </div>
       {creating && junction && (

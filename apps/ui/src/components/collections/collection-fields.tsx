@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Table,
@@ -75,8 +75,7 @@ export function CollectionFields({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">
-            {copy("Поля коллекции ")}
-            {collection.displayName || collection.name}
+            {copy("Поля коллекции")} {collection.displayName || collection.name}
           </h3>
           <p className="text-xs text-muted-foreground">
             {collection.system
@@ -105,7 +104,7 @@ export function CollectionFields({
                 variant="ghost"
                 onClick={onForm}
               >
-                {copy("Форма ")}
+                {copy("Форма")}
               </Button>
             )}
             {!collection.system && (
@@ -115,7 +114,7 @@ export function CollectionFields({
                 variant="ghost"
                 onClick={onDisplay}
               >
-                {copy("Настройки коллекции ")}
+                {copy("Настройки коллекции")}
               </Button>
             )}
             {!readonly && (
@@ -125,7 +124,7 @@ export function CollectionFields({
                 variant="outline"
                 onClick={onAddField}
               >
-                {copy("Добавить поле ")}
+                {copy("Добавить поле")}
               </Button>
             )}
           </div>
@@ -188,7 +187,7 @@ export function CollectionFields({
                       variant="outline"
                       className="ml-2 font-sans"
                     >
-                      {copy("Системное ")}
+                      {copy("Системное")}
                     </Badge>
                   )}
                 </TableCell>
@@ -243,7 +242,7 @@ export function CollectionFields({
                               : onEditField(field.name)
                           }
                         >
-                          {copy("Настроить ")}
+                          {copy("Настроить")}
                         </Button>
                         {!readonly &&
                           field.name !== collection.state?.field && (
@@ -257,7 +256,7 @@ export function CollectionFields({
                               className="text-destructive hover:text-destructive"
                               onClick={() => onDeleteField(field.name)}
                             >
-                              {copy("Удалить ")}
+                              {copy("Удалить")}
                             </Button>
                           )}
                       </div>

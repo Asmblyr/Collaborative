@@ -19,15 +19,15 @@ export function NoAccessLayout() {
           />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          {copy("У вас пока нет доступа ")}
+          {copy("У вас пока нет доступа")}
         </h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           {copy(
-            "У вас пока нет доступных коллекций. Обратитесь к администратору, чтобы получить доступ. ",
+            "У вас пока нет доступных коллекций. Обратитесь к администратору, чтобы получить доступ.",
           )}
         </p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          {copy("Позже здесь появится форма запроса доступа. ")}
+          {copy("Позже здесь появится форма запроса доступа.")}
         </p>
         <LogoutButton />
         <Button

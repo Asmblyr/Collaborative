@@ -1,21 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsUpDown,
-  Plus,
-  X,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent } from "@/components/ui/popover";
 import { ItemFilterMenu } from "./item-filter-menu";
 import { itemLabelField } from "./item-label";
 import { useRelationItems } from "./use-relation-items";
@@ -26,6 +15,7 @@ import {
 import { useTableRelationLabels } from "./use-table-relation-labels";
 import { availableColumns } from "./item-columns";
 import { PresentedValue } from "./presented-value";
+import { RecordChooserTrigger } from "./record-chooser-trigger";
 import type { Collection, Item } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -58,6 +48,7 @@ export function RecordChooser({
   emptyMessage,
   excludedIds = [],
   onChoose,
+  onClear,
 }: {
   collection: Collection;
   selected: string[];
@@ -69,6 +60,7 @@ export function RecordChooser({
   trigger?: ReactNode;
   onApply?: (choices: RecordChoice[]) => Promise<boolean>;
   onChoose?: (choice: RecordChoice) => void;
+  onClear?: () => void;
   pending?: boolean;
   id?: string;
   actionError?: string;
@@ -164,36 +156,20 @@ export function RecordChooser({
         if (!pending) setOpen(value);
       }}
     >
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          id={id}
-          disabled={disabled}
-          aria-label={copy("Выбрать записи: {{value0}}", {
-            value0: collection.name,
-          })}
-          className={
-            trigger
-              ? "gap-2"
-              : "h-10 w-full min-w-0 justify-between font-normal"
-          }
-        >
-          {trigger ?? (
-            <>
-              <span className="truncate">
-                {selected.length
-                  ? selectedLabel(selected[0])
-                  : copy("Выберите запись…")}
-              </span>
-              <ChevronsUpDown
-                className="size-3.5 shrink-0 text-muted-foreground"
-                aria-hidden="true"
-              />
-            </>
-          )}
-        </Button>
-      </PopoverTrigger>
+      <RecordChooserTrigger
+        id={id}
+        collectionName={collection.name}
+        fieldLabel={title || collection.displayName || collection.name}
+        label={
+          selected.length
+            ? selectedLabel(selected[0])
+            : copy("Выберите запись…")
+        }
+        selected={selected.length > 0}
+        disabled={disabled || pending}
+        trigger={trigger}
+        onClear={onClear}
+      />
       <PopoverContent
         container={portalContainer}
         align="start"
@@ -261,7 +237,7 @@ export function RecordChooser({
               role="status"
               className="p-3 text-sm text-muted-foreground"
             >
-              {copy("Загрузка… ")}
+              {copy("Загрузка…")}
             </p>
           ) : items.error ? (
             <div
@@ -275,7 +251,7 @@ export function RecordChooser({
                 variant="ghost"
                 onClick={items.retry}
               >
-                {copy("Повторить ")}
+                {copy("Повторить")}
               </Button>
             </div>
           ) : !options.length ? (
@@ -412,7 +388,7 @@ export function RecordChooser({
                 }}
               >
                 <Plus className="size-4" />
-                {copy("Создать запись ")}
+                {copy("Создать запись")}
               </Button>
             )
           )}

@@ -132,6 +132,7 @@ async function main() {
     "core-integration",
     "core-registry",
     "core-assistant",
+    "core-mcp",
     "core-sso",
     "core-browser",
     "core-deployment",
@@ -193,6 +194,7 @@ async function main() {
         return [
           "test/preferences.integration.test.ts",
           "test/table-views-workspaces.integration.test.ts",
+          "test/table-views-location.integration.test.ts",
           "test/table-column-widths.integration.test.ts",
         ].includes(name);
       }
@@ -290,6 +292,16 @@ async function main() {
       if (suite === "core-unit") return !name.endsWith(".integration.test.ts");
       if (suite === "core-integration")
         return name.endsWith(".integration.test.ts");
+      if (suite === "core-mcp")
+        return (
+          name.startsWith("test/mcp-") ||
+          [
+            "test/assistant-mcp.integration.test.ts",
+            "test/assistant-tools.integration.test.ts",
+            "test/assistant-aggregate.integration.test.ts",
+            "test/assistant-write-schema.test.ts",
+          ].includes(name)
+        );
       if (suite === "core-assistant") return name.startsWith("test/assistant");
       if (suite === "core-sso") return name.startsWith("test/sso");
       if (suite === "core-oauth") return name.startsWith("test/oauth");

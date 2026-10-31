@@ -170,7 +170,7 @@ export function CollectionsTable({
                     </span>
                     {canDrop() && (
                       <span className="ml-3 text-xs font-normal text-primary">
-                        {copy("В конец списка ")}
+                        {copy("В конец списка")}
                       </span>
                     )}
                   </TableCell>

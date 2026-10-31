@@ -5,7 +5,7 @@ import { SettingsReadOnlyNotice } from "@/components/admin/settings/read-only-no
 import { useState } from "react";
 import { BookOpen, Plus, Search } from "lucide-react";
 import type { TermDefinition } from "@asmblyr-collaborative/contracts";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import {
@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { TermForm } from "./term-form";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
@@ -58,14 +58,14 @@ export function TermsWorkspace({
           </h1>
           <p className="text-sm leading-6 text-muted-foreground">
             {copy(
-              "Общий словарь для работы с данными. Объясните понятия вашей команды, а в настройках коллекций свяжите их с точными условиями. ",
+              "Общий словарь для работы с данными. Объясните понятия вашей команды, а в настройках коллекций свяжите их с точными условиями.",
             )}
           </p>
         </div>
         {!readOnly && (
           <Button onClick={() => setEditor({ term: null })}>
             <Plus />
-            {copy("Добавить термин ")}
+            {copy("Добавить термин")}
           </Button>
         )}
       </div>
@@ -114,7 +114,7 @@ export function TermsWorkspace({
                   </Button>
                   {term.builtin && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {copy("Базовый ")}
+                      {copy("Базовый")}
                     </p>
                   )}
                 </TableCell>
@@ -144,7 +144,7 @@ export function TermsWorkspace({
       </div>
       <p className="text-xs leading-5 text-muted-foreground">
         {copy(
-          "Базовые определения можно менять. Термин начинает работать с данными после настройки условия в коллекции. ",
+          "Базовые определения можно менять. Термин начинает работать с данными после настройки условия в коллекции.",
         )}
       </p>
       {editor && (

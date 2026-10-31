@@ -2,36 +2,31 @@
 
 import { useLocalizedCatalog } from "./use-localized-catalog";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { TablePreferences } from "@/lib/table-preferences";
 import { itemsPageHref } from "@/lib/item-location";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { ItemEditorDialog } from "./item-editor-dialog";
+import { showToast } from "@/components/ui/toast";
 import { ItemEmptyState } from "./item-empty-state";
-import { ItemFilterSummary } from "./item-filter-summary";
-import { ItemBulkDialog } from "./item-bulk-dialog";
-import { ItemSelectionBar } from "./item-selection-bar";
-import { ItemFilters } from "./item-filters";
-import { ItemSearchOrder } from "./item-search-order";
-import { ItemViewMenu } from "./item-table-controls";
+import { ItemsWorkspaceToolbar } from "./items-workspace-toolbar";
+import { ItemsWorkspaceDialogs } from "./items-workspace-dialogs";
 import { ItemPagination } from "./item-pagination";
 import { useRecordLocation } from "./use-record-location";
 import { ItemsTable } from "./items-table";
 import { useTableViews } from "./use-table-views";
+import {
+  useTableQueryPreferences,
+  TablePreferencesNotice,
+} from "./use-table-query-preferences";
 import { useItemSelection } from "./use-item-selection";
 import { useItemColumns } from "./use-item-columns";
 import { useColumnVisibilityMotion } from "./use-column-visibility-motion";
-import { TableViewDialog } from "./table-view-dialog";
-import { readFilter } from "./item-filter-options";
+import { useCollectionLive } from "./use-record-live";
 import type { Collection, Item, ItemPage } from "./types";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
-import { AssistantTableContext } from "@/components/assistant/assistant-context";
 import { useUiCopy } from "@/lib/ui-copy";
-import { Badge } from "@/components/ui/badge";
-import { PresenceAvatars } from "@/components/presence/presence-avatars";
-import { subscribeRealtime } from "@/lib/realtime-scope";
 
 export function ItemsWorkspace({
   collection: sourceCollection,
@@ -63,7 +58,8 @@ export function ItemsWorkspace({
     catalog.find((entry) => entry.name === sourceCollection.name) ??
     sourceCollection;
   const router = useRouter();
-  const workspaceId = useWorkspace()?.active?.id;
+  const workspace = useWorkspace();
+  const workspaceId = workspace?.active?.id;
   const {
     recordId,
     listPath: pathname,
@@ -73,7 +69,16 @@ export function ItemsWorkspace({
   } = useRecordLocation(collection.name);
   const [creating, setCreating] = useState(false);
   const [bulkEditing, setBulkEditing] = useState(false);
-  const [message, setMessage] = useState("");
+
+  const setMessage = useCallback(
+    (text: string, variant: "success" | "error" = "success") => {
+      if (text) {
+        showToast(copy(text), variant);
+      }
+    },
+    [copy],
+  );
+
   const {
     selected,
     setSelected,
@@ -91,6 +96,7 @@ export function ItemsWorkspace({
     setMessage,
     onNavigate: navigate,
   });
+
   const columns = useItemColumns(collection, userId, preferences);
   const {
     root: columnRoot,
@@ -98,37 +104,23 @@ export function ItemsWorkspace({
     change: changeColumnVisibility,
   } = useColumnVisibilityMotion();
   const [viewEditor, setViewEditor] = useState(false);
-  const { views, savingView, saveView, reloadViews } = useTableViews({
+  const queryPreferences = useTableQueryPreferences(
+    userId,
+    collection.name,
+    page,
+    filter,
+    preferences,
+  );
+  const { views, reloadViews } = useTableViews({
     collection,
     userId,
     workspaceId,
-    page,
     setMessage,
   });
+
   const canRead = Boolean(collection.access.read);
-  useEffect(() => {
-    if (!canRead) return;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const unsubscribe = subscribeRealtime(
-      { kind: "collection", collection: collection.name },
-      (event, state) => {
-        if (
-          event?.type === "collection.changed" &&
-          state === "connected" &&
-          !timer
-        ) {
-          timer = setTimeout(() => {
-            timer = null;
-            router.refresh();
-          }, 200);
-        }
-      },
-    );
-    return () => {
-      unsubscribe();
-      if (timer) clearTimeout(timer);
-    };
-  }, [canRead, collection.name, router]);
+  useCollectionLive(collection.name, canRead, () => router.refresh());
+
   const itemKey = (item: Item) => String(item[collection.primaryKey.name]);
   const canCreate =
     !collection.profileExtension &&
@@ -149,7 +141,7 @@ export function ItemsWorkspace({
     setCreating(false);
     setSelected(new Set());
     setConfirmDelete(false);
-    router.push(href, { scroll: false });
+    router.push(workspace?.href(href) ?? href, { scroll: false });
   }
 
   function openCreate() {
@@ -174,40 +166,13 @@ export function ItemsWorkspace({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6">
-      <AssistantTableContext
-        context={
-          canRead
-            ? {
-                page: "items",
-                workspaceId: workspaceId ?? null,
-                collection: collection.name,
-                table: {
-                  page: page.number,
-                  size: page.size,
-                  sort: page.sort,
-                  order: page.order ?? "field",
-                  direction: page.direction,
-                  q,
-                  filter,
-                  selectedCount: selected.size,
-                  editorOpen: Boolean(recordId || creating || bulkEditing),
-                },
-              }
-            : null
-        }
-        onApply={(nextFilter) => navigate({ number: 1 }, nextFilter)}
-      />
       <h1 className="sr-only">{collection.displayName || collection.name}</h1>
+      <TablePreferencesNotice
+        status={queryPreferences.status}
+        retry={queryPreferences.retry}
+      />
       {!collection.access.read && createButton && (
         <div className="flex justify-end">{createButton}</div>
-      )}
-      {message && !recordId && !creating && (
-        <p
-          role="status"
-          className="shrink-0 rounded-lg bg-muted px-4 py-3 text-sm"
-        >
-          {copy(message)}
-        </p>
       )}
       {columns.error && (
         <p
@@ -220,97 +185,45 @@ export function ItemsWorkspace({
             variant="ghost"
             onClick={columns.retry}
           >
-            {copy("Повторить ")}
+            {copy("Повторить")}
           </Button>
         </p>
       )}
       {!collection.access.read ? (
         <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-          {copy("Просмотр записей недоступен для этой коллекции. ")}
+          {copy("Просмотр записей недоступен для этой коллекции.")}
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
-          <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 py-3">
-            <PresenceAvatars
-              scope={{ kind: "collection", collection: collection.name }}
-            />
-            {collection.sourceKind === "materialized-view" && (
-              <Badge variant="secondary">{copy("Только просмотр")}</Badge>
-            )}
-            {collection.mode === "single" && (
-              <span className="text-sm text-muted-foreground">
-                {copy("Коллекция с одним объектом ")}
-              </span>
-            )}
-            {items.length > 0 && (
-              <span className="hidden text-xs text-muted-foreground lg:block">
-                {copy("Нажмите на строку, чтобы открыть запись ")}
-              </span>
-            )}
-            <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
-              <ItemFilters
-                collection={collection}
-                catalog={catalog}
-                userId={userId}
-                filter={filter}
-                onApply={(group) =>
-                  navigate({ number: 1 }, group ? JSON.stringify(group) : "")
-                }
-              />
-              {q.trim() && (
-                <ItemSearchOrder
-                  value={page.order ?? "field"}
-                  onChange={(order) => navigate({ number: 1, order })}
-                />
-              )}
-              <ItemViewMenu
-                all={columns.all}
-                visible={columns.visible}
-                saving={savingView}
-                onSave={saveView}
-                views={views}
-                onManageViews={() => setViewEditor(true)}
-                onApplyView={(view) => {
-                  if (!view.definition) return;
-                  columns.apply(view.definition.columns);
-                  navigate(
-                    {
-                      number: 1,
-                      size: view.definition.pageSize,
-                      sort: view.definition.sort.field,
-                      order: view.definition.sort.order ?? "field",
-                      direction: view.definition.sort.direction,
-                    },
-                    view.definition.filter
-                      ? JSON.stringify(view.definition.filter)
-                      : "",
-                    view.definition.q,
-                  );
-                }}
-                onImport={columns.hasLegacy ? columns.importLegacy : undefined}
-                onToggle={(name, show) =>
-                  changeColumnVisibility(name, show, () => {
-                    columns.toggle(name, show);
-                    if (!show && page.sort === name)
-                      navigate({
-                        number: 1,
-                        sort: collection.primaryKey.name,
-                        direction: "asc",
-                      });
-                  })
-                }
-              />
-              {createButton}
-            </div>
-          </div>
-          <ItemFilterSummary
+          <ItemsWorkspaceToolbar
             collection={collection}
             catalog={catalog}
+            userId={userId}
+            hasItems={items.length > 0}
+            page={page}
             q={q}
             filter={filter}
-            onChange={(nextFilter, nextQuery) =>
-              navigate({ number: 1 }, nextFilter, nextQuery)
+            allColumns={columns.all}
+            visibleColumns={columns.visible}
+            views={views}
+            hasLegacyColumns={columns.hasLegacy}
+            onImportLegacyColumns={columns.importLegacy}
+            onApplyColumnSnapshot={columns.apply}
+            onToggleColumn={(name, show) =>
+              changeColumnVisibility(name, show, () => {
+                columns.toggle(name, show);
+                if (!show && page.sort === name) {
+                  navigate({
+                    number: 1,
+                    sort: collection.primaryKey.name,
+                    direction: "asc",
+                  });
+                }
+              })
             }
+            onManageViews={() => setViewEditor(true)}
+            onNavigate={navigate}
+            createButton={createButton}
           />
           <div
             ref={columnRoot}
@@ -388,81 +301,43 @@ export function ItemsWorkspace({
           )}
         </div>
       )}
-      <ItemSelectionBar
-        count={selected.size}
-        confirming={confirmDelete}
+      <ItemsWorkspaceDialogs
+        collection={collection}
+        catalog={catalog}
+        sourceCatalog={sourceCatalog}
+        workspaceId={workspaceId}
+        canRead={canRead}
+        selectedCount={selected.size}
+        confirmDelete={confirmDelete}
         pending={pending}
-        canDelete={collection.access.delete}
-        canEdit={Boolean(collection.access.update)}
-        onEdit={() => setBulkEditing(true)}
-        disabled={recordId !== null || creating || bulkEditing}
-        onDelete={removeSelected}
-        onConfirm={() => setConfirmDelete(true)}
-        onCancel={() => setConfirmDelete(false)}
-        onClear={() => {
+        recordId={recordId}
+        creating={creating}
+        bulkEditing={bulkEditing}
+        viewEditor={viewEditor}
+        views={views}
+        superuser={superuser}
+        columnSnapshot={columns.snapshot}
+        filter={filter}
+        q={q}
+        page={page}
+        onApplyFilter={(nextFilter) => navigate({ number: 1 }, nextFilter)}
+        onOpenBulkEdit={() => setBulkEditing(true)}
+        onCloseBulkEdit={() => setBulkEditing(false)}
+        onSaveBulk={saveBulk}
+        onDeleteSelected={removeSelected}
+        onConfirmDelete={() => setConfirmDelete(true)}
+        onCancelDelete={() => setConfirmDelete(false)}
+        onClearSelection={() => {
           setSelected(new Set());
           setConfirmDelete(false);
         }}
+        onCloseViewEditor={() => setViewEditor(false)}
+        onReloadViews={reloadViews}
+        onCloseCreate={() => setCreating(false)}
+        onCloseRecord={closeRecord}
+        onRecordChanged={recordChanged}
+        onMessage={setMessage}
       />
-      {bulkEditing && (
-        <ItemBulkDialog
-          collection={collection}
-          catalog={catalog}
-          count={selected.size}
-          pending={pending}
-          onClose={() => setBulkEditing(false)}
-          onSave={saveBulk}
-        />
-      )}
-      {viewEditor && (
-        <TableViewDialog
-          collection={collection.name}
-          views={views}
-          superuser={superuser}
-          onClose={() => setViewEditor(false)}
-          onChanged={reloadViews}
-          definition={{
-            columns: columns.snapshot,
-            filter: filter ? readFilter(filter) : null,
-            q,
-            sort: {
-              field: page.sort,
-              direction: page.direction,
-              order: page.order ?? "field",
-            },
-            pageSize: page.size,
-          }}
-        />
-      )}
-      {creating && (
-        <ItemEditorDialog
-          request={{
-            collection: collection.name,
-            onSaved: () => setMessage(copy("Запись создана")),
-          }}
-          catalog={catalog}
-          onClose={() => setCreating(false)}
-        />
-      )}
-      {recordId !== null && (
-        <ItemEditorDialog
-          key={`${collection.name}:${recordId}`}
-          request={{
-            collection: collection.name,
-            id: recordId,
-            onSaved: () => setMessage(copy("Запись обновлена")),
-          }}
-          catalog={
-            collection.sourceKind === "materialized-view"
-              ? sourceCatalog
-              : catalog
-          }
-          onClose={(reason) => {
-            if (reason !== "navigation") closeRecord();
-          }}
-          onChanged={recordChanged}
-        />
-      )}
     </div>
   );
 }

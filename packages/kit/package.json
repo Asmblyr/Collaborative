@@ -50,6 +50,22 @@
       "types": "./dist/ui/checkbox.d.ts",
       "default": "./dist/ui/checkbox.js"
     },
+    "./ui/switch": {
+      "types": "./dist/ui/switch.d.ts",
+      "default": "./dist/ui/switch.js"
+    },
+    "./ui/label": {
+      "types": "./dist/ui/label.d.ts",
+      "default": "./dist/ui/label.js"
+    },
+    "./ui/badge": {
+      "types": "./dist/ui/badge.d.ts",
+      "default": "./dist/ui/badge.js"
+    },
+    "./ui/card": {
+      "types": "./dist/ui/card.d.ts",
+      "default": "./dist/ui/card.js"
+    },
     "./ui/tabs": {
       "types": "./dist/ui/tabs.d.ts",
       "default": "./dist/ui/tabs.js"

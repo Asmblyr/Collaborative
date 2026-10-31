@@ -3,7 +3,7 @@
 import { Plus, X } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Select,
@@ -47,10 +47,10 @@ export function ValueDisplaySettings({
     <section className="space-y-4 rounded-xl border p-4">
       <div className="space-y-1">
         <h3 className="text-sm font-medium">
-          {copy("Значение в таблице и при просмотре ")}
+          {copy("Значение в таблице и при просмотре")}
         </h3>
         <p className="text-xs text-muted-foreground">
-          {copy("Оформление не меняет хранимые данные и способ ввода. ")}
+          {copy("Оформление не меняет хранимые данные и способ ввода.")}
         </p>
       </div>
       <Select
@@ -219,14 +219,14 @@ export function ValueDisplaySettings({
             }
           >
             <Plus />
-            {copy("Статус ")}
+            {copy("Статус")}
           </Button>
         </div>
       )}
       {display?.kind === "number" && (
         <div className="grid grid-cols-2 gap-3">
           <label className="space-y-2 text-sm">
-            {copy("Знаков после запятой ")}
+            {copy("Знаков после запятой")}
             <Input
               type="number"
               min={0}
@@ -234,7 +234,12 @@ export function ValueDisplaySettings({
               value={display.decimals}
               disabled={disabled}
               onChange={(e) =>
-                set({ ...display, decimals: e.target.valueAsNumber })
+                set({
+                  ...display,
+                  decimals: Number.isNaN(e.target.valueAsNumber)
+                    ? 0
+                    : e.target.valueAsNumber,
+                })
               }
             />
           </label>
@@ -244,10 +249,10 @@ export function ValueDisplaySettings({
               disabled={disabled}
               onCheckedChange={(v) => set({ ...display, grouping: v === true })}
             />
-            {copy("Разделять разряды ")}
+            {copy("Разделять разряды")}
           </label>
           <label className="space-y-2 text-sm">
-            {copy("Перед числом ")}
+            {copy("Перед числом")}
             <Input
               value={display.prefix}
               disabled={disabled}
@@ -256,7 +261,7 @@ export function ValueDisplaySettings({
             />
           </label>
           <label className="space-y-2 text-sm">
-            {copy("После числа ")}
+            {copy("После числа")}
             <Input
               value={display.suffix}
               disabled={disabled}
@@ -320,7 +325,7 @@ function DisplayPreview({ display }: { display: ValueDisplay }) {
   } catch {
     return (
       <span className="text-xs text-destructive">
-        {copy("Укажите часовой пояс IANA ")}
+        {copy("Укажите часовой пояс IANA")}
       </span>
     );
   }

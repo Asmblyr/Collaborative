@@ -3,7 +3,7 @@
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Tabs,
   TabsContent,
@@ -97,7 +97,7 @@ export function FieldEditorForm({
           disabled={pending || created}
           onClick={onBack}
         >
-          <ArrowLeft aria-hidden="true" /> {copy(" К выбору типа ")}
+          <ArrowLeft aria-hidden="true" /> {copy("К выбору типа")}
         </Button>
       )}
       <div className="space-y-2">
@@ -108,7 +108,7 @@ export function FieldEditorForm({
               {field.name}
             </div>
             <p className="text-xs text-muted-foreground">
-              {copy("Имя поля нельзя изменить после создания. ")}
+              {copy("Имя поля нельзя изменить после создания.")}
             </p>
           </>
         ) : (
@@ -126,7 +126,7 @@ export function FieldEditorForm({
               className="h-10 font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              {copy("Строчные латинские буквы, цифры и подчёркивание. ")}
+              {copy("Строчные латинские буквы, цифры и подчёркивание.")}
             </p>
           </>
         )}
@@ -139,7 +139,7 @@ export function FieldEditorForm({
             {field.type}
           </div>
           <p className="text-xs text-muted-foreground">
-            {copy("Тип поля нельзя изменить после создания. ")}
+            {copy("Тип поля нельзя изменить после создания.")}
           </p>
         </div>
       ) : (
@@ -165,7 +165,7 @@ export function FieldEditorForm({
                   "Выбор одной записи. Если связанную запись удалить, поле очистится. Системная запись останется.",
                 )
               : copy(
-                  "В этой коллекции появится внешний ключ. Обратные записи будут видны в карточке целевой записи. ",
+                  "В этой коллекции появится внешний ключ. Обратные записи будут видны в карточке целевой записи.",
                 )}
           </p>
           {field?.relation?.kind === "m2o" && (
@@ -278,7 +278,7 @@ export function FieldEditorForm({
           disabled={pending}
           onClick={onCancel}
         >
-          {copy("Отмена ")}
+          {copy("Отмена")}
         </Button>
       </div>
     </form>

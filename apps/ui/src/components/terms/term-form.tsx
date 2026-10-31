@@ -7,10 +7,12 @@ import type {
 } from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { useEditorState } from "@/components/collections/editor-lifecycle";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
+import { apiRequest } from "@/lib/api-request";
+import { localizedRequestError } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function TermForm({
@@ -51,21 +53,15 @@ export function TermForm({
           .map((word) => word.trim())
           .filter(Boolean),
       };
-      const response = await fetch(
+      const savedTerm = await apiRequest<TermDefinition>(
         term ? `/api/settings/terms/${term.id}` : "/api/settings/terms",
-        {
-          method: term ? "PUT" : "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(input),
-        },
+        term ? "PUT" : "POST",
+        input,
       );
-      const body = await response.json();
-      if (!response.ok)
-        throw new Error(body.message ?? copy("Не удалось сохранить термин"));
-      onSaved(body.data);
+      onSaved(savedTerm);
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : copy("Ошибка соединения"),
+        localizedRequestError(cause, copy, "Не удалось сохранить термин"),
       );
     } finally {
       setBusy(false);
@@ -106,7 +102,7 @@ export function TermForm({
           />
           <p className="text-xs text-muted-foreground">
             {copy(
-              "До 12 вариантов через запятую. Помогают понимать формулировки пользователя. ",
+              "До 12 вариантов через запятую. Помогают понимать формулировки пользователя.",
             )}
           </p>
         </div>
@@ -127,7 +123,7 @@ export function TermForm({
           />
           <p className="text-xs leading-5 text-muted-foreground">
             {copy(
-              "Точные условия задаются отдельно: настройки коллекции → MCP → Термины. Изменение определения не меняет сохранённые фильтры. ",
+              "Точные условия задаются отдельно: настройки коллекции → MCP → Термины. Изменение определения не меняет сохранённые фильтры.",
             )}
           </p>
         </div>
@@ -136,7 +132,7 @@ export function TermForm({
             <Label htmlFor="term-enabled">{copy("Использовать термин")}</Label>
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Выключенный термин недоступен ассистенту. Условия в коллекциях сохраняются. ",
+                "Выключенный термин недоступен ассистенту. Условия в коллекциях сохраняются.",
               )}
             </p>
           </div>
@@ -152,7 +148,7 @@ export function TermForm({
           role="alert"
           className="text-sm text-destructive"
         >
-          {copy(error)}
+          {error}
         </p>
       )}
       {!readOnly && (

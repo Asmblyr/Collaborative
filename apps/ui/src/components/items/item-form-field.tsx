@@ -1,5 +1,5 @@
 "use client";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { ItemReadonlyField } from "./item-readonly-field";
 import { ItemFieldInput } from "./item-field-input";
 import { displayValue } from "./item-display";
@@ -48,7 +48,7 @@ export function ItemFormField({
       >
         {field.presentation?.label || field.name}
         {holder && (
-          <span className="ml-2 font-sans text-xs text-amber-600">
+          <span className="ml-2 font-sans text-xs text-amber-600 dark:text-amber-400">
             {copy("{{value0}} редактирует", { value0: holder })}
           </span>
         )}
@@ -86,7 +86,7 @@ export function ItemFormField({
       )}
       {field.presentation?.rules?.computed && (
         <p className="text-xs text-muted-foreground">
-          {copy("Вычисляется из связи при сохранении. ")}
+          {copy("Вычисляется из связи при сохранении.")}
         </p>
       )}
       {field.presentation?.description && (
@@ -99,7 +99,7 @@ export function ItemFormField({
       )}
       {field.type === "datetime" && !readonly && (
         <p className="text-xs text-muted-foreground">
-          {copy("Время UTC, без пересчёта из часового пояса устройства. ")}
+          {copy("Время UTC, без пересчёта из часового пояса устройства.")}
         </p>
       )}
       {!item && field.defaultValue !== undefined && (

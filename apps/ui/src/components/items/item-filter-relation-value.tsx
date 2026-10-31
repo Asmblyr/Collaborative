@@ -61,7 +61,7 @@ export function ItemFilterRelationValue({
           type="button"
           variant="ghost"
           size="sm"
-          aria-label={copy("Выбранные записи связи ") + scope.id}
+          aria-label={`${copy("Выбранные записи связи")} ` + scope.id}
           className="h-8 min-w-0 max-w-full justify-start gap-1.5 px-2 font-normal"
         >
           <Link2
@@ -114,7 +114,7 @@ export function ItemFilterRelationValue({
                   size="icon-sm"
                   className="h-6 w-6 shrink-0"
                   aria-label={
-                    copy("Убрать запись ") + (items.labels.get(id) ?? id)
+                    `${copy("Убрать запись")} ` + (items.labels.get(id) ?? id)
                   }
                   onClick={() => toggle(id)}
                 >
@@ -132,7 +132,7 @@ export function ItemFilterRelationValue({
           onQueryChange={items.setQuery}
           maxLength={100}
           placeholder={
-            copy("Найти запись в ") +
+            `${copy("Найти запись в")} ` +
             (scope.collection === "@users"
               ? copy("Пользователи")
               : scope.collection)
@@ -143,7 +143,7 @@ export function ItemFilterRelationValue({
               role="status"
               className="p-3 text-xs text-muted-foreground"
             >
-              {copy("Загрузка записей… ")}
+              {copy("Загрузка записей…")}
             </p>
           ) : items.error ? (
             <div
@@ -157,7 +157,7 @@ export function ItemFilterRelationValue({
                 size="sm"
                 onClick={items.retry}
               >
-                {copy("Повторить ")}
+                {copy("Повторить")}
               </Button>
             </div>
           ) : items.options.length === 0 ? (
@@ -191,7 +191,7 @@ export function ItemFilterRelationValue({
                   <Checkbox
                     checked={checked}
                     disabled={disabled}
-                    aria-label={copy("Выбрать ") + label}
+                    aria-label={`${copy("Выбрать")} ` + label}
                     onCheckedChange={() => toggle(id)}
                   />
                   {content}
@@ -258,14 +258,14 @@ export function ItemFilterRelationValue({
               disabled={!selected.length}
               onClick={() => onChange(multiple ? [] : "")}
             >
-              {copy("Очистить ")}
+              {copy("Очистить")}
             </Button>
             <Button
               type="button"
               size="sm"
               onClick={() => setOpen(false)}
             >
-              {copy("Готово ")}
+              {copy("Готово")}
             </Button>
           </div>
         </div>

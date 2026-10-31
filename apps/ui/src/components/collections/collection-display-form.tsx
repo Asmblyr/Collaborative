@@ -1,6 +1,6 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -42,7 +42,7 @@ export function CollectionDisplayFields({
         </Label>
         <p className="text-sm text-muted-foreground">
           {copy(
-            "Это поле будет названием записи в связях, фильтрах и результатах поиска. ",
+            "Это поле будет названием записи в связях, фильтрах и результатах поиска.",
           )}
         </p>
         <Select
@@ -59,7 +59,7 @@ export function CollectionDisplayFields({
           <SelectContent container={portalContainer}>
             <SelectItem value="$auto">{copy("Автоматически")}</SelectItem>
             <SelectItem value={collection.primaryKey.name}>
-              {collection.primaryKey.name} {copy(" · основной ключ ")}
+              {collection.primaryKey.name} {copy("· основной ключ")}
             </SelectItem>
             {collection.fields
               .filter(
@@ -79,7 +79,7 @@ export function CollectionDisplayFields({
         </Select>
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Автоматически — первое доступное текстовое поле. Если значение пустое или поле недоступно пользователю, показывается основной ключ. ",
+            "Автоматически — первое доступное текстовое поле. Если значение пустое или поле недоступно пользователю, показывается основной ключ.",
           )}
         </p>
       </div>
@@ -111,7 +111,7 @@ export function CollectionDisplayFields({
               value="$insert"
               disabled
             >
-              {copy("Вставить поле… ")}
+              {copy("Вставить поле…")}
             </SelectItem>
             {labelPathOptions(collection, catalog).map((option) => (
               <SelectItem
@@ -125,7 +125,7 @@ export function CollectionDisplayFields({
         </Select>
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Можно сочетать до 8 полей и обычный текст, включая пути через две связи. Пустой шаблон отключает составную подпись. Если одно из полей недоступно пользователю или удалено, используется поле подписи выше. ",
+            "Можно сочетать до 8 полей и обычный текст, включая пути через две связи. Пустой шаблон отключает составную подпись. Если одно из полей недоступно пользователю или удалено, используется поле подписи выше.",
           )}
         </p>
       </div>

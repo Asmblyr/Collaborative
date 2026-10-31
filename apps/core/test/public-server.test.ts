@@ -72,6 +72,8 @@ test("single-domain listener sends API directly to Core, preserves UI responses 
     "/sign/sso/okkam/callback?code=hidden",
     "/connections/google/callback",
     "/oauth/token",
+    "/.well-known/oauth-authorization-server",
+    "/.well-known/oauth-protected-resource/api/mcp",
   ])
     assert.equal(isCorePath(path), true, path);
   for (const path of [

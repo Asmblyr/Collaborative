@@ -12,6 +12,69 @@ import {
 } from "../src/plugins/registry-state.js";
 import { pluginItemsFixture } from "./support/plugin-items-fixture.js";
 
+test("constructor package names remain healthy and switch through the registry using Core compatibility", async (t) => {
+  const registry = parseRegistryPackage(
+    {
+      name: "constructor",
+      version: "1.0.0",
+      asmblyr: {
+        manifest: {
+          version: 1,
+          namespace: "constructor",
+          dependencies: {},
+          optionalDependencies: {},
+          compatibility: { collaborative: ">=0.1.0-0" },
+        },
+      },
+    },
+    "constructor",
+  );
+  const fixture = await pluginItemsFixture({
+    plugins: [
+      {
+        name: registry.name,
+        namespace: "constructor",
+        definition: {},
+        endpoints: [],
+        registry,
+      },
+    ],
+  });
+  t.after(async () => {
+    await fixture
+      .db("asmblyr_extension_history")
+      .where({ package_name: registry.name })
+      .delete();
+    await fixture
+      .db("asmblyr_extension_states")
+      .where({ package_name: registry.name })
+      .delete();
+    await fixture.close();
+  });
+  const list = (await fixture.call("GET", "/settings/extension-registry")).data;
+  const entry = list.find(
+    (row: { packageName: string }) => row.packageName === registry.name,
+  );
+  assert.equal(entry.status, "healthy");
+  assert.equal(entry.compatible, true);
+  const disabled = (
+    await fixture.call(
+      "POST",
+      `/settings/extension-registry/${entry.id}/disable`,
+    )
+  ).data;
+  assert.equal(disabled.desiredState, "disabled");
+  assert.equal(disabled.pendingRestart, true);
+  const enabled = (
+    await fixture.call(
+      "POST",
+      `/settings/extension-registry/${entry.id}/enable`,
+    )
+  ).data;
+  assert.equal(enabled.status, "healthy");
+  assert.equal(enabled.compatible, true);
+});
+
 test("registry enforces RBAC, records desired state and preserves live runtime until restart", async (t) => {
   const plugins = await loadPlugins(
     new URL("../../../package.json", import.meta.url),

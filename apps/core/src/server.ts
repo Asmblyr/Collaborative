@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { CORE_VERSION } from "./version.js";
 import { createApp } from "./app.js";
 import { ssoFromEnv } from "./auth/sso/config.js";
 import { SsoService } from "./auth/sso/service.js";
@@ -36,7 +36,6 @@ const sso = new SsoService(
   }),
 );
 const projectPackage = new URL("../../../package.json", import.meta.url);
-const projectMetadata = JSON.parse(await readFile(projectPackage, "utf8"));
 const registryPackages = await readConfiguredRegistryPackages(
   projectPackage,
   true,
@@ -58,6 +57,7 @@ const plugins = await loadPlugins(projectPackage, {
   sourcePlugins: process.argv.includes("--plugin-sources"),
   disabledPackages,
   registryPackages,
+  coreVersion: CORE_VERSION,
   onFailure: (name, error) => registryFailures.set(name, error),
 });
 const app = createApp({
@@ -65,6 +65,10 @@ const app = createApp({
     .map((value) => value.trim())
     .filter(Boolean),
   sessionCookiePrefix: process.env.SESSION_COOKIE_PREFIX,
+  sessionCookieDomain: process.env.SESSION_COOKIE_DOMAIN,
+  publicOriginAliases: process.env.AUTH_UI_ALIASES?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
   operationLimits: limitsFromEnv(process.env),
   passkeys: passkeysFromEnv(process.env),
   databaseUrl: process.env.DATABASE_URL,
@@ -75,7 +79,7 @@ const app = createApp({
   registryPackages,
   registryFailures,
   registryInstanceId,
-  coreVersion: projectMetadata.version,
+  coreVersion: CORE_VERSION,
   plugins,
 });
 for (const entry of registryPackages) {

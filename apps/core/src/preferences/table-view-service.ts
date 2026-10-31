@@ -41,9 +41,19 @@ const project = (
   updatedAt: row.updated_at,
 });
 
-export async function listTableViews(db: Knex, name: string, access: Access) {
+export async function listTableViews(
+  db: Knex,
+  name: string,
+  access: Access,
+  requestedWorkspace?: string,
+) {
   const ctx = await viewContext(db, name, access);
-  const workspaceId = await activeWorkspace(db, access.principal.id, ctx.id);
+  const workspaceId = await activeWorkspace(
+    db,
+    access.principal.id,
+    ctx.id,
+    requestedWorkspace,
+  );
   const rows = await table(db)
     .where({ collection_id: ctx.id })
     .modify((q) => visibleViews(q, access.principal.id, workspaceId))
@@ -58,8 +68,13 @@ export async function listTableViews(db: Knex, name: string, access: Access) {
   });
 }
 
-export async function defaultTableView(db: Knex, name: string, access: Access) {
-  const views = await listTableViews(db, name, access);
+export async function defaultTableView(
+  db: Knex,
+  name: string,
+  access: Access,
+  requestedWorkspace?: string,
+) {
+  const views = await listTableViews(db, name, access, requestedWorkspace);
   return (
     ["personal", "workspace", "collection"]
       .map((scope) =>

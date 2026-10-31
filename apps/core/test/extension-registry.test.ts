@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { CORE_VERSION } from "../src/version.js";
 import {
   parseRegistryPackage,
   type RegistryPackage,
@@ -24,6 +29,96 @@ function fixture(
     name,
   );
 }
+
+test("npm names inherited from Object.prototype remain valid dependency keys", () => {
+  const dependency = fixture("constructor");
+  const consumer = fixture("consumer", { constructor: "^1.0.0" });
+  const result = resolveRegistryPackages([consumer, dependency], "0.0.0");
+  assert.deepEqual(result.order, ["constructor", "consumer"]);
+  assert.equal(result.issues.constructor, undefined);
+  assert.equal(result.issues.consumer, undefined);
+  assert.throws(
+    () => fixture("constructor", { constructor: "*" }),
+    /cannot depend on itself/,
+  );
+  const incompatible = {
+    ...dependency,
+    manifest: {
+      ...dependency.manifest,
+      compatibility: { collaborative: ">=99.0.0" },
+    },
+  };
+  assert.match(
+    resolveRegistryPackages([incompatible], "0.0.0").issues.constructor[0],
+    /Requires Collaborative/,
+  );
+});
+
+test("a constructor-named package failure reaches onFailure instead of aborting Core startup", async (t) => {
+  const directory = await mkdtemp(path.join(tmpdir(), "asmblyr-registry-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const projectFile = path.join(directory, "package.json");
+  await writeFile(
+    projectFile,
+    JSON.stringify({
+      version: "99.0.0",
+      asmblyr: { plugins: ["constructor"] },
+    }),
+  );
+  const failures = new Map<string, string>();
+  const plugins = await loadPlugins(pathToFileURL(projectFile), {
+    registryPackages: [fixture("constructor")],
+    onFailure: (name, error) => failures.set(name, error),
+  });
+  assert.deepEqual(plugins, []);
+  assert.match(failures.get("constructor")!, /Cannot find module/);
+});
+
+test("host project versions cannot override the installed Core compatibility", async (t) => {
+  const directory = await mkdtemp(
+    path.join(tmpdir(), "asmblyr-registry-version-"),
+  );
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const projectFile = path.join(directory, "package.json");
+  await writeFile(
+    projectFile,
+    JSON.stringify({
+      version: "99.0.0",
+      asmblyr: { plugins: ["future-core"] },
+    }),
+  );
+  const entry = parseRegistryPackage(
+    {
+      name: "future-core",
+      version: "1.0.0",
+      asmblyr: {
+        manifest: { version: 1, compatibility: { collaborative: ">=98.0.0" } },
+      },
+    },
+    "future-core",
+  );
+  const failures = new Map<string, string>();
+  const plugins = await loadPlugins(pathToFileURL(projectFile), {
+    registryPackages: [entry],
+    onFailure: (name, error) => failures.set(name, error),
+  });
+  assert.deepEqual(plugins, []);
+  assert.equal(
+    failures.get(entry.name),
+    `Requires Collaborative >=98.0.0; current ${CORE_VERSION}`,
+  );
+  const supported = {
+    ...entry,
+    manifest: {
+      ...entry.manifest,
+      compatibility: { collaborative: ">=0.1.0-0" },
+    },
+  };
+  assert.equal(
+    resolveRegistryPackages([supported], CORE_VERSION).issues[entry.name],
+    undefined,
+  );
+});
 
 test("registry manifest validates versions, ranges and identity", () => {
   assert.equal(fixture("alpha").version, "1.2.0");

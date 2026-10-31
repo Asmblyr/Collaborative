@@ -2,8 +2,8 @@
 
 import { availableSettings } from "@/components/admin/settings/sections";
 import { useEffect, useState } from "react";
-import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Badge } from "@/components/ui/badge";
+import { EditorDialog } from "@/components/ui/editor-dialog";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { accessRequest } from "@/lib/access-request";
 import { actionName, type EffectivePermission, type UserAccess } from "./types";
 import type { Policy } from "./types";
@@ -85,7 +85,7 @@ export function UserAccessDialog({
               role="status"
               className="text-sm text-muted-foreground"
             >
-              {copy("Загружаем права… ")}
+              {copy("Загружаем права…")}
             </p>
           )}
           {access && (
@@ -93,7 +93,7 @@ export function UserAccessDialog({
               {access.user.status === "disabled" && (
                 <p className="rounded-lg border p-3 text-sm">
                   {copy(
-                    "Учётная запись отключена. Назначения сохранены, но сейчас войти и использовать права нельзя. ",
+                    "Учётная запись отключена. Назначения сохранены, но сейчас войти и использовать права нельзя.",
                   )}
                 </p>
               )}
@@ -102,7 +102,7 @@ export function UserAccessDialog({
                 access.user.status === "active" && (
                   <p className="rounded-lg border p-3 text-sm">
                     {copy(
-                      "Приглашение ещё не принято. Права начнут действовать после входа. ",
+                      "Приглашение ещё не принято. Права начнут действовать после входа.",
                     )}
                   </p>
                 )}
@@ -134,7 +134,7 @@ export function UserAccessDialog({
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    {copy("Политики не назначены. ")}
+                    {copy("Политики не назначены.")}
                   </p>
                 )}
               </section>
@@ -156,7 +156,7 @@ export function UserAccessDialog({
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    {copy("Доступ к настройкам не выдан. ")}
+                    {copy("Доступ к настройкам не выдан.")}
                   </p>
                 )}
               </section>
@@ -184,9 +184,7 @@ export function UserAccessDialog({
                       {copy("Права по политикам")}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {copy(
-                        "Объединение разрешений всех назначенных политик. ",
-                      )}
+                      {copy("Объединение разрешений всех назначенных политик.")}
                     </p>
                   </div>
                   {access.permissions.length ? (
@@ -217,7 +215,7 @@ export function UserAccessDialog({
                                       (rule) => rule.rowFilter,
                                     ) && (
                                       <span className="ml-2 text-xs">
-                                        {copy("· По условиям политик ")}
+                                        {copy("· По условиям политик")}
                                       </span>
                                     )}
                                   </span>
@@ -230,7 +228,7 @@ export function UserAccessDialog({
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      {copy("Разрешений на коллекции нет. ")}
+                      {copy("Разрешений на коллекции нет.")}
                     </p>
                   )}
                 </section>

@@ -15,6 +15,7 @@ export function EditorDiscardConfirmation({
 
   const id = useId();
   const continueRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     continueRef.current?.focus();
   }, []);
@@ -33,13 +34,13 @@ export function EditorDiscardConfirmation({
             id={`${id}-title`}
             className="text-base font-semibold"
           >
-            {copy("Закрыть без сохранения? ")}
+            {copy("Закрыть без сохранения?")}
           </h3>
           <p
             id={`${id}-description`}
             className="text-sm leading-relaxed text-muted-foreground"
           >
-            {copy("Ваши несохранённые изменения будут потеряны. ")}
+            {copy("Ваши несохранённые изменения будут потеряны.")}
           </p>
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -48,14 +49,14 @@ export function EditorDiscardConfirmation({
             variant="outline"
             onClick={onDiscard}
           >
-            {copy("Не сохранять ")}
+            {copy("Не сохранять")}
           </Button>
           <Button
             ref={continueRef}
             type="button"
             onClick={onContinue}
           >
-            {copy("Продолжить редактирование ")}
+            {copy("Продолжить редактирование")}
           </Button>
         </div>
       </section>

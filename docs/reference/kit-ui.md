@@ -13,6 +13,17 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@asmblyr-collaborative/kit/ui/card";
 import {
   Tabs,
   TabsList,
@@ -28,7 +39,7 @@ import {
 } from "@asmblyr-collaborative/kit/ui/select";
 ```
 
-`buttonVariants` from kit/ui/button styles links and other elements. `kit/ui` contains plugin registration/UI contracts. Never import the server root into browsers. React/ReactDOM are compatible peer dependencies shared with the host. Server consumers need not import UI.
+`buttonVariants` from kit/ui/button and `badgeVariants` from kit/ui/badge style links and other elements. `kit/ui` contains plugin registration/UI contracts. Never import the server root into browsers. React/ReactDOM are compatible peer dependencies shared with the host. Server consumers need not import UI.
 
 <a id="стили-и-сборка"></a>
 
@@ -62,6 +73,6 @@ SelectContent uses an explicit container or inherited context. Admin popovers sh
 
 ## Changing or adding components
 
-Change shared Button, Input, Textarea, Select, Checkbox, and Tabs in Kit. Keep "use client" on interactive modules and check native-dialog behavior. Button/buttonVariants remain usable from server components.
+Change shared Button, Input, Textarea, Select, Checkbox, Switch, Label, Badge, Card, and Tabs in Kit. Keep "use client" on interactive modules and check native-dialog behavior. Button/buttonVariants, Badge/badgeVariants, and Card remain usable from server components.
 
 Apps/ui/components.json still manages other local components. Do not run shadcn add --overwrite for components already moved to Kit: it creates duplicates. When moving another component, add an explicit Kit export, move dependencies, and replace consumer imports. Kit imports must not depend on @/ aliases or admin files.

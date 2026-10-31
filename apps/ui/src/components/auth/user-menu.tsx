@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 import type { SessionUser } from "@/lib/session";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,7 +48,7 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
   const copy = useUiCopy();
 
   const { t } = useTranslations();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { logout, pending, error } = useLogout();
 
   if (!user) return null;
@@ -84,7 +84,14 @@ export function UserMenu({ user }: { user: SessionUser | null }) {
                 <UserIdentity user={user} />
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
+              <DropdownMenuItem
+                asChild
+                onSelect={() => {
+                  if (isMobile) {
+                    setOpenMobile(false);
+                  }
+                }}
+              >
                 <Link href="/settings">
                   <Settings aria-hidden="true" />
                   {t("nav.account")}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEditorState } from "./editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useUiCopy } from "@/lib/ui-copy";
 import {
   HttpError,
@@ -123,22 +123,21 @@ export function DeleteStructureForm({
 
       {loading ? (
         <p className="text-sm text-muted-foreground">
-          {copy("Проверяем затрагиваемые данные… ")}
+          {copy("Проверяем затрагиваемые данные…")}
         </p>
       ) : impact ? (
         <div className="space-y-1 rounded-xl border p-4 text-sm">
           <p>
-            {copy("Записей в коллекции: ")}
-            <strong>{impact.itemCount}</strong>
+            {copy("Записей в коллекции:")} <strong>{impact.itemCount}</strong>
           </p>
           {field && !impact.virtual && (
             <p>
-              {copy("Значение поля есть у ")}
-              <strong>{impact.populatedCount}</strong> {copy("записей. ")}
+              {copy("Значение поля есть у")}{" "}
+              <strong>{impact.populatedCount}</strong> {copy("записей.")}
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            {copy("Числа получены на момент проверки. ")}
+            {copy("Числа получены на момент проверки.")}
           </p>
         </div>
       ) : (
@@ -147,14 +146,13 @@ export function DeleteStructureForm({
           variant="outline"
           onClick={() => setRetry((current) => current + 1)}
         >
-          {copy("Повторить проверку ")}
+          {copy("Повторить проверку")}
         </Button>
       )}
 
       <div className="space-y-2">
         <Label htmlFor="delete-confirmation">
-          {copy("Для подтверждения введите ")}
-          {target}
+          {copy("Для подтверждения введите")} {target}
         </Label>
         <Input
           id="delete-confirmation"
@@ -193,7 +191,7 @@ export function DeleteStructureForm({
           disabled={pending}
           onClick={onCancel}
         >
-          {copy("Отмена ")}
+          {copy("Отмена")}
         </Button>
       </div>
     </form>

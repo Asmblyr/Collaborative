@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { ArrowRight, Database, Settings2, Table2 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";

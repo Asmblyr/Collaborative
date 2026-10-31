@@ -10,9 +10,12 @@ the streamed response. Behavior and limits are in the [feature guide](../feature
 flowchart LR
   UI[UI: chat and page context] --> Core[Core: request and response stream]
   Core --> Provider[Configured model provider]
-  Core --> MCP[Internal MCP: tools]
+  Core --> MCP[Shared MCP data tools]
+  External[External MCP client] --> HTTP[OAuth and HTTP adapter]
+  HTTP --> MCP
   MCP --> Items[Items and permissions services]
-  MCP --> Model[Plugin model handlers]
+  Core --> Model[Published plugin model handlers]
+  HTTP --> Model
   Model --> Items
   Items --> DB[(PostgreSQL)]
 ```
@@ -31,7 +34,7 @@ Chat requires a human user who is a superuser, has at least one read/create/upda
 data grant, or has an active personal Google connection. Every tool call undergoes
 server checks. `items` enforces action, field, and row permissions. MCP calls also
 respect `mcp.enabled` on every affected collection, including related paths and
-superuser requests. There is no external public MCP endpoint. Data returned by
+superuser requests. The [external MCP](../features/external-mcp.md) shares this data kernel through a user-authorized HTTP adapter. Data returned by
 tools may be sent to the configured model provider.
 
 <a id="деиствия-расширении"></a>
@@ -42,7 +45,7 @@ tools may be sent to the configured model provider.
 wrap suitable handlers in `defineModelContext<Input>(defineHandler(...), annotation)`.
 `defineModelAnnotation` supplies a title, description, `AccessGate`, and optional
 `page` and `readOnly`. The Kit builder derives input/output runtime schemas from
-TypeScript types. HTTP, the assistant, and internal MCP call the same handler and
+TypeScript types. HTTP, the assistant, and internal/external MCP call the same handler and
 middleware; there is no manual registry in `plugin.ts`.
 
 `AccessGate.authenticated` admits a request but does not grant collection access.

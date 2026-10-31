@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
-import { EditorDialog } from "@/components/collections/editor-dialog";
-import { Badge } from "@/components/ui/badge";
+import { EditorDialog } from "@/components/ui/editor-dialog";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { PluginSettingsForm } from "./settings-form";
 import { ExtensionHistory } from "./extension-history";
 import { capabilityLabels, type PluginSettingsEntry } from "./types";
@@ -104,7 +104,7 @@ export function PluginEditorDialog({
       setMessage(
         copy(
           result.data.restartRequired
-            ? "Изменение сохранено. Перезапустите Core."
+            ? "Изменение сохранено. Перезапустите Core и обновите страницу."
             : "Состояние сохранено.",
         ),
       );

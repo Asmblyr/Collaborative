@@ -1,27 +1,35 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { defineUiPlugin } from "@asmblyr-collaborative/kit/ui";
 import { PluginRegistryProvider } from "../src/components/plugins/registry";
+import { PluginRegistryContext } from "../src/components/plugins/registry-context";
 import { ItemFieldInput } from "../src/components/items/item-field-input";
 import { ContentValue } from "../src/components/items/content-value";
 import { readColorOptions } from "../../../examples/plugins/color/ui/color-options";
 import colorPlugin from "../../../examples/plugins/color/ui/index";
-import { uiPlugins } from "../src/generated/plugin-ui";
 
-const installedPlugins = [...uiPlugins];
-test.before(() => {
-  // This example is a test fixture; production enables only configured packages.
-  uiPlugins.push({
-    packageName: "@asmblyr-collaborative/plugin-color",
-    namespace: "color",
-    definition: colorPlugin,
-  });
-});
-test.after(() => {
-  uiPlugins.splice(0, uiPlugins.length, ...installedPlugins);
-});
+function ColorPluginProvider({ children }: { children?: ReactNode }) {
+  return createElement(
+    PluginRegistryContext.Provider,
+    {
+      value: {
+        plugins: [
+          {
+            packageName: "@asmblyr-collaborative/plugin-color",
+            namespace: "color",
+            definition: colorPlugin,
+          },
+        ],
+        pending: false,
+        failedNamespaces: [],
+        retry: () => undefined,
+      },
+    },
+    children,
+  );
+}
 
 const field = {
   name: "color",
@@ -66,8 +74,8 @@ test("disabled plugin preserves an editable draft and uses a plain display", () 
 test("active color editor retains values outside the palette and honors disabled controls", () => {
   const input = renderToStaticMarkup(
     createElement(
-      PluginRegistryProvider,
-      { enabled: ["@asmblyr-collaborative/plugin-color"] },
+      ColorPluginProvider,
+      {},
       createElement(ItemFieldInput, {
         id: "color",
         field,
@@ -87,8 +95,8 @@ test("active color editor retains values outside the palette and honors disabled
 test("plugin display escapes arbitrary stored text instead of treating it as CSS or HTML", () => {
   const html = renderToStaticMarkup(
     createElement(
-      PluginRegistryProvider,
-      { enabled: ["@asmblyr-collaborative/plugin-color"] },
+      ColorPluginProvider,
+      {},
       createElement(ContentValue, {
         field,
         value: '<img src=x onerror="alert(1)">',
@@ -104,6 +112,17 @@ test("plugin display escapes arbitrary stored text instead of treating it as CSS
       allowCustom: false,
     },
   );
+});
+
+test("plugin loading leaves the host form and its stored draft available", () => {
+  const html = renderToStaticMarkup(
+    createElement(
+      PluginRegistryProvider,
+      { enabled: ["@asmblyr-collaborative/plugin-comments"] },
+      createElement("input", { defaultValue: "Unsaved draft", name: "title" }),
+    ),
+  );
+  assert.match(html, /value="Unsaved draft"/);
 });
 
 test("field UI contributions reject ambiguous IDs and duplicate registrations", () => {

@@ -6,7 +6,7 @@ import type {
 } from "@asmblyr-collaborative/contracts";
 import { Activity } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { requestJson } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { IntegrationEditor } from "../integrations/editor";

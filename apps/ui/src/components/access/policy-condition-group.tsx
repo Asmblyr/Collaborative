@@ -213,7 +213,7 @@ export function PolicyConditionGroup({
       </div>
       {!value.children.length && (
         <p className="py-5 text-sm text-muted-foreground">
-          {copy("Добавьте хотя бы одно условие. ")}
+          {copy("Добавьте хотя бы одно условие.")}
         </p>
       )}
       <div className="flex items-center gap-0.5 py-3">
@@ -230,7 +230,7 @@ export function PolicyConditionGroup({
           }
         >
           <Plus className="size-4" />
-          {copy("Добавить условие ")}
+          {copy("Добавить условие")}
         </Button>
         {depth < 3 && (
           <Popover
@@ -274,7 +274,7 @@ export function PolicyConditionGroup({
                   });
                 }}
               >
-                {copy("Добавить группу И/ИЛИ ")}
+                {copy("Добавить группу И/ИЛИ")}
               </Button>
             </PopoverContent>
           </Popover>

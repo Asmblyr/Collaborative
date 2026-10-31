@@ -26,6 +26,50 @@ const sort = {
   },
 };
 const pageSize = { enum: [10, 25, 50, 100] };
+const condition = {
+  type: "object",
+  additionalProperties: false,
+  required: ["field", "op"],
+  properties: {
+    field: { type: "string" },
+    op: { type: "string" },
+    value: {
+      anyOf: [
+        { type: "string", maxLength: 255 },
+        {
+          type: "array",
+          minItems: 1,
+          maxItems: 20,
+          items: { type: "string", maxLength: 255 },
+        },
+      ],
+    },
+    quantifier: { enum: ["some", "none"] },
+  },
+};
+function filterGroup(depth) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["logic", "children"],
+    properties: {
+      logic: { enum: ["and", "or"] },
+      children: {
+        type: "array",
+        maxItems: 20,
+        items:
+          depth < 3
+            ? { anyOf: [condition, filterGroup(depth + 1)] }
+            : condition,
+      },
+    },
+  };
+}
+const filter = {
+  anyOf: [filterGroup(1), { type: "null" }],
+  description:
+    "Ordinary item filter AST, validated against current field/relation read permissions (30 total nodes, 8192 serialized characters). null explicitly remembers no filter. Omission preserves the previous filter. GET omits this property until a personal filter has been saved; an inaccessible saved filter is returned as null without revealing its definition.",
+};
 const data = {
   type: "object",
   additionalProperties: false,
@@ -36,6 +80,7 @@ const data = {
     columns: { anyOf: [tableColumns, { type: "null" }] },
     pageSize,
     sort,
+    filter,
   },
 };
 const json = (schema) => ({ "application/json": { schema } });
@@ -56,13 +101,13 @@ export function tablePreferencesContract(key) {
           type: "object",
           additionalProperties: false,
           minProperties: 1,
-          properties: { columns: tableColumns, pageSize, sort },
+          properties: { columns: tableColumns, pageSize, sort, filter },
         }),
       }
     : undefined;
   return {
     description:
-      "Human caller with read access to the collection; only their own table preferences. PATCH merges supplied properties. Columns are reconciled against readable fields on GET; missing personal settings fall back to a visible default view. Resizing does not require record update permission.",
+      "Human caller with read access to the collection; only their own table preferences. PATCH merges supplied properties. Columns and saved filters are checked against current readable fields on GET; missing personal settings fall back to a visible default view. The UI automatically saves columns, sort, filter and page size. Resizing and preference changes do not require record update permission.",
     ...(requestBody ? { requestBody } : {}),
     responses: {
       200: {

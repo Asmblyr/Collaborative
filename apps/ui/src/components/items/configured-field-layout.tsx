@@ -24,6 +24,8 @@ export function ConfiguredFieldLayout({
   values,
   forced,
   reveal,
+  revealAttempt = 0,
+  plainGroups = false,
   children,
 }: {
   layout?: FormLayout | null;
@@ -31,6 +33,8 @@ export function ConfiguredFieldLayout({
   values: Record<string, string>;
   forced: Set<string>;
   reveal?: string;
+  revealAttempt?: number;
+  plainGroups?: boolean;
   children: (field: CollectionField) => ReactNode;
 }) {
   const copy = useUiCopy();
@@ -40,14 +44,14 @@ export function ConfiguredFieldLayout({
     values,
     forced,
   );
-  const [selected, setSelected] = useState(
-    () =>
-      form.tabs.find(
-        (t) => reveal && fieldsInNodes(t.children).includes(reveal),
-      )?.id ??
-      form.tabs[0]?.id ??
-      "",
+  const [choice, setChoice] = useState<{ id: string; attempt: number } | null>(
+    null,
   );
+  const revealedTab =
+    reveal && (!choice || choice.attempt < revealAttempt)
+      ? form.tabs.find((t) => fieldsInNodes(t.children).includes(reveal))?.id
+      : undefined;
+  const selected = revealedTab ?? choice?.id ?? form.tabs[0]?.id ?? "";
   const active = form.tabs.some((t) => t.id === selected)
     ? selected
     : (form.tabs[0]?.id ?? "");
@@ -60,6 +64,8 @@ export function ConfiguredFieldLayout({
             key={node.id}
             node={node}
             reveal={reveal}
+            revealAttempt={revealAttempt}
+            plain={plainGroups}
           >
             {render(node.children)}
           </FormSection>
@@ -78,7 +84,7 @@ export function ConfiguredFieldLayout({
   if (!form.tabs.length)
     return (
       <p className="text-sm text-muted-foreground">
-        {copy("Нет полей для отображения. ")}
+        {copy("Нет полей для отображения.")}
       </p>
     );
   return (
@@ -88,7 +94,7 @@ export function ConfiguredFieldLayout({
       ) : (
         <Tabs
           value={active}
-          onValueChange={setSelected}
+          onValueChange={(id) => setChoice({ id, attempt: revealAttempt })}
           className="space-y-5"
         >
           <TabsList
@@ -123,23 +129,34 @@ export function ConfiguredFieldLayout({
 function FormSection({
   node,
   reveal,
+  revealAttempt,
+  plain,
   children,
 }: {
   node: Extract<FormNode, { kind: "group" }>;
   reveal?: string;
+  revealAttempt: number;
+  plain: boolean;
   children: ReactNode;
 }) {
   const id = useId();
-  const [open, setOpen] = useState(
-    !node.collapsed ||
-      (!!reveal && fieldsInNodes(node.children).includes(reveal)),
+  const containsReveal = Boolean(
+    reveal && fieldsInNodes(node.children).includes(reveal),
   );
+  const [toggle, setToggle] = useState<{
+    open: boolean;
+    attempt: number;
+  } | null>(null);
+  const open =
+    containsReveal && (!toggle || toggle.attempt < revealAttempt)
+      ? true
+      : (toggle?.open ?? !node.collapsed);
   return (
     <section
-      className="min-w-0 rounded-xl border bg-muted/10 @min-[420px]:col-span-2"
+      className={`min-w-0 @min-[420px]:col-span-2 ${plain ? "space-y-3" : "rounded-xl border bg-muted/10"}`}
       aria-labelledby={`${id}-label`}
     >
-      <div className="px-4 py-3">
+      <div className={plain ? undefined : "px-4 py-3"}>
         {node.collapsible ? (
           <Button
             id={`${id}-label`}
@@ -149,7 +166,7 @@ function FormSection({
             className="-ml-2 h-auto w-full justify-start py-1.5"
             aria-expanded={open}
             aria-controls={id}
-            onClick={() => setOpen(!open)}
+            onClick={() => setToggle({ open: !open, attempt: revealAttempt })}
           >
             <ChevronDown className={open ? "" : "-rotate-90"} />
             {node.label}
@@ -171,7 +188,7 @@ function FormSection({
       <div
         id={id}
         hidden={node.collapsible && !open}
-        className="@container px-4 pb-4"
+        className={plain ? "@container" : "@container px-4 pb-4"}
       >
         {children}
       </div>

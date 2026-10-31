@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { PersonalConnectionStatus } from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { ASSISTANT_SETTINGS_CHANGED } from "../assistant/assistant-types";
@@ -14,18 +14,14 @@ export function GoogleConnectionPanel({ feedback }: { feedback?: string }) {
   const [message, setMessage] = useState("");
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/connections/google", {
-      signal: controller.signal,
-      cache: "no-store",
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error();
-        }
-        const result = (await response.json()) as {
-          data: PersonalConnectionStatus;
-        };
-        setStatus(result.data);
+    void apiRequest<PersonalConnectionStatus>(
+      "/api/connections/google",
+      "GET",
+      undefined,
+      controller.signal,
+    )
+      .then((result) => {
+        setStatus(result);
       })
       .catch(() => {
         if (!controller.signal.aborted) {

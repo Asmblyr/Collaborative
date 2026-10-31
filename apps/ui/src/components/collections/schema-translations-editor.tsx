@@ -9,7 +9,7 @@ import {
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useUiCopy } from "@/lib/ui-copy";
 
 const labelLimits = { label: 120, description: 1000, placeholder: 255 };

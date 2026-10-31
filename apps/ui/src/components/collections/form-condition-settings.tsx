@@ -88,13 +88,13 @@ export function FormConditionSettings({
             value="all"
             disabled={!eligible.length}
           >
-            {copy("Все условия выполнены ")}
+            {copy("Все условия выполнены")}
           </SelectItem>
           <SelectItem
             value="any"
             disabled={!eligible.length}
           >
-            {copy("Любое условие выполнено ")}
+            {copy("Любое условие выполнено")}
           </SelectItem>
         </SelectContent>
       </Select>
@@ -230,7 +230,7 @@ export function FormConditionSettings({
                         (o) => o.value === rule.value,
                       ) && (
                         <SelectItem value={String(rule.value)}>
-                          {String(rule.value)} {copy(" (архивный вариант) ")}
+                          {String(rule.value)} {copy("(архивный вариант)")}
                         </SelectItem>
                       )}
                     {field.presentation.options.map((o) => (
@@ -271,7 +271,7 @@ export function FormConditionSettings({
           }
         >
           <Plus />
-          {copy("Условие ")}
+          {copy("Условие")}
         </Button>
       )}
     </section>

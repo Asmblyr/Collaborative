@@ -1,6 +1,6 @@
 "use client";
 import type { MonitoringMetrics } from "@asmblyr-collaborative/contracts";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function MonitoringMeasurements({

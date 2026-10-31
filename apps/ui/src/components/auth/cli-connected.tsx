@@ -18,9 +18,9 @@ export function CliConnected() {
       </p>
       <Link
         className="text-sm text-primary underline-offset-4 hover:underline"
-        href="/admin/collections"
+        href="/"
       >
-        {copy("Вернуться в админку")}
+        {copy("Перейти к коллекциям")}
       </Link>
     </section>
   );

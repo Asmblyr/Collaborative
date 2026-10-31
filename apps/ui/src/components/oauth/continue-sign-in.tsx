@@ -49,7 +49,7 @@ export function ContinueOAuthSignIn({ details }: { details: ConsentDetails }) {
               variant="outline"
               onClick={() => window.location.reload()}
             >
-              {copy("Проверить снова ")}
+              {copy("Проверить снова")}
             </Button>
           </>
         ) : (
@@ -59,8 +59,7 @@ export function ContinueOAuthSignIn({ details }: { details: ConsentDetails }) {
               className="mx-auto size-6 animate-spin text-muted-foreground"
             />
             <h1 className="text-lg font-semibold">
-              {copy("Входим в ")}
-              {details.name}…
+              {copy("Входим в")} {details.name}…
             </h1>
             <p
               role="status"

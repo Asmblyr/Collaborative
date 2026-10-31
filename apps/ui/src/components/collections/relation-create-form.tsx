@@ -10,9 +10,9 @@ import { RelationBehaviorSettings } from "./relation-behavior-settings";
 
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -95,7 +95,7 @@ export function RelationCreateForm({
           disabled={pending}
           onClick={onBack}
         >
-          <ArrowLeft aria-hidden="true" /> {copy(" К выбору типа ")}
+          <ArrowLeft aria-hidden="true" /> {copy("К выбору типа")}
         </Button>
         <Badge variant="secondary">
           {kind === "m2o"
@@ -127,21 +127,21 @@ export function RelationCreateForm({
             value="basic"
             disabled={pending}
           >
-            {copy("Основное ")}
+            {copy("Основное")}
           </TabsTrigger>
           {kind !== "m2o" && (
             <TabsTrigger
               value="structure"
               disabled={pending}
             >
-              {copy("Структура ")}
+              {copy("Структура")}
             </TabsTrigger>
           )}
           <TabsTrigger
             value="behavior"
             disabled={pending}
           >
-            {copy("Поведение ")}
+            {copy("Поведение")}
           </TabsTrigger>
         </TabsList>
         <TabsContent
@@ -229,7 +229,7 @@ export function RelationCreateForm({
             {!targetCollection && (
               <p className="text-sm text-muted-foreground">
                 {copy(
-                  "Сначала выберите связанную коллекцию на вкладке «Основное». ",
+                  "Сначала выберите связанную коллекцию на вкладке «Основное».",
                 )}
               </p>
             )}
@@ -245,14 +245,13 @@ export function RelationCreateForm({
                         setMessage("");
                       }}
                     />
-                    {copy("Использовать существующий внешний ключ ")}
+                    {copy("Использовать существующий внешний ключ")}
                   </label>
                 )}
                 {reuseExisting ? (
                   <div className="space-y-2">
                     <Label htmlFor="relation-existing-key">
-                      {copy("Внешний ключ в ")}
-                      {targetCollection}
+                      {copy("Внешний ключ в")} {targetCollection}
                     </Label>
                     <Select
                       value={foreignKey}
@@ -331,7 +330,7 @@ export function RelationCreateForm({
                       setAllowDuplicates(checked === true)
                     }
                   />
-                  {copy("Разрешить повторные пары записей ")}
+                  {copy("Разрешить повторные пары записей")}
                 </label>
               </div>
             )}
@@ -358,7 +357,7 @@ export function RelationCreateForm({
           disabled={pending}
           onClick={onCancel}
         >
-          {copy("Отмена ")}
+          {copy("Отмена")}
         </Button>
       </div>
     </form>

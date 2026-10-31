@@ -70,6 +70,11 @@ export type {
   ExtensionHistoryEntry,
   ExtensionListResult,
 } from "./extension-registry.js";
+export type {
+  UserFieldSelfAccess,
+  UserFormConfiguration,
+  UserFormResult,
+} from "./user-form.js";
 export type { NotificationItem, NotificationResult } from "./notifications.js";
 export type {
   SchemaValueType,

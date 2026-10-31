@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import type { ServiceFederation } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -56,7 +56,7 @@ export function ServiceFederations({
     <div className="space-y-5">
       <p className="text-sm leading-6 text-muted-foreground">
         {copy(
-          "GitLab.com подтверждает, какой проект и ветка запустили задачу. Постоянный секрет для CI не нужен. Доступ задают политики этого аккаунта. ",
+          "GitLab.com подтверждает, какой проект и ветка запустили задачу. Постоянный секрет для CI не нужен. Доступ задают политики этого аккаунта.",
         )}
       </p>
       {active && !readOnly && (
@@ -129,7 +129,7 @@ export function ServiceFederations({
           </fieldset>
           <p className="text-xs text-muted-foreground">
             {copy(
-              "Только указанная защищённая ветка. Merge request pipelines не допускаются. ",
+              "Только указанная защищённая ветка. Merge request pipelines не допускаются.",
             )}
           </p>
           <Button disabled={busy}>
@@ -147,7 +147,7 @@ export function ServiceFederations({
       )}
       {bindings.length === 0 && (
         <p className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-          {copy("Федераций пока нет ")}
+          {copy("Федераций пока нет")}
         </p>
       )}
       {bindings.map((binding) => (
@@ -168,12 +168,12 @@ export function ServiceFederations({
             <>
               <details className="text-sm">
                 <summary className="cursor-pointer font-medium">
-                  {copy("Подключение к pipeline ")}
+                  {copy("Подключение к pipeline")}
                 </summary>
                 <div className="mt-3 space-y-3 text-muted-foreground">
                   <p>
                     {copy(
-                      "В переменных GitLab CI укажите ASMBLYR_CORE_URL — доступный runner’у HTTPS-адрес Core. Для локального runner допускается localhost. ",
+                      "В переменных GitLab CI укажите ASMBLYR_CORE_URL — доступный runner’у HTTPS-адрес Core. Для локального runner допускается localhost.",
                     )}
                   </p>
                   <p>{copy("Добавьте в задачу:")}</p>
@@ -191,7 +191,7 @@ export function ServiceFederations({
                   </pre>
                   <p>
                     {copy(
-                      "Подставьте токен из переменной окружения. Ответ accessToken передавайте как Bearer. Обмен однократный, срок — до 15 минут. ",
+                      "Подставьте токен из переменной окружения. Ответ accessToken передавайте как Bearer. Обмен однократный, срок — до 15 минут.",
                     )}
                   </p>
                 </div>
@@ -201,7 +201,7 @@ export function ServiceFederations({
                   <div className="space-y-2">
                     <p className="text-xs text-destructive">
                       {copy(
-                        "Все токены этой федерации сразу перестанут работать. ",
+                        "Все токены этой федерации сразу перестанут работать.",
                       )}
                     </p>
                     <div className="flex gap-2">
@@ -229,7 +229,7 @@ export function ServiceFederations({
                           })
                         }
                       >
-                        {copy("Подтвердить отзыв ")}
+                        {copy("Подтвердить отзыв")}
                       </Button>
                       <Button
                         size="sm"
@@ -237,7 +237,7 @@ export function ServiceFederations({
                         disabled={busy}
                         onClick={() => setConfirm(null)}
                       >
-                        {copy("Отмена ")}
+                        {copy("Отмена")}
                       </Button>
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export function ServiceFederations({
                     disabled={busy}
                     onClick={() => setConfirm(binding.id)}
                   >
-                    {copy("Отозвать ")}
+                    {copy("Отозвать")}
                   </Button>
                 ))}
             </>

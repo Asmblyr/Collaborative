@@ -10,12 +10,13 @@ import type {
 } from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { ASSISTANT_SETTINGS_CHANGED } from "@/components/assistant/assistant-types";
 import { MONITORING_SETTINGS_CHANGED } from "@/lib/monitoring/controller";
 import { apiRequest } from "@/lib/api-request";
 import { HttpError } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
+import { showToast } from "@/components/ui/toast";
 import { ConnectionFields } from "./connection-fields";
 import { SecretFields } from "./secret-fields";
 import { integrationTitles } from "./titles";
@@ -118,6 +119,7 @@ export function IntegrationEditor({
         );
         window.dispatchEvent(new Event(ASSISTANT_SETTINGS_CHANGED));
         window.dispatchEvent(new Event(MONITORING_SETTINGS_CHANGED));
+        showToast(copy("Настройки сохранены"), "success");
         router.refresh();
         onSave(updated);
       }
@@ -153,7 +155,7 @@ export function IntegrationEditor({
       onClose={onClose}
       busy={busy}
       hasUnsavedChanges={dirty}
-      footer={(close) => (
+      footer={(requestClose) => (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button
             type="button"
@@ -176,7 +178,7 @@ export function IntegrationEditor({
               size="sm"
               variant="ghost"
               disabled={busy}
-              onClick={close}
+              onClick={requestClose}
             >
               {copy("Отмена")}
             </Button>

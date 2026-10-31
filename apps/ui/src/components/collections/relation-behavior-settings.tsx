@@ -2,7 +2,7 @@
 
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -53,7 +53,7 @@ export function RelationBehaviorSettings({
       {kind === "o2m" && reuseExisting && (
         <p className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
           {copy(
-            "Для существующего внешнего ключа правила обязательности и удаления уже заданы в целевой коллекции. ",
+            "Для существующего внешнего ключа правила обязательности и удаления уже заданы в целевой коллекции.",
           )}
         </p>
       )}
@@ -62,8 +62,7 @@ export function RelationBehaviorSettings({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="relation-source-delete">
-                {copy("При удалении записи из ")}
-                {collection}
+                {copy("При удалении записи из")} {collection}
               </Label>
               <Select
                 value={sourceOnDelete}
@@ -83,7 +82,7 @@ export function RelationBehaviorSettings({
                     {copy("Удалить строки связи")}
                   </SelectItem>
                   <SelectItem value="restrict">
-                    {copy("Запретить удаление записи ")}
+                    {copy("Запретить удаление записи")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -111,7 +110,7 @@ export function RelationBehaviorSettings({
                     {copy("Удалить строки связи")}
                   </SelectItem>
                   <SelectItem value="restrict">
-                    {copy("Запретить удаление записи ")}
+                    {copy("Запретить удаление записи")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -120,7 +119,7 @@ export function RelationBehaviorSettings({
           {(sourceOnDelete === "cascade" || targetOnDelete === "cascade") && (
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Удаление строк связи самой БД пока не записывается отдельно в историю. ",
+                "Удаление строк связи самой БД пока не записывается отдельно в историю.",
               )}
             </p>
           )}
@@ -133,7 +132,7 @@ export function RelationBehaviorSettings({
               checked={required}
               onCheckedChange={(checked) => setRequired(checked === true)}
             />
-            {copy("Обязательно в API ")}
+            {copy("Обязательно в API")}
           </label>
           <label className="flex items-center gap-3 text-sm">
             <Checkbox
@@ -144,11 +143,11 @@ export function RelationBehaviorSettings({
                   setOnDelete("restrict");
               }}
             />
-            {copy("Разрешить NULL в БД ")}
+            {copy("Разрешить NULL в БД")}
           </label>
           <div className="space-y-2">
             <Label htmlFor="relation-delete">
-              {copy("При удалении связанной записи ")}
+              {copy("При удалении связанной записи")}
             </Label>
             <Select
               value={onDelete}
@@ -175,12 +174,12 @@ export function RelationBehaviorSettings({
                 )}
                 {targetCollection !== "@users" && (
                   <SelectItem value="setDefault">
-                    {copy("Установить значение по умолчанию ")}
+                    {copy("Установить значение по умолчанию")}
                   </SelectItem>
                 )}
                 {targetCollection !== "@users" && (
                   <SelectItem value="cascade">
-                    {copy("Удалить связанные записи ")}
+                    {copy("Удалить связанные записи")}
                   </SelectItem>
                 )}
               </SelectContent>
@@ -199,14 +198,14 @@ export function RelationBehaviorSettings({
                 className="h-10 font-mono"
               />
               <p className="text-xs text-muted-foreground">
-                {copy("Запись с этим ID должна уже существовать. ")}
+                {copy("Запись с этим ID должна уже существовать.")}
               </p>
             </div>
           )}
           {onDelete !== "restrict" && (
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Изменения других записей, выполненные самой БД при удалении, пока не получают отдельные записи в истории. ",
+                "Изменения других записей, выполненные самой БД при удалении, пока не получают отдельные записи в истории.",
               )}
             </p>
           )}

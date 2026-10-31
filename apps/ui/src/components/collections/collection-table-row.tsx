@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { ChevronRight, GripVertical, Table2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { Collection, CollectionFolder } from "@/components/items/types";
@@ -166,13 +166,13 @@ export function CollectionTableRow({
                   variant="outline"
                   className="font-sans font-normal text-muted-foreground"
                 >
-                  {copy("Скрыта ")}
+                  {copy("Скрыта")}
                 </Badge>
               )}
             </Button>
             {inside && (
               <span className="ml-2 shrink-0 text-xs text-primary">
-                {copy("Вложить сюда ")}
+                {copy("Вложить сюда")}
               </span>
             )}
           </div>

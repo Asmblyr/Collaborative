@@ -82,7 +82,7 @@ export function RelationChoiceSettings({
                 })
               }
             >
-              {copy("Убрать группу ")}
+              {copy("Убрать группу")}
             </Button>
           </div>
         ) : (
@@ -127,7 +127,7 @@ export function RelationChoiceSettings({
             })
           }
         >
-          {copy("Добавить условие ")}
+          {copy("Добавить условие")}
         </Button>
         {depth < 2 && (
           <Button
@@ -154,7 +154,7 @@ export function RelationChoiceSettings({
               })
             }
           >
-            {copy("Группа ")}
+            {copy("Группа")}
           </Button>
         )}
       </div>
@@ -183,7 +183,7 @@ export function RelationChoiceSettings({
       </h3>
       <p className="text-xs text-muted-foreground">
         {copy(
-          "Можно сравнить поле кандидата со значением другого поля формы. Смена родителя сбрасывает зависимый выбор; сервер проверяет связь при сохранении. ",
+          "Можно сравнить поле кандидата со значением другого поля формы. Смена родителя сбрасывает зависимый выбор; сервер проверяет связь при сохранении.",
         )}
       </p>
       {value ? (
@@ -198,7 +198,7 @@ export function RelationChoiceSettings({
             size="sm"
             onClick={() => onChange(undefined)}
           >
-            {copy("Без ограничений выбора ")}
+            {copy("Без ограничений выбора")}
           </Button>
         </fieldset>
       ) : (
@@ -220,7 +220,7 @@ export function RelationChoiceSettings({
             })
           }
         >
-          {copy("Настроить ограничения ")}
+          {copy("Настроить ограничения")}
         </Button>
       )}
     </section>

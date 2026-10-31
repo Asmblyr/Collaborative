@@ -16,7 +16,7 @@ Unsaved uploads remain in the library for administrator cleanup. Owners can view
 
 Appearance preferences include an IANA time zone, such as `Asia/Yekaterinburg`; `null` uses the device time zone. It formats profile and session dates while database/API timestamps stay UTC. `lastLoginAt` changes on new-session creation, not refresh. `lastActiveAt` is approximate: successful user access-token requests update it at most every five minutes. Service-key activity is tracked separately.
 
-Job title, department, organization, and manager are not built into Core. A superuser can create an ordinary UUID-key collection and select it under Settings → Users → Profile extension. Use supported fields, M2O/O2M/M2M relationships, and the standard form editor. An empty collection is recommended. Existing row IDs must match user IDs; each user has one profile row. An internal FK protects the association, and collection renaming preserves the setting.
+Job title, department, organization, and manager are not built into Core. New profile fields and M2O relations are configured in the system Users collection. Existing UUID-key extension collections remain supported through the compatibility API. Use supported fields, M2O/O2M/M2M relationships, and the standard form editor. An empty collection is recommended. Existing row IDs must match user IDs; each user has one profile row. An internal FK protects the association, and collection renaming preserves the setting.
 
 Extra data opens from the personal profile and user side panel. The first `PATCH /users/me/extension` or `PATCH /users/:id/extension` creates a row with the user's ID; later calls update it. Ordinary `POST /items/:collection` cannot create profiles with random IDs. Existing rows and relationships use the standard record editor. Disabling the extension preserves data and its FK; disable it before deleting the collection.
 
@@ -28,7 +28,7 @@ Validation, computed fields, audit, and mutation hooks match ordinary collection
 
 ## Configurable profile information
 
-A superuser configures a separate read-only block under Settings → Users → Profile display. It supports up to 12 rows with label, source, order, and Show to profile owner, off by default. An empty title uses the translated Additional information label.
+A superuser adds read-only virtual fields under Collections → System collections → Users. Up to 12 fields have a label, source and Show to profile owner, off by default. Arrange them alongside other profile fields in Profile form. Existing display configuration and its sources are preserved.
 
 Sources are custom fields of the system `users` collection. Paths may traverse up to two single M2O relations to a final value, such as department → name or department → manager. Supported values include text, email, numbers, flags, dates, tags, and user references exposing only a display name with name/email fallback. Photos and arbitrary fields of linked users are not returned.
 
@@ -52,6 +52,8 @@ Browser sign-in endpoints are `/api/auth/browser/login`, `/api/auth/browser/invi
 
 Upgrading from the former BFF requires signing in again: old access/refresh cookies are unused. Data, users, passkeys, and API sessions are preserved.
 
+`SESSION_COOKIE_DOMAIN` optionally shares only the main session cookie with trusted applications under one parent domain; an empty value keeps it host-only. For example, `admin.example.test` and `portal.example.test` may use `example.test`. The value must match the public origin's parent domain, must not be an IP, top-level domain or public suffix, and every receiving subdomain must be trusted. Cookie sharing alone does not authenticate another product: it must validate the session through the trusted Core and map the exact external subject to its own account and permissions. Passkey and SSO challenge cookies remain host-only. Sign-in/logout clear both the current host-only and configured domain session cookie; duplicate session cookies are rejected. Changing the public hostname requires one sign-in on the new origin and new passkeys; it does not move or revoke existing database sessions. Shared sessions keep the original expiry (up to 30 days), revocation and active-user checks.
+
 Administrators specify an email and share a one-time `/invite#token=…` link through any channel. It expires after seven days and signs in without email delivery or a mandatory password. The fragment is removed before submission; GET alone does not consume it. It proves possession of the invitation secret, not ownership of the mailbox. After sign-in, add a password, passkey, or linked SSO for future access. Consumed invitations cannot be reused.
 
 Invitations require users/update. Managers can re-invite only unactivated accounts without password, passkey, or SSO, whose policies all belong to their allowed set. Their own account and users with delegation rights are excluded. UI controls and server checks enforce this independently. See [delegation](./access.md#bounded-policy-delegation).
@@ -66,7 +68,7 @@ Adding/removing passkeys and setting the first password require sign-in within t
 
 A freshly authenticated superuser can issue a one-time 30-minute recovery link to an active ordinary user. Claiming it revokes prior sessions, password, passkeys, SSO links, and OAuth consents. Issuing it alone resets nothing. Recovery is not delegated to managers and cannot target superusers. Operators recover locked-out administrators on the server using `scripts/operations/admin-recover.mjs`; see [operations](../development/operations.md).
 
-`AUTH_UI_URL` sets the exact public origin and is mandatory in production. HTTPS is required except for local localhost. Optional `PASSKEY_RP_ID` must match the hostname. Domain changes require new passkeys. Core also binds the challenge to an HttpOnly browser cookie.
+`AUTH_UI_URL` sets the exact public origin and is mandatory in production. HTTPS is required except for `localhost` and its `.localhost` subdomains, used by local ingress. The browser must resolve these names to loopback and support them as secure contexts. Optional `PASSKEY_RP_ID` must match the hostname. Domain changes require new passkeys. Core also binds the challenge to an HttpOnly browser cookie.
 
 <a id="подключение-cli"></a>
 
@@ -85,3 +87,17 @@ OIDC validates discovery, issuer, state, PKCE, and nonce. New providers are link
 There is no separate MFA flow, general LDAP/SAML connector, or self-service email password recovery. SMTP is unnecessary for the first beta. The shared credential-endpoint rate limit lives in PostgreSQL; additional route limits are process-local. Core's built-in public listener sees browser connections directly. Behind an external reverse proxy, the shared source limit applies to the proxy address because Core does not trust external forwarded headers.
 
 Sources: `apps/core/src/auth` and `apps/core/src/auth/browser`. External application authorization is covered under [integrations](./integrations.md).
+
+## Profile fields and form
+
+Configure profiles under **Collections → Show system collections → Users**. Add ordinary optional fields, M2O relationships, or read-only virtual fields rooted in existing custom user fields and single relationships. **Profile form** reuses the collection form designer: order, half/full widths, tabs, sections and preview. Both the account profile and the administrative user card use this form. Profile sections keep their headings and share the main field grid without nested cards or horizontal insets; the profile form preview uses the same presentation. Avatars keep their dedicated uploader. Built-in identity, authentication and privilege columns remain protected.
+
+For a custom field, select **Owner access** in the form designer: hidden by default, read only, or read and edit. These are explicit own-row grants, enforced in Core. Related rows still require ordinary collection read permissions; file permissions remain enforced. Other users' custom columns remain superuser-only. Visibility in the form is not an authorization rule.
+
+Legacy profile-extension collections, values, relationships and policies remain untouched and accessible from existing profiles. Existing display projections become virtual fields in Users; their exact sources and owner visibility are preserved. The separate Profile extension and Profile display settings are removed from the Users settings screen. The legacy APIs remain compatible. No automatic data migration or privilege expansion occurs.
+
+New routes: GET/PUT /system-collections/users/form (human superuser), GET/PATCH /users/me/form (own human session), GET/PATCH /users/:id/form (users/read or users/update). GET responses omit hidden fields and layout conditions referring to them. PATCH is atomic across native and custom user fields. Deleting a custom field removes its owner grant, so recreating its name cannot recover old privileges.
+
+Verification: core-profile and core-system-collections through scripts/test.mjs, UI unit tests, typecheck, lint and production builds.
+
+Own native profile fields (first name, last name, display name and About) are read only by default for ordinary users. A superuser explicitly enables owner writes for each field in the system Users form. Custom fields keep their existing hidden/read/write grants. Human users with users/update can manage native profiles, and superusers retain their administration access. The legacy PATCH /users/me and unified form enforce the same checks; mixed unauthorized writes are rejected atomically. Revocation takes effect on the next request and preserves saved values. Owners may freely upload/change their own avatar, subject to existing image and file validation. Passwords, sessions, appearance and personal application connections remain independently available. Legacy extension collections continue to enforce their ordinary row and field grants.

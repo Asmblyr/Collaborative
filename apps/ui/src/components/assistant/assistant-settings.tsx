@@ -2,7 +2,7 @@
 
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import {
   effortLabels,
   type AssistantSettings as Settings,
@@ -56,7 +56,7 @@ export function AssistantSettings({
         <div>
           <h3 className="text-sm font-medium">{copy("Параметры диалога")}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            {copy("Только для ваших следующих сообщений ")}
+            {copy("Только для ваших следующих сообщений")}
           </p>
         </div>
         <div className="flex items-center justify-between gap-3 text-xs">
@@ -109,9 +109,9 @@ export function AssistantSettings({
               </SelectContent>
             </Select>
             <p className="text-xs leading-5 text-muted-foreground">
-              {copy("Более глубокий ответ может занять больше времени. ")}
+              {copy("Более глубокий ответ может занять больше времени.")}{" "}
               {config.thinking === "required"
-                ? copy(" У этой модели размышление всегда включено.")
+                ? ` ${copy("У этой модели размышление всегда включено.")}`
                 : ""}
             </p>
           </div>
@@ -126,7 +126,7 @@ export function AssistantSettings({
             className="w-full"
             onClick={() => onChange({})}
           >
-            {copy("Использовать общие настройки ")}
+            {copy("Использовать общие настройки")}
           </Button>
         )}
       </PopoverContent>

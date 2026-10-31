@@ -18,9 +18,12 @@ import { tablePreferencesContract } from "./table-preferences-contract.mjs";
 import { userProfileContract } from "./user-profile-contract.mjs";
 import { profileDisplayContract } from "./profile-display-contract.mjs";
 import { systemCollectionsContract } from "./system-collections-contract.mjs";
+import { userFormContract } from "./user-form-contract.mjs";
 import { oauthPolicyContract } from "./oauth-policy-contract.mjs";
 import { userReferenceContract } from "./user-reference-contract.mjs";
 import { extensionRegistryContract } from "./extension-registry-contract.mjs";
+import { mcpContract } from "./mcp-contract.mjs";
+import { tableViewsContract } from "./table-views-contract.mjs";
 const object = { type: "object", additionalProperties: true };
 const json = (schema) => ({ "application/json": { schema } });
 const response = (schema, description = "Успех") => ({
@@ -77,6 +80,14 @@ const settingsSectionList = {
 export function operationContract(key) {
   const extensionRegistry = extensionRegistryContract(key);
   if (extensionRegistry) return extensionRegistry;
+  const tableViews = tableViewsContract(key);
+  if (tableViews) {
+    return tableViews;
+  }
+  const mcp = mcpContract(key);
+  if (mcp) return mcp;
+  const userForm = userFormContract(key);
+  if (userForm) return userForm;
   const userReference = userReferenceContract(key);
   if (userReference) return userReference;
   const oauthPolicy = oauthPolicyContract(key);

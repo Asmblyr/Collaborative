@@ -1,21 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { CurrentUser } from "@asmblyr-collaborative/contracts";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { ProfileForm } from "@/components/settings/profile-form";
-import { ProfileExtensionFields } from "@/components/settings/profile-extension-fields";
 import { ProfileDates } from "@/components/settings/profile-dates";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { userDisplayName } from "@/lib/user-profile";
-import { UserSystemFields } from "./user-system-fields";
-import { ProfileDisplay } from "@/components/settings/profile-display";
 export function UserProfileDialog({
   userId,
   email,
   readOnly,
   canChooseAvatar,
-  canManageSystemFields = false,
   onClose,
   onSaved,
 }: {
@@ -74,7 +70,6 @@ export function UserProfileDialog({
           )}
           {user && (
             <>
-              <ProfileDisplay userId={userId} />
               <ProfileForm
                 user={user}
                 endpoint={`/api/users/${userId}/profile`}
@@ -86,19 +81,6 @@ export function UserProfileDialog({
                   void onSaved();
                 }}
               />
-              <ProfileExtensionFields
-                userId={userId}
-                endpoint={`/api/users/${userId}/extension`}
-                readOnly={readOnly}
-                container={container}
-              />
-              {canManageSystemFields && !readOnly && (
-                <UserSystemFields
-                  userId={userId}
-                  container={container}
-                  onCancel={onClose}
-                />
-              )}
               <ProfileDates user={user} />
             </>
           )}

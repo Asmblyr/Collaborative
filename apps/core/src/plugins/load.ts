@@ -49,6 +49,7 @@ import {
   type RegistryPackage,
 } from "./registry-manifest.js";
 import { resolveRegistryPackages } from "./registry-resolver.js";
+import { CORE_VERSION } from "../version.js";
 
 const packageNamePattern = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 
@@ -152,11 +153,13 @@ export async function loadPlugins(
     sourcePlugins = false,
     disabledPackages = [],
     registryPackages,
+    coreVersion = CORE_VERSION,
     onFailure,
   }: {
     sourcePlugins?: boolean;
     disabledPackages?: readonly string[];
     registryPackages?: readonly RegistryPackage[];
+    coreVersion?: string;
     onFailure?: (name: string, error: string) => void;
   } = {},
 ): Promise<LoadedPlugin[]> {
@@ -169,10 +172,7 @@ export async function loadPlugins(
     registryPackages ?? (await readConfiguredRegistryPackages(projectPackage));
   const disabled = new Set(disabledPackages);
   const active = configured.filter((entry) => !disabled.has(entry.name));
-  const resolution = resolveRegistryPackages(
-    active,
-    typeof project.version === "string" ? project.version : "0.0.0",
-  );
+  const resolution = resolveRegistryPackages(active, coreVersion);
   const errors = Object.entries(resolution.issues);
   if (errors.length && !onFailure) {
     const details = errors

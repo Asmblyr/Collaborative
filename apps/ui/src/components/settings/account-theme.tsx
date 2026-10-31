@@ -9,8 +9,17 @@ import type {
 } from "@asmblyr-collaborative/contracts";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 import { useAppearance } from "./appearance-provider";
+import { useToast } from "@/components/ui/toast";
 
 type Theme = "light" | "dark" | "system";
+
+function setThemeCookie(theme: Theme) {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `asmblyr-theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+}
 const Context = createContext<{
   saveTheme: (theme: Theme) => void;
   saveStyle: (style: ThemeStyle) => void;
@@ -22,19 +31,47 @@ const Context = createContext<{
 } | null>(null);
 
 export function AccountTheme({ children }: { children: React.ReactNode }) {
-  const { setTheme } = useTheme();
-  const { setStyle, setLocale } = useAppearance();
+  const { theme: currentTheme, setTheme } = useTheme();
+  const {
+    style: currentStyle,
+    locale: currentLocale,
+    setStyle,
+    setLocale,
+  } = useAppearance();
   const { t } = useTranslations();
+  const toast = useToast();
   const [ready, setReady] = useState(false);
   const [timezone, setTimezone] = useState<string | null>(null);
   const [error, setError] = useState("");
   const queue = useRef(Promise.resolve(true));
+  const committed = useRef<{
+    theme: Theme | undefined;
+    style: ThemeStyle;
+    locale: UiLocale;
+  }>({
+    theme:
+      currentTheme === "light" ||
+      currentTheme === "dark" ||
+      currentTheme === "system"
+        ? currentTheme
+        : undefined,
+    style: currentStyle,
+    locale: currentLocale,
+  });
+
   useEffect(() => {
     let active = true;
     void apiRequest<UserPreferences>("/api/users/me/preferences")
       .then((result) => {
         if (active) {
-          setTheme(result.theme ?? "system");
+          const resolvedTheme = result.theme ?? "system";
+          committed.current = {
+            theme: resolvedTheme,
+            style: result.style,
+            locale: result.locale,
+          };
+          setTheme(resolvedTheme);
+          setThemeCookie(resolvedTheme);
           setStyle(result.style);
           setLocale(result.locale);
           setTimezone(result.timezone);
@@ -51,6 +88,7 @@ export function AccountTheme({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, [setTheme, setStyle, setLocale]);
+
   function save(patch: Partial<UserPreferences>) {
     setError("");
     queue.current = queue.current.then(async () => {
@@ -65,28 +103,71 @@ export function AccountTheme({ children }: { children: React.ReactNode }) {
     });
     return queue.current;
   }
+
   return (
     <Context.Provider
       value={{
         timezone,
         saveTimezone: async (value) => {
+          if (value === timezone) {
+            return true;
+          }
           const result = await save({ timezone: value });
           if (result) {
             setTimezone(value);
+            toast.success(t("common.saved"));
           }
           return result;
         },
         saveTheme: (theme) => {
+          const previousTheme =
+            committed.current.theme ??
+            (currentTheme === "light" ||
+            currentTheme === "dark" ||
+            currentTheme === "system"
+              ? currentTheme
+              : undefined);
+          if (previousTheme === theme) {
+            return;
+          }
+          committed.current.theme = theme;
           setTheme(theme);
-          save({ theme });
+          setThemeCookie(theme);
+          void save({ theme }).then((saved) => {
+            if (saved) {
+              toast.success(t("common.saved"));
+            } else {
+              committed.current.theme = previousTheme;
+            }
+          });
         },
         saveStyle: (style) => {
+          const previousStyle = committed.current.style;
+          if (previousStyle === style) {
+            return;
+          }
+          committed.current.style = style;
           setStyle(style);
-          save({ style });
+          void save({ style }).then((saved) => {
+            if (saved) {
+              toast.success(t("common.saved"));
+            } else {
+              committed.current.style = previousStyle;
+            }
+          });
         },
         saveLocale: (locale) => {
+          const previousLocale = committed.current.locale;
+          if (previousLocale === locale) {
+            return;
+          }
+          committed.current.locale = locale;
           setLocale(locale);
-          save({ locale });
+          void save({ locale }).then((saved) => {
+            if (!saved) {
+              committed.current.locale = previousLocale;
+            }
+          });
         },
         error: error ? t(error) : "",
         ready,

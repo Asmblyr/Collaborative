@@ -312,6 +312,10 @@
   background: rgb(0 0 0 / 45%);
 }
 
+.editor-dialog[data-nested]::backdrop {
+  background: rgb(0 0 0 / 18%);
+}
+
 .editor-dialog[open]::backdrop {
   animation: editor-dialog-backdrop-enter 180ms ease-out;
 }

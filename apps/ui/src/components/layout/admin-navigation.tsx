@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { usePathname } from "next/navigation";
 import { Database, Files, Home, Settings2 } from "lucide-react";
 import type {
@@ -170,7 +170,7 @@ export function AdminNavigation({
         {visible.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className="mb-1 text-[11px] font-medium uppercase tracking-wider">
-              {copy("Данные ")}
+              {copy("Данные")}
             </SidebarGroupLabel>
             <CollectionNavigation
               collections={visible}

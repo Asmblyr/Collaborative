@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Table,
   TableBody,
@@ -117,14 +117,13 @@ export function TelemetryTable({
                       tabIndex={0}
                       className="mt-1 block text-[10px] text-muted-foreground"
                     >
-                      {item.turnId.slice(0, 8)} {copy(" · вызов ")}
+                      {item.turnId.slice(0, 8)} {copy("· вызов")}{" "}
                       {item.callIndex}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {copy("Сообщение ")}
-                    {item.turnId}
-                    {copy(". Каждый вызов модели учитывается отдельно. ")}
+                    {copy("Сообщение")} {item.turnId}
+                    {copy(". Каждый вызов модели учитывается отдельно.")}
                   </TooltipContent>
                 </Tooltip>
               </TableCell>
@@ -156,13 +155,12 @@ export function TelemetryTable({
                 </div>
                 {!item.model && (
                   <div className="text-xs text-muted-foreground">
-                    {copy("Запрошенная модель ")}
+                    {copy("Запрошенная модель")}
                   </div>
                 )}
                 {item.model && item.model !== item.requestedModel && (
                   <div className="truncate text-xs text-muted-foreground">
-                    {copy("Запрошена: ")}
-                    {item.requestedModel}
+                    {copy("Запрошена:")} {item.requestedModel}
                   </div>
                 )}
               </TableCell>
@@ -178,7 +176,7 @@ export function TelemetryTable({
                 </span>
                 {item.usage.cachedTokens !== null && (
                   <div className="text-xs text-muted-foreground">
-                    {copy("кэш: ")}
+                    {copy("кэш:")}{" "}
                     {tokenCount(item.usage.cachedTokens, copy.locale)}
                   </div>
                 )}
@@ -195,7 +193,7 @@ export function TelemetryTable({
                 </span>
                 {item.usage.reasoningTokens !== null && (
                   <div className="text-xs text-muted-foreground">
-                    {copy("размышления: ")}
+                    {copy("размышления:")}{" "}
                     {tokenCount(item.usage.reasoningTokens, copy.locale)}
                   </div>
                 )}
@@ -225,8 +223,8 @@ export function TelemetryTable({
                         className="h-auto px-2 py-1 text-xs"
                       >
                         {copy(statusLabels[item.turnSummary.status])} ·{" "}
-                        {item.turnSummary.modelCalls} {copy(" выз. ·")}{" "}
-                        {item.turnSummary.toolCalls} {copy(" инстр. ")}
+                        {item.turnSummary.modelCalls} {copy("выз. ·")}{" "}
+                        {item.turnSummary.toolCalls} {copy("инстр.")}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
@@ -234,7 +232,7 @@ export function TelemetryTable({
                       className="w-80 space-y-3"
                     >
                       <p className="text-sm font-medium">
-                        {copy("Итог сообщения · ")}
+                        {copy("Итог сообщения ·")}{" "}
                         {copy(statusLabels[item.turnSummary.status])}
                       </p>
                       <AssistantUsageSummary summary={item.turnSummary} />

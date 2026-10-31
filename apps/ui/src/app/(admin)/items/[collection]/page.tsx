@@ -9,6 +9,8 @@ import { coreAddress, requireSession } from "@/lib/session";
 import type { TableView } from "@/components/items/table-view-dialog";
 import { defaultStateFilter } from "@/components/items/default-state-filter";
 import { getUiCopy } from "@/lib/ui-copy-server";
+import { workspaceViewQuery } from "@/lib/workspace-location";
+import { tableQueryDefaults } from "@/lib/table-query-defaults";
 
 async function LoadError({ message }: { message: string }) {
   const copy = await getUiCopy();
@@ -19,7 +21,7 @@ async function LoadError({ message }: { message: string }) {
         href="/"
         className="text-sm text-muted-foreground underline"
       >
-        {copy("← К коллекциям ")}
+        {copy("← К коллекциям")}
       </Link>
       <p role="alert">{copy(message)}</p>
     </div>
@@ -74,7 +76,9 @@ export default async function CollectionItemsPage({
           options,
         ),
         fetch(
-          coreAddress(`/table-views/${encodeURIComponent(name)}/default`),
+          coreAddress(
+            `/table-views/${encodeURIComponent(name)}/default${workspaceViewQuery(requested.workspace)}`,
+          ),
           options,
         ),
       ]);
@@ -94,16 +98,6 @@ export default async function CollectionItemsPage({
       direction: "asc",
     },
   };
-  const initialVisit = ![
-    "page",
-    "limit",
-    "sort",
-    "direction",
-    "q",
-    "filter",
-    "order",
-  ].some((key) => typeof requested[key] === "string");
-  const defaults = initialVisit ? defaultView?.definition : null;
   const layoutDefaults = defaultView?.definition;
   if (preferences && layoutDefaults)
     preferences = {
@@ -113,25 +107,15 @@ export default async function CollectionItemsPage({
         ? { pageSize: layoutDefaults.pageSize, sort: layoutDefaults.sort }
         : {}),
     };
-  // Keep the header search and reloadable URL in sync with a default view's query.
-  if (defaults) {
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(requested))
-      if (typeof value === "string") query.set(key, value);
-    query.set("limit", String(preferences?.pageSize ?? defaults.pageSize));
-    const defaultSort = preferences?.sort ?? defaults.sort;
-    query.set("sort", defaultSort.field);
-    query.set("order", defaultSort.order ?? "field");
-    query.set("direction", defaultSort.direction);
-    if (defaults.q) query.set("q", defaults.q);
-    query.set("filter", defaults.filter ? JSON.stringify(defaults.filter) : "");
-    redirect(`${path}?${query}`);
+  const { q, filter, canonical } = tableQueryDefaults(
+    requested,
+    preferences,
+    defaultView,
+    defaultStateFilter(collection),
+  );
+  if (canonical !== null) {
+    redirect(`${path}?${canonical}`);
   }
-  const q = typeof requested.q === "string" ? requested.q : "";
-  const filter =
-    typeof requested.filter === "string"
-      ? requested.filter
-      : defaultStateFilter(collection);
   if (collection.access.read) {
     let order = "field";
     if (q.trim()) {
@@ -179,7 +163,7 @@ export default async function CollectionItemsPage({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ItemsWorkspace
-        key={`${name}:${defaultView?.id}:${q}:${filter}:${items.page.number}`}
+        key={`${name}:${defaultView?.id ?? "base"}`}
         collection={collection}
         catalog={collections}
         userId={user.id}

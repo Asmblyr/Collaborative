@@ -163,3 +163,11 @@ The runner creates, migrates and drops a fresh `asmblyr_test_*` database. Never
 point it at a production server. After a failed startup, inspect the Core log
 event and registry history. Correct the trusted artifact or approval, then
 restart Core; an API enable request cannot repair a bad artifact.
+
+## Core version and browser activation
+
+Compatibility checks use the installed Core version, never the host project version. Source builds read apps/core/package.json; ASMBLYR_CORE_VERSION overrides it for a release image. CI injects the release tag without its v prefix; main/PR images add commit metadata to the package version. Invalid versions and the placeholder 0.0.0 fail startup. DEPLOYMENT_VERSION remains the independent Core/UI deployment identifier.
+
+The browser registry contains deferred imports. Only Core-enabled packages execute their UI entrypoint. Parallel loads share an import promise; failures can be retried. Changes to the enabled set ignore stale completions and immediately remove disabled definitions without replacing the host form. An unavailable field editor falls back to the ordinary input, preserving its draft. Standalone plugin pages show loading and recoverable import errors instead of a premature 404.
+
+After changing activation, restart Core and refresh existing browser tabs. Already executed JavaScript cannot be unloaded from a running tab. This remains trusted browser code, not a sandbox.

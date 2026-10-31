@@ -114,6 +114,12 @@ const spec = {
   components: {
     schemas: itemCommitSchemas,
     securitySchemes: {
+      mcpBearer: {
+        type: "http",
+        scheme: "bearer",
+        description:
+          "Purpose-bound MCP OAuth token; browser cookies, ordinary API tokens and service tokens are rejected.",
+      },
       browserSession: {
         type: "apiKey",
         in: "cookie",

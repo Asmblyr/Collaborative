@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { FilePreview } from "./file-preview";
 import { fileSize, type FilePage, type StoredFile } from "./types";
+import { localizedRequestError, requestJson } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function FilePicker({
@@ -36,6 +37,7 @@ export function FilePicker({
     [result, setResult] = useState<FilePage | null>(null);
   const [loading, setLoading] = useState(false),
     [uploading, setUploading] = useState(false);
+  const [staged, setStaged] = useState<StoredFile[]>([]);
   const [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null),
     lock = useRef(false);
@@ -46,20 +48,27 @@ export function FilePicker({
       setLoading(true);
       setError("");
       try {
-        const response = await fetch(
+        const data = await requestJson<FilePage>(
           `/api/files?${new URLSearchParams({ search: query, page: String(page), limit: "20" })}`,
-          { signal: controller.signal },
+          "GET",
+          undefined,
+          controller.signal,
         );
-        if (!response.ok)
-          throw new Error(copy("Не удалось загрузить библиотеку"));
-        setResult((await response.json()) as FilePage);
+        setResult(data);
       } catch (reason) {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setError(
-            reason instanceof Error ? reason.message : copy("Ошибка загрузки"),
+            localizedRequestError(
+              reason,
+              copy,
+              "Не удалось загрузить библиотеку",
+            ),
           );
+        }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }, 180);
     return () => {
@@ -120,7 +129,10 @@ export function FilePicker({
     <Popover
       open={open}
       onOpenChange={(value) => {
-        if (!uploading) setOpen(value);
+        if (!uploading) {
+          setOpen(value);
+          setStaged([]);
+        }
       }}
     >
       <PopoverTrigger asChild>
@@ -156,44 +168,60 @@ export function FilePicker({
           {loading ? (
             <p className="flex items-center gap-2 p-4 text-sm">
               <Loader2 className="size-4 animate-spin" />
-              {copy("Загрузка… ")}
+              {copy("Загрузка…")}
             </p>
           ) : (
             result?.data
               .filter((file) => file.status === "ready")
-              .map((file) => (
-                <Button
-                  type="button"
-                  key={file.id}
-                  variant="ghost"
-                  className="h-auto w-full justify-start gap-3 p-2 text-left"
-                  disabled={
-                    uploading ||
-                    selected.includes(file.id) ||
-                    (multiple && selected.length >= 100)
-                  }
-                  onClick={() => {
-                    onChoose([file]);
-                    setOpen(false);
-                  }}
-                >
-                  <FilePreview
-                    file={file}
-                    compact
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate">{file.title}</span>
-                    <span className="block text-xs font-normal text-muted-foreground">
-                      {fileSize(file.size, copy)}
+              .map((file) => {
+                const alreadySelected = selected.includes(file.id);
+                const isStaged = staged.some((entry) => entry.id === file.id);
+                const limitReached =
+                  multiple &&
+                  !isStaged &&
+                  selected.length + staged.length >= 100;
+                return (
+                  <Button
+                    type="button"
+                    key={file.id}
+                    variant="ghost"
+                    className={`h-auto w-full justify-start gap-3 p-2 text-left ${isStaged ? "bg-accent" : ""}`}
+                    disabled={uploading || alreadySelected || limitReached}
+                    onClick={() => {
+                      if (!multiple) {
+                        onChoose([file]);
+                        setOpen(false);
+                        return;
+                      }
+                      setStaged((current) =>
+                        current.some((entry) => entry.id === file.id)
+                          ? current.filter((entry) => entry.id !== file.id)
+                          : [...current, file],
+                      );
+                    }}
+                  >
+                    <FilePreview
+                      file={file}
+                      compact
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{file.title}</span>
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        {fileSize(file.size, copy)}
+                      </span>
                     </span>
-                  </span>
-                  {selected.includes(file.id) && <Check className="size-4" />}
-                </Button>
-              ))
+                    {(alreadySelected || isStaged) && (
+                      <Check
+                        className={`size-4 ${isStaged ? "text-primary" : ""}`}
+                      />
+                    )}
+                  </Button>
+                );
+              })
           )}
           {!loading && result && !result.data.length && (
             <p className="p-4 text-sm text-muted-foreground">
-              {copy("Файлы не найдены ")}
+              {copy("Файлы не найдены")}
             </p>
           )}
         </div>
@@ -206,7 +234,7 @@ export function FilePicker({
               disabled={page === 1 || loading || uploading}
               onClick={() => setPage(page - 1)}
             >
-              {copy("Назад ")}
+              {copy("Назад")}
             </Button>
             <span>
               {page} / {Math.ceil(result.meta.total / 20)}
@@ -218,9 +246,27 @@ export function FilePicker({
               disabled={page * 20 >= result.meta.total || loading || uploading}
               onClick={() => setPage(page + 1)}
             >
-              {copy("Далее ")}
+              {copy("Далее")}
             </Button>
           </div>
+        )}
+        {multiple && staged.length > 0 && (
+          <Button
+            type="button"
+            className="w-full"
+            disabled={uploading}
+            onClick={() => {
+              onChoose(staged);
+              setStaged([]);
+              setOpen(false);
+            }}
+          >
+            {copy.plural(staged.length, {
+              one: "Добавить {{count}} файл",
+              few: "Добавить {{count}} файла",
+              many: "Добавить {{count}} файлов",
+            })}
+          </Button>
         )}
         <Button
           type="button"
@@ -235,7 +281,7 @@ export function FilePicker({
           onClick={() => input.current?.click()}
         >
           {uploading ? <Loader2 className="animate-spin" /> : <Upload />}
-          {copy("Загрузить с устройства ")}
+          {copy("Загрузить с устройства")}
         </Button>
         <input
           ref={input}
@@ -255,7 +301,7 @@ export function FilePicker({
             role="alert"
             className="text-xs text-destructive"
           >
-            {copy(error)}
+            {error}
           </p>
         )}
       </PopoverContent>

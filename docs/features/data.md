@@ -53,7 +53,7 @@ Core API: GET /system-collections, POST|PUT /system-collections/:name/fields/:fi
 
 Names users, files, policies, workspaces, and service_accounts belong to a separate system catalog. PATCH accepts `{ "values": { "custom_field": "value" } }` and changes registered custom columns only. Built-in values and secrets are not returned; selectors expose ID and label (email for users).
 
-All these routes, including value editing, require an active human superuser. System tables do not become ordinary /items collections and are excluded from SDK generation. Ordinary users cannot self-edit these fields. The separate profile-extension collection with ordinary policies remains available.
+All these routes, including value editing, require an active human superuser. System tables do not become ordinary /items collections and are excluded from SDK generation. Ordinary users cannot use these administrative endpoints. Explicit own-field access can be configured in the Users profile form; own reads/writes use the restricted /users/me/form endpoint. The separate profile-extension collection with ordinary policies remains available.
 
 Column ownership is recorded atomically with DDL in asmblyr_system_fields. Existing columns are never adopted as custom extensions. Future Core migrations must detect naming conflicts and resolve them explicitly while preserving data. Registry rollback is blocked while fields exist. Images/galleries use the normal library, and attached files cannot be deleted. Tests: node scripts/test.mjs core-system-collections.
 
@@ -126,6 +126,8 @@ Use the same option list for radio-style scenarios. Ordinary JSON uses a text ed
 Click a row to open a side editor at /items/&lt;collection&gt;/&lt;id&gt;. Without update access it is read-only. Creation uses the same dialog. Selecting rows reveals a floating action bar.
 
 Tables support pagination, sorting, column order/visibility/resize, search, filters, and views. Search defaults to relevance: exact match, whole-word prefix, whole word within a label, then substring. Exact primary keys rank highest. Primary search fields win equal matches over secondary fields. Automatic priority uses record-label/template fields, falling back to the first text field; field/relation editors can override it. Matching is literal and case-insensitive, without typo correction or morphology.
+
+Column settings, sorting, applied filters and page size save automatically in the database per user and collection after a successful table load. Clearing filters is remembered too; there is no separate save button. Explicit URL parameters take priority on restoration. Named personal/shared views remain templates and are not overwritten by autosave. Search text and page number stay in the URL. Failed writes retain the latest changes for Retry; rapid changes are serialized and coalesced. A saved filter is validated again with current permissions and schema; an inaccessible filter is omitted from the effective query without exposing its definition.
 
 Resize by dragging a header's right edge; double-click resets. Keyboard separators support Left/Right (16 px), Home/End (80/1200 px), Delete/Backspace (reset), and Escape (cancel drag). Widths save to personal preferences after pointer release, survive reload, and join named-view definitions. Hiding/reordering preserves widths; removing fields or read access removes their settings. Record-edit permission is unnecessary.
 

@@ -6,7 +6,7 @@ import type { CollectionField } from "@/components/items/types";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { FieldPresentationSettings } from "./field-presentation-settings";
 import { defaultPresentation } from "./field-presentation-defaults";
-import { useEditorState } from "./editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 

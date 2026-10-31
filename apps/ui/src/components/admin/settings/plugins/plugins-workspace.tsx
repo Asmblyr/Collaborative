@@ -8,7 +8,7 @@ import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
 import { SettingsReadOnlyNotice } from "@/components/admin/settings/read-only-notice";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Table,
   TableBody,

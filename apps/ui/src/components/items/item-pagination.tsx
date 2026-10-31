@@ -20,6 +20,7 @@ import {
 } from "@asmblyr-collaborative/kit/ui/select";
 import type { ItemPage } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
+import { useWorkspace } from "@/components/workspaces/workspace-provider";
 
 function visiblePages(current: bigint, total: bigint): (bigint | null)[] {
   if (total <= BigInt(7))
@@ -66,6 +67,7 @@ export function ItemPagination({
   onSize: (size: number) => void;
 }) {
   const copy = useUiCopy();
+  const workspace = useWorkspace();
 
   const total = BigInt(page.total);
   const size = BigInt(page.size);
@@ -77,7 +79,8 @@ export function ItemPagination({
   const end = total < current * size ? total : current * size;
 
   function href(number: bigint): string {
-    return itemsPageHref(pathname, { ...page, number }, q, filter);
+    const target = itemsPageHref(pathname, { ...page, number }, q, filter);
+    return workspace?.href(target) ?? target;
   }
 
   function visit(event: MouseEvent<HTMLAnchorElement>, number: bigint) {
@@ -101,8 +104,7 @@ export function ItemPagination({
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm">
       <div className="flex flex-wrap items-center gap-4">
         <span className="text-muted-foreground">
-          {start.toString()}–{end.toString()} {copy(" из ")}
-          {page.total}
+          {start.toString()}–{end.toString()} {copy("из")} {page.total}
         </span>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">{copy("На странице")}</span>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -99,7 +99,7 @@ export function PasswordForm() {
       </fieldset>
       <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
         {copy(
-          "После смены пароля все сеансы будут завершены. Войдите снова с новым паролем. ",
+          "После смены пароля все сеансы будут завершены. Войдите снова с новым паролем.",
         )}
       </p>
       {error && (

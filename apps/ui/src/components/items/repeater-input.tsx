@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import type { RepeaterField, RepeaterSettings } from "./presentation-types";
 import type { CollectionField, Item, ItemValue } from "./types";
@@ -60,7 +60,7 @@ export function RepeaterInput(props: RepeaterInputProps) {
       <div className="space-y-2">
         <p className="text-sm text-amber-700 dark:text-amber-300">
           {copy(
-            "Сохранённое значение не является списком объектов. Данные оставлены без изменений. Для повторяемой формы нужен JSON-массив объектов. ",
+            "Сохранённое значение не является списком объектов. Данные оставлены без изменений. Для повторяемой формы нужен JSON-массив объектов.",
           )}
         </p>
         <Textarea
@@ -239,7 +239,7 @@ function RepeaterRowsInput({
       })}
       {!rows.length && (
         <p className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-          {copy("Пока нет элементов ")}
+          {copy("Пока нет элементов")}
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
@@ -251,12 +251,12 @@ function RepeaterRowsInput({
           onClick={() => update([...rows, {}], [...keys, crypto.randomUUID()])}
         >
           <Plus />
-          {copy("Добавить элемент ")}
+          {copy("Добавить элемент")}
         </Button>
         <span className="text-xs text-muted-foreground">
           {rows.length} / {settings.maxItems}
           {settings.minItems > 0 &&
-            copy(" · минимум {{value0}}", { value0: settings.minItems })}
+            ` ${copy("· минимум {{value0}}", { value0: settings.minItems })}`}
         </span>
       </div>
     </div>

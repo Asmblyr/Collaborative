@@ -82,8 +82,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          core_version="$(node -p "require('./apps/core/package.json').version")"
+          core_version="${core_version%%+*}+sha.${GITHUB_SHA}"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            core_version="${GITHUB_REF_NAME#v}"
+          fi
           for component in core ui; do
             docker build --target "$component" --build-arg DEPLOYMENT_VERSION="$GITHUB_SHA" \
+              --build-arg ASMBLYR_CORE_VERSION="$core_version" \
               --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
               --label org.opencontainers.image.revision="$GITHUB_SHA" \
               --label org.opencontainers.image.licenses=MIT \

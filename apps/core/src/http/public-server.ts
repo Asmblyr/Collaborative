@@ -12,6 +12,8 @@ export function isCorePath(url: string): boolean {
   const path = url.split("?")[0];
   return (
     /^\/api(?:\/|$)/.test(path) ||
+    path === "/.well-known/oauth-authorization-server" ||
+    path === "/.well-known/oauth-protected-resource/api/mcp" ||
     /^\/sign\/sso\//.test(path) ||
     path === "/connections/google/callback" ||
     (/^\/oauth(?:\/|$)/.test(path) &&

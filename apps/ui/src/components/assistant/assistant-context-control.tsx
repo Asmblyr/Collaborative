@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import { useUiCopy } from "@/lib/ui-copy";
 import { contextLabel, type PageContext } from "./assistant-context-types";
 import type { AssistantMessage } from "./assistant-types";
@@ -42,7 +42,7 @@ export function AssistantContextControl({
   } else if (enabled) {
     detail = context.record
       ? copy("Сохранённые данные · черновик не передаётся")
-      : copy("{{value0}} · чтение данных и фильтры", {
+      : copy("{{value0}} · работа с данными по запросу", {
           value0: workspaceName ?? copy("Все коллекции"),
         });
   }

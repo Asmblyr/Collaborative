@@ -1,6 +1,6 @@
 "use client";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { FieldDefaultInput } from "./field-default-input";
 import type { useFieldEditor } from "./use-field-editor";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -52,7 +52,7 @@ export function FieldBasicSettings({
               </Label>
               <p className="text-xs text-muted-foreground">
                 {copy(
-                  "Требует значение в API. Default покрывает пропуск поля. ",
+                  "Требует значение в API. Default покрывает пропуск поля.",
                 )}
               </p>
             </div>
@@ -67,11 +67,11 @@ export function FieldBasicSettings({
             />
             <div className="space-y-1">
               <Label htmlFor="field-editor-nullable">
-                {copy("Разрешить NULL в БД ")}
+                {copy("Разрешить NULL в БД")}
               </Label>
               <p className="text-xs text-muted-foreground">
                 {copy(
-                  "При отключении существующие пустые значения помешают сохранению. ",
+                  "При отключении существующие пустые значения помешают сохранению.",
                 )}
               </p>
             </div>
@@ -90,11 +90,11 @@ export function FieldBasicSettings({
             />
             <div className="space-y-1">
               <Label htmlFor="field-editor-has-default">
-                {copy("Значение по умолчанию ")}
+                {copy("Значение по умолчанию")}
               </Label>
               <p className="text-xs text-muted-foreground">
                 {copy(
-                  "Применяется при создании записи, если поле не передано. ",
+                  "Применяется при создании записи, если поле не передано.",
                 )}
               </p>
             </div>
@@ -116,7 +116,7 @@ export function FieldBasicSettings({
           )}
           <p className="text-xs text-muted-foreground">
             {copy(
-              "При добавлении поля default заполнит существующие строки. Изменение default позже их не меняет. ",
+              "При добавлении поля default заполнит существующие строки. Изменение default позже их не меняет.",
             )}
           </p>
         </div>

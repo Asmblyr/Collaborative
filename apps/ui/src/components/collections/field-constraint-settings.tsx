@@ -1,6 +1,6 @@
 "use client";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import type { FieldPresentation } from "@/components/items/types";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -68,7 +68,7 @@ export function FieldConstraintSettings({
       </div>
       <p className="text-xs text-muted-foreground">
         {copy(
-          "Проверяются при записи через API. Для форматированного текста длина считается без разметки. Существующие записи не изменяются. ",
+          "Проверяются при записи через API. Для форматированного текста длина считается без разметки. Существующие записи не изменяются.",
         )}
       </p>
     </fieldset>

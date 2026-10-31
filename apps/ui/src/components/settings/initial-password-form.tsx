@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -47,7 +47,7 @@ export function InitialPasswordForm() {
       }}
     >
       <p className="text-sm text-muted-foreground">
-        {copy("Пароль необязателен, если используете passkey или SSO. ")}
+        {copy("Пароль необязателен, если используете passkey или SSO.")}
       </p>
       <div className="space-y-2">
         <Label htmlFor="initial-password">{copy("Пароль")}</Label>
@@ -87,7 +87,7 @@ export function InitialPasswordForm() {
         variant="outline"
         disabled={pending}
       >
-        {copy("Добавить пароль ")}
+        {copy("Добавить пароль")}
       </Button>
     </form>
   );

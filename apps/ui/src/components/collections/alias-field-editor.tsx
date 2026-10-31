@@ -91,7 +91,7 @@ export function AliasFieldEditor({
             </>
           )}
           <p className="text-muted-foreground">
-            {copy("Физические имена связи после создания не меняются. ")}
+            {copy("Физические имена связи после создания не меняются.")}
           </p>
         </TabsContent>
         <TabsContent value="search">
@@ -146,7 +146,7 @@ export function AliasFieldEditor({
           disabled={pending}
           onClick={onCancel}
         >
-          {copy("Отмена ")}
+          {copy("Отмена")}
         </Button>
       </div>
     </form>

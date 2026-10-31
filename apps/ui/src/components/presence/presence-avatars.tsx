@@ -107,8 +107,7 @@ export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
             ))}
             {data.total > data.participants.length && (
               <p>
-                {copy("И ещё ")}
-                {data.total - data.participants.length}
+                {copy("И ещё")} {data.total - data.participants.length}
               </p>
             )}
           </TooltipContent>

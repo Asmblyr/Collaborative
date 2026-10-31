@@ -11,7 +11,7 @@ function json(value: object) {
   return JSON.parse(JSON.stringify(value));
 }
 
-test("internal MCP discovers only permitted exposed collections, checks reads and has no HTTP endpoint", async (t) => {
+test("internal MCP discovers permitted collections and external HTTP requires its own authorization", async (t) => {
   const fixture = await mcpFixture(t);
   const { app, db, names, suffix, access, reload, permissions } = fixture;
   const client = await connectInternalMcp(
@@ -31,7 +31,7 @@ test("internal MCP discovers only permitted exposed collections, checks reads an
       ],
     );
     for (const method of ["GET", "POST"] as const) {
-      assert.equal((await app.inject({ method, url: "/mcp" })).statusCode, 404);
+      assert.equal((await app.inject({ method, url: "/mcp" })).statusCode, 401);
     }
     const query = { q: suffix, page: 1, limit: 1 };
     const first = json(await client.call("list_collections", query));

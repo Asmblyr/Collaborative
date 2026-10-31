@@ -30,6 +30,10 @@ Compose runs migrations in a short-lived Core process, then starts Core/UI. The 
 
 Core's public listener handles API and forwards pages to UI; Next does not proxy API. UI receives only internal CORE_URL and shared SESSION_COOKIE_PREFIX, without database, S3, or provider secrets. Set SESSION_COOKIE_PREFIX in Compose's environment if changing it. Pin both production images to the same release and their respective digests.
 
+The optional Core `SESSION_COOKIE_DOMAIN` (`sessionCookieDomain` in Helm) shares the main browser session with explicitly trusted applications under one parent domain. The default is host-only. Use HTTPS and a registrable parent, never a public suffix; all receiving subdomains and their servers can obtain the credential. Keep distinct cookie names for independent native sessions. Other products must validate the Core session and map its exact subject to their own ACL; sharing a cookie name does not share account storage or administrator rights. Passkey/SSO challenge cookies remain host-only. A change of hostname requires one sign-in at the new origin; it does not invalidate existing database sessions. See [identity](../docs/features/identity.md).
+
+`AUTH_UI_ALIASES` (comma-separated origins; Helm `publicUrlAliases`) redirects configured old hosts to `AUTH_UI_URL` before authentication. Route all alias paths, including pages, to Core's HTTP port. GET/HEAD preserve the original path and query with a temporary redirect. Mutations receive `421 CANONICAL_ORIGIN_REQUIRED`; API clients must use the canonical origin. Cookies and tokens are not copied to a new host, and forwarded host headers cannot select a redirect destination.
+
 ## Kubernetes and Helm
 
 The [chart](helm/collaborative) creates two Deployments, two ClusterIP Services, optional Ingress, and a migration Job, all scoped to the release namespace. It creates no database, bucket, CRDs, cluster roles, ingress controller, or cert-manager.
@@ -134,3 +138,11 @@ docker compose --env-file /private/local.env -p asmblyr-local -f deploy/local/co
 ```
 
 Default address: `http://localhost:3300`. Stop with down without -v to retain data. See [operations](../docs/development/operations.md) for backups/recovery.
+
+For Docker Desktop kind with separate images, PostgreSQL and a local ingress,
+see [local Kubernetes](local/kubernetes/README.md).
+
+Migration history is append-only. Existing extension metadata migrations and
+tables remain in place when integration code is removed; upgrading does not
+drop their data or enable an integration. Never delete applied migration files
+from an existing installation.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { ItemFieldInput } from "./item-field-input";
@@ -66,10 +66,11 @@ export function ItemBulkDialog({
     <EditorDialog
       open
       busy={pending || uploading}
+      hasUnsavedChanges={enabled.size > 0}
       title={copy("Изменить выбранные записи")}
       eyebrow={collection.displayName || collection.name}
       onClose={onClose}
-      footer={(close) => (
+      footer={(requestClose) => (
         <div className="flex gap-2">
           <Button
             type="submit"
@@ -78,16 +79,18 @@ export function ItemBulkDialog({
           >
             {pending
               ? copy("Сохраняем…")
-              : copy("Применить к {{value0}} записям", {
-                  value0: initialCount,
+              : copy.plural(initialCount, {
+                  one: "Применить к {{count}} записи",
+                  many: "Применить к {{count}} записям",
                 })}
           </Button>
           <Button
+            type="button"
             variant="ghost"
             disabled={pending || uploading}
-            onClick={close}
+            onClick={requestClose}
           >
-            {copy("Отмена ")}
+            {copy("Отмена")}
           </Button>
         </div>
       )}
@@ -100,7 +103,7 @@ export function ItemBulkDialog({
         >
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Отметьте поля, которые нужно заменить во всех выбранных записях. Остальные значения сохранятся. ",
+              "Отметьте поля, которые нужно заменить во всех выбранных записях. Остальные значения сохранятся.",
             )}
           </p>
           {fields.map((field) => (

@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { relationFilterDependencies } from "@asmblyr-collaborative/contracts";
 import { RelationPicker } from "./relation-picker";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { ItemForm } from "./item-form";
 import { ItemFormActions } from "./item-form-actions";
 import type { OpenRelated } from "./relation-picker";
@@ -30,6 +30,7 @@ export function ItemCreateDialog({
   onReferenceChange,
   formRevision = 0,
   conflictReview,
+  trail,
 }: {
   collection: Collection;
   catalog: Collection[];
@@ -51,6 +52,7 @@ export function ItemCreateDialog({
   onReferenceChange?: (field: string, value: string) => void;
   formRevision?: number;
   conflictReview?: ReactNode;
+  trail?: readonly string[];
 }) {
   const copy = useUiCopy();
 
@@ -105,7 +107,8 @@ export function ItemCreateDialog({
           ? copy("Создать объект")
           : copy("Новая запись"))
       }
-      eyebrow={collection.displayName || collection.name}
+      nested={Boolean(trail?.length)}
+      eyebrow={`${trail?.length ? `${trail.join(" → ")} → ` : ""}${collection.displayName || collection.name}`}
       onClose={onClose}
       hasUnsavedChanges={changedCount > 0 || extraDirty || Boolean(leadValue)}
       footer={
@@ -115,7 +118,7 @@ export function ItemCreateDialog({
             className="ml-auto"
             onClick={() => setStep("details")}
           >
-            {copy("Далее ")}
+            {copy("Далее")}
             <ArrowRight />
           </Button>
         ) : (
@@ -168,7 +171,7 @@ export function ItemCreateDialog({
                   onClick={() => setStep("choose")}
                 >
                   <ArrowLeft />
-                  {copy("К выбору ")}
+                  {copy("К выбору")}
                 </Button>
               )}
             </div>

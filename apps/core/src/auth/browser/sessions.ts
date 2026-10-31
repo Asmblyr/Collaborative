@@ -54,6 +54,8 @@ export async function startBrowserSession(
     `${config.prefix}_session`,
     secret,
     (new Date(pair.refreshExpiresAt).getTime() - Date.now()) / 1000,
+    "/",
+    config.sessionDomain,
   );
 }
 

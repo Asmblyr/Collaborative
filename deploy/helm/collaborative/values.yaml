@@ -12,7 +12,11 @@ images:
     digest: ""
 
 publicUrl: ""
+publicUrlAliases: []
 sessionCookiePrefix: asmblyr
+# Opt-in shared browser session. All subdomains must belong to trusted products.
+# Empty keeps the session cookie host-only. Never use a public suffix.
+sessionCookieDomain: ""
 # Existing Secret in the release namespace: DATABASE_URL, SECRETS_LOCAL_KEY,
 # ASMBLYR_SETUP_TOKEN, optional provider/S3 credentials. Never passed to UI.
 existingSecret: ""

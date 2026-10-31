@@ -35,7 +35,7 @@ export default async function ServicesPage() {
         role="alert"
         className="text-sm text-destructive"
       >
-        {copy("Не удалось загрузить сервисные аккаунты. Обновите страницу. ")}
+        {copy("Не удалось загрузить сервисные аккаунты. Обновите страницу.")}
       </p>
     );
   }

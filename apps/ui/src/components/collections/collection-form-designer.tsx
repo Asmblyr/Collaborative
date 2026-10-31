@@ -1,8 +1,8 @@
 "use client";
 
-import { useEditorDraft } from "./editor-lifecycle";
+import { useEditorDraft } from "@/components/ui/editor-lifecycle";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, FolderPlus, PanelTop, Plus, Settings2 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
@@ -36,17 +36,24 @@ import { FormDesignerTree } from "./form-designer-tree";
 import { FormDesignerProperties } from "./form-designer-properties";
 import { useUiCopy } from "@/lib/ui-copy";
 import { requestErrorMessage, requestJson } from "@/lib/http-request";
+import { showToast } from "@/components/ui/toast";
 
 export function CollectionFormDesigner({
   collection,
   catalog,
   container,
   onSaved,
+  onSave,
+  plainGroups,
+  renderFieldSettings,
 }: {
   collection: Collection;
   catalog: Collection[];
   container: HTMLElement | null;
   onSaved: () => void;
+  onSave?: (layout: FormLayout | null) => Promise<void>;
+  plainGroups?: boolean;
+  renderFieldSettings?: (field: string, disabled: boolean) => ReactNode;
 }) {
   const copy = useUiCopy();
 
@@ -58,6 +65,8 @@ export function CollectionFormDesigner({
   const [selected, setSelected] = useState(layout.tabs[0].id);
   const [pending, setPending] = useState(false),
     [error, setError] = useState("");
+  const [previewNotice, setPreviewNotice] = useState("");
+  const [confirmReset, setConfirmReset] = useState(false);
   const [section, setSection] = useState("structure");
   useEditorDraft(layout, pending);
   const placed = new Set(layout.tabs.flatMap((t) => fieldsInNodes(t.children)));
@@ -70,12 +79,19 @@ export function CollectionFormDesigner({
   async function save(value: FormLayout | null) {
     setPending(true);
     setError("");
+    setPreviewNotice("");
+    setConfirmReset(false);
     try {
-      await requestJson(
-        `/api/collections/${encodeURIComponent(collection.name)}/form`,
-        "PUT",
-        value,
-      );
+      if (onSave) {
+        await onSave(value);
+      } else {
+        await requestJson(
+          `/api/collections/${encodeURIComponent(collection.name)}/form`,
+          "PUT",
+          value,
+        );
+      }
+      showToast(copy("Настройки сохранены"), "success");
       router.refresh();
       onSaved();
     } catch (cause) {
@@ -85,10 +101,10 @@ export function CollectionFormDesigner({
     }
   }
   return (
-    <div className="space-y-5">
+    <div className="@container space-y-5">
       <p className="text-sm text-muted-foreground">
         {copy(
-          "Организуйте поля для создания, редактирования и просмотра записи. Настройка общая для коллекции; каждый пользователь увидит только доступные ему поля. ",
+          "Организуйте поля для создания, редактирования и просмотра записи. Настройка общая для коллекции; каждый пользователь увидит только доступные ему поля.",
         )}
       </p>
       <Tabs
@@ -96,17 +112,18 @@ export function CollectionFormDesigner({
         onValueChange={(value) => {
           setSection(value);
           setError("");
+          setPreviewNotice("");
         }}
         className="space-y-5"
       >
         <TabsList>
           <TabsTrigger value="structure">
             <Settings2 />
-            {copy("Организация ")}
+            {copy("Организация")}
           </TabsTrigger>
           <TabsTrigger value="preview">
             <Eye />
-            {copy("Предпросмотр ")}
+            {copy("Предпросмотр")}
           </TabsTrigger>
         </TabsList>
         <TabsContent
@@ -132,7 +149,7 @@ export function CollectionFormDesigner({
               }}
             >
               <PanelTop />
-              {copy("Вкладка ")}
+              {copy("Вкладка")}
             </Button>
             <Button
               type="button"
@@ -156,7 +173,7 @@ export function CollectionFormDesigner({
               }}
             >
               <FolderPlus />
-              {copy("Секция ")}
+              {copy("Секция")}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -167,7 +184,7 @@ export function CollectionFormDesigner({
                   disabled={pending || !unplaced.length}
                 >
                   <Plus />
-                  {copy("Разместить поле ")}
+                  {copy("Разместить поле")}{" "}
                   {unplaced.length > 0 && ` (${unplaced.length})`}
                 </Button>
               </DropdownMenuTrigger>
@@ -197,7 +214,7 @@ export function CollectionFormDesigner({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="grid min-h-80 gap-5 lg:grid-cols-[minmax(240px,0.9fr)_minmax(280px,1.1fr)]">
+          <div className="grid min-h-80 gap-5 @min-[640px]:grid-cols-[minmax(240px,0.9fr)_minmax(280px,1.1fr)]">
             <div className="min-w-0 space-y-4 rounded-xl border p-3">
               <FormDesignerTree
                 layout={layout}
@@ -215,7 +232,7 @@ export function CollectionFormDesigner({
                   {unplaced
                     .map((f) => f.presentation?.label || f.name)
                     .join(", ")}
-                  {copy(". Они появятся в «Других полях». ")}
+                  {copy(". Они появятся в «Других полях».")}
                 </p>
               )}
             </div>
@@ -229,6 +246,8 @@ export function CollectionFormDesigner({
                 onChange={setLayout}
                 onSelect={setSelected}
               />
+              {selectedNode?.kind === "field" &&
+                renderFieldSettings?.(selectedNode.field, pending)}
             </div>
           </div>
         </TabsContent>
@@ -238,7 +257,7 @@ export function CollectionFormDesigner({
         >
           <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
             {copy(
-              "Интерактивный пример создания записи. Можно вводить значения и проверять условия. Данные не сохраняются. ",
+              "Интерактивный пример создания записи. Можно вводить значения и проверять условия. Данные не сохраняются.",
             )}
           </p>
           <div className="mx-auto max-w-2xl rounded-xl border p-5">
@@ -248,12 +267,13 @@ export function CollectionFormDesigner({
               catalog={catalog}
               primaryKey={collection.primaryKey}
               formLayout={layout}
+              plainGroups={plainGroups}
               embedded
               preview
               pending={false}
               portalContainer={container}
               onSave={async () => {
-                setError(
+                setPreviewNotice(
                   copy(
                     "Предпросмотр: форма прошла проверку, запись не создавалась.",
                   ),
@@ -264,9 +284,17 @@ export function CollectionFormDesigner({
           </div>
         </TabsContent>
       </Tabs>
-      {error && (
+      {previewNotice && (
         <p
           role="status"
+          className="rounded-lg border bg-muted/40 px-3 py-2 text-sm text-foreground"
+        >
+          {previewNotice}
+        </p>
+      )}
+      {error && (
+        <p
+          role="alert"
           className="text-sm text-destructive"
         >
           {copy(error)}
@@ -276,18 +304,39 @@ export function CollectionFormDesigner({
         <Button
           type="button"
           disabled={pending}
-          onClick={() => save(layout)}
+          onClick={() => void save(layout)}
         >
           {pending ? copy("Сохранение…") : copy("Сохранить форму")}
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={pending}
-          onClick={() => save(null)}
-        >
-          {copy("Автоматическая раскладка ")}
-        </Button>
+        {confirmReset ? (
+          <>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={pending}
+              onClick={() => void save(null)}
+            >
+              {copy("Сбросить раскладку")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => setConfirmReset(false)}
+            >
+              {copy("Отмена")}
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => setConfirmReset(true)}
+          >
+            {copy("Автоматическая раскладка")}
+          </Button>
+        )}
       </div>
     </div>
   );

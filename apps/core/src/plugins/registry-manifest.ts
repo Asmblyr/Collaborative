@@ -76,8 +76,11 @@ export function parseRegistryPackage(
     throw new Error(`Plugin ${expectedName}: invalid semantic version`);
   }
   if (
-    parsed.asmblyr.manifest.dependencies?.[expectedName] ||
-    parsed.asmblyr.manifest.optionalDependencies?.[expectedName]
+    Object.hasOwn(parsed.asmblyr.manifest.dependencies ?? {}, expectedName) ||
+    Object.hasOwn(
+      parsed.asmblyr.manifest.optionalDependencies ?? {},
+      expectedName,
+    )
   ) {
     throw new Error(`Plugin ${expectedName}: cannot depend on itself`);
   }

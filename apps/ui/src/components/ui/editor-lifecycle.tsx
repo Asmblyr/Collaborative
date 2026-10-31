@@ -12,10 +12,12 @@ export interface EditorState {
   dirty: boolean;
   busy: boolean;
 }
+
 export type RegisterEditorState = (
   id: string,
   state: EditorState | null,
 ) => void;
+
 export const EditorLifecycleContext = createContext<RegisterEditorState | null>(
   null,
 );
@@ -23,6 +25,7 @@ export const EditorLifecycleContext = createContext<RegisterEditorState | null>(
 export function useEditorState(dirty: boolean, busy: boolean): void {
   const register = useContext(EditorLifecycleContext);
   const id = useId();
+
   useLayoutEffect(() => {
     register?.(id, { dirty, busy });
     return () => register?.(id, null);

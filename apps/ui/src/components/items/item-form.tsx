@@ -3,7 +3,7 @@
 import { useLayoutEffect, useId, useState, type FormEvent } from "react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import type { OpenRelated } from "./relation-picker";
 import { formDraftPayload, FieldDraftError } from "./form-draft-payload";
 import { ItemFormField } from "./item-form-field";
@@ -27,6 +27,7 @@ interface ItemFormProps {
   aliasFields?: CollectionField[];
   renderAlias?: (field: CollectionField) => ReactNode;
   formLayout?: FormLayout | null;
+  plainGroups?: boolean;
   readOnlyFields?: string[];
   preview?: boolean;
   catalog: Collection[];
@@ -38,7 +39,10 @@ interface ItemFormProps {
   id?: string;
   hideActions?: boolean;
   portalContainer?: HTMLElement | null;
-  onSave: (values: Record<string, ItemValue>) => Promise<void>;
+  onSave: (
+    values: Record<string, ItemValue>,
+    keepOpen?: boolean,
+  ) => Promise<void>;
   onCancel: () => void;
   onBusyChange?: (busy: boolean) => void;
   onDirtyChange?: (count: number) => void;
@@ -56,6 +60,7 @@ export function ItemForm({
   aliasFields = [],
   renderAlias,
   formLayout,
+  plainGroups = false,
   readOnlyFields = [],
   preview = false,
   catalog,
@@ -154,6 +159,8 @@ export function ItemForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     event.stopPropagation();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const keepOpen = submitter?.getAttribute("data-keep-open") === "true";
     onSubmitAttempt?.();
     if (pending) return;
     if (uploading) {
@@ -209,9 +216,10 @@ export function ItemForm({
     setMessage("");
     try {
       const payload = formDraftPayload(changed, values, copy);
-      if (!item && primaryKey.type === "text")
+      if (!item && primaryKey.type === "text") {
         payload[primaryKey.name] = manualKey;
-      await onSave(payload);
+      }
+      await onSave(payload, keepOpen);
     } catch (error) {
       if (error instanceof FieldDraftError) {
         showError(event.currentTarget, error.message, error.field);
@@ -273,7 +281,7 @@ export function ItemForm({
             className="h-9 font-mono"
           />
           <p className="text-xs text-muted-foreground">
-            {copy("Укажите уникальный строковый ключ записи. ")}
+            {copy("Укажите уникальный строковый ключ записи.")}
           </p>
         </div>
       )}
@@ -294,7 +302,6 @@ export function ItemForm({
         </div>
       )}
       <ConfiguredFieldLayout
-        key={issue.attempt}
         fields={[
           ...fields.filter(
             (f) => !f.presentation?.rules?.hidden || forced.has(f.name),
@@ -304,15 +311,17 @@ export function ItemForm({
           ),
         ]}
         layout={formLayout}
+        plainGroups={plainGroups}
         values={conditionValues}
         forced={forced}
         reveal={issue.field}
+        revealAttempt={issue.attempt}
       >
         {(field) =>
           field.type === "alias" ? (
             (renderAlias?.(field) ?? (
               <p className="text-xs text-muted-foreground">
-                {copy("Связанные записи появятся после сохранения. ")}
+                {copy("Связанные записи появятся после сохранения.")}
               </p>
             ))
           ) : (

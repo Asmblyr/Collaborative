@@ -1,11 +1,13 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 235 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 256 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
 | Метод и путь | Доступ | Источник в репозитории |
 | --- | --- | --- |
+| `GET /.well-known/oauth-authorization-server` | Public MCP/OAuth discovery metadata; no credentials or user data. | `apps/core/src/mcp/routes.ts` |
+| `GET /.well-known/oauth-protected-resource/api/mcp` | Public MCP/OAuth discovery metadata; no credentials or user data. | `apps/core/src/mcp/routes.ts` |
 | `GET /assistant/conversations` | Активный человек с доступом к чату; только собственные сессии | `apps/core/src/assistant/history-routes.ts` |
 | `POST /assistant/conversations` | Активный человек с доступом к чату; создаёт собственную сессию с пустым контекстом | `apps/core/src/assistant/history-routes.ts` |
 | `DELETE /assistant/conversations/:id` | Активный человек с доступом к чату; только собственная неактивная сессия | `apps/core/src/assistant/history-routes.ts` |
@@ -109,6 +111,17 @@
 | `POST /items/:collection/commit` | Активный principal; личные read/create/update и поля всех затронутых записей. expectedValues требует чтения обновляемых полей; конфликт откатывает весь commit | `apps/core/src/items/relation-routes.ts` |
 | `GET /materialized-views` | Человек-superuser; обнаружение существующих materialized views в public без регистрации/REFRESH; Core/plugin объекты исключены | `apps/core/src/collections/materialized-routes.ts` |
 | `POST /materialized-views` | Человек-superuser; атомарное подключение заполненного public MV с поддерживаемыми полями и устойчивым уникальным ключом. Только метаданные отображения/расположения, без SQL/DDL/REFRESH; права другим пользователям не выдаются | `apps/core/src/collections/materialized-routes.ts` |
+| `DELETE /mcp` | MCP-purpose bearer only; active human/session, current account action/field/row permissions and published extension gates. General read/write mode; no collection selection. MCP publication still applies. No cookies, service or ordinary API tokens. | `apps/core/src/mcp/routes.ts` |
+| `GET /mcp` | MCP-purpose bearer only; active human/session, current account action/field/row permissions and published extension gates. General read/write mode; no collection selection. MCP publication still applies. No cookies, service or ordinary API tokens. | `apps/core/src/mcp/routes.ts` |
+| `OPTIONS /mcp` | Public CORS preflight without credentials; no data access. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp` | MCP-purpose bearer only; active human/session, current account action/field/row permissions and published extension gates. General read/write mode; no collection selection. MCP publication still applies. No cookies, service or ordinary API tokens. | `apps/core/src/mcp/routes.ts` |
+| `GET /mcp/authorizations/:request` | Active human session; inspect or approve/deny a pending MCP request. Consent chooses general read/write only. Live account and extension permissions apply automatically, without collection selection. Write cannot exceed requested/current rights. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/authorizations/:request` | Active human session; inspect or approve/deny a pending MCP request. Consent chooses general read/write only. Live account and extension permissions apply automatically, without collection selection. Write cannot exceed requested/current rights. | `apps/core/src/mcp/routes.ts` |
+| `OPTIONS /mcp/oauth/:operation` | Public CORS preflight without credentials; no data access. | `apps/core/src/mcp/routes.ts` |
+| `GET /mcp/oauth/authorize` | Public OAuth authorization entry; registered callback, S256 challenge and exact MCP resource. Redirects to human login and explicit consent. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/oauth/register` | Public rate-limited OAuth client registration; exact HTTPS or HTTP loopback callbacks, no grant. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/oauth/revoke` | Owning client ID and access/refresh credential revoke that connection; unknown credentials also succeed. | `apps/core/src/mcp/routes.ts` |
+| `POST /mcp/oauth/token` | One-use code with PKCE or rotating refresh token; exact client/resource and active approving human/session. Purpose-bound MCP credentials only. | `apps/core/src/mcp/routes.ts` |
 | `GET /monitoring/browser` | Активная человеческая сессия; только публичный браузерный DSN и разрешённые флаги, без серверного DSN. Сервисные токены не допускаются | `apps/core/src/monitoring/routes.ts` |
 | `GET /notifications` | Активная человеческая сессия; собственные уведомления включённых плагинов, доступ к каждой записи проверяется заново | `apps/core/src/notifications/routes.ts` |
 | `POST /notifications/:id/read` | Активная человеческая сессия; собственное уведомление и текущий доступ к записи | `apps/core/src/notifications/routes.ts` |
@@ -191,11 +204,13 @@
 | `GET /system-collections/:name/records` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `GET /system-collections/:name/records/:id` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
 | `PATCH /system-collections/:name/records/:id` | Активная человеческая сессия суперпользователя. Только разрешённые системные сущности и зарегистрированные пользовательские поля; встроенные колонки защищены | `apps/core/src/system-collections/routes.ts` |
-| `GET /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
+| `GET /system-collections/users/form` | Human superuser only; safe user form fields, layout and owner grants, without authentication columns. | `apps/core/src/auth/user-form-routes.ts` |
+| `PUT /system-collections/users/form` | Human superuser only; safe layout and explicit native/custom owner-field grants. Native fields default to read only, custom fields to hidden. Does not grant user administration or related-row access. | `apps/core/src/auth/user-form-routes.ts` |
+| `GET /table-views/:collection` | Human account and collection read access. Personal/collection views plus the explicit workspaceId (UUID or all); omission uses personal saved workspace. Collection membership and field permissions are enforced. Reading does not change the personal selection. | `apps/core/src/preferences/table-view-routes.ts` |
 | `POST /table-views/:collection` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `DELETE /table-views/:collection/:id` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
 | `PUT /table-views/:collection/:id` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
-| `GET /table-views/:collection/default` | Человек и доступ к коллекции; личный владелец, общие виды изменяет superuser | `apps/core/src/preferences/table-view-routes.ts` |
+| `GET /table-views/:collection/default` | Human account and collection read access. Personal/collection views plus the explicit workspaceId (UUID or all); omission uses personal saved workspace. Collection membership and field permissions are enforced. Reading does not change the personal selection. | `apps/core/src/preferences/table-view-routes.ts` |
 | `GET /translations` | Активный пользователь или сервисный аккаунт; схема ограничена доступными вызывающему коллекциями и полями, статические каталоги активных плагинов, без записей и defaults | `apps/core/src/translations/routes.ts` |
 | `GET /users` | Человек: users/read или update ИЛИ policies/read или update; superuser bypass | `apps/core/src/auth/user-routes.ts` |
 | `POST /users` | Человек: users/update; superuser bypass | `apps/core/src/auth/user-routes.ts` |
@@ -203,18 +218,24 @@
 | `PUT /users/:id/delegation` | Только человек-superuser: явный набор готовых политик, которые пользователь вправе назначать | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/extension` | Активный пользователь с users/read и обычными read-правами коллекции | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/extension` | Активный пользователь с users/update и обычными read/create/update-правами коллекции | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/:id/form` | Active human session with users/read; safe profile and existing virtual grants. Raw custom columns require a superuser. | `apps/core/src/auth/user-form-routes.ts` |
+| `PATCH /users/:id/form` | Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected. | `apps/core/src/auth/user-form-routes.ts` |
 | `POST /users/:id/invitation` | Человек: superuser ИЛИ users/update; повторное приглашение только в пределах разрешённого набора, без доступа к аккаунтам с собственным делегированием | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/profile` | Активный пользователь с users/read; публичные сведения профиля без credentials | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/profile` | Активный пользователь с users/update; только поля профиля, без изменения статуса и привилегий | `apps/core/src/auth/profile-extension-routes.ts` |
 | `GET /users/:id/profile-display` | Активный человек с users/read или superuser; настроенная проекция профиля целевого пользователя | `apps/core/src/auth/profile-display-routes.ts` |
 | `POST /users/:id/recovery` | Свежий человек-superuser; только другой активный обычный пользователь. Одноразовая ссылка на 30 минут, аудит; не делегируется | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
-| `PATCH /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
+| `PATCH /users/me` | Active human session; own non-avatar profile fields need explicit field write grants or users/update. Own avatar remains freely editable. Credentials, email and privileges remain protected. | `apps/core/src/auth/profile-routes.ts` |
 | `POST /users/me/avatar` | Собственная человеческая сессия; приватное растровое изображение до 2 MiB, настроенное файловое хранилище и credential rate limit | `apps/core/src/auth/profile-avatar-routes.ts` |
 | `GET /users/me/extension` | Собственная человеческая сессия и обычные read-права коллекции; скрытые поля и строки не раскрываются | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/me/extension` | Собственная человеческая сессия; read и create/update, обычные правила строк, полей, связей и файлов | `apps/core/src/auth/profile-extension-routes.ts` |
+| `GET /users/me/form` | Active human session; own safe profile, explicitly granted custom fields and legacy virtual values. Hidden values and conditions are omitted. | `apps/core/src/auth/user-form-routes.ts` |
+| `PATCH /users/me/form` | Active human session; own field writes follow explicit grants, native fields also allow users/update. Own avatar is freely editable. Security, appearance and personal applications use independent endpoints. | `apps/core/src/auth/user-form-routes.ts` |
 | `GET /users/me/identities` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/sso/routes.ts` |
 | `DELETE /users/me/identities/:id` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/sso/routes.ts` |
+| `GET /users/me/mcp-connections` | Active human session; own MCP endpoint and active connections, without tokens or another user's clients. | `apps/core/src/mcp/routes.ts` |
+| `DELETE /users/me/mcp-connections/:id` | Active human session; revoke only own MCP connection and all its access/refresh credentials immediately. | `apps/core/src/mcp/routes.ts` |
 | `GET /users/me/oauth-apps` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/oauth/consent-routes.ts` |
 | `DELETE /users/me/oauth-apps/:id` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/oauth/consent-routes.ts` |
 | `GET /users/me/passkeys` | Собственная активная человеческая сессия; только публичные сведения о ключах | `apps/core/src/auth/passkeys/routes.ts` |

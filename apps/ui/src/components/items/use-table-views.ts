@@ -2,28 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api-request";
-import type { Collection, ItemPage } from "./types";
+import type { Collection } from "./types";
 import type { TableView } from "./table-view-dialog";
 import { useUiCopy } from "@/lib/ui-copy";
+import { workspaceViewQuery } from "@/lib/workspace-location";
 
 export function useTableViews({
   collection,
   userId,
   workspaceId,
-  page,
   setMessage,
 }: {
   collection: Collection;
   userId: string;
   workspaceId?: string;
-  page: ItemPage;
-  setMessage: (message: string) => void;
+  setMessage: (message: string, variant?: "success" | "error") => void;
 }) {
   const copy = useUiCopy();
 
-  const [savingView, setSavingView] = useState(false);
   const [views, setViews] = useState<TableView[]>([]);
-  const viewEndpoint = `/api/table-views/${encodeURIComponent(collection.name)}`;
+  const viewEndpoint = `/api/table-views/${encodeURIComponent(collection.name)}${workspaceViewQuery(workspaceId ?? "all")}`;
   const canRead = Boolean(collection.access.read);
   useEffect(() => {
     if (!canRead) return;
@@ -38,34 +36,12 @@ export function useTableViews({
     };
   }, [viewEndpoint, canRead, userId, workspaceId]);
 
-  async function saveView() {
-    setSavingView(true);
-    setMessage("");
-    try {
-      await apiRequest(
-        `/api/users/me/table-preferences/${encodeURIComponent(collection.name)}`,
-        "PATCH",
-        {
-          pageSize: page.size,
-          sort: {
-            field: page.sort,
-            direction: page.direction,
-            order: page.order ?? "field",
-          },
-        },
-      );
-      setMessage(copy("Текущий вид сохранён в вашем профиле"));
-    } catch {
-      setMessage(copy("Не удалось сохранить вид таблицы"));
-    } finally {
-      setSavingView(false);
-    }
-  }
-
   function reloadViews() {
     void apiRequest<TableView[]>(viewEndpoint)
       .then(setViews)
-      .catch(() => setMessage(copy("Не удалось обновить список видов")));
+      .catch(() =>
+        setMessage(copy("Не удалось обновить список видов"), "error"),
+      );
   }
-  return { views, savingView, saveView, reloadViews };
+  return { views, reloadViews };
 }

@@ -78,8 +78,7 @@ export function ContentValue({
             className="space-y-3 rounded-xl border p-4"
           >
             <div className="text-xs text-muted-foreground">
-              {copy("Элемент ")}
-              {index + 1}
+              {copy("Элемент")} {index + 1}
             </div>
             {repeater.fields.map((child) => (
               <div key={child.name}>
