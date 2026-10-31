@@ -20,6 +20,8 @@ RUN node scripts/container/prepare.mjs /runtime
 
 # Production images share a build and release, but contain separate runtimes.
 FROM base AS core
+ARG ASMBLYR_CORE_VERSION
+ENV ASMBLYR_CORE_VERSION=$ASMBLYR_CORE_VERSION
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3001
 WORKDIR /app
 COPY --from=production-dependencies /runtime ./
@@ -41,6 +43,8 @@ CMD ["node", "apps/ui/server.js"]
 
 # Compatibility target for existing single-container installations.
 FROM base AS app
+ARG ASMBLYR_CORE_VERSION
+ENV ASMBLYR_CORE_VERSION=$ASMBLYR_CORE_VERSION
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 CORE_PORT=3001
 WORKDIR /app
 COPY --from=production-dependencies /runtime ./

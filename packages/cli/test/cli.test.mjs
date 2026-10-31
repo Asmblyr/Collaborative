@@ -187,3 +187,46 @@ test("stdin credentials, remote schema changes and HTTP errors stay scoped and r
     },
   );
 });
+
+test("extension CLI uses the registry API and requires explicit mutation confirmation", async (t) => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), "asmblyr-cli-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  await writeFile(
+    path.join(cwd, "asmblyr.config.json"),
+    JSON.stringify({
+      version: 1,
+      url: "https://example.test/api",
+      schemaFile: "asmblyr.schema.json",
+      typesFile: "asmblyr.schema.ts",
+    }),
+  );
+  const calls = [];
+  const output = [];
+  const options = {
+    cwd,
+    env: { ASMBLYR_ACCESS_TOKEN: "human-token" },
+    out: (value) => output.push(value),
+    fetch: async (url, init) => {
+      calls.push([url, init.method]);
+      assert.equal(init.headers.get("authorization"), "Bearer human-token");
+      return Response.json({ data: [], page: 1, limit: 100, total: 0 });
+    },
+  };
+  assert.equal(await run(["extensions", "list"], options), 0);
+  await assert.rejects(run(["extensions", "disable", "abc"], options), /--yes/);
+  assert.equal(
+    await run(["extensions", "disable", "abc", "--yes"], options),
+    0,
+  );
+  assert.deepEqual(calls, [
+    [
+      "https://example.test/api/settings/extension-registry?limit=100&page=1",
+      "GET",
+    ],
+    [
+      "https://example.test/api/settings/extension-registry/abc/disable",
+      "POST",
+    ],
+  ]);
+  assert.ok(output.every((value) => !value.includes("human-token")));
+});

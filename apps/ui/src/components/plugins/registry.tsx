@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -12,7 +12,13 @@ import type {
   TranslationsResult,
   TranslationCatalogs,
 } from "@asmblyr-collaborative/contracts";
-import { uiPlugins } from "@/generated/plugin-ui";
+import { uiPluginModules } from "@/generated/plugin-ui";
+import {
+  createUiPluginLoader,
+  watchUiPlugins,
+  type UiPluginLoadResult,
+} from "./registry-loader";
+import { PluginRegistryContext } from "./registry-context";
 import {
   TranslationProvider,
   useTranslations,
@@ -20,7 +26,7 @@ import {
 import { coreTranslations } from "@asmblyr-collaborative/contracts/translations";
 import { useAppearance } from "@/components/settings/appearance-provider";
 
-const RegistryContext = createContext<typeof uiPlugins>([]);
+const loader = createUiPluginLoader(uiPluginModules);
 
 export function PluginRegistryProvider({
   enabled,
@@ -29,16 +35,47 @@ export function PluginRegistryProvider({
   enabled: readonly string[];
   children?: ReactNode;
 }) {
+  const enabledKey = JSON.stringify([...new Set(enabled)].sort());
+  const enabledNames = useMemo(
+    () => new Set<string>(JSON.parse(enabledKey)),
+    [enabledKey],
+  );
+  const [snapshot, setSnapshot] = useState<UiPluginLoadResult>({
+    plugins: [],
+    failed: [],
+  });
+  const [settledKey, setSettledKey] = useState<string | null>(null);
+  const [retryRevision, setRetryRevision] = useState(0);
+  const retry = useCallback(() => setRetryRevision((value) => value + 1), []);
+  const requestKey = `${enabledKey}:${retryRevision}`;
+  useEffect(() => {
+    return watchUiPlugins(loader, JSON.parse(enabledKey), (result) => {
+      setSnapshot(result);
+      setSettledKey(requestKey);
+    });
+  }, [enabledKey, requestKey]);
   const plugins = useMemo(
-    () => uiPlugins.filter((plugin) => enabled.includes(plugin.packageName)),
-    [enabled],
+    () =>
+      snapshot.plugins.filter((plugin) => enabledNames.has(plugin.packageName)),
+    [snapshot.plugins, enabledNames],
+  );
+  const pending = enabledNames.size > 0 && settledKey !== requestKey;
+  const failedNamespaces = useMemo(
+    () =>
+      snapshot.failed
+        .filter((entry) => enabledNames.has(entry.packageName))
+        .map((entry) => entry.namespace),
+    [snapshot.failed, enabledNames],
+  );
+  const registry = useMemo(
+    () => ({ plugins, pending, failedNamespaces, retry }),
+    [plugins, pending, failedNamespaces, retry],
   );
   const { locale } = useAppearance();
   const [remote, setRemote] = useState<{
     locale: typeof locale;
     catalogs: Record<string, TranslationCatalogs>;
   } | null>(null);
-  const enabledKey = enabled.join("|");
   useEffect(() => {
     const controller = new AbortController();
     void fetch(`/api/translations?locale=${locale}`, {
@@ -83,19 +120,23 @@ export function PluginRegistryProvider({
     [plugins, remote, locale],
   );
   return (
-    <RegistryContext.Provider value={plugins}>
+    <PluginRegistryContext.Provider value={registry}>
       <TranslationProvider
         locale={locale}
         catalogs={catalogs}
       >
         {children}
       </TranslationProvider>
-    </RegistryContext.Provider>
+    </PluginRegistryContext.Provider>
   );
 }
 
 export function useUiPlugins() {
-  return useContext(RegistryContext);
+  return useContext(PluginRegistryContext).plugins;
+}
+
+export function usePluginUiStatus() {
+  return useContext(PluginRegistryContext);
 }
 
 export function usePluginPages() {

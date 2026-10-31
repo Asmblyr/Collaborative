@@ -39,6 +39,13 @@ For CI, provide ASMBLYR_ACCESS_TOKEN or --token-stdin and an explicit Core API o
 /api root. Credentials are never written to generated files. HTTPS is required
 except on localhost; HTTP redirects are rejected.
 
+The extension commands use the registry API and require an explicit human access
+token with `plugins/read` or `plugins/update`. The browser's schema-only consent
+token cannot use them. Run `asm extensions list`, then use the returned ID with
+`asm extensions info <id>`. `asm extensions enable <id> --yes` and
+`asm extensions disable <id> --yes` save the desired state; restart Core to apply
+it. The CLI cannot install, update or remove package artifacts.
+
 connect creates asmblyr.config.json, asmblyr.schema.json and asmblyr.schema.ts.
 It preserves existing files; schema pull refreshes an existing connection.
 --config, --schema-file and --types-file select relative project paths.

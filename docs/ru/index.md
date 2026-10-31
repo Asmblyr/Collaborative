@@ -48,6 +48,7 @@
 - [Локальная разработка и проверки](development/local-development.md)
 - [Архитектура](development/architecture.md)
 - [Архитектура Collaborative Live](architecture/realtime.md)
+- [Архитектура реестра расширений](architecture/extension-registry.md)
 - [Первое расширение](development/first-extension.md)
 - [Архитектура ассистента и model context](development/assistant-architecture.md)
 - [Опубликованные пакеты](reference/packages.md)

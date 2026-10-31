@@ -48,6 +48,7 @@ field locks, and transport limits.
 - [Local development and checks](./development/local-development.md)
 - [Architecture](./development/architecture.md)
 - [Collaborative Live architecture](./architecture/realtime.md)
+- [Extension registry architecture](./architecture/extension-registry.md)
 - [Your first plugin](./development/first-extension.md)
 - [Assistant architecture and model context](./development/assistant-architecture.md)
 - [Published packages](./reference/packages.md)

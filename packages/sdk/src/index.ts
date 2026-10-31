@@ -3,6 +3,7 @@ export type { RealtimeConnection, RealtimeLock } from "./realtime.js";
 export type { UsersClient } from "./users.js";
 export { ApiError } from "./error.js";
 export type { PluginsClient, PluginPaths } from "./plugins.js";
+export type { ExtensionsClient, ExtensionListOptions } from "./extensions.js";
 export {
   defineSchema,
   type ClientSchema,

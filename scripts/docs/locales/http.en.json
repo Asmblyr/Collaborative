@@ -215,5 +215,13 @@
   "Public CLI discovery; configured admin consent URL only. No credential.": "Public CLI discovery; configured admin consent URL only. No credential.",
   "Active human session approves a 60-second one-use PKCE S256 code for an exact loopback callback.": "Active human session approves a 60-second one-use PKCE S256 code for an exact loopback callback.",
   "One-use code + PKCE verifier + exact callback. Issues 10-minute schema:read access only; rate-limited.": "One-use code + PKCE verifier + exact callback. Issues 10-minute schema:read access only; rate-limited.",
-  "Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены": "Human session: superuser or users-section read; only user IDs/labels with bounded search/pagination; service keys forbidden"
+  "Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены": "Human session: superuser or users-section read; only user IDs/labels with bounded search/pagination; service keys forbidden",
+  "Человек: plugins/read либо update; superuser bypass; только настроенные пакеты": "Human with plugins/read or update; superuser bypass; configured packages only",
+  "Человек: plugins/read либо update; superuser bypass": "Human with plugins/read or update; superuser bypass",
+  "Человек: plugins/read либо update; только установленная версия": "Human with plugins/read or update; installed version only",
+  "Человек: plugins/read либо update; snapshot текущего процесса": "Human with plugins/read or update; current process snapshot",
+  "Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска": "Human with plugins/update; superuser bypass; saves desired state until restart",
+  "Успех; private, no-store": "Success; private, no-store",
+  "Ошибка авторизации, проверки или конфликта": "Authorization, validation, or conflict error",
+  "Base64url идентификатор имени пакета": "Base64url identifier of the package name"
 }

@@ -14,7 +14,12 @@ asm schema pull [--config asmblyr.config.json]
 asm generate [--config asmblyr.config.json]
 asm schema generate [--config asmblyr.config.json]
 asm schema check [--offline] [--config asmblyr.config.json]
+asm extensions list [--config asmblyr.config.json]
+asm extensions info <id> [--config asmblyr.config.json]
+asm extensions enable <id> --yes [--config asmblyr.config.json]
+asm extensions disable <id> --yes [--config asmblyr.config.json]
 Credentials: browser sign-in by default; ASMBLYR_ACCESS_TOKEN or --token-stdin for CI.
+Extension commands require an existing human token with plugins permissions; browser schema-only login is insufficient.
 --no-browser prints the sign-in URL. Credentials are never saved. Requires Node.js 22+.
 connect verifies access, then writes a credential-free config, schema and TypeScript types.
 generate rebuilds TypeScript from the saved snapshot, without network or credentials.
@@ -38,6 +43,29 @@ function verified(input) {
   }
   return snapshot;
 }
+
+async function suppliedToken(flags, env, stdin) {
+  let token = env.ASMBLYR_ACCESS_TOKEN;
+  if (flags["token-stdin"]) {
+    const chunks = [];
+    let length = 0;
+    for await (const chunk of stdin) {
+      length += chunk.length;
+      if (length > 16384) {
+        throw new Error("Credential input is too large");
+      }
+      chunks.push(chunk);
+    }
+    token = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)))
+      .toString("utf8")
+      .trim();
+  }
+  if (token && (/\s/.test(token) || token.length > 16384)) {
+    throw new Error("Set ASMBLYR_ACCESS_TOKEN or provide --token-stdin");
+  }
+  return token;
+}
+
 export async function run(
   args,
   {
@@ -50,7 +78,7 @@ export async function run(
     openBrowser,
   } = {},
 ) {
-  const { command, flags } = parseArguments(args);
+  const { command, flags, extensionId } = parseArguments(args);
   if (command === "help") {
     out(help);
     return 0;
@@ -93,6 +121,52 @@ export async function run(
   } else {
     config = await readConfig(cwd, file);
   }
+  if (command.startsWith("extensions ")) {
+    const token = await suppliedToken(flags, env, stdin);
+    if (!token) {
+      throw new Error(
+        "Extension commands require ASMBLYR_ACCESS_TOKEN or --token-stdin with plugins permissions",
+      );
+    }
+    if (
+      (command === "extensions enable" || command === "extensions disable") &&
+      !flags.yes
+    ) {
+      throw new Error(
+        "Changing extension activation requires --yes; Core restart is required",
+      );
+    }
+    const extensions = createClient({
+      baseUrl: config.url,
+      accessToken: token,
+      fetch,
+      timeoutMs: 15000,
+    }).extensions;
+    let result;
+    if (command === "extensions list") {
+      const data = [];
+      let page = 1;
+      let total = 0;
+      do {
+        const chunk = await extensions.list({ limit: 100, page });
+        data.push(...chunk.data);
+        total = chunk.total;
+        page += 1;
+        if (!chunk.data.length) {
+          break;
+        }
+      } while (data.length < total);
+      result = { data, total };
+    } else if (command === "extensions info") {
+      result = await extensions.get(extensionId);
+    } else if (command === "extensions enable") {
+      result = await extensions.enable(extensionId);
+    } else {
+      result = await extensions.disable(extensionId);
+    }
+    out(JSON.stringify(result, null, 2));
+    return 0;
+  }
   if (command === "schema generate") {
     const saved = verified(
       JSON.parse(await readFile(outputPath(cwd, config.schemaFile), "utf8")),
@@ -103,21 +177,7 @@ export async function run(
   }
   let current;
   if (!flags.offline) {
-    let token = env.ASMBLYR_ACCESS_TOKEN;
-    if (flags["token-stdin"]) {
-      const chunks = [];
-      let length = 0;
-      for await (const chunk of stdin) {
-        length += chunk.length;
-        if (length > 16384) {
-          throw new Error("Credential input is too large");
-        }
-        chunks.push(chunk);
-      }
-      token = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)))
-        .toString("utf8")
-        .trim();
-    }
+    let token = await suppliedToken(flags, env, stdin);
     if (!token && !flags["token-stdin"]) {
       const connection = await login(config.url, {
         fetch,

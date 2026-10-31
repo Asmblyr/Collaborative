@@ -21,6 +21,7 @@ import { systemCollectionsContract } from "./system-collections-contract.mjs";
 import { userFormContract } from "./user-form-contract.mjs";
 import { oauthPolicyContract } from "./oauth-policy-contract.mjs";
 import { userReferenceContract } from "./user-reference-contract.mjs";
+import { extensionRegistryContract } from "./extension-registry-contract.mjs";
 import { mcpContract } from "./mcp-contract.mjs";
 import { tableViewsContract } from "./table-views-contract.mjs";
 const object = { type: "object", additionalProperties: true };
@@ -77,6 +78,8 @@ const settingsSectionList = {
 };
 
 export function operationContract(key) {
+  const extensionRegistry = extensionRegistryContract(key);
+  if (extensionRegistry) return extensionRegistry;
   const tableViews = tableViewsContract(key);
   if (tableViews) {
     return tableViews;

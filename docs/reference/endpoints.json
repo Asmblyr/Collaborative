@@ -583,6 +583,42 @@
     "access": "Человек: plugins/read ИЛИ update; superuser bypass",
     "public": false
   },
+  "GET /settings/extension-registry": {
+    "access": "Человек: plugins/read либо update; superuser bypass; только настроенные пакеты",
+    "public": false
+  },
+  "GET /settings/extension-registry/:id": {
+    "access": "Человек: plugins/read либо update; superuser bypass",
+    "public": false
+  },
+  "GET /settings/extension-registry/:id/versions": {
+    "access": "Человек: plugins/read либо update; только установленная версия",
+    "public": false
+  },
+  "GET /settings/extension-registry/:id/dependencies": {
+    "access": "Человек: plugins/read либо update; superuser bypass",
+    "public": false
+  },
+  "GET /settings/extension-registry/:id/permissions": {
+    "access": "Человек: plugins/read либо update; superuser bypass",
+    "public": false
+  },
+  "GET /settings/extension-registry/:id/health": {
+    "access": "Человек: plugins/read либо update; snapshot текущего процесса",
+    "public": false
+  },
+  "GET /settings/extension-registry/:id/history": {
+    "access": "Человек: plugins/read либо update; superuser bypass",
+    "public": false
+  },
+  "POST /settings/extension-registry/:id/enable": {
+    "access": "Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска",
+    "public": false
+  },
+  "POST /settings/extension-registry/:id/disable": {
+    "access": "Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска",
+    "public": false
+  },
   "GET /settings/plugins/:namespace": {
     "access": "Человек: plugins/read ИЛИ update; superuser bypass",
     "public": false

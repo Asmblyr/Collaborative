@@ -66,6 +66,11 @@ export type {
 } from "./users.js";
 export type { ApiErrorBody } from "./api-error.js";
 export type {
+  ExtensionEntry,
+  ExtensionHistoryEntry,
+  ExtensionListResult,
+} from "./extension-registry.js";
+export type {
   UserFieldSelfAccess,
   UserFormConfiguration,
   UserFormResult,

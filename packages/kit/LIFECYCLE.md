@@ -86,7 +86,7 @@ Import shadcn directly from kit/ui/&lt;component&gt;. Admin/plugins share full p
 
 Panels mount on first open and persist across tab changes. Render failures are isolated from the record form. New unsaved records have no panels. Active packages are checked through authenticated /extensions.
 
-Next generates static imports and Tailwind sources from enabled exports at startup/build. Development reads ui/index.ts; production/npm use built ./ui. Package-list changes require dev restart or production UI rebuild; TSX uses Fast Refresh. React is a peer dependency. Use .ts/.tsx relative imports with rewriteRelativeImportExtensions:true, and include ui/**/\* and shared/**/\*.
+Next generates deferred import descriptors and Tailwind sources from configured exports at startup/build. The browser imports only packages enabled by Core. An import failure is isolated from other modules and the host form; standalone plugin pages show a loading state or a retry action. Development reads ui/index.ts; production/npm use built ./ui. Package-list changes require dev restart or production UI rebuild; TSX uses Fast Refresh. React is a peer dependency. Use .ts/.tsx relative imports with rewriteRelativeImportExtensions:true, and include ui/**/\* and shared/**/\*.
 
 Packages/plugin-comments is the complete example. Server packages must never enter UI imports.
 
@@ -109,7 +109,7 @@ Routes use /extensions/&lt;namespace&gt;/&lt;id&gt;. The host adds pages under A
 
 PluginPageProps.request is the same namespace-limited HTTP client. Shared Button/Textarea come from Kit. The shell isolates render errors. Authenticated /extensions supplies enabled packages to layout, menu, pages, and panels.
 
-Users must satisfy existing admin admission rules. Separate page permissions are unsupported; each plugin API enforces its domain rights. Missing/disabled plugins are hidden. Enabling requires rebuilding/restarting UI and Core.
+Users must satisfy existing admin admission rules. Separate page permissions are unsupported; each plugin API enforces its domain rights. Missing/disabled plugins are hidden. Changing registry activation requires restarting Core and refreshing existing browser tabs. Already executed JavaScript cannot be unloaded from a running tab. Adding packages still requires rebuilding UI and Core.
 
 Only fixed pages are supported, without nested/dynamic routes. Pages also receive preparedAction/onStateChange. UseAction(contract, props, { path, initialInput }) connects form schema, ordinary requests, prepared results, and dirty/busy host state. Overview reads only the current caller's context. See [field editors](FIELDS.md).
 

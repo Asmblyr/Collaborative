@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { CORE_VERSION } from "./version.js";
 import { registerReadiness } from "./health/readiness.js";
 import { registerPresenceRoutes } from "./presence/routes.js";
 import { PostgresRealtimeBus, InMemoryRealtimeBus } from "./realtime/bus.js";
@@ -63,6 +64,8 @@ import { registerPluginSettingsRoutes } from "./plugins/settings-routes.js";
 import { registerPluginBoundary } from "./plugins/routing.js";
 import { registerPluginRoutes } from "./plugins/routes.js";
 import type { LoadedPlugin } from "./plugins/definition.js";
+import type { RegistryPackage } from "./plugins/registry-manifest.js";
+import { registerExtensionRegistryRoutes } from "./plugins/registry-routes.js";
 import { installPluginCollections } from "./plugins/install-collections.js";
 import { registerPluginUiRoutes } from "./plugins/ui-routes.js";
 import { pluginActor } from "./plugins/actor.js";
@@ -106,6 +109,10 @@ interface AppOptions {
   sso?: SsoService;
   oauth?: OAuthConfig;
   plugins?: readonly LoadedPlugin[];
+  registryPackages?: readonly RegistryPackage[];
+  registryFailures?: ReadonlyMap<string, string>;
+  registryInstanceId?: string;
+  coreVersion?: string;
   integrations?: IntegrationOptions;
   googleProtocol?: GoogleOAuthProtocol;
 }
@@ -126,6 +133,12 @@ export function createApp({
   sso = new SsoService([]),
   oauth,
   plugins = [],
+  registryPackages = plugins.flatMap((plugin) =>
+    plugin.registry ? [plugin.registry] : [],
+  ),
+  registryFailures = new Map(),
+  registryInstanceId = randomUUID(),
+  coreVersion = CORE_VERSION,
   operationLimits = defaultOperationLimits,
   passkeys = {
     rpId: "localhost",
@@ -302,6 +315,15 @@ export function createApp({
   registerMonitoringRoutes(app, database, monitoring);
   registerConnectionRoutes(app, database, google);
   registerPluginSettingsRoutes(app, database, plugins);
+  registerExtensionRegistryRoutes(
+    app,
+    database,
+    registryPackages,
+    plugins,
+    coreVersion,
+    registryFailures,
+    registryInstanceId,
+  );
   registerTermRoutes(app, database);
 
   app.get("/health", async () => ({ status: "ok", service: "core" }));

@@ -8,6 +8,7 @@ import type { PluginMigration } from "./migration-index.js";
 import type { PluginSettingsDefinition } from "@asmblyr-collaborative/contracts";
 import type { LoadedHook } from "./hook-index.js";
 import type { TranslationCatalogs } from "@asmblyr-collaborative/contracts";
+import type { RegistryPackage } from "./registry-manifest.js";
 
 export interface LoadedPlugin {
   translations?: TranslationCatalogs;
@@ -22,6 +23,7 @@ export interface LoadedPlugin {
   settings?: PluginSettingsDefinition;
   /** Intersection approved at load time. Missing means no optional capabilities. */
   capabilities?: readonly PluginCapability[];
+  registry?: RegistryPackage;
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
