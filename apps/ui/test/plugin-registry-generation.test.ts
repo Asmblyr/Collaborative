@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtemp, mkdir, writeFile, symlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { generateUiRegistry } from "@asmblyr-collaborative/kit/node";
@@ -9,6 +10,14 @@ import { createUiPluginLoader } from "../src/components/plugins/registry-loader"
 
 for (const source of [false, true]) {
   test(`generated ${source ? "source" : "built"} registry does not execute disabled UI entrypoints`, async (t) => {
+    const marker = `registry-${randomUUID()}`;
+    const executions = globalThis as unknown as Record<
+      string,
+      number | undefined
+    >;
+    t.after(() => {
+      delete executions[marker];
+    });
     const directory = await mkdtemp(
       path.join(tmpdir(), "asmblyr-ui-registry-"),
     );
@@ -35,11 +44,11 @@ for (const source of [false, true]) {
     );
     await writeFile(
       path.join(packageRoot, "ui/index.mjs"),
-      'throw new Error("disabled UI entry executed"); export default {};',
+      `globalThis[${JSON.stringify(marker)}] = 1; export default { translations: { en: { entry: "built" } } };`,
     );
     await writeFile(
       path.join(packageRoot, "ui/index.ts"),
-      'throw new Error("disabled UI entry executed"); export default {};',
+      `globalThis[${JSON.stringify(marker)}] = 1; export default { translations: { en: { entry: "source" } } };`,
     );
     await symlink(
       packageRoot,
@@ -53,10 +62,18 @@ for (const source of [false, true]) {
       source,
     );
     const generated = await import(pathToFileURL(output).href);
+    assert.equal(executions[marker], undefined);
     const loader = createUiPluginLoader(generated.uiPluginModules);
     assert.deepEqual(await loader.load([]), { plugins: [], failed: [] });
-    assert.deepEqual((await loader.load(["fixture-ui"])).failed, [
-      { packageName: "fixture-ui", namespace: "fixture" },
-    ]);
+    assert.equal(executions[marker], undefined);
+    const enabled = await loader.load(["fixture-ui"]);
+    assert.deepEqual(enabled.failed, []);
+    assert.equal(enabled.plugins.length, 1);
+    assert.equal(enabled.plugins[0].packageName, "fixture-ui");
+    assert.equal(
+      enabled.plugins[0].definition.translations?.en?.entry,
+      source ? "source" : "built",
+    );
+    assert.equal(executions[marker], 1);
   });
 }

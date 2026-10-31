@@ -16,6 +16,10 @@ test("Core compatibility uses its own package or an explicit release version", (
   assert.notEqual(CORE_VERSION, "0.0.0");
   assert.throws(() => resolveCoreVersion("0.0.0"), /semantic version/);
   assert.throws(
+    () => resolveCoreVersion("0.0.0", "0.0.0+sha.abc123"),
+    /semantic version/,
+  );
+  assert.throws(
     () => resolveCoreVersion("0.1.0-beta.8", "v0.1.0-beta.9"),
     /semantic version/,
   );

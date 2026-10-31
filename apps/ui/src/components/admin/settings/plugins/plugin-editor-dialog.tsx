@@ -55,7 +55,11 @@ export function PluginEditorDialog({
         if (!response.ok) {
           throw new Error(result.message ?? "Activity unavailable");
         }
+        if (controller.signal.aborted) {
+          return;
+        }
         setHistory(result.data);
+        setHistoryError("");
         setHistoryLoading(false);
       })
       .catch((cause) => {
@@ -114,6 +118,8 @@ export function PluginEditorDialog({
       if (activity.ok) {
         const updated = await activity.json();
         setHistory(updated.data);
+        setHistoryError("");
+        setHistoryLoading(false);
       }
     } catch (cause) {
       setError(

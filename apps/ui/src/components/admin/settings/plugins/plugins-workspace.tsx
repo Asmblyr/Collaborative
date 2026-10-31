@@ -307,7 +307,10 @@ export function PluginsWorkspace({
                 .filter(
                   (candidate) =>
                     candidate.desiredState === "enabled" &&
-                    selection.packageName in candidate.dependencies,
+                    Object.hasOwn(
+                      candidate.dependencies,
+                      selection.packageName,
+                    ),
                 )
                 .map((candidate) => candidate.title)
             : []

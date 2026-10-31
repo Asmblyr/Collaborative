@@ -4,7 +4,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { CORE_VERSION } from "../src/version.js";
+import { CORE_VERSION, resolveCoreVersion } from "../src/version.js";
 import {
   parseRegistryPackage,
   type RegistryPackage,
@@ -117,6 +117,18 @@ test("host project versions cannot override the installed Core compatibility", a
   assert.equal(
     resolveRegistryPackages([supported], CORE_VERSION).issues[entry.name],
     undefined,
+  );
+  const ciVersion = resolveCoreVersion(
+    "0.1.0-beta.8",
+    "0.1.0-beta.8+sha.abc123",
+  );
+  assert.equal(
+    resolveRegistryPackages([supported], ciVersion).issues[entry.name],
+    undefined,
+  );
+  assert.equal(
+    resolveRegistryPackages([entry], ciVersion).issues[entry.name][0],
+    `Requires Collaborative >=98.0.0; current ${ciVersion}`,
   );
 });
 
