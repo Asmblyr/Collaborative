@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Table,
   TableBody,
@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/table";
 import { UserAccessDialog } from "./user-access-dialog";
 import { UserProfileDialog } from "./user-profile-dialog";
+import {
+  UsersInvitationBanner,
+  type IssuedInvitation,
+} from "./users-invitation-banner";
 import { userDisplayName } from "@/lib/user-profile";
 import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Policy } from "./types";
@@ -44,11 +48,8 @@ export function UsersPanel({
   const copy = useUiCopy();
 
   const [email, setEmail] = useState("");
-  const [invite, setInvite] = useState<{
-    email: string;
-    token: string;
-    expiresAt: string;
-  } | null>(null);
+  const [query, setQuery] = useState("");
+  const [invite, setInvite] = useState<IssuedInvitation | null>(null);
   const [busy, setBusy] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AccessUser | null>(null);
   const [profileUser, setProfileUser] = useState<AccessUser | null>(null);
@@ -122,10 +123,14 @@ export function UsersPanel({
     }
   }
 
-  const invitationUrl =
-    invite && typeof window !== "undefined"
-      ? `${window.location.origin}/invite#token=${encodeURIComponent(invite.token)}`
-      : "";
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredUsers = normalizedQuery
+    ? users.filter((user) =>
+        [userDisplayName(user), user.email].some((field) =>
+          field.toLowerCase().includes(normalizedQuery),
+        ),
+      )
+    : users;
 
   return (
     <section className="space-y-5 rounded-xl border bg-card p-5">
@@ -159,35 +164,19 @@ export function UsersPanel({
             type="submit"
             disabled={busy}
           >
-            {copy("Пригласить ")}
+            {copy("Пригласить")}
           </Button>
         </form>
       )}
-      {invite && (
-        <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-          <p className="font-medium">
-            {copy("Ссылка для ")}
-            {invite.email} {copy(" показана один раз. Действует до")}{" "}
-            {new Date(invite.expiresAt).toLocaleString(
-              copy.locale === "en" ? "en-US" : "ru-RU",
-            )}
-            .
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              readOnly
-              aria-label={copy("Ссылка приглашения")}
-              value={invitationUrl}
-              className="min-w-64 flex-1"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigator.clipboard.writeText(invitationUrl)}
-            >
-              {copy("Копировать ")}
-            </Button>
-          </div>
+      {invite && <UsersInvitationBanner invite={invite} />}
+      {users.length > 5 && (
+        <div className="max-w-xs">
+          <Input
+            aria-label={copy("Поиск пользователя")}
+            placeholder={copy("Поиск по имени или почте…")}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
         </div>
       )}
       <Table>
@@ -201,7 +190,7 @@ export function UsersPanel({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <TableRow key={user.id}>
               <TableCell>
                 <button
@@ -257,7 +246,7 @@ export function UsersPanel({
                     disabled={busy}
                     onClick={() => renew(user)}
                   >
-                    {copy("Новая ссылка ")}
+                    {copy("Новая ссылка")}
                   </Button>
                 )}
                 {canManageDelegation &&
@@ -292,7 +281,7 @@ export function UsersPanel({
                         }
                       }}
                     >
-                      {copy("Восстановить вход ")}
+                      {copy("Восстановить вход")}
                     </Button>
                   )}
               </TableCell>
@@ -303,11 +292,21 @@ export function UsersPanel({
                   variant="outline"
                   onClick={() => setSelectedUser(user)}
                 >
-                  {copy("Посмотреть ")}
+                  {copy("Посмотреть")}
                 </Button>
               </TableCell>
             </TableRow>
           ))}
+          {filteredUsers.length === 0 && (
+            <TableRow>
+              <TableCell
+                colSpan={5}
+                className="py-6 text-center text-sm text-muted-foreground"
+              >
+                {copy("Пользователи не найдены.")}
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
       {selectedUser && (

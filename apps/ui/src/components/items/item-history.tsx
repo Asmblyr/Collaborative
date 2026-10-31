@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { History } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { displayValue } from "./item-display";
 import type { Collection, ItemEvent } from "./types";
+import { localizedRequestError, requestJson } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
@@ -25,22 +26,21 @@ async function fetchHistory(
   itemId?: string,
   before?: string,
   signal?: AbortSignal,
-  copy: UiCopy = originalCopy,
 ): Promise<HistoryPage> {
-  const url = new URL(
-    `/api/item-events/${encodeURIComponent(collection)}`,
-    window.location.origin,
-  );
-  if (itemId !== undefined) url.searchParams.set("item", itemId);
-  if (before !== undefined) url.searchParams.set("before", before);
-  const response = await fetch(url, { cache: "no-store", signal });
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as {
-      message?: string;
-    } | null;
-    throw new Error(body?.message ?? copy("Не удалось загрузить историю"));
+  const params = new URLSearchParams();
+  if (itemId !== undefined) {
+    params.set("item", itemId);
   }
-  return response.json() as Promise<HistoryPage>;
+  if (before !== undefined) {
+    params.set("before", before);
+  }
+  const suffix = params.size > 0 ? `?${params}` : "";
+  return requestJson<HistoryPage>(
+    `/api/item-events/${encodeURIComponent(collection)}${suffix}`,
+    "GET",
+    undefined,
+    signal,
+  );
 }
 
 function valueText(
@@ -166,44 +166,39 @@ export function ItemHistory({
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchHistory(collection, itemId, undefined, controller.signal, copy)
+    fetchHistory(collection, itemId, undefined, controller.signal)
       .then((page) => {
         setEvents(page.data);
         setCursor(page.nextCursor);
       })
       .catch((reason: unknown) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setError(
-            reason instanceof Error
-              ? reason.message
-              : copy("Не удалось загрузить историю"),
+            localizedRequestError(reason, copy, "Не удалось загрузить историю"),
           );
+        }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setPending(false);
+        if (!controller.signal.aborted) {
+          setPending(false);
+        }
       });
     return () => controller.abort();
   }, [collection, itemId, copy]);
 
   async function loadMore() {
-    if (!cursor || pending) return;
+    if (!cursor || pending) {
+      return;
+    }
     setPending(true);
     setError("");
     try {
-      const page = await fetchHistory(
-        collection,
-        itemId,
-        cursor,
-        undefined,
-        copy,
-      );
+      const page = await fetchHistory(collection, itemId, cursor);
       setEvents((current) => [...current, ...page.data]);
       setCursor(page.nextCursor);
     } catch (reason) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : copy("Не удалось загрузить историю"),
+        localizedRequestError(reason, copy, "Не удалось загрузить историю"),
       );
     } finally {
       setPending(false);
@@ -218,7 +213,7 @@ export function ItemHistory({
           <h3 className="text-sm font-medium">{copy("История пока пуста")}</h3>
           <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-muted-foreground">
             {copy(
-              "Здесь появятся изменения через Asmblyr: кто и когда изменил поля, значения до и после. Изменения напрямую в базе и история из других систем сюда не попадают. ",
+              "Здесь появятся изменения через Asmblyr: кто и когда изменил поля, значения до и после. Изменения напрямую в базе и история из других систем сюда не попадают.",
             )}
           </p>
         </div>
@@ -236,7 +231,7 @@ export function ItemHistory({
           role="alert"
           className="text-sm text-destructive"
         >
-          {copy(error)}
+          {error}
         </p>
       )}
       {pending && (
@@ -244,7 +239,7 @@ export function ItemHistory({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {copy("Загрузка… ")}
+          {copy("Загрузка…")}
         </p>
       )}
       {cursor && (
@@ -254,7 +249,7 @@ export function ItemHistory({
           disabled={pending}
           onClick={loadMore}
         >
-          {copy("Показать ещё ")}
+          {copy("Показать ещё")}
         </Button>
       )}
     </div>

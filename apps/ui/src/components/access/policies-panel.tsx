@@ -59,7 +59,7 @@ export function PoliciesPanel({
             type="button"
             onClick={() => setSelection("new")}
           >
-            {copy("Создать политику ")}
+            {copy("Создать политику")}
           </Button>
         )}
       </div>

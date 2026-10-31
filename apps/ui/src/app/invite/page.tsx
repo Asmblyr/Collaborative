@@ -16,7 +16,7 @@ export default async function InvitePage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Используйте ссылку администратора. Письмо и пароль для первого входа не нужны. ",
+              "Используйте ссылку администратора. Письмо и пароль для первого входа не нужны.",
             )}
           </p>
         </div>

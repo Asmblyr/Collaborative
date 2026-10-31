@@ -98,7 +98,7 @@ export function ItemFilterGroup({
       )}
       {root && group.children.length === 0 && (
         <p className="px-2 pb-2 pt-1 text-sm text-muted-foreground">
-          {copy("Выберите поле и задайте условие отбора. ")}
+          {copy("Выберите поле и задайте условие отбора.")}
         </p>
       )}
       <div className="space-y-2">
@@ -148,7 +148,7 @@ export function ItemFilterGroup({
       />
       {root && total >= 20 && (
         <p className="px-2 text-xs text-muted-foreground">
-          {copy("Можно добавить до 20 условий. ")}
+          {copy("Можно добавить до 20 условий.")}
         </p>
       )}
     </section>

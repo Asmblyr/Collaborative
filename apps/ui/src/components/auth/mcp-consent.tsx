@@ -1,9 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
+
+function callbackOriginLabel(redirectUri: string): string {
+  try {
+    const parsed = new URL(redirectUri);
+    if (parsed.origin && parsed.origin !== "null") {
+      return parsed.origin;
+    }
+    return parsed.host
+      ? `${parsed.protocol}//${parsed.host}${parsed.pathname}`
+      : `${parsed.protocol}${parsed.pathname}`;
+  } catch {
+    return redirectUri;
+  }
+}
 
 interface Authorization {
   name: string;
@@ -76,7 +91,15 @@ export function McpConsent({
         <h1 className="text-xl font-semibold">
           {copy("Подключение MCP-клиента")}
         </h1>
-        <p className="break-all text-sm text-muted-foreground">{email}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="break-all text-sm text-muted-foreground">{email}</p>
+          <Link
+            href={`/login?reauth=1&next=${encodeURIComponent(`/mcp/authorize?request=${encodeURIComponent(request)}`)}`}
+            className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {copy("Сменить аккаунт")}
+          </Link>
+        </div>
       </div>
       {error && (
         <p
@@ -88,13 +111,13 @@ export function McpConsent({
           )}
         </p>
       )}
-      {!info && !error && <p role="status">{copy("Загрузка… ")}</p>}
+      {!info && !error && <p role="status">{copy("Загрузка…")}</p>}
       {info && (
         <>
           <div>
             <h2 className="break-words font-semibold">{info.name}</h2>
             <p className="mt-1 break-all text-xs text-muted-foreground">
-              {new URL(info.redirectUri).origin}
+              {callbackOriginLabel(info.redirectUri)}
             </p>
           </div>
           <p className="text-sm text-muted-foreground">

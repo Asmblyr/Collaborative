@@ -33,7 +33,7 @@ export function ItemFieldInput(
       {fallback}
       <p className="text-xs text-muted-foreground">
         {copy(
-          "Редактор расширения недоступен. Значение можно изменить обычным полем. ",
+          "Редактор расширения недоступен. Значение можно изменить обычным полем.",
         )}
       </p>
     </div>

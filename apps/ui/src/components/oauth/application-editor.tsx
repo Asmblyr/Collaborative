@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-request";
+import { showToast } from "@/components/ui/toast";
+import { ApplicationConnectionCard } from "./application-connection-card";
 import { ApplicationFields } from "./application-fields";
 import type { ApplicationDraft, OAuthApplication, OAuthUser } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -47,6 +47,7 @@ export function ApplicationEditor({
     },
   );
   const [id, setId] = useState(initial?.id);
+  const [tab, setTab] = useState("general");
   const [secret, setSecret] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -64,6 +65,18 @@ export function ApplicationEditor({
     if (readOnly || busy) {
       return;
     }
+    const redirectUris = draft.redirectUris
+      .map((uri) => uri.trim())
+      .filter(Boolean);
+    if (!draft.name.trim() || !redirectUris.length) {
+      setTab("general");
+      setError(
+        !draft.name.trim()
+          ? copy("Укажите название приложения")
+          : copy("Укажите хотя бы один адрес возврата"),
+      );
+      return;
+    }
     pending(true);
     setError("");
     try {
@@ -75,12 +88,14 @@ export function ApplicationEditor({
         draft.accessMode === "domains" &&
         !emailDomains.length
       ) {
+        setTab("access");
         throw new Error(
           copy("Добавьте хотя бы один домен почты во вкладке «Доступ»"),
         );
       }
       const scopes = draft.scopes.map((scope) => scope.trim()).filter(Boolean);
       if (new Set(scopes).size !== scopes.length) {
+        setTab("service");
         throw new Error(copy("Значения разрешений не должны повторяться"));
       }
       const payload = {
@@ -100,9 +115,7 @@ export function ApplicationEditor({
             )
             .map(([scope, label]) => [scope.trim(), label.trim()]),
         ),
-        redirectUris: draft.redirectUris
-          .map((uri) => uri.trim())
-          .filter(Boolean),
+        redirectUris,
         scopes,
       };
       const result = await apiRequest<{
@@ -115,8 +128,11 @@ export function ApplicationEditor({
       );
       setId(result.application.id);
       setDraft(result.application);
-      if (result.clientSecret) setSecret(result.clientSecret);
+      if (result.clientSecret) {
+        setSecret(result.clientSecret);
+      }
       setSaved(true);
+      showToast(copy("Настройки сохранены"), "success");
       onDirty(Boolean(result.clientSecret || secret));
       onSaved();
     } catch (error) {
@@ -129,9 +145,9 @@ export function ApplicationEditor({
       pending(false);
     }
   }
-  async function rotate() {
+  async function rotate(): Promise<boolean> {
     if (readOnly || busy || !id) {
-      return;
+      return false;
     }
     pending(true);
     setError("");
@@ -143,18 +159,21 @@ export function ApplicationEditor({
       );
       setSecret(result.clientSecret);
       onDirty(true);
+      return true;
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
           : copy("Не удалось заменить секрет"),
       );
+      return false;
     } finally {
       pending(false);
     }
   }
   return (
     <form
+      noValidate
       className="space-y-6"
       onSubmit={(event) => {
         event.preventDefault();
@@ -172,74 +191,21 @@ export function ApplicationEditor({
           users={users}
           existing={Boolean(id)}
           portal={portal}
+          tab={tab}
+          onTabChange={setTab}
         />
-        {id && (
-          <section className="space-y-4 rounded-xl border p-4">
-            <h3 className="text-sm font-medium">{copy("Подключение")}</h3>
-            <div className="space-y-2">
-              <Label htmlFor="oauth-client-id">Client ID</Label>
-              <Input
-                id="oauth-client-id"
-                readOnly
-                value={id}
-                className="font-mono text-xs"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="oauth-issuer">Issuer</Label>
-              <Input
-                id="oauth-issuer"
-                readOnly
-                value={issuer}
-                className="text-xs"
-              />
-            </div>
-            <p className="break-all text-xs text-muted-foreground">
-              Discovery: {issuer}/.well-known/openid-configuration
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {copy("Scopes профиля: openid profile email ")}
-            </p>
-            {!readOnly && draft.clientType === "confidential" && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={rotate}
-              >
-                {copy("Заменить секрет (старый перестанет работать) ")}
-              </Button>
-            )}
-          </section>
-        )}
-        {secret && (
-          <section className="space-y-3 rounded-xl border border-primary/40 bg-primary/5 p-4">
-            <Label htmlFor="oauth-secret">
-              {copy("Секрет · показывается один раз")}
-            </Label>
-            <Input
-              id="oauth-secret"
-              value={secret}
-              readOnly
-              autoComplete="off"
-              className="font-mono text-xs"
-            />
-            <p className="text-xs text-muted-foreground">
-              {copy(
-                "Сохраните его в настройках сервиса. После закрытия прочитать секрет снова нельзя. ",
-              )}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setSecret("");
-                onDirty(!saved);
-              }}
-            >
-              {copy("Я сохранил секрет ")}
-            </Button>
-          </section>
-        )}
+        <ApplicationConnectionCard
+          id={id}
+          issuer={issuer}
+          readOnly={readOnly}
+          confidential={draft.clientType === "confidential"}
+          secret={secret}
+          onRotate={rotate}
+          onAcknowledgeSecret={() => {
+            setSecret("");
+            onDirty(!saved);
+          }}
+        />
         {error && (
           <p
             role="alert"
@@ -263,7 +229,7 @@ export function ApplicationEditor({
               role="status"
               className="text-sm text-muted-foreground"
             >
-              {copy("Сохранено ")}
+              {copy("Сохранено")}
             </p>
           )}
         </div>

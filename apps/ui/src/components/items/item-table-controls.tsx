@@ -41,7 +41,7 @@ export function ItemViewMenu({
           variant="outline"
           size="sm"
         >
-          <SlidersHorizontal aria-hidden="true" /> {copy(" Вид ")}
+          <SlidersHorizontal aria-hidden="true" /> {copy("Вид")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -49,7 +49,7 @@ export function ItemViewMenu({
         className="w-72"
       >
         <p className="px-2 py-2 text-xs font-medium text-muted-foreground">
-          {copy("Столбцы ")}
+          {copy("Столбцы")}
         </p>
         <div className="max-h-64 overflow-y-auto">
           {all.map((column) => {
@@ -79,7 +79,7 @@ export function ItemViewMenu({
         {views.length > 0 && (
           <>
             <p className="px-2 py-2 text-xs font-medium text-muted-foreground">
-              {copy("Сохранённые виды ")}
+              {copy("Сохранённые виды")}
             </p>
             <div className="max-h-48 overflow-auto">
               {views.map((view) => (
@@ -91,7 +91,7 @@ export function ItemViewMenu({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">
                       {view.name}
-                      {view.isDefault ? copy(" · по умолчанию") : ""}
+                      {view.isDefault ? ` ${copy("· по умолчанию")}` : ""}
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {view.scope === "personal"
@@ -112,12 +112,11 @@ export function ItemViewMenu({
         )}
         <DropdownMenuItem onSelect={onManageViews}>
           <Save />
-          {copy("Сохранить как… / управлять видами ")}
+          {copy("Сохранить как… / управлять видами")}
         </DropdownMenuItem>
         {onImport && (
           <DropdownMenuItem onSelect={onImport}>
-            <Download aria-hidden="true" />{" "}
-            {copy(" Импортировать из браузера ")}
+            <Download aria-hidden="true" /> {copy("Импортировать из браузера")}
           </DropdownMenuItem>
         )}
         <p className="px-2 py-2 text-xs leading-relaxed text-muted-foreground">

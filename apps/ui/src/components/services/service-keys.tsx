@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Copy, KeyRound } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -108,7 +108,7 @@ export function ServiceKeys({
     <div className="space-y-6">
       <p className="text-sm leading-6 text-muted-foreground">
         {copy(
-          "Создайте ключ для приложения или автоматизации. Несколько ключей позволяют заменить старый без перерыва в работе. ",
+          "Создайте ключ для приложения или автоматизации. Несколько ключей позволяют заменить старый без перерыва в работе.",
         )}
       </p>
       {secret ? (
@@ -118,7 +118,7 @@ export function ServiceKeys({
         >
           <h3 className="font-semibold">{copy("Сохраните ключ сейчас")}</h3>
           <p className="text-sm text-muted-foreground">
-            {copy("После закрытия этого блока увидеть его повторно нельзя. ")}
+            {copy("После закрытия этого блока увидеть его повторно нельзя.")}
           </p>
           <Input
             readOnly
@@ -154,7 +154,7 @@ export function ServiceKeys({
                 onBusy(false);
               }}
             >
-              {copy("Ключ сохранён ")}
+              {copy("Ключ сохранён")}
             </Button>
           </div>
         </section>
@@ -165,7 +165,7 @@ export function ServiceKeys({
         >
           <h3 className="flex items-center gap-2 font-medium">
             <KeyRound className="size-4" />
-            {copy("Новый ключ ")}
+            {copy("Новый ключ")}
           </h3>
           <div className="space-y-2">
             <Label htmlFor="key-name">{copy("Название ключа")}</Label>
@@ -196,7 +196,7 @@ export function ServiceKeys({
                       key={value}
                       value={String(value)}
                     >
-                      {value} {copy(" дней ")}
+                      {value} {copy("дней")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -209,9 +209,7 @@ export function ServiceKeys({
         </form>
       ) : !active && !readOnly ? (
         <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-          {copy(
-            "Аккаунт отключён. Включите его, чтобы выпускать новые ключи. ",
-          )}
+          {copy("Аккаунт отключён. Включите его, чтобы выпускать новые ключи.")}
         </p>
       ) : null}
       {error && (
@@ -229,7 +227,7 @@ export function ServiceKeys({
         </h3>
         {keys.length === 0 && (
           <p className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-            {copy("Пока нет ключей ")}
+            {copy("Пока нет ключей")}
           </p>
         )}
         <p className="text-xs text-muted-foreground">
@@ -252,24 +250,21 @@ export function ServiceKeys({
       </div>
       <details className="rounded-lg border p-4 text-sm">
         <summary className="cursor-pointer font-medium">
-          {copy("Как подключить приложение ")}
+          {copy("Как подключить приложение")}
         </summary>
         <div className="mt-3 space-y-3 text-muted-foreground">
           <p>
-            {copy("Отправьте ключ в Core: ")}
+            {copy("Отправьте ключ в Core:")}{" "}
             <code>POST /auth/service-token</code>
           </p>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
             {copy('{ "key": "<сервисный ключ>" }')}
           </pre>
           <p>
-            {copy("В ответе придёт ")}
-            <code>accessToken</code>{" "}
-            {copy(" со сроком до 15 минут. Передавайте его в ")}
+            {copy("В ответе придёт")} <code>accessToken</code>{" "}
+            {copy("со сроком до 15 минут. Передавайте его в")}{" "}
             <code>Authorization: Bearer …</code>
-            {copy(
-              ". По истечении срока получите новый токен тем же способом. ",
-            )}
+            {copy(". По истечении срока получите новый токен тем же способом.")}
           </p>
         </div>
       </details>

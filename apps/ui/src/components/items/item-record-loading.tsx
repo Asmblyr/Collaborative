@@ -30,7 +30,7 @@ export function ItemRecordLoading({
             variant="outline"
             onClick={onRetry}
           >
-            {copy("Повторить ")}
+            {copy("Повторить")}
           </Button>
         </div>
       ) : (
@@ -39,7 +39,7 @@ export function ItemRecordLoading({
             role="status"
             className="sr-only"
           >
-            {copy("Загрузка записи… ")}
+            {copy("Загрузка записи…")}
           </p>
           <Skeleton className="h-9 w-full" />
           <div

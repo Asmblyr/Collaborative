@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useAppearance } from "./appearance-provider";
 import { useAccountTheme } from "./account-theme";
 import { useUiCopy } from "@/lib/ui-copy";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,14 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
+} from "@asmblyr-collaborative/kit/ui/card";
 import { apiRequest } from "@/lib/api-request";
 import {
   ASSISTANT_SETTINGS_CHANGED,
@@ -109,10 +109,10 @@ export function AssistantForm({
                 htmlFor="system-assistant-enabled"
                 className="text-base"
               >
-                {copy("Ассистент в интерфейсе ")}
+                {copy("Ассистент в интерфейсе")}
               </Label>
               <CardDescription>
-                {copy("Показывать вкладку AI в панели общения. ")}
+                {copy("Показывать вкладку AI в панели общения.")}
               </CardDescription>
             </div>
             <Switch
@@ -142,7 +142,7 @@ export function AssistantForm({
           {!value.enabled && (
             <p className="text-sm text-muted-foreground">
               {copy(
-                "Ассистент будет скрыт. Обсуждения и уведомления останутся доступны. ",
+                "Ассистент будет скрыт. Обсуждения и уведомления останутся доступны.",
               )}
             </p>
           )}
@@ -154,7 +154,7 @@ export function AssistantForm({
           <CardTitle>{copy("Параметры ответа")}</CardTitle>
           <CardDescription>
             {copy(
-              "Значения по умолчанию. Пользователь может изменить их для своего диалога. ",
+              "Значения по умолчанию. Пользователь может изменить их для своего диалога.",
             )}
           </CardDescription>
         </CardHeader>
@@ -167,7 +167,7 @@ export function AssistantForm({
                 </Label>
                 <p className="max-w-sm text-sm leading-6 text-muted-foreground">
                   {copy(
-                    "Глубокое рассуждение подходит для сложных задач, но ответ занимает больше времени. ",
+                    "Глубокое рассуждение подходит для сложных задач, но ответ занимает больше времени.",
                   )}
                 </p>
               </div>
@@ -197,7 +197,7 @@ export function AssistantForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="default">
-                    {copy("Из Core ")}
+                    {copy("Из Core")}{" "}
                     {defaults.defaultEffort
                       ? ` · ${copy(effortLabels[defaults.defaultEffort])}`
                       : ""}
@@ -221,7 +221,7 @@ export function AssistantForm({
                   {copy("Размышление")}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  {copy("Дополнительное рассуждение перед ответом. ")}
+                  {copy("Дополнительное рассуждение перед ответом.")}
                 </p>
               </div>
               <Select
@@ -258,7 +258,7 @@ export function AssistantForm({
           {defaults?.thinking === "required" && (
             <p className="rounded-lg bg-muted/50 px-4 py-3 text-sm leading-6 text-muted-foreground">
               {copy(
-                "У этой модели размышление всегда включено. Можно выбрать его глубину. ",
+                "У этой модели размышление всегда включено. Можно выбрать его глубину.",
               )}
             </p>
           )}
@@ -304,7 +304,7 @@ export function AssistantForm({
               }}
             >
               <RotateCcw />
-              {copy("Отменить ")}
+              {copy("Отменить")}
             </Button>
           )}
           {message && (
@@ -328,7 +328,7 @@ export function AssistantForm({
       )}
       <p className="px-1 text-xs leading-5 text-muted-foreground">
         {copy(
-          "При включённом контексте ассистент видит состояние таблицы и может искать, читать и считать записи открытой коллекции в пределах прав пользователя. Запрошенные значения передаются AI-провайдеру. Черновики форм недоступны. Предложенный фильтр применяется только по нажатию пользователя. ",
+          "При включённом контексте ассистент видит состояние таблицы и может искать, читать и считать записи открытой коллекции в пределах прав пользователя. Запрошенные значения передаются AI-провайдеру. Черновики форм недоступны. Предложенный фильтр применяется только по нажатию пользователя.",
         )}
       </p>
     </form>

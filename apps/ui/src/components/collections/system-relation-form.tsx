@@ -12,11 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import type { Collection } from "@/components/items/types";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
-import { useEditorDraft } from "./editor-lifecycle";
+import { useEditorDraft } from "@/components/ui/editor-lifecycle";
 import { NameInput } from "./relation-name-input";
 
 export function SystemRelationForm({
@@ -89,7 +89,7 @@ export function SystemRelationForm({
         onClick={onBack}
       >
         <ArrowLeft aria-hidden="true" />
-        {copy(" К выбору типа ")}
+        {copy("К выбору типа")}
       </Button>
       <fieldset
         disabled={pending}
@@ -101,7 +101,7 @@ export function SystemRelationForm({
           value={name}
           onChange={setName}
           required
-          hint={copy("Строчные латинские буквы, цифры и подчёркивание. ")}
+          hint={`${copy("Строчные латинские буквы, цифры и подчёркивание.")} `}
         />
         <div className="space-y-2">
           <Label htmlFor="system-relation-label">
@@ -175,7 +175,7 @@ export function SystemRelationForm({
           disabled={pending}
           onClick={onCancel}
         >
-          {copy("Отмена ")}
+          {copy("Отмена")}
         </Button>
       </div>
     </form>

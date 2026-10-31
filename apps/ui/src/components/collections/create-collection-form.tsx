@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditorDraft } from "./editor-lifecycle";
+import { useEditorDraft } from "@/components/ui/editor-lifecycle";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { defaultCollectionState } from "@asmblyr-collaborative/contracts";
 import { CollectionSystemFields } from "./collection-system-fields";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -148,13 +148,13 @@ export function CreateCollectionForm({
             value="general"
             className="flex-1"
           >
-            {copy("Основное ")}
+            {copy("Основное")}
           </TabsTrigger>
           <TabsTrigger
             value="display"
             className="flex-1"
           >
-            {copy("Отображение ")}
+            {copy("Отображение")}
           </TabsTrigger>
           <TabsTrigger
             value="mcp"
@@ -189,7 +189,7 @@ export function CreateCollectionForm({
             />
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Строчные латинские буквы, цифры и подчёркивание. Префиксы asmblyr_ и plugin_ зарезервированы. ",
+                "Строчные латинские буквы, цифры и подчёркивание. Префиксы asmblyr_ и plugin_ зарезервированы.",
               )}
             </p>
           </div>
@@ -208,7 +208,7 @@ export function CreateCollectionForm({
             />
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Группировка в меню. Связи между записями и права настраиваются отдельно. ",
+                "Группировка в меню. Связи между записями и права настраиваются отдельно.",
               )}
             </p>
           </div>
@@ -235,7 +235,7 @@ export function CreateCollectionForm({
             </Select>
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Для одного объекта Core разрешит создать только одну запись. ",
+                "Для одного объекта Core разрешит создать только одну запись.",
               )}
             </p>
           </div>
@@ -263,7 +263,7 @@ export function CreateCollectionForm({
 
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Пользовательские поля можно добавить после создания коллекции. ",
+              "Пользовательские поля можно добавить после создания коллекции.",
             )}
           </p>
         </TabsContent>
@@ -319,7 +319,7 @@ export function CreateCollectionForm({
           disabled={pending}
           onClick={onCancel}
         >
-          {copy("Отмена ")}
+          {copy("Отмена")}
         </Button>
       </div>
     </form>

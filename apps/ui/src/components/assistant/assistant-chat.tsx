@@ -165,7 +165,7 @@ export function AssistantChat({
                         {message.truncated && (
                           <p className="text-xs text-muted-foreground">
                             {copy(
-                              "Ответ достиг ограничения длины. Можно попросить продолжить. ",
+                              "Ответ достиг ограничения длины. Можно попросить продолжить.",
                             )}
                           </p>
                         )}
@@ -242,7 +242,7 @@ export function AssistantChat({
                 onClick={onRetry}
               >
                 <RotateCcw />
-                {copy("Повторить ")}
+                {copy("Повторить")}
               </Button>
             )}
             {errorSummary && <AssistantUsageSummary summary={errorSummary} />}
@@ -278,7 +278,7 @@ export function AssistantChat({
               id="assistant-input-hint"
               className="text-[11px] font-normal text-muted-foreground"
             >
-              {copy("Shift + Enter — новая строка ")}
+              {copy("Shift + Enter — новая строка")}
             </span>
             <InputGroupButton
               type="submit"
@@ -294,7 +294,7 @@ export function AssistantChat({
         </InputGroup>
         <p className="assistant-composer-notice mt-2 text-center text-[11px] leading-4 text-muted-foreground">
           {copy(
-            "Запрошенные данные передаются AI-провайдеру · ответы стоит проверять ",
+            "Запрошенные данные передаются AI-провайдеру · ответы стоит проверять",
           )}
         </p>
       </form>

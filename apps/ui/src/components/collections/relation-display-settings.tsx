@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -196,7 +196,7 @@ export function RelationDisplaySettings({
           </Select>
           <p className="text-xs text-muted-foreground">
             {copy(
-              "До 12 столбцов. Если список пуст, столбцы подбираются автоматически. Пользователь увидит только доступные ему поля. ",
+              "До 12 столбцов. Если список пуст, столбцы подбираются автоматически. Пользователь увидит только доступные ему поля.",
             )}
           </p>
         </div>
@@ -307,7 +307,7 @@ export function RelationDisplaySettings({
         ))}
         <p className="text-xs text-muted-foreground">
           {copy(
-            "Кнопки доступны, если действие разрешено политиками пользователя. ",
+            "Кнопки доступны, если действие разрешено политиками пользователя.",
           )}
         </p>
       </div>

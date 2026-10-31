@@ -17,7 +17,7 @@ export function SsoProviders({
   return (
     <div className="space-y-3 border-t pt-5">
       <p className="text-center text-xs text-muted-foreground">
-        {copy("Или через подключённый аккаунт ")}
+        {copy("Или через подключённый аккаунт")}
       </p>
       {providers.map((provider) => (
         <form
@@ -40,8 +40,7 @@ export function SsoProviders({
             type="submit"
             className="w-full"
           >
-            {copy("Войти через ")}
-            {provider.label}
+            {copy("Войти через")} {provider.label}
           </Button>
         </form>
       ))}

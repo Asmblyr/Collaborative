@@ -16,6 +16,17 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@asmblyr-collaborative/kit/ui/card";
 import {
   Tabs,
   TabsList,
@@ -31,8 +42,8 @@ import {
 } from "@asmblyr-collaborative/kit/ui/select";
 ```
 
-`buttonVariants` экспортируется из `@asmblyr-collaborative/kit/ui/button` для ссылок и других
-элементов, которым нужен стиль кнопки. `@asmblyr-collaborative/kit/ui` содержит регистрацию
+`buttonVariants` экспортируется из `@asmblyr-collaborative/kit/ui/button`, а `badgeVariants` — из `@asmblyr-collaborative/kit/ui/badge` для ссылок и других
+элементов, которым нужен стиль кнопки или плашки. `@asmblyr-collaborative/kit/ui` содержит регистрацию
 плагина и контракты его UI. Серверный entry `@asmblyr-collaborative/kit` в браузер не импортируется.
 React и ReactDOM — совместимые peer dependencies: плагины используют экземпляры
 хоста. Серверные потребители Kit не обязаны импортировать UI.
@@ -77,9 +88,9 @@ Popover админки использует этот же контекст. За
 
 ## Изменение и добавление компонентов
 
-Общие Button, Input, Textarea, Select, Checkbox и Tabs меняются в Kit.
+Общие Button, Input, Textarea, Select, Checkbox, Switch, Label, Badge, Card и Tabs меняются в Kit.
 Сохраняйте `"use client"` на интерактивных модулях и проверяйте компоненты внутри
-нативного диалога. Button и `buttonVariants` остаются доступными серверным компонентам.
+нативного диалога. Button/`buttonVariants`, Badge/`badgeVariants` и Card остаются доступными серверным компонентам.
 
 `apps/ui/components.json` пока обслуживает остальные локальные компоненты админки.
 Не запускайте `shadcn add --overwrite` для уже перенесённых компонентов в `apps/ui`:

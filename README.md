@@ -12,8 +12,8 @@
 </p>
 
 <p align="center">
-  <strong>A collaborative workspace for your PostgreSQL data.</strong><br>
-  Collections, an admin interface, access policies, and an API — on your infrastructure.
+  <strong>Your team's data, in one shared workspace.</strong><br>
+  Organize records, build forms, and work together — on your own infrastructure.
 </p>
 
 <p align="center">
@@ -23,151 +23,139 @@
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick start</a> ·
-  <a href="deploy/README.md">Deployment</a> ·
-  <a href="docs/index.md">Documentation</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="#what-you-can-build">Use cases</a> ·
+  <a href="#a-workspace-that-fits-your-team">Explore the product</a> ·
+  <a href="#quick-start">Get started</a> ·
+  <a href="docs/index.md">Documentation</a>
 </p>
 
-Collaborative turns PostgreSQL data into a workspace your team can use together.
-Define collections and relationships, build forms and table views, and control
-which records and fields each person can access. Use the same data through the
-HTTP API or a typed TypeScript client, and extend the product with plugins.
+Collaborative is an open-source workspace for teams that manage structured data
+together. Create collections for your work, connect them with relationships, and
+give people tables and forms they can use every day. Keep discussions next to the
+records and decide who can see or change each part of the data.
 
-**Early beta.** Each installation is intended for one team. The interface supports
-English and Russian, as does the documentation (English by default). SDK and CLI
-packages are available under the npm `beta` tag.
+Your data lives in PostgreSQL on infrastructure you control. The interface is
+available in English and Russian.
 
-## What you can do
+![A shared request table in Collaborative with sample records, statuses, filters, and view controls](docs/assets/screenshots/requests-table.en.png)
 
-| Area                   | Capabilities                                                                                                                                        |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Model your data**    | Typed fields, M:1 / 1:M / M:N relationships, custom fields on supported system collections, and read-only materialized views.                       |
-| **Build a workspace**  | Configurable forms and tables, relevance search, nested filters, saved views, tags, and translated collection and field labels.                     |
-| **Work together**      | Discussions, notifications, live presence, saved-record updates, advisory field locks, and conflict handling that preserves local edits.            |
-| **Control access**     | Policies for actions, fields, and rows; invitations by link; passwords, passkeys, and external SSO; service accounts and OAuth/OIDC applications.   |
-| **Connect services**   | S3-compatible storage, encrypted connection secrets, optional Yandex KMS, personal Google Drive/Sheets connections, and optional Sentry monitoring. |
-| **Extend the product** | Server handlers, UI pages, field editors, collections, and migrations through the plugin Kit; a TypeScript SDK and schema-generating CLI.           |
-| **Use an assistant**   | Optional streaming chat with conversation history, permission-aware data tools, and explicitly exposed plugin actions.                              |
+_A request collection with fictional demo data._
 
-See the [feature guide](docs/guide/features.md) for details and current limits.
-Workspaces organize collections within an installation; they are not tenant
-isolation boundaries. Plugins are installed with the application, and their
-server code runs as trusted code inside Core.
+## What you can build
 
-## Live collaboration
+Use your own collections and fields to model the way your team works:
 
-Open the same record in two sessions to see who is there, which fields are being
-edited, and changes after they are saved. Tables and record editors receive
-updates over server-sent events. Unsaved edits stay in the form; conflicting
-changes to the same field can be reviewed before saving.
+| Scenario             | A workspace for                                                          |
+| -------------------- | ------------------------------------------------------------------------ |
+| Requests and intake  | A shared queue with statuses, related customers, attachments, and notes. |
+| Catalogs and content | Structured records, descriptions, tags, images, and related entries.     |
+| Internal directories | Departments, contacts, resources, and the relationships between them.    |
 
-Field locks help coordinate editing. Conflict checks protect draft saves;
-ordinary API writes retain their documented behavior. Live events come from
-operations through Core, not direct SQL writes.
-[How live collaboration works](docs/features/realtime.md).
+These are examples of what you can configure, rather than preinstalled templates.
+
+## A workspace that fits your team
+
+### Make the table yours
+
+Choose columns, adjust widths, sort records, and combine filters to find the
+right work. Your column settings, sorting, filters, and page size are saved
+automatically for each collection. Save named views for yourself or share them
+with the team.
+
+Group collections into workspaces and share a link to the right workspace or
+record. Colleagues still see only the data their permissions allow.
+
+### Give each record a useful form
+
+Arrange fields into sections and tabs. Use choices, dates, tags, rich text, files,
+and related records to capture the information your team needs. Show relevant
+fields and choices based on other values in the form. Open a record beside the
+table, follow its relationships, and review its change history. Save the record
+and staged changes to related records together.
+
+<details>
+<summary>See a record card</summary>
+
+<p align="center">
+  <img src="docs/assets/screenshots/request-record.en.png" alt="A demo request card with editable fields, History and Discussion tabs, and save actions" width="560">
+</p>
+
+</details>
+
+### Work on the same data together
+
+See who has a record open and which fields they are editing. Saved changes
+update open tables and cards. If someone changes a field you are editing,
+review the conflict while keeping your local draft.
+
+Discuss a record in its **Discussion** tab. Follow the conversation and receive
+in-app notifications when others reply.
+
+### Give people the right access
+
+Control which collections, records, and fields each person can read or change.
+Reuse policies across your team, invite colleagues, and support passwords,
+passkeys, or external sign-in. Administrators configure the workspace; team
+members work within their granted access.
+
+## Bring an assistant into the workspace
+
+The optional assistant can help find records, build filters, answer questions
+about accessible data, and create or update records when you ask it to. It uses
+your account's permissions and the collections enabled for its tools.
+Enable it by connecting an OpenAI-compatible model provider.
+
+Prefer an external AI client? Connect it through **MCP**, sign in with your
+Collaborative account, and choose read-only or read-and-write access. Available
+collections follow your current account rights and the installation's MCP
+settings. The website assistant and external MCP share the same data tools and
+permission checks. Find the MCP server address in **Settings → Applications**.
+
+[Assistant guide](docs/features/assistant.md) ·
+[External MCP](docs/features/external-mcp.md)
 
 ## Quick start
 
-For local development, install **Node.js 22+, pnpm 11.13.1, and Docker Compose**.
+**Collaborative is in early beta.** Each installation is intended for one team.
+Check the [feature map and current limits](docs/guide/features.md) before adopting
+it for your work. Workspaces organize collections; they do not provide tenant
+isolation. Collections are modeled in Collaborative; arbitrary existing
+PostgreSQL tables are not automatically imported.
 
-```sh
-git clone https://github.com/Asmblyr/Collaborative.git
-cd Collaborative
-pnpm install --frozen-lockfile
-pnpm db:up
-cp -n apps/core/.env.example apps/core/.env
-```
+Choose how you want to start:
 
-Set `ASMBLYR_SETUP_TOKEN` in `apps/core/.env` to a random value of at least
-32 characters, then start the application:
+- **Run the product:** [Docker Compose](deploy/README.md#docker-compose) or
+  [Kubernetes with Helm](deploy/README.md#kubernetes-and-helm).
+- **Run from source:** [local setup](docs/guide/getting-started.md), including
+  configuration and creating your first administrator.
+- **Explore the guides:** [collections and records](docs/features/data.md),
+  [workspaces and views](docs/features/workspaces.md), and
+  [team permissions](docs/features/access.md).
 
-```sh
-pnpm db:migrate
-pnpm dev
-```
+## Connect your tools and extend the product
 
-Open [localhost:3000/setup](http://localhost:3000/setup) to create the first
-administrator. The copy command above is for a POSIX shell; on Windows, copy the
-example file without overwriting an existing `.env`.
-See [first-time setup](docs/guide/getting-started.md) for configuration details.
+Use the HTTP API and TypeScript SDK with the same data and access rules as the
+interface. The CLI generates types from your installation's schema. Plugins can
+add pages, field editors, record panels, and server behavior.
 
-## Deploy with Docker or Kubernetes
+Personal Google Drive and Sheets connections are also available for supported
+assistant actions. Server plugins run as trusted code and are installed with
+the application.
 
-Deploy **Core and UI as a matching pair**, built from the same commit. PostgreSQL
-and S3-compatible storage are connected separately. Both components can share
-one public origin, with the API available at `/api`.
+[HTTP API](docs/reference/http.md) ·
+[SDK](docs/reference/sdk-guide.md) ·
+[CLI](docs/reference/cli-guide.md) ·
+[Build a plugin](docs/development/first-extension.md) ·
+[Architecture](docs/development/architecture.md)
 
-- **Docker Compose:** [deployment instructions](deploy/README.md#docker-compose).
-- **Kubernetes:** [Helm chart](deploy/helm/collaborative) and [configuration](deploy/README.md#kubernetes-and-helm).
-- **Images:** `ghcr.io/asmblyr/collaborative-core` and `ghcr.io/asmblyr/collaborative-ui`.
-- **Operations:** [upgrades](docs/guide/deployment.md), [backups and recovery](docs/development/operations.md).
+## Get involved
 
-Pin both images to the same release and their respective digests. Container builds
-compile the SDK, Kit, contracts, and bundled plugins directly from this repository;
-they do not require those packages to be published to npm first.
-
-## Connect a TypeScript project
-
-```sh
-npm install @asmblyr-collaborative/sdk@beta
-npm install --save-dev @asmblyr-collaborative/cli@beta
-npx asm connect --url http://localhost:3000
-```
-
-The CLI opens your installation's sign-in and consent flow, downloads the schema
-available to your account, and generates collection and plugin types. No custom
-compiler or bundler plugin is required. Schema authorization does not grant data
-access; API requests still need their own authenticated session or credentials.
-
-[SDK guide](docs/reference/sdk-guide.md) ·
-[CLI guide](docs/reference/cli-guide.md) ·
-[HTTP API](docs/reference/http.md)
-
-## Assistant and plugins
-
-Connect an OpenAI-compatible provider to enable the assistant. It works with the
-caller's permissions and collections explicitly made available to its tools.
-Personal Google Drive and Sheets connections support reading on request and
-proposing changes for user approval.
-
-Plugins can expose selected actions through `defineModelContext`. Ordinary HTTP
-handlers do not automatically become assistant tools. The MCP integration is
-internal; there is no public MCP endpoint.
-
-[Assistant architecture](docs/development/assistant-architecture.md) ·
-[Build your first plugin](docs/development/first-extension.md) ·
-[Kit guide](docs/reference/kit-guide.md)
-
-## Architecture
-
-```mermaid
-flowchart LR
-  Browser[Browser] -->|Pages| UI[Next.js UI]
-  Browser -->|/api| Core[Fastify Core]
-  SDK[TypeScript SDK and CLI] --> Core
-  Core --> DB[(PostgreSQL)]
-  Core --> S3[(S3-compatible storage)]
-  Plugins[Kit plugins] --> Core
-```
-
-Core owns the HTTP API, authentication, permissions, and database access. UI
-provides the admin interface. PostgreSQL coordinates realtime updates between
-Core instances.
-[Architecture guide](docs/development/architecture.md).
-
-## Contributing
-
-Bug reports and proposals are welcome in [GitHub Issues](https://github.com/Asmblyr/Collaborative/issues).
-For code changes, fork the repository and open a pull request. Discuss substantial
-architecture or API changes in an issue first.
-
-- [Contribution guide](CONTRIBUTING.md) and [local development](docs/development/local-development.md).
-- [Documentation index](docs/index.md) and [documentation workflow](docs/development/documentation.md).
-- [Security policy and private reporting](SECURITY.md).
+Share bugs, questions, and ideas in [GitHub Issues](https://github.com/Asmblyr/Collaborative/issues).
+For code contributions, see the [contribution guide](CONTRIBUTING.md).
+Report vulnerabilities privately using the [security policy](SECURITY.md).
 
 ## License
 
 [MIT](LICENSE). Third-party dependencies retain their own licenses. The optional
-local S3 service uses MinIO under AGPL. The wordmark uses the bundled Geist
-typeface, distributed under [SIL OFL 1.1](apps/ui/src/app/fonts/OFL.txt).
+local S3 service uses MinIO under AGPL. The wordmark uses Geist under
+[SIL OFL 1.1](apps/ui/src/app/fonts/OFL.txt).

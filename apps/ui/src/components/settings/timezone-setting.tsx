@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useAccountTheme } from "./account-theme";
 import { useUiCopy } from "@/lib/ui-copy";
 

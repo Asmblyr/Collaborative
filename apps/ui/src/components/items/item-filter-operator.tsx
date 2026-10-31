@@ -124,7 +124,7 @@ export function ItemFilterOperator({
           ))}
           {options.length === 0 && (
             <p className="p-3 text-xs text-muted-foreground">
-              {copy("Оператор не найден ")}
+              {copy("Оператор не найден")}
             </p>
           )}
         </ItemFilterMenu>
@@ -136,7 +136,7 @@ export function ItemFilterOperator({
                 onChange(checked ? base + "Case" : base)
               }
             />
-            {copy("Учитывать регистр букв ")}
+            {copy("Учитывать регистр букв")}
           </label>
         )}
       </PopoverContent>

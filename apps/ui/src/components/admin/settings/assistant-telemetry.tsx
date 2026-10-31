@@ -11,7 +11,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@asmblyr-collaborative/kit/ui/card";
 import {
   Select,
   SelectContent,
@@ -91,7 +91,7 @@ export function AssistantTelemetry() {
           <h2 className="font-medium">{copy("Использование AI")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {copy(
-              "Вызовы модели всех пользователей, без содержимого диалогов. Одно сообщение может включать несколько вызовов. ",
+              "Вызовы модели всех пользователей, без содержимого диалогов. Одно сообщение может включать несколько вызовов.",
             )}
           </p>
         </div>
@@ -130,7 +130,7 @@ export function AssistantTelemetry() {
           role="status"
         >
           <Loader2 className="size-4 animate-spin" />
-          {copy("Загружаем журнал… ")}
+          {copy("Загружаем журнал…")}
         </div>
       )}
       {current?.error && (
@@ -144,7 +144,7 @@ export function AssistantTelemetry() {
             variant="outline"
             onClick={() => refresh()}
           >
-            {copy("Повторить ")}
+            {copy("Повторить")}
           </Button>
         </div>
       )}
@@ -193,20 +193,17 @@ export function AssistantTelemetry() {
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span>
-              {copy("Вход и выход известны для ")}
-              {data.summary.withUsage} {copy(" из")} {data.summary.requests}{" "}
-              {copy(" запросов ")}
+              {copy("Вход и выход известны для")} {data.summary.withUsage}{" "}
+              {copy("из")} {data.summary.requests} {copy("запросов")}
             </span>
             {data.summary.cancelled > 0 && (
               <span>
-                {copy("Отменено: ")}
-                {data.summary.cancelled}
+                {copy("Отменено:")} {data.summary.cancelled}
               </span>
             )}
             {data.summary.pending > 0 && (
               <span>
-                {copy("Без итогового статуса: ")}
-                {data.summary.pending}
+                {copy("Без итогового статуса:")} {data.summary.pending}
               </span>
             )}
           </div>
@@ -222,7 +219,7 @@ export function AssistantTelemetry() {
                 {copy("За этот период запросов нет")}
               </p>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                {copy("Новые обращения к ассистенту будут появляться здесь. ")}
+                {copy("Новые обращения к ассистенту будут появляться здесь.")}
               </p>
             </div>
           )}
@@ -247,7 +244,7 @@ export function AssistantTelemetry() {
                       onClick={() => setPages((value) => value.slice(0, -1))}
                     >
                       <ChevronLeft />
-                      {copy("Назад ")}
+                      {copy("Назад")}
                     </Button>
                   </PaginationItem>
                   <PaginationItem>
@@ -263,7 +260,7 @@ export function AssistantTelemetry() {
                         setPages((value) => [...value, data.nextCursor!]);
                       }}
                     >
-                      {copy("Далее ")}
+                      {copy("Далее")}
                       <ChevronRight />
                     </Button>
                   </PaginationItem>
@@ -275,7 +272,7 @@ export function AssistantTelemetry() {
       )}
       <p className="border-t pt-4 text-xs leading-5 text-muted-foreground">
         {copy(
-          "Учитываются обращения к провайдеру после проверки доступа и лимитов. «—» означает, что статистика не получена. Кэш входит во входные токены, размышления — в выходные. Это расход токенов, а не сумма списания по тарифу. Журнал хранится без автоудаления; обращения до его подключения не восстановятся. ",
+          "Учитываются обращения к провайдеру после проверки доступа и лимитов. «—» означает, что статистика не получена. Кэш входит во входные токены, размышления — в выходные. Это расход токенов, а не сумма списания по тарифу. Журнал хранится без автоудаления; обращения до его подключения не восстановятся.",
         )}
       </p>
     </div>

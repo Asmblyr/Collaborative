@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { Ellipsis, ArrowUpRight } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Collection, CollectionFolder } from "@/components/items/types";
-import { collectionLocation } from "@/lib/collection-tree";
+import { collectionLocation, locationValue } from "@/lib/collection-tree";
 import { CollectionLocationSelect } from "./collection-location-select";
 import type { MoveCollection } from "./use-collection-drag";
 import { useMenuEditorAction } from "./use-menu-editor-action";
@@ -53,6 +53,17 @@ export function CollectionRowActions({
     onDeleteCollection,
     onMoveCollection,
   } = actions;
+  const location = collectionLocation(collection);
+  const siblings = catalog.filter(
+    (entry) =>
+      entry.access.structure &&
+      locationValue(collectionLocation(entry)) === locationValue(location),
+  );
+  const siblingIndex = siblings.findIndex(
+    (entry) => entry.name === collection.name,
+  );
+  const canMoveUp = siblingIndex > 0;
+  const canMoveDown = siblingIndex >= 0 && siblingIndex < siblings.length - 1;
   return (
     <div className="flex justify-end gap-1">
       {canEdit && (
@@ -76,7 +87,7 @@ export function CollectionRowActions({
             aria-label={copy("Открыть записи {{value0}}", {
               value0: collection.name,
             })}
-            title={copy("Записи ")}
+            title={`${copy("Записи")} `}
           >
             <ArrowUpRight aria-hidden />
           </Link>
@@ -106,12 +117,12 @@ export function CollectionRowActions({
                 selectEditorAction(() => onDisplay(collection.name))
               }
             >
-              {copy("Настройки коллекции ")}
+              {copy("Настройки коллекции")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => selectEditorAction(() => onForm(collection.name))}
             >
-              {copy("Форма ")}
+              {copy("Форма")}
             </DropdownMenuItem>
             {collection.sourceKind !== "materialized-view" && (
               <DropdownMenuItem
@@ -119,8 +130,39 @@ export function CollectionRowActions({
                   selectEditorAction(() => onAddField(collection.name))
                 }
               >
-                {copy("Добавить поле ")}
+                {copy("Добавить поле")}
               </DropdownMenuItem>
+            )}
+            {(canMoveUp || canMoveDown) && (
+              <>
+                <DropdownMenuSeparator />
+                {canMoveUp && (
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      onMoveCollection(
+                        collection.name,
+                        location,
+                        siblings[siblingIndex - 1]?.name ?? null,
+                      )
+                    }
+                  >
+                    {copy("Переместить выше")}
+                  </DropdownMenuItem>
+                )}
+                {canMoveDown && (
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      onMoveCollection(
+                        collection.name,
+                        location,
+                        siblings[siblingIndex + 2]?.name ?? null,
+                      )
+                    }
+                  >
+                    {copy("Переместить ниже")}
+                  </DropdownMenuItem>
+                )}
+              </>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem

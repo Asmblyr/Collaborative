@@ -59,7 +59,7 @@ export function ItemFilterCondition({
     <div
       ref={row}
       role="group"
-      aria-label={copy("Условие ") + condition.field}
+      aria-label={`${copy("Условие")} ` + condition.field}
       className="group flex items-start gap-0.5 rounded-lg border border-border/60 bg-muted/20 p-1 transition-colors focus-within:border-ring/50 focus-within:bg-muted/40"
     >
       <div className="min-w-0 flex-1">
@@ -137,7 +137,7 @@ export function ItemFilterCondition({
             </>
           ) : (
             <span className="px-2 text-xs text-destructive">
-              {copy("Поле недоступно ")}
+              {copy("Поле недоступно")}
             </span>
           )}
         </div>
@@ -146,7 +146,7 @@ export function ItemFilterCondition({
         type="button"
         variant="ghost"
         size="icon-sm"
-        aria-label={copy("Удалить условие ") + condition.field}
+        aria-label={`${copy("Удалить условие")} ` + condition.field}
         className="h-8 w-7 shrink-0 text-muted-foreground/60 hover:text-destructive"
         onClick={onRemove}
       >

@@ -1,11 +1,11 @@
 "use client";
 
 import { UserRound, ShieldCheck, Palette, AppWindow } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { settingsTab, settingsTabHref } from "@/lib/settings-location";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Tabs,
   TabsContent,
@@ -28,6 +28,7 @@ import { PasskeysPanel } from "./passkeys-panel";
 import { InitialPasswordForm } from "./initial-password-form";
 import { userDisplayName, userAvatarUrl } from "@/lib/user-profile";
 import { ProfileDates } from "./profile-dates";
+import { useUiCopy } from "@/lib/ui-copy";
 
 export function SettingsWorkspace({
   user,
@@ -40,10 +41,15 @@ export function SettingsWorkspace({
   ssoStatus?: string;
   connectionStatus?: string;
 }) {
+  const copy = useUiCopy();
   const { t } = useTranslations();
   const params = useSearchParams();
   const requestedTab = params.get("tab");
   const tab = settingsTab(requestedTab);
+  const [securityVisited, setSecurityVisited] = useState(tab === "security");
+  if (tab === "security" && !securityVisited) {
+    setSecurityVisited(true);
+  }
   useEffect(() => {
     if (requestedTab !== tab) {
       window.history.replaceState(
@@ -89,13 +95,17 @@ export function SettingsWorkspace({
         </aside>
         <Tabs
           value={tab}
-          onValueChange={(value) =>
+          onValueChange={(value) => {
+            const nextTab = settingsTab(value);
+            if (nextTab === "security") {
+              setSecurityVisited(true);
+            }
             window.history.pushState(
               null,
               "",
-              settingsTabHref(window.location.href, settingsTab(value)),
-            )
-          }
+              settingsTabHref(window.location.href, nextTab),
+            );
+          }}
           className="min-w-0 space-y-5"
         >
           <TabsList className="h-auto w-full justify-start overflow-x-auto">
@@ -141,7 +151,7 @@ export function SettingsWorkspace({
           </TabsContent>
           <TabsContent
             value="security"
-            forceMount
+            forceMount={securityVisited ? true : undefined}
             className="rounded-xl border bg-card p-5 data-[state=inactive]:hidden sm:p-6"
           >
             <h2 className="mb-1 font-semibold">{t("settings.password")}</h2>
@@ -153,13 +163,17 @@ export function SettingsWorkspace({
                 role="status"
                 className="mb-5 rounded-lg bg-muted p-3 text-sm"
               >
-                {message}
+                {copy(message)}
               </p>
             )}
             {user.hasPassword ? <PasswordForm /> : <InitialPasswordForm />}
-            <PasskeysPanel />
-            <IdentitiesPanel providers={providers} />
-            <SessionsPanel />
+            {securityVisited && (
+              <>
+                <PasskeysPanel />
+                <IdentitiesPanel providers={providers} />
+                <SessionsPanel />
+              </>
+            )}
           </TabsContent>
           <TabsContent
             value="applications"

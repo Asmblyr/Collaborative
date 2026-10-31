@@ -10,7 +10,7 @@ import {
   preparedActionHref,
 } from "@/components/plugins/action-client";
 import { pluginPageBlocksNavigation } from "@/components/plugins/page-state";
-import { navigateWithEditorGuard } from "@/components/collections/use-editor-navigation-guard";
+import { navigateWithEditorGuard } from "@/components/ui/use-editor-navigation-guard";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function AssistantPluginResultCard({

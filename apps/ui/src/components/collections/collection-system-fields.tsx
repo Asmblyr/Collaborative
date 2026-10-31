@@ -1,7 +1,7 @@
 "use client";
 
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function CollectionSystemFields({
@@ -69,7 +69,7 @@ export function CollectionSystemFields({
       ))}
       <p className="text-xs leading-relaxed text-muted-foreground">
         {copy(
-          "Даты заполняются автоматически. Состояние новой записи — «Опубликовано». Черновики и архив скрыты из списка по умолчанию. Состояния можно настроить после создания коллекции. ",
+          "Даты заполняются автоматически. Состояние новой записи — «Опубликовано». Черновики и архив скрыты из списка по умолчанию. Состояния можно настроить после создания коллекции.",
         )}
       </p>
     </div>

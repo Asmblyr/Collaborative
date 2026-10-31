@@ -8,11 +8,11 @@ import type {
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { ProfileDisplaySourcePicker } from "@/components/access/profile-display-source";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
-import { useEditorState } from "./editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 
 export function UserVirtualField({
   fieldId,

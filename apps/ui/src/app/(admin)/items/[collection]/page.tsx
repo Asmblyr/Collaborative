@@ -21,7 +21,7 @@ async function LoadError({ message }: { message: string }) {
         href="/"
         className="text-sm text-muted-foreground underline"
       >
-        {copy("← К коллекциям ")}
+        {copy("← К коллекциям")}
       </Link>
       <p role="alert">{copy(message)}</p>
     </div>
@@ -163,7 +163,7 @@ export default async function CollectionItemsPage({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ItemsWorkspace
-        key={`${name}:${defaultView?.id}:${q}:${filter}:${items.page.number}`}
+        key={`${name}:${defaultView?.id ?? "base"}`}
         collection={collection}
         catalog={collections}
         userId={user.id}

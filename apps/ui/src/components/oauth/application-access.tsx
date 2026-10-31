@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import {
   Select,
@@ -96,7 +96,7 @@ export function ApplicationAccess({
             className="text-xs leading-relaxed text-muted-foreground"
           >
             {copy(
-              "По одному домену на строку. Можно указать @company.ru. Поддомены добавляйте отдельно: team.company.ru. Используется почта профиля Asmblyr; правило не подтверждает владение адресом. ",
+              "По одному домену на строку. Можно указать @company.ru. Поддомены добавляйте отдельно: team.company.ru. Используется почта профиля Asmblyr; правило не подтверждает владение адресом.",
             )}
           </p>
         </div>
@@ -147,7 +147,7 @@ export function ApplicationAccess({
                   {user.email}
                   {user.status !== "active" && (
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {copy("Неактивен · вход запрещён ")}
+                      {copy("Неактивен · вход запрещён")}
                     </span>
                   )}
                 </span>
@@ -155,13 +155,12 @@ export function ApplicationAccess({
             ))}
             {!visibleUsers.length && (
               <p className="p-3 text-sm text-muted-foreground">
-                {copy("Пользователи не найдены ")}
+                {copy("Пользователи не найдены")}
               </p>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {copy("Выбрано: ")}
-            {draft.userIds.length}
+            {copy("Выбрано:")} {draft.userIds.length}
           </p>
         </div>
       )}

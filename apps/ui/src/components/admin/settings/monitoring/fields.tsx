@@ -1,7 +1,7 @@
 "use client";
 import { useId } from "react";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { useUiCopy } from "@/lib/ui-copy";
 import {
   ConnectionEnabled,

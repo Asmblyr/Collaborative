@@ -2,6 +2,7 @@ import { loadSettingsAccess } from "@/lib/settings-access";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { AdminShell } from "@/components/layout/admin-shell";
+import { BrowserMonitoring } from "@/components/monitoring/browser-monitoring";
 import { SettingsWorkspace } from "@/components/settings/settings-workspace";
 import { AccountTheme } from "@/components/settings/account-theme";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
@@ -24,15 +25,19 @@ export default async function SettingsPage({
 
   const query = await searchParams;
   const { user, token } = await requireSession(settingsReturnHref(query));
-  const settings = await loadSettingsAccess(token);
-  const providers = await loadLoginProviders();
+  const [settings, providers, catalog, jar] = await Promise.all([
+    loadSettingsAccess(token),
+    loadLoginProviders(),
+    loadCollections(token),
+    cookies(),
+  ]);
   const ssoProps = {
     providers,
     ssoStatus: typeof query.sso === "string" ? query.sso : undefined,
     connectionStatus:
       typeof query.connection === "string" ? query.connection : undefined,
   };
-  const { data, folders } = await loadCollections(token);
+  const { data, folders } = catalog;
   const collections = collectionNavigationEntries(data);
   if (
     !user.superuser &&
@@ -41,6 +46,7 @@ export default async function SettingsPage({
   ) {
     return (
       <main className="min-h-dvh px-4 py-6 sm:px-8">
+        <BrowserMonitoring key={user.id} />
         <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
           <Button
             asChild
@@ -59,9 +65,10 @@ export default async function SettingsPage({
       </main>
     );
   }
-  const jar = await cookies();
-  const workspaces = await loadWorkspaces(token);
-  const plugins = await loadPluginExtensions(token).catch(() => []);
+  const [workspaces, plugins] = await Promise.all([
+    loadWorkspaces(token),
+    loadPluginExtensions(token).catch(() => []),
+  ]);
   return (
     <AdminShell
       settingsSections={settings.sections}
@@ -72,6 +79,7 @@ export default async function SettingsPage({
       plugins={plugins}
       defaultOpen={jar.get("sidebar_state")?.value !== "false"}
     >
+      <BrowserMonitoring key={user.id} />
       <SettingsWorkspace
         user={user}
         {...ssoProps}

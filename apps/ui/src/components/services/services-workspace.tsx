@@ -6,9 +6,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound, Plus, ArrowUpRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Table,
   TableBody,
@@ -90,7 +90,7 @@ export function ServicesWorkspace({
             onClick={create}
           >
             <Plus className="size-4" />
-            {copy("Создать аккаунт ")}
+            {copy("Создать аккаунт")}
           </Button>
         )}
       </PageHeader>
@@ -181,7 +181,7 @@ export function ServicesWorkspace({
           </h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
             {copy(
-              "Создайте сервисный аккаунт, назначьте политики и выпустите ключ. Он будет работать независимо от личного аккаунта сотрудника. ",
+              "Создайте сервисный аккаунт, назначьте политики и выпустите ключ. Он будет работать независимо от личного аккаунта сотрудника.",
             )}
           </p>
           {!readOnly && (
@@ -190,7 +190,7 @@ export function ServicesWorkspace({
               className="mt-5"
               onClick={create}
             >
-              {copy("Создать сервисный аккаунт ")}
+              {copy("Создать сервисный аккаунт")}
             </Button>
           )}
         </section>

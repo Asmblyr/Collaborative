@@ -3,9 +3,10 @@ import test from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
-import { copyTranslationKey } from "@asmblyr-collaborative/contracts/translations";
 import {
+  copyTranslationKey,
   coreTranslations,
+  pluralizeCopy,
   translateCopy,
 } from "@asmblyr-collaborative/contracts/translations";
 import {
@@ -37,6 +38,49 @@ test("all UI catalogs preserve interpolation parameters and technical tokens", (
     translateCopy("Название пользователя: <script>", "en"),
     "Название пользователя: <script>",
   );
+});
+
+test("copy catalogs contain no whitespace-padded values and translateCopy trims fallback lookup", () => {
+  for (const [key, value] of Object.entries(coreTranslations.ru)) {
+    if (key.startsWith("copy.")) {
+      assert.equal(value, value.trim(), `ru padded key ${key}`);
+    }
+  }
+  for (const [key, value] of Object.entries(coreTranslations.en)) {
+    if (key.startsWith("copy.")) {
+      assert.equal(value, value.trim(), `en padded key ${key}`);
+    }
+  }
+  assert.equal(translateCopy(" Сохранить ", "en"), " Save ");
+});
+
+test("pluralizeCopy selects CLDR plural categories in Russian and English", () => {
+  const fileForms = {
+    one: "Всего {{count}} файл",
+    few: "Всего {{count}} файла",
+    many: "Всего {{count}} файлов",
+  };
+  assert.equal(pluralizeCopy(1, fileForms, "ru"), "Всего 1 файл");
+  assert.equal(pluralizeCopy(2, fileForms, "ru"), "Всего 2 файла");
+  assert.equal(pluralizeCopy(5, fileForms, "ru"), "Всего 5 файлов");
+  assert.equal(pluralizeCopy(11, fileForms, "ru"), "Всего 11 файлов");
+  assert.equal(pluralizeCopy(21, fileForms, "ru"), "Всего 21 файл");
+
+  assert.equal(pluralizeCopy(0, fileForms, "en"), "0 files total");
+  assert.equal(pluralizeCopy(1, fileForms, "en"), "1 file total");
+  assert.equal(pluralizeCopy(2, fileForms, "en"), "2 files total");
+  assert.equal(pluralizeCopy(21, fileForms, "en"), "21 files total");
+
+  const selectionForms = {
+    one: "Выбрана {{count}} запись",
+    few: "Выбрано {{count}} записи",
+    many: "Выбрано {{count}} записей",
+  };
+  assert.equal(pluralizeCopy(1, selectionForms, "ru"), "Выбрана 1 запись");
+  assert.equal(pluralizeCopy(3, selectionForms, "ru"), "Выбрано 3 записи");
+  assert.equal(pluralizeCopy(12, selectionForms, "ru"), "Выбрано 12 записей");
+  assert.equal(pluralizeCopy(1, selectionForms, "en"), "1 record selected");
+  assert.equal(pluralizeCopy(3, selectionForms, "en"), "3 records selected");
 });
 
 test("filter summaries translate built-in parameters but preserve user fields and choices", () => {
@@ -98,6 +142,15 @@ test("localized exact decimals retain precision and user affixes", () => {
 });
 
 test("application copy literals are present in both language catalogs", () => {
+  function assertCatalogLiteral(file: string, text: string) {
+    if (!/[а-яё]/i.test(text)) {
+      return;
+    }
+    const key = copyTranslationKey(text);
+    assert.equal(coreTranslations.ru[key], text, `${file}: ${text}`);
+    assert.ok(coreTranslations.en[key], `${file}: ${text}`);
+  }
+
   function visitDirectory(directory: string) {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const file = path.join(directory, entry.name);
@@ -111,23 +164,29 @@ test("application copy literals are present in both language catalogs", () => {
           true,
         );
         function visit(node: ts.Node) {
-          if (
-            ts.isCallExpression(node) &&
-            node.expression.getText(source) === "copy"
-          ) {
-            const argument = node.arguments[0];
-            if (
-              argument &&
-              ts.isStringLiteralLike(argument) &&
-              /[а-яё]/i.test(argument.text)
-            ) {
-              const key = copyTranslationKey(argument.text);
-              assert.equal(
-                coreTranslations.ru[key],
-                argument.text,
-                `${file}: ${argument.text}`,
-              );
-              assert.ok(coreTranslations.en[key], `${file}: ${argument.text}`);
+          if (ts.isCallExpression(node)) {
+            const callee = node.expression.getText(source);
+            if (callee === "copy") {
+              const argument = node.arguments[0];
+              if (argument && ts.isStringLiteralLike(argument)) {
+                assertCatalogLiteral(file, argument.text);
+              }
+            } else if (callee === "copy.plural" || callee === "pluralCopy") {
+              const formsArgument =
+                callee === "pluralCopy" ? node.arguments[2] : node.arguments[1];
+              if (
+                formsArgument &&
+                ts.isObjectLiteralExpression(formsArgument)
+              ) {
+                for (const property of formsArgument.properties) {
+                  if (
+                    ts.isPropertyAssignment(property) &&
+                    ts.isStringLiteralLike(property.initializer)
+                  ) {
+                    assertCatalogLiteral(file, property.initializer.text);
+                  }
+                }
+              }
             }
           }
           ts.forEachChild(node, visit);

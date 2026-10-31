@@ -11,7 +11,7 @@ import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
 import { SystemCollectionList } from "./system-collection-list";
-import { EditorDialog } from "./editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { FieldTypePicker, type DataFieldType } from "./field-type-picker";
 import { FieldEditorForm } from "./field-editor-form";
 import {

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
+import { showToast } from "@/components/ui/toast";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import {
@@ -41,6 +42,21 @@ export interface TableView {
   editable: boolean;
 }
 
+export function isTableViewDraftDirty(
+  selected: Pick<TableView, "name" | "scope" | "isDefault"> | undefined,
+  draft: {
+    name: string;
+    scope: TableView["scope"];
+    isDefault: boolean;
+  },
+): boolean {
+  return (
+    draft.name !== (selected?.name ?? "") ||
+    draft.scope !== (selected?.scope ?? "personal") ||
+    draft.isDefault !== (selected?.isDefault ?? false)
+  );
+}
+
 export function TableViewDialog({
   collection,
   definition,
@@ -58,14 +74,17 @@ export function TableViewDialog({
 }) {
   const copy = useUiCopy();
 
-  const [id, setId] = useState("new"),
-    [name, setName] = useState("");
-  const [pending, setPending] = useState(false),
-    [error, setError] = useState("");
+  const [id, setId] = useState("new");
+  const [name, setName] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const workspace = useWorkspace();
-  const [scope, setScope] = useState<TableView["scope"]>("personal"),
-    [isDefault, setDefault] = useState(false);
+  const [scope, setScope] = useState<TableView["scope"]>("personal");
+  const [isDefault, setDefault] = useState(false);
+
   const selected = views.find((view) => view.id === id);
+  const dirty = isTableViewDraftDirty(selected, { name, scope, isDefault });
   const workspaceId = selected?.workspaceId ?? workspace?.active?.id;
   const editable = id === "new" || selected?.editable;
   const endpoint = `/api/table-views/${encodeURIComponent(collection)}`;
@@ -86,6 +105,7 @@ export function TableViewDialog({
         },
       );
       onChanged();
+      showToast(copy("Настройки сохранены"), "success");
       close();
     } catch (reason) {
       setError(
@@ -103,6 +123,7 @@ export function TableViewDialog({
     try {
       await apiRequest(`${endpoint}/${id}`, "DELETE");
       onChanged();
+      showToast(copy("Вид удалён"), "success");
       close();
     } catch (reason) {
       setError(
@@ -118,18 +139,19 @@ export function TableViewDialog({
     <EditorDialog
       open
       busy={pending}
+      hasUnsavedChanges={dirty}
       title={copy("Сохранённые виды")}
       eyebrow={collection}
       onClose={onClose}
     >
-      {(container, close) => (
+      {(container, close, requestClose, requestLeave) => (
         <form
           onSubmit={(event) => void save(event, close)}
           className="space-y-5"
         >
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Сохраните фильтры, поиск, столбцы, сортировку и размер страницы. Общий вид доступен коллегам с правом чтения коллекции. ",
+              "Сохраните фильтры, поиск, столбцы, сортировку и размер страницы. Общий вид доступен коллегам с правом чтения коллекции.",
             )}
           </p>
           <div className="space-y-2">
@@ -138,12 +160,18 @@ export function TableViewDialog({
               value={id}
               disabled={pending}
               onValueChange={(value) => {
-                const view = views.find((v) => v.id === value);
-                setId(value);
-                setName(view?.name ?? "");
-                setScope(view?.scope ?? "personal");
-                setDefault(view?.isDefault ?? false);
-                setError("");
+                if (value === id) {
+                  return;
+                }
+                requestLeave(() => {
+                  const view = views.find((v) => v.id === value);
+                  setId(value);
+                  setName(view?.name ?? "");
+                  setScope(view?.scope ?? "personal");
+                  setDefault(view?.isDefault ?? false);
+                  setConfirmDelete(false);
+                  setError("");
+                });
               }}
             >
               <SelectTrigger
@@ -212,7 +240,7 @@ export function TableViewDialog({
           {id !== "new" && (
             <p className="rounded-lg bg-muted p-3 text-sm">
               {copy(
-                "Сохранение заменит настройки выбранного вида текущими настройками таблицы. ",
+                "Сохранение заменит настройки выбранного вида текущими настройками таблицы.",
               )}
             </p>
           )}
@@ -228,7 +256,7 @@ export function TableViewDialog({
               </span>
               <span className="block text-xs text-muted-foreground">
                 {copy(
-                  "Применяется при открытии коллекции. Личный вид имеет приоритет, затем вид workspace и общий вид коллекции. Настройки ссылки и ваши столбцы сохраняют приоритет. ",
+                  "Применяется при открытии коллекции. Личный вид имеет приоритет, затем вид workspace и общий вид коллекции. Настройки ссылки и ваши столбцы сохраняют приоритет.",
                 )}
               </span>
             </span>
@@ -245,23 +273,43 @@ export function TableViewDialog({
             <Button disabled={pending || !name.trim()}>
               {pending ? copy("Сохраняем…") : copy("Сохранить")}
             </Button>
-            {id !== "new" && (
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={pending}
-                onClick={() => void remove(close)}
-              >
-                {copy("Удалить вид ")}
-              </Button>
-            )}
+            {id !== "new" &&
+              (confirmDelete ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={pending}
+                    onClick={() => void remove(close)}
+                  >
+                    {copy("Подтвердить удаление")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={pending}
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    {copy("Отменить удаление")}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={pending}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  {copy("Удалить вид")}
+                </Button>
+              ))}
             <Button
               type="button"
               variant="ghost"
               disabled={pending}
-              onClick={close}
+              onClick={requestClose}
             >
-              {copy("Отмена ")}
+              {copy("Отмена")}
             </Button>
           </div>
         </form>

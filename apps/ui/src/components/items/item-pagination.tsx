@@ -104,8 +104,7 @@ export function ItemPagination({
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm">
       <div className="flex flex-wrap items-center gap-4">
         <span className="text-muted-foreground">
-          {start.toString()}–{end.toString()} {copy(" из ")}
-          {page.total}
+          {start.toString()}–{end.toString()} {copy("из")} {page.total}
         </span>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">{copy("На странице")}</span>

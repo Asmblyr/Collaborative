@@ -25,7 +25,7 @@ export function SettingsOverview({
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {copy(
-            "Управление командой и возможностями Asmblyr. Здесь доступны разделы, которые вы можете изменять. ",
+            "Управление командой и возможностями Asmblyr. Здесь доступны разделы, которые вы можете изменять.",
           )}
         </p>
       </div>

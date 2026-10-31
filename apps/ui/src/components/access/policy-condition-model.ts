@@ -224,5 +224,7 @@ export function conditionSummary(
       }
       return `${field?.label ?? child.field} ${operator} ${value}`.trim();
     })
-    .join(group.logic === "and" ? copy(" · И · ") : copy(" · ИЛИ · "));
+    .join(
+      group.logic === "and" ? ` ${copy("· И ·")} ` : ` ${copy("· ИЛИ ·")} `,
+    );
 }

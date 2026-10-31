@@ -2,7 +2,7 @@
 
 import type { SearchPriority } from "@asmblyr-collaborative/contracts";
 import { useId } from "react";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,

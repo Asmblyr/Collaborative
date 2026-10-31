@@ -23,7 +23,7 @@ export default async function OAuthApplicationsPage() {
     return (
       <p className="text-sm text-muted-foreground">
         {copy(
-          "OAuth-провайдер пока не настроен. Укажите OAUTH_ISSUER_URL и OAUTH_KEYS_FILE в Core. ",
+          "OAuth-провайдер пока не настроен. Укажите OAUTH_ISSUER_URL и OAUTH_KEYS_FILE в Core.",
         )}
       </p>
     );

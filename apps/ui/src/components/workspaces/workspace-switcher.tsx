@@ -37,12 +37,20 @@ export function WorkspaceSwitcher({
 }) {
   const copy = useUiCopy();
 
-  const state = useWorkspace(),
-    { isMobile } = useSidebar();
+  const state = useWorkspace();
+  const { isMobile, setOpenMobile } = useSidebar();
   const [editor, setEditor] = useState<{ workspace: Workspace | null } | null>(
     null,
   );
-  if (!state) return null;
+  if (!state) {
+    return null;
+  }
+  function selectWorkspace(id: string | null) {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+    void state?.select(id);
+  }
   return (
     <>
       <SidebarMenu>
@@ -76,11 +84,11 @@ export function WorkspaceSwitcher({
               className="w-(--radix-dropdown-menu-trigger-width) min-w-64 rounded-lg"
             >
               <DropdownMenuLabel className="text-xs text-muted-foreground">
-                {copy("Рабочие пространства ")}
+                {copy("Рабочие пространства")}
               </DropdownMenuLabel>
               <DropdownMenuItem
                 className="gap-2 p-2"
-                onSelect={() => void state.select(null)}
+                onSelect={() => selectWorkspace(null)}
               >
                 <span className="flex size-6 items-center justify-center rounded-sm border">
                   <Layers3 className="size-4" />
@@ -92,7 +100,7 @@ export function WorkspaceSwitcher({
                 {state.workspaces.map((workspace) => (
                   <DropdownMenuItem
                     key={workspace.id}
-                    onSelect={() => void state.select(workspace.id)}
+                    onSelect={() => selectWorkspace(workspace.id)}
                   >
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-sm border">
                       <LayoutGrid className="size-4" />
@@ -111,14 +119,14 @@ export function WorkspaceSwitcher({
                     onSelect={() => setEditor({ workspace: null })}
                   >
                     <Plus />
-                    {copy("Новый workspace ")}
+                    {copy("Новый workspace")}
                   </DropdownMenuItem>
                   {state.active && (
                     <DropdownMenuItem
                       onSelect={() => setEditor({ workspace: state.active })}
                     >
                       <Settings2 />
-                      {copy("Настроить workspace ")}
+                      {copy("Настроить workspace")}
                     </DropdownMenuItem>
                   )}
                 </>

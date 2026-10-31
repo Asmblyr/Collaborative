@@ -49,7 +49,7 @@ export default async function LoginPage({
           </p>
           <h1 className="text-2xl font-semibold">{copy("Вход")}</h1>
           <p className="text-sm text-muted-foreground">
-            {copy("Войдите в админку под своей учётной записью. ")}
+            {copy("Войдите в админку под своей учётной записью.")}
           </p>
         </div>
         {message && (

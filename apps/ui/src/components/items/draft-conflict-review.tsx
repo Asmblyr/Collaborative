@@ -39,7 +39,7 @@ export function DraftConflictReview({
           className="flex items-center gap-2 text-sm font-medium"
         >
           <GitCompareArrows className="size-4 shrink-0" />{" "}
-          {copy(" Запись изменилась ")}
+          {copy("Запись изменилась")}
         </p>
         <p className="text-xs text-muted-foreground">
           {conflicts.length
@@ -123,7 +123,7 @@ export function DraftConflictReview({
         disabled={conflicts.some((conflict) => !choices[conflict.key])}
         onClick={() => onApply(choices)}
       >
-        {copy("Продолжить редактирование ")}
+        {copy("Продолжить редактирование")}
       </Button>
     </section>
   );

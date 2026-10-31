@@ -2,14 +2,41 @@
 
 import { useState, type FormEvent } from "react";
 import { apiRequest } from "@/lib/api-request";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
+import { showToast } from "@/components/ui/toast";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import type { Workspace } from "@/lib/workspaces";
 import { useUiCopy } from "@/lib/ui-copy";
+
+export function isWorkspaceDraftDirty(
+  workspace: Pick<Workspace, "name" | "description" | "collections"> | null,
+  draft: {
+    name: string;
+    description: string;
+    selected: Iterable<string>;
+  },
+): boolean {
+  if (draft.name !== (workspace?.name ?? "")) {
+    return true;
+  }
+  if (draft.description !== (workspace?.description ?? "")) {
+    return true;
+  }
+
+  const initialCollections = [...new Set(workspace?.collections ?? [])].sort();
+  const selectedCollections = [...new Set(draft.selected)].sort();
+  if (selectedCollections.length !== initialCollections.length) {
+    return true;
+  }
+
+  return selectedCollections.some(
+    (collection, index) => collection !== initialCollections[index],
+  );
+}
 
 export function WorkspaceEditor({
   workspace,
@@ -24,15 +51,21 @@ export function WorkspaceEditor({
 }) {
   const copy = useUiCopy();
 
-  const [name, setName] = useState(workspace?.name ?? ""),
-    [description, setDescription] = useState(workspace?.description ?? "");
+  const [name, setName] = useState(workspace?.name ?? "");
+  const [description, setDescription] = useState(workspace?.description ?? "");
   const [selected, setSelected] = useState(
-      new Set(workspace?.collections ?? []),
-    ),
-    [query, setQuery] = useState("");
-  const [pending, setPending] = useState(false),
-    [error, setError] = useState(""),
-    [confirm, setConfirm] = useState(false);
+    () => new Set(workspace?.collections ?? []),
+  );
+  const [query, setQuery] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [confirm, setConfirm] = useState(false);
+
+  const dirty = isWorkspaceDraftDirty(workspace, {
+    name,
+    description,
+    selected,
+  });
   const endpoint = `/api/workspaces${workspace ? `/${workspace.id}` : ""}`;
   async function save(event: FormEvent, close: () => void) {
     event.preventDefault();
@@ -45,6 +78,7 @@ export function WorkspaceEditor({
         collections: [...selected],
       });
       await onChanged();
+      showToast(copy("Настройки сохранены"), "success");
       close();
     } catch (reason) {
       setError(
@@ -77,18 +111,19 @@ export function WorkspaceEditor({
     <EditorDialog
       open
       busy={pending}
+      hasUnsavedChanges={dirty}
       title={workspace ? copy("Настройки workspace") : copy("Новый workspace")}
       eyebrow={copy("Организация данных")}
       onClose={onClose}
     >
-      {(_, close) => (
+      {(_, close, requestClose) => (
         <form
           onSubmit={(event) => void save(event, close)}
           className="space-y-5"
         >
           <p className="text-sm text-muted-foreground">
             {copy(
-              "Объедините коллекции одного продукта или команды. Пользователи увидят здесь только доступные им коллекции. ",
+              "Объедините коллекции одного продукта или команды. Пользователи увидят здесь только доступные им коллекции.",
             )}
           </p>
           <div className="space-y-2">
@@ -115,8 +150,7 @@ export function WorkspaceEditor({
           </div>
           <div className="space-y-3">
             <Label>
-              {copy("Коллекции · ")}
-              {selected.size}
+              {copy("Коллекции ·")} {selected.size}
             </Label>
             <Input
               value={query}
@@ -142,8 +176,11 @@ export function WorkspaceEditor({
                       onCheckedChange={(checked) =>
                         setSelected((previous) => {
                           const next = new Set(previous);
-                          if (checked) next.add(c.name);
-                          else next.delete(c.name);
+                          if (checked === true) {
+                            next.add(c.name);
+                          } else {
+                            next.delete(c.name);
+                          }
                           return next;
                         })
                       }
@@ -153,7 +190,7 @@ export function WorkspaceEditor({
                 ))}
               {!collections.length && (
                 <p className="p-3 text-sm text-muted-foreground">
-                  {copy("Сначала создайте коллекции ")}
+                  {copy("Сначала создайте коллекции")}
                 </p>
               )}
             </div>
@@ -174,9 +211,9 @@ export function WorkspaceEditor({
               type="button"
               variant="ghost"
               disabled={pending}
-              onClick={close}
+              onClick={requestClose}
             >
-              {copy("Отмена ")}
+              {copy("Отмена")}
             </Button>
             {workspace && (
               <Button
@@ -196,7 +233,7 @@ export function WorkspaceEditor({
           {confirm && (
             <p className="text-xs text-muted-foreground">
               {copy(
-                "Коллекции и записи сохранятся. Удалится только workspace. ",
+                "Коллекции и записи сохранятся. Удалится только workspace.",
               )}
             </p>
           )}

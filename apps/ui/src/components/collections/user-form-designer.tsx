@@ -8,7 +8,7 @@ import type {
 import type { Collection } from "@/components/items/types";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
-import { useEditorState } from "./editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 import { CollectionFormDesigner } from "./collection-form-designer";
 import {
   Select,

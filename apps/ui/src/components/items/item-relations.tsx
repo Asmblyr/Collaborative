@@ -120,7 +120,7 @@ export function ItemRelations({
           <h3 className="text-sm font-semibold">{copy("Связанные записи")}</h3>
           {aliases.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              {copy("Связи сохранятся вместе с карточкой ")}
+              {copy("Связи сохранятся вместе с карточкой")}
             </p>
           )}
         </div>
@@ -150,7 +150,7 @@ export function ItemRelations({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {copy("Загрузка связанных записей… ")}
+          {copy("Загрузка связанных записей…")}
         </p>
       )}
       {error && (
@@ -169,7 +169,7 @@ export function ItemRelations({
               setRevision((value) => value + 1);
             }}
           >
-            {copy("Повторить ")}
+            {copy("Повторить")}
           </Button>
         </div>
       )}
@@ -208,7 +208,7 @@ export function ItemRelations({
           </ul>
           {group.hasMore && (
             <p className="text-xs text-muted-foreground">
-              {copy("Показаны первые 20 записей. ")}
+              {copy("Показаны первые 20 записей.")}
             </p>
           )}
         </section>

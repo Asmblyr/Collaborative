@@ -8,27 +8,20 @@ import type {
   AssistantConversationReceipt,
 } from "@asmblyr-collaborative/contracts";
 
+import { apiRequest } from "@/lib/api-request";
+import { requestErrorMessage } from "@/lib/http-request";
+
 async function historyRequest<T>(
   path: string,
   method = "GET",
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch("/api/assistant/conversations" + path, {
+  return apiRequest<T>(
+    `/api/assistant/conversations${path}`,
     method,
-    cache: "no-store",
+    method === "POST" ? {} : undefined,
     signal,
-    ...(method === "POST"
-      ? { headers: { "content-type": "application/json" }, body: "{}" }
-      : {}),
-  });
-  if (response.status === 204) {
-    return undefined as T;
-  }
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.message || "Не удалось загрузить историю.");
-  }
-  return result.data;
+  );
 }
 
 export function useAssistantHistory(
@@ -90,9 +83,7 @@ export function useAssistantHistory(
       } catch (failure) {
         if (!controller.signal.aborted) {
           setError(
-            failure instanceof Error
-              ? failure.message
-              : "Не удалось загрузить историю.",
+            requestErrorMessage(failure, "Не удалось загрузить историю."),
           );
         }
         return false;

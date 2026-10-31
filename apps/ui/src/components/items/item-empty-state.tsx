@@ -52,14 +52,14 @@ export function ItemEmptyState({
             variant="outline"
             onClick={onFirstPage}
           >
-            {copy("На первую страницу ")}
+            {copy("На первую страницу")}
           </Button>
         ) : filtered ? (
           <Button
             variant="outline"
             onClick={onReset}
           >
-            {copy("Сбросить поиск и фильтры ")}
+            {copy("Сбросить поиск и фильтры")}
           </Button>
         ) : (
           onCreate && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Select,
   SelectContent,
@@ -62,7 +62,7 @@ export function CollectionPrimaryKeyFields({
             <SelectItem value="uuid">{copy("UUID (автоматически)")}</SelectItem>
             <SelectItem value="serial">{copy("Автоинкремент")}</SelectItem>
             <SelectItem value="bigserial">
-              {copy("Большой автоинкремент ")}
+              {copy("Большой автоинкремент")}
             </SelectItem>
             <SelectItem value="text">
               {copy("Строка (ввод вручную)")}

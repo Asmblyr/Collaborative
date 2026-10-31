@@ -89,7 +89,7 @@ export function ItemFilters({
           variant={filter ? "secondary" : "outline"}
           size="sm"
         >
-          <ListFilter aria-hidden="true" /> {copy(" Фильтры ")}
+          <ListFilter aria-hidden="true" /> {copy("Фильтры")}{" "}
           {filter && (
             <span className="ml-0.5 rounded bg-foreground/10 px-1.5 text-xs">
               {itemFilterCount(filter)}
@@ -116,7 +116,7 @@ export function ItemFilters({
                   aria-hidden="true"
                   className="size-3.5"
                 />{" "}
-                {copy("Фильтры ")}
+                {copy("Фильтры")}{" "}
                 {total > 0 && (
                   <span className="text-muted-foreground">{total}</span>
                 )}
@@ -129,7 +129,7 @@ export function ItemFilters({
                   aria-hidden="true"
                   className="size-3.5"
                 />{" "}
-                {copy("Сохранённые ")}
+                {copy("Сохранённые")}
               </TabsTrigger>
             </TabsList>
             <Button
@@ -216,13 +216,13 @@ export function ItemFilters({
                     }
                   }}
                 >
-                  {copy("Сбросить ")}
+                  {copy("Сбросить")}
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
                 >
-                  {copy("Применить ")}
+                  {copy("Применить")}
                 </Button>
               </div>
             </form>

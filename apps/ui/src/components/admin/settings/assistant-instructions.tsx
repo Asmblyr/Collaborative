@@ -1,7 +1,7 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Card,
@@ -9,8 +9,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+} from "@asmblyr-collaborative/kit/ui/card";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -45,13 +45,13 @@ export function AssistantInstructions({
         </div>
         <CardDescription>
           {copy(
-            "Задайте роль, стиль общения и формат ответов для всех диалогов. ",
+            "Задайте роль, стиль общения и формат ответов для всех диалогов.",
           )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <Label htmlFor="assistant-instructions">
-          {copy("Как должен отвечать ассистент ")}
+          {copy("Как должен отвечать ассистент")}
         </Label>
         <Textarea
           id="assistant-instructions"
@@ -76,7 +76,7 @@ export function AssistantInstructions({
             onClick={() => onChange(null)}
           >
             <RotateCcw />
-            {copy("Восстановить стандартные ")}
+            {copy("Восстановить стандартные")}
           </Button>
           <span
             id="assistant-instructions-count"
@@ -94,7 +94,7 @@ export function AssistantInstructions({
             role="alert"
             className="text-sm text-destructive"
           >
-            {copy("Введите инструкции или восстановите стандартные. ")}
+            {copy("Введите инструкции или восстановите стандартные.")}
           </p>
         )}
         <p
@@ -102,7 +102,7 @@ export function AssistantInstructions({
           className="text-xs leading-5 text-muted-foreground"
         >
           {copy(
-            "После сохранения применятся со следующего сообщения. Инструкции задают поведение, а доступ к данным и действиям определяется системой. ",
+            "После сохранения применятся со следующего сообщения. Инструкции задают поведение, а доступ к данным и действиям определяется системой.",
           )}
         </p>
       </CardContent>

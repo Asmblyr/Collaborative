@@ -6,7 +6,7 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
-import { useEditorState } from "./editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 
 export function MaterializedDisconnectForm({
   name,

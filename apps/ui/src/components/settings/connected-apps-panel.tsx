@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppWindow, Unplug } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { apiRequest } from "@/lib/api-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -78,7 +78,7 @@ export function ConnectedAppsPanel() {
         <h2 className="font-semibold">{copy("Подключённые приложения")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {copy(
-            "Сервисы, которым вы разрешили вход через Asmblyr. Повторный вход использует сохранённое согласие. ",
+            "Сервисы, которым вы разрешили вход через Asmblyr. Повторный вход использует сохранённое согласие.",
           )}
         </p>
       </div>
@@ -94,7 +94,7 @@ export function ConnectedAppsPanel() {
             disabled={pending}
             onClick={reload}
           >
-            {copy("Повторить ")}
+            {copy("Повторить")}
           </Button>
         </div>
       )}
@@ -103,17 +103,17 @@ export function ConnectedAppsPanel() {
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {copy("Загрузка… ")}
+          {copy("Загрузка…")}
         </p>
       )}
       {apps?.length === 0 && (
         <div className="rounded-xl border border-dashed p-7 text-center">
           <AppWindow className="mx-auto mb-3 size-6 text-muted-foreground" />
           <p className="text-sm font-medium">
-            {copy("Пока нет подключённых приложений ")}
+            {copy("Пока нет подключённых приложений")}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {copy("Они появятся после первого подтверждения входа. ")}
+            {copy("Они появятся после первого подтверждения входа.")}
           </p>
         </div>
       )}
@@ -141,7 +141,7 @@ export function ConnectedAppsPanel() {
                     variant="secondary"
                     className="mt-2"
                   >
-                    {copy("Отключено администратором ")}
+                    {copy("Отключено администратором")}
                   </Badge>
                 )}
               </div>
@@ -153,7 +153,7 @@ export function ConnectedAppsPanel() {
               onClick={() => setConfirm(app.id)}
             >
               <Unplug className="size-3.5" />
-              {copy("Отозвать доступ ")}
+              {copy("Отозвать доступ")}
             </Button>
           </div>
           <div
@@ -175,8 +175,7 @@ export function ConnectedAppsPanel() {
           <div className="space-y-1 text-xs text-muted-foreground">
             {app.audience && (
               <p className="break-all">
-                {copy("Получатель: ")}
-                {app.audience}
+                {copy("Получатель:")} {app.audience}
               </p>
             )}
             <p>
@@ -193,10 +192,9 @@ export function ConnectedAppsPanel() {
           {confirm === app.id && (
             <div className="space-y-3 rounded-lg bg-muted p-3">
               <p className="text-sm">
-                {copy("При следующем входе ")}
-                {app.name}{" "}
+                {copy("При следующем входе")} {app.name}{" "}
                 {copy(
-                  " снова запросит разрешение. Уже выданный токен может действовать ещё до 5 минут; собственная сессия сервиса может завершиться позже. ",
+                  "снова запросит разрешение. Уже выданный токен может действовать ещё до 5 минут; собственная сессия сервиса может завершиться позже.",
                 )}
               </p>
               <div className="flex gap-2">
@@ -214,7 +212,7 @@ export function ConnectedAppsPanel() {
                   disabled={pending}
                   onClick={() => setConfirm(null)}
                 >
-                  {copy("Отмена ")}
+                  {copy("Отмена")}
                 </Button>
               </div>
             </div>

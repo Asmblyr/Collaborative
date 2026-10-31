@@ -48,8 +48,7 @@ export function AssistantFilterProposal({
     <div className="space-y-2.5 rounded-xl border bg-background p-3 text-xs">
       <p className="flex items-center gap-2 font-medium">
         <ListFilter className="size-3.5" />
-        {copy("Фильтр · ")}
-        {collectionName}
+        {copy("Фильтр ·")} {collectionName}
       </p>
       <p className="max-h-36 overflow-auto whitespace-pre-wrap break-words leading-5 text-muted-foreground">
         {proposal.filter.children.length
@@ -57,7 +56,7 @@ export function AssistantFilterProposal({
           : copy("Все записи без фильтра")}
       </p>
       <p className="text-[11px] leading-4 text-muted-foreground">
-        {copy("Заменит текущие фильтры. Поисковый запрос сохранится. ")}
+        {copy("Заменит текущие фильтры. Поисковый запрос сохранится.")}
       </p>
       <Button
         size="sm"
@@ -84,13 +83,13 @@ export function AssistantFilterProposal({
           role="status"
           className="text-muted-foreground"
         >
-          {copy("Фильтр применён ")}
+          {copy("Фильтр применён")}
         </p>
       )}
       {!available && (
         <p className="text-muted-foreground">
-          {copy("Откройте ")}
-          {collectionName} {copy(" в исходном workspace и закройте редактор. ")}
+          {copy("Откройте")} {collectionName}{" "}
+          {copy("в исходном workspace и закройте редактор.")}
         </p>
       )}
       {error && (

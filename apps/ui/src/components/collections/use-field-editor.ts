@@ -14,7 +14,7 @@ import {
 } from "./field-default-value";
 import { fieldChoicePayload } from "./field-choice-values";
 import { defaultPresentation } from "./field-presentation-defaults";
-import { useEditorDraft } from "./editor-lifecycle";
+import { useEditorDraft } from "@/components/ui/editor-lifecycle";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function useFieldEditor({

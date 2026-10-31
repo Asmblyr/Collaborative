@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { Code2 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -84,7 +85,15 @@ export function CliConsent({
       <Code2 className="size-6 text-primary" />
       <div className="space-y-2">
         <h1 className="text-xl font-semibold">{copy("Подключить SDK")}</h1>
-        <p className="text-sm text-muted-foreground">{email}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="break-all text-sm text-muted-foreground">{email}</p>
+          <Link
+            href={`/login?reauth=1&next=${encodeURIComponent(`/sdk/connect?${new URLSearchParams(input)}`)}`}
+            className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {copy("Сменить аккаунт")}
+          </Link>
+        </div>
       </div>
       <p className="text-sm text-muted-foreground">
         {copy(

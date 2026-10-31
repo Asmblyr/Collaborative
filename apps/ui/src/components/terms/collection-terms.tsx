@@ -5,7 +5,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import type { TermDefinition } from "@asmblyr-collaborative/contracts";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Select,
   SelectContent,
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
 import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
-import { useEditorState } from "@/components/collections/editor-lifecycle";
+import { useEditorState } from "@/components/ui/editor-lifecycle";
 import {
   filterScopes,
   type FilterGroup,
@@ -22,6 +22,8 @@ import {
 import { normalizeFilter } from "@/components/items/item-filter-model";
 import type { Collection } from "@/components/items/types";
 import { TermFilterEditor } from "./term-filter-editor";
+import { apiRequest } from "@/lib/api-request";
+import { localizedRequestError } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 
 interface Binding {
@@ -65,18 +67,21 @@ export function CollectionTerms({
     const controller = new AbortController();
     async function load() {
       try {
-        const response = await fetch(path, { signal: controller.signal });
-        const body = await response.json();
-        if (!response.ok)
-          throw new Error(body.message ?? copy("Не удалось загрузить термины"));
-        setSnapshot(body.data);
-        setBindings(body.data.bindings);
+        const data = await apiRequest<Snapshot>(
+          path,
+          "GET",
+          undefined,
+          controller.signal,
+        );
+        setSnapshot(data);
+        setBindings(data.bindings);
         setError("");
       } catch (cause) {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setError(
-            cause instanceof Error ? cause.message : copy("Ошибка соединения"),
+            localizedRequestError(cause, copy, "Не удалось загрузить термины"),
           );
+        }
       }
     }
     void load();
@@ -84,38 +89,33 @@ export function CollectionTerms({
   }, [path, retry, copy]);
   const scopes = filterScopes(collection, catalog);
   async function save() {
-    if (!snapshot || disabled || busy) return;
+    if (!snapshot || disabled || busy) {
+      return;
+    }
     setError("");
     setNotice("");
     try {
       const next = bindings.map((binding) => {
         const filter = normalizeFilter(binding.filter, scopes, copy);
-        if (!filter.children.length)
+        if (!filter.children.length) {
           throw new Error(
             copy(
               "Добавьте условие для каждого термина или уберите его из коллекции.",
             ),
           );
+        }
         return { termId: binding.termId, filter, valid: true };
       });
       setBusy(true);
-      const response = await fetch(path, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          bindings: next.map(({ termId, filter }) => ({ termId, filter })),
-        }),
+      await apiRequest(path, "PUT", {
+        bindings: next.map(({ termId, filter }) => ({ termId, filter })),
       });
-      if (!response.ok) {
-        const body = await response.json();
-        throw new Error(body.message ?? copy("Не удалось сохранить условия"));
-      }
       setSnapshot({ ...snapshot, bindings: next });
       setBindings(next);
       setNotice(copy("Условия сохранены"));
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : copy("Ошибка соединения"),
+        localizedRequestError(cause, copy, "Не удалось сохранить условия"),
       );
     } finally {
       setBusy(false);
@@ -144,18 +144,18 @@ export function CollectionTerms({
             id="collection-terms-title"
             className="text-base font-medium"
           >
-            {copy("Термины этой коллекции ")}
+            {copy("Термины этой коллекции")}
           </h3>
           <p className="text-sm leading-6 text-muted-foreground">
             {copy(
-              "Задайте, какие записи означают «активные» и другие понятия. Ассистент будет применять эти условия при поиске и подсчёте. ",
+              "Задайте, какие записи означают «активные» и другие понятия. Ассистент будет применять эти условия при поиске и подсчёте.",
             )}
           </p>
           <Link
             href="/admin/settings/terms"
             className="text-xs underline underline-offset-4"
           >
-            {copy("Открыть общий справочник ")}
+            {copy("Открыть общий справочник")}
           </Link>
         </div>
         {!snapshot && !error && (
@@ -163,7 +163,7 @@ export function CollectionTerms({
             role="status"
             className="text-sm text-muted-foreground"
           >
-            {copy("Загрузка терминов… ")}
+            {copy("Загрузка терминов…")}
           </p>
         )}
         <fieldset
@@ -196,7 +196,7 @@ export function CollectionTerms({
                     {binding.valid === false && (
                       <p className="text-xs text-destructive">
                         {copy(
-                          "Структура изменилась. Исправьте или удалите условие. ",
+                          "Структура изменилась. Исправьте или удалите условие.",
                         )}
                       </p>
                     )}
@@ -236,7 +236,7 @@ export function CollectionTerms({
           {snapshot && !bindings.length && (
             <p className="rounded-xl border border-dashed p-5 text-sm leading-6 text-muted-foreground">
               {copy(
-                "Пока нет настроенных терминов. Добавьте понятие из справочника и выберите условие. ",
+                "Пока нет настроенных терминов. Добавьте понятие из справочника и выберите условие.",
               )}
             </p>
           )}
@@ -277,14 +277,14 @@ export function CollectionTerms({
             role="alert"
             className="text-sm text-destructive"
           >
-            {copy(error)}
+            {error}
             {!snapshot && (
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setRetry(retry + 1)}
               >
-                {copy("Повторить ")}
+                {copy("Повторить")}
               </Button>
             )}
           </div>
@@ -305,7 +305,7 @@ export function CollectionTerms({
                 disabled={busy}
                 onClick={() => change(snapshot.bindings)}
               >
-                {copy("Отменить изменения ")}
+                {copy("Отменить изменения")}
               </Button>
             )}
             {notice && (

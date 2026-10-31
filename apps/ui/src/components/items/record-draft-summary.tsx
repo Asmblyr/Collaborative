@@ -34,7 +34,7 @@ export function RecordDraftSummary({
         {copy("Изменённые связанные записи")}
       </p>
       <p className="text-xs text-muted-foreground">
-        {copy("Сохранятся вместе с этой карточкой. ")}
+        {copy("Сохранятся вместе с этой карточкой.")}
       </p>
       {records.map(({ collection, record }) => (
         <div

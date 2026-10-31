@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Collection } from "@/components/items/types";
-import { useEditorDraft } from "./editor-lifecycle";
+import { useEditorDraft } from "@/components/ui/editor-lifecycle";
 import { useUiCopy } from "@/lib/ui-copy";
 import { requestErrorMessage, requestJson } from "@/lib/http-request";
 

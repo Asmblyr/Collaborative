@@ -60,7 +60,7 @@ export function AssistantAvailability({
         aria-label={copy("Повторить проверку ассистента")}
       >
         <RotateCcw />
-        {copy("Повторить ")}
+        {copy("Повторить")}
       </Button>
     </div>
   );

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Plug } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { GoogleConnectionPanel } from "../settings/google-connection-panel";
 import { useUiCopy } from "@/lib/ui-copy";
 import { AssistantDataControl } from "./assistant-data-control";

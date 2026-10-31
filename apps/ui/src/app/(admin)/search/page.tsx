@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { PageHeader } from "@/components/layout/page-header";
 import { coreAddress, requireSession } from "@/lib/session";
 import { itemSearchHref, type SearchResults } from "@/lib/search";
@@ -99,8 +99,7 @@ export default async function SearchPage({
                     href={`/items/${encodeURIComponent(collection)}?q=${encodeURIComponent(q)}`}
                     className="mr-4 inline-block text-sm text-primary hover:underline"
                   >
-                    {copy("Все совпадения в ")}
-                    {collection}
+                    {copy("Все совпадения в")} {collection}
                   </Link>
                 ),
               )}

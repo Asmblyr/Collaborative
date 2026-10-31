@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings2, X } from "lucide-react";
+import { Plus, Settings2, X } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { PolicyActionDialog } from "./policy-action-dialog";
@@ -27,6 +27,7 @@ export function PolicyPermissionsMatrix({
   const copy = useUiCopy();
 
   const [query, setQuery] = useState("");
+  const [confirmClear, setConfirmClear] = useState<string | null>(null);
   const [editing, setEditing] = useState<{
     collection: PolicyCollection;
     action: Action;
@@ -63,7 +64,7 @@ export function PolicyPermissionsMatrix({
         <div>
           <h3 className="font-semibold">{copy("Доступ к коллекциям")}</h3>
           <p className="text-xs text-muted-foreground">
-            {copy("Выберите действие, чтобы настроить записи и поля. ")}
+            {copy("Выберите действие, чтобы настроить записи и поля.")}
           </p>
         </div>
         <Input
@@ -113,13 +114,13 @@ export function PolicyPermissionsMatrix({
                           size="sm"
                           variant={rules.length ? "default" : "outline"}
                           className="h-8 rounded-full px-3 text-xs"
-                          aria-pressed={Boolean(rules.length)}
+                          aria-haspopup="dialog"
                           aria-label={copy("{{value0}}: {{value1}}{{value2}}", {
                             value0: collection.name,
                             value1: copy(actionName[action]),
                             value2: rules.length
-                              ? copy(" включено")
-                              : copy(" выключено"),
+                              ? ` ${copy("включено")}`
+                              : ` ${copy("выключено")}`,
                           })}
                           title={
                             rules.some((rule) => rule.rowFilter)
@@ -147,33 +148,63 @@ export function PolicyPermissionsMatrix({
                   >
                     <Settings2 className="size-4" />
                   </Button>
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="ghost"
-                    disabled={readOnly || !active.length}
-                    aria-label={copy(
-                      "Убрать все действия коллекции {{value0}}",
-                      { value0: collection.name },
-                    )}
-                    title={copy("Убрать коллекцию из политики")}
-                    onClick={() =>
-                      onChange(
-                        grants.filter(
-                          (grant) => grant.collection !== collection.name,
-                        ),
-                      )
-                    }
-                  >
-                    <X className="size-4" />
-                  </Button>
+                  {confirmClear === collection.name ? (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        className="h-7 px-2.5 text-xs"
+                        onClick={() => {
+                          setConfirmClear(null);
+                          onChange(
+                            grants.filter(
+                              (grant) => grant.collection !== collection.name,
+                            ),
+                          );
+                        }}
+                      >
+                        {copy("Сбросить")}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setConfirmClear(null)}
+                      >
+                        {copy("Отмена")}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      disabled={readOnly || !active.length}
+                      aria-label={copy(
+                        "Убрать все действия коллекции {{value0}}",
+                        { value0: collection.name },
+                      )}
+                      title={copy("Убрать коллекцию из политики")}
+                      onClick={() => setConfirmClear(collection.name)}
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
               {actions
-                .filter(
-                  (action) =>
-                    active.filter((rule) => rule.action === action).length > 1,
-                )
+                .filter((action) => {
+                  const rules = active.filter((rule) => rule.action === action);
+                  const canAddRule =
+                    !readOnly &&
+                    rules.some(
+                      (rule) =>
+                        Boolean(rule.rowFilter) || !rule.fields.includes("*"),
+                    );
+                  return rules.length > 1 || canAddRule;
+                })
                 .map((action) => (
                   <div
                     key={action}
@@ -196,13 +227,24 @@ export function PolicyPermissionsMatrix({
                           className="h-7 text-xs"
                           onClick={() => open(collection, action, index)}
                         >
-                          {copy("Правило ")}
-                          {number + 1} ·{" "}
+                          {copy("Правило")} {number + 1} ·{" "}
                           {grant.rowFilter
                             ? copy("По условию")
                             : copy("Все записи")}
                         </Button>
                       ))}
+                    {!readOnly && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => open(collection, action, -1)}
+                      >
+                        <Plus className="size-3" />
+                        {copy("Правило")}
+                      </Button>
+                    )}
                   </div>
                 ))}
             </div>

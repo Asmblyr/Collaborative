@@ -170,7 +170,7 @@ export function AdminNavigation({
         {visible.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className="mb-1 text-[11px] font-medium uppercase tracking-wider">
-              {copy("Данные ")}
+              {copy("Данные")}
             </SidebarGroupLabel>
             <CollectionNavigation
               collections={visible}

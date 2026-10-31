@@ -96,7 +96,7 @@ export function McpConnectionsPanel() {
           )}
         </p>
       )}
-      {!data && !error && <p role="status">{copy("Загрузка… ")}</p>}
+      {!data && !error && <p role="status">{copy("Загрузка…")}</p>}
       {data && (
         <>
           <div className="flex flex-wrap items-center gap-2">

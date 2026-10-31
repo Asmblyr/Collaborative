@@ -2,8 +2,8 @@
 
 import { useId, type ReactNode } from "react";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import {
   Select,
   SelectContent,

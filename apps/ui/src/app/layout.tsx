@@ -6,17 +6,28 @@ import { cn } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { themeStyles, type ThemeStyle } from "@asmblyr-collaborative/contracts";
 import { AppearanceProvider } from "@/components/settings/appearance-provider";
+import { Toaster } from "@/components/ui/toast";
 
 const geist = localFont({
   src: "./fonts/geist-latin.woff2",
   variable: "--font-sans",
   weight: "100 900",
   display: "swap",
+  adjustFontFallback: false,
+  fallback: [
+    "Segoe UI Variable Text",
+    "Segoe UI",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Roboto",
+    "Helvetica Neue",
+    "sans-serif",
+  ],
 });
 
 export const metadata: Metadata = {
   title: "Asmblyr",
-  description: "Asmblyr administration",
+  description: "Asmblyr Collaborative",
 };
 
 export default async function RootLayout({
@@ -29,18 +40,23 @@ export default async function RootLayout({
   const style: ThemeStyle = themeStyles.includes(savedStyle as ThemeStyle)
     ? (savedStyle as ThemeStyle)
     : "neutral";
+  const savedTheme = jar.get("asmblyr-theme")?.value;
+  const defaultTheme =
+    savedTheme === "light" || savedTheme === "dark" || savedTheme === "system"
+      ? savedTheme
+      : "system";
   const locale = jar.get("asmblyr-locale")?.value === "en" ? "en" : "ru";
   return (
     <html
       lang={locale}
       data-style={style}
-      className={cn("font-sans", geist.variable)}
+      className={cn("font-sans antialiased", geist.variable)}
       suppressHydrationWarning
     >
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme={defaultTheme}
           enableSystem
           disableTransitionOnChange
         >
@@ -49,6 +65,7 @@ export default async function RootLayout({
             initialLocale={locale}
           >
             {children}
+            <Toaster />
           </AppearanceProvider>
         </ThemeProvider>
       </body>

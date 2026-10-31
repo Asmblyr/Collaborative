@@ -45,7 +45,11 @@ export function ItemSelectionBar({
         <span>
           {confirming
             ? copy("Удалить выбранные записи?")
-            : copy("Выбрано на странице")}
+            : copy.plural(count, {
+                one: "Выбрана {{count}} запись",
+                few: "Выбрано {{count}} записи",
+                many: "Выбрано {{count}} записей",
+              })}
         </span>
       </div>
       <div className="flex items-center gap-2">
@@ -57,7 +61,7 @@ export function ItemSelectionBar({
             onClick={onEdit}
           >
             <Pencil />
-            {copy("Изменить ")}
+            {copy("Изменить")}
           </Button>
         )}
         {canDelete &&
@@ -69,7 +73,7 @@ export function ItemSelectionBar({
                 disabled={pending}
                 onClick={onDelete}
               >
-                {copy("Да, удалить ")}
+                {copy("Да, удалить")}
               </Button>
               <Button
                 size="sm"
@@ -77,7 +81,7 @@ export function ItemSelectionBar({
                 disabled={pending}
                 onClick={onCancel}
               >
-                {copy("Отмена ")}
+                {copy("Отмена")}
               </Button>
             </>
           ) : (
@@ -87,7 +91,7 @@ export function ItemSelectionBar({
               disabled={pending || disabled}
               onClick={onConfirm}
             >
-              <Trash2 aria-hidden="true" /> {copy(" Удалить ")}
+              <Trash2 aria-hidden="true" /> {copy("Удалить")}
             </Button>
           ))}
         {!confirming && (

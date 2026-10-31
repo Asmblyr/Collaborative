@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@asmblyr-collaborative/kit/ui/switch";
 import { useUiCopy } from "@/lib/ui-copy";
 import { contextLabel, type PageContext } from "./assistant-context-types";
 import type { AssistantMessage } from "./assistant-types";

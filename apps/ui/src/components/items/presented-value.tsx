@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { useUiCopy } from "@/lib/ui-copy";
 import { formattedValue } from "./value-format";
 import type { ValueDisplay } from "./presentation-types";

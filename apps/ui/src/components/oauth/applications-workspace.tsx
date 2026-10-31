@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, AppWindow } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { ApplicationEditor } from "./application-editor";
 import { applicationAccessSummary } from "./access-summary";
@@ -50,7 +50,7 @@ export function ApplicationsWorkspace({
         {!readOnly && (
           <Button onClick={() => setSelection("new")}>
             <Plus className="size-4" />
-            {copy("Создать приложение ")}
+            {copy("Создать приложение")}
           </Button>
         )}
       </PageHeader>
@@ -118,7 +118,7 @@ export function ApplicationsWorkspace({
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             {copy(
-              "Подключите приложение по OpenID Connect. Пользователь войдёт через Asmblyr и подтвердит передачу своего профиля. ",
+              "Подключите приложение по OpenID Connect. Пользователь войдёт через Asmblyr и подтвердит передачу своего профиля.",
             )}
           </p>
         </section>

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { cn } from "cn";
+import { usePortalContainer } from "@asmblyr-collaborative/kit/ui/portal-container";
 
 function DropdownMenu(
   props: React.ComponentProps<typeof DropdownMenuPrimitive.Root>,
@@ -34,8 +35,9 @@ function DropdownMenuContent({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
   container?: HTMLElement | null;
 }) {
+  const inheritedContainer = usePortalContainer();
   return (
-    <DropdownMenuPrimitive.Portal container={container}>
+    <DropdownMenuPrimitive.Portal container={container ?? inheritedContainer}>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}

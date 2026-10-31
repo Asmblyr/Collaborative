@@ -1,11 +1,12 @@
 "use client";
-import { useRef, useState, type DragEvent } from "react";
+
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FolderOpen, RefreshCw, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { EditorDialog } from "@/components/collections/editor-dialog";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import {
   Table,
   TableBody,
@@ -17,6 +18,7 @@ import {
 import { ItemPagination } from "@/components/items/item-pagination";
 import { FileEditor } from "./file-editor";
 import { FilePreview } from "./file-preview";
+import { useFileUploads } from "./use-file-uploads";
 import { fileSize, fileStatus, type FilePage, type StoredFile } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -28,103 +30,36 @@ export function FilesWorkspace({
   query: string;
 }) {
   const copy = useUiCopy();
-
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
-  const uploadLock = useRef(false);
   const [selected, setSelected] = useState<StoredFile | null>(null);
-  const [busy, setBusy] = useState(false),
-    [uploading, setUploading] = useState("");
-  const [message, setMessage] = useState(""),
-    [error, setError] = useState("");
-  const [dragging, setDragging] = useState(false);
-  const disabled =
-    Boolean(uploading) ||
-    !result.meta.storageConfigured ||
-    !result.meta.canManage;
+  const [busy, setBusy] = useState(false);
 
   function navigate(page: number, limit = result.meta.limit) {
     const params = new URLSearchParams({
       page: String(page),
       limit: String(limit),
     });
-    if (query) params.set("q", query);
+    if (query) {
+      params.set("q", query);
+    }
     router.push(`/files?${params}`, { scroll: false });
   }
-  async function upload(chosen: File[]) {
-    if (disabled || uploadLock.current || !chosen.length) return;
-    setError("");
-    setMessage("");
-    if (chosen.length > 20) {
-      setError(copy("Выберите не более 20 файлов за раз."));
-      return;
-    }
-    const oversized = chosen.find(
-      (file) => file.size > result.meta.maxFileBytes,
-    );
-    if (oversized) {
-      setError(
-        copy("«{{value0}}» больше {{value1}}.", {
-          value0: oversized.name,
-          value1: fileSize(result.meta.maxFileBytes, copy),
-        }),
-      );
-      return;
-    }
-    uploadLock.current = true;
-    let completed = 0;
-    try {
-      for (const file of chosen) {
-        setUploading(
-          copy("{{value0}} из {{value1}} · {{value2}}", {
-            value0: completed + 1,
-            value1: chosen.length,
-            value2: file.name,
-          }),
-        );
-        const response = await fetch("/api/files", {
-          method: "POST",
-          body: file,
-          headers: {
-            "content-type": "application/octet-stream",
-            "x-file-name": encodeURIComponent(file.name),
-            "x-file-type": file.type || "application/octet-stream",
-          },
-        });
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          throw new Error(
-            copy("{{value0}}: {{value1}}", {
-              value0: file.name,
-              value1: body.message ?? copy("Не удалось загрузить файл"),
-            }),
-          );
-        }
-        completed++;
-      }
-      setMessage(copy("Загружено файлов: {{value0}}", { value0: completed }));
-      if (result.meta.page !== 1) navigate(1);
-    } catch (reason) {
-      setError(
-        copy("{{value0}}{{value1}}", {
-          value0:
-            reason instanceof Error ? reason.message : copy("Ошибка загрузки"),
-          value1: completed
-            ? copy(" Уже загружено: {{value0}}.", { value0: completed })
-            : "",
-        }),
-      );
-    } finally {
-      uploadLock.current = false;
-      setUploading("");
-      router.refresh();
-    }
-  }
-  function drop(event: DragEvent) {
-    event.preventDefault();
-    setDragging(false);
-    void upload(Array.from(event.dataTransfer.files));
-  }
+
+  const {
+    uploading,
+    message,
+    error,
+    dragging,
+    disabled,
+    upload,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+  } = useFileUploads({
+    meta: result.meta,
+    onFirstPage: () => navigate(1),
+  });
 
   return (
     <div className="space-y-6">
@@ -152,7 +87,7 @@ export function FilesWorkspace({
           ) : (
             <Upload aria-hidden />
           )}
-          {copy("Загрузить файлы ")}
+          {copy("Загрузить файлы")}
         </Button>
         <input
           ref={input}
@@ -173,7 +108,7 @@ export function FilesWorkspace({
           role="status"
           className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground"
         >
-          {copy("Загрузка недоступна: хранилище ещё не подключено. ")}
+          {copy("Загрузка недоступна: хранилище ещё не подключено.")}
         </p>
       )}
       {uploading && (
@@ -182,8 +117,7 @@ export function FilesWorkspace({
           className="flex items-center gap-2 text-sm"
         >
           <Loader2 className="size-4 animate-spin" />
-          {copy("Загружаем ")}
-          {uploading}
+          {copy("Загружаем")} {uploading}
         </p>
       )}
       {message && (
@@ -191,7 +125,7 @@ export function FilesWorkspace({
           role="status"
           className="text-sm text-muted-foreground"
         >
-          {copy(message)}
+          {message}
         </p>
       )}
       {error && (
@@ -199,31 +133,29 @@ export function FilesWorkspace({
           role="alert"
           className="text-sm text-destructive"
         >
-          {copy(error)}
+          {error}
         </p>
       )}
       <section
         aria-label={copy("Библиотека файлов")}
-        onDrop={drop}
-        onDragOver={(event) => {
-          event.preventDefault();
-          if (!disabled) setDragging(true);
-        }}
-        onDragLeave={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget as Node))
-            setDragging(false);
-        }}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         className={`overflow-hidden rounded-xl border transition-colors ${dragging ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "bg-card"}`}
       >
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3 text-xs text-muted-foreground">
           <span>
             {query
               ? copy("Результаты поиска: {{value0}}", { value0: query })
-              : copy("Всего файлов: {{value0}}", { value0: result.meta.total })}
+              : copy.plural(result.meta.total, {
+                  one: "Всего {{count}} файл",
+                  few: "Всего {{count}} файла",
+                  many: "Всего {{count}} файлов",
+                })}
           </span>
           <span>
-            {copy("Перетащите файлы сюда · до ")}
-            {fileSize(result.meta.maxFileBytes, copy)} {copy("каждый ")}
+            {copy("Перетащите файлы сюда · до")}{" "}
+            {fileSize(result.meta.maxFileBytes, copy)} {copy("каждый")}
           </span>
         </div>
         {!result.data.length ? (
@@ -243,7 +175,15 @@ export function FilesWorkspace({
                     "Добавьте изображения и документы. У каждого файла будут своё название, описание и история изменений.",
                   )}
             </p>
-            {!query && (
+            {query ? (
+              <Button
+                className="mt-2"
+                variant="outline"
+                onClick={() => router.push("/files")}
+              >
+                {copy("Сбросить поиск")}
+              </Button>
+            ) : (
               <Button
                 className="mt-2"
                 variant="outline"
@@ -251,7 +191,7 @@ export function FilesWorkspace({
                 onClick={() => input.current?.click()}
               >
                 <Upload aria-hidden />
-                {copy("Выбрать файлы ")}
+                {copy("Выбрать файлы")}
               </Button>
             )}
           </div>
@@ -312,7 +252,9 @@ export function FilesWorkspace({
                     {fileSize(file.size, copy)}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-muted-foreground">
-                    {new Date(file.createdAt).toLocaleDateString("ru-RU")}
+                    {new Date(file.createdAt).toLocaleDateString(
+                      copy.locale === "en" ? "en-US" : "ru-RU",
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -321,20 +263,22 @@ export function FilesWorkspace({
         )}
       </section>
       {result.meta.total > 0 && (
-        <ItemPagination
-          page={{
-            number: result.meta.page,
-            size: result.meta.limit,
-            total: String(result.meta.total),
-            sort: "created_at",
-            direction: "desc",
-          }}
-          pathname="/files"
-          q={query}
-          filter=""
-          onPage={(page) => navigate(page)}
-          onSize={(limit) => navigate(1, limit)}
-        />
+        <div className="pr-20">
+          <ItemPagination
+            page={{
+              number: result.meta.page,
+              size: result.meta.limit,
+              total: String(result.meta.total),
+              sort: "created_at",
+              direction: "desc",
+            }}
+            pathname="/files"
+            q={query}
+            filter=""
+            onPage={(page) => navigate(page)}
+            onSize={(limit) => navigate(1, limit)}
+          />
+        </div>
       )}
       <EditorDialog
         open={Boolean(selected)}
@@ -342,7 +286,9 @@ export function FilesWorkspace({
         eyebrow={copy("Библиотека файлов")}
         busy={busy}
         onClose={() => {
-          if (!busy) setSelected(null);
+          if (!busy) {
+            setSelected(null);
+          }
         }}
       >
         {(_, close) =>

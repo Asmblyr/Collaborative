@@ -18,7 +18,7 @@ export function useItemSelection({
   collection: Collection;
   items: Item[];
   page: ItemPage;
-  setMessage: (message: string) => void;
+  setMessage: (message: string, variant?: "success" | "error") => void;
   onNavigate: (changes: Partial<ItemPage>) => void;
 }) {
   const copy = useUiCopy();
@@ -46,27 +46,42 @@ export function useItemSelection({
   }
 
   async function removeSelected() {
-    if (!collection.access.delete || selected.size === 0) return;
+    if (!collection.access.delete || selected.size === 0) {
+      return;
+    }
     const ids = items.map(itemKey).filter((id) => selected.has(id));
     setPending(true);
     setMessage("");
-    let removed = 0;
+    const deletedIds = new Set<string>();
     let failure = "";
-    for (const id of ids) {
-      try {
-        await asmblyr.items.delete(collection.name, id);
-        removed += 1;
-      } catch (error) {
-        failure =
-          error instanceof ApiError
-            ? error.message
-            : copy("Не удалось связаться с сервером");
-        break;
+    let cursor = 0;
+
+    async function worker() {
+      while (cursor < ids.length && !failure) {
+        const id = ids[cursor];
+        cursor += 1;
+        try {
+          await asmblyr.items.delete(collection.name, id);
+          deletedIds.add(id);
+        } catch (error) {
+          if (!failure) {
+            failure =
+              error instanceof ApiError
+                ? error.message
+                : copy("Не удалось связаться с сервером");
+          }
+          break;
+        }
       }
     }
+
+    const workerCount = Math.min(6, ids.length);
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    const removed = deletedIds.size;
+
     setPending(false);
     setConfirmDelete(false);
-    setSelected(new Set(ids.slice(removed)));
+    setSelected(new Set(ids.filter((id) => !deletedIds.has(id))));
     setMessage(
       failure
         ? copy("Удалено: {{value0}} из {{value1}}. {{value2}}", {
@@ -74,7 +89,12 @@ export function useItemSelection({
             value1: ids.length,
             value2: failure,
           })
-        : copy("Удалено записей: {{value0}}", { value0: removed }),
+        : copy.plural(removed, {
+            one: "Удалена {{count}} запись",
+            few: "Удалено {{count}} записи",
+            many: "Удалено {{count}} записей",
+          }),
+      failure ? "error" : "success",
     );
     if (removed > 0) {
       const remaining = BigInt(page.total) - BigInt(removed);
@@ -83,7 +103,9 @@ export function useItemSelection({
         BigInt(page.number - 1) * BigInt(page.size) >= remaining
       ) {
         onNavigate({ number: page.number - 1 });
-      } else router.refresh();
+      } else {
+        router.refresh();
+      }
     }
   }
 
@@ -100,7 +122,11 @@ export function useItemSelection({
       close();
       setSelected(new Set());
       setMessage(
-        copy("Обновлено записей: {{value0}}", { value0: result.changed }),
+        copy.plural(result.changed, {
+          one: "Обновлена {{count}} запись",
+          few: "Обновлено {{count}} записи",
+          many: "Обновлено {{count}} записей",
+        }),
       );
       router.refresh();
     } finally {

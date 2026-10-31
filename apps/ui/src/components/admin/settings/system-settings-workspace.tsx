@@ -1,7 +1,7 @@
 "use client";
 
 import { SettingsReadOnlyNotice } from "./read-only-notice";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { AssistantTabs } from "./assistant-tabs";
 import type { AssistantSystemSettings } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -27,10 +27,10 @@ export function SystemSettingsWorkspace({
               id="assistant-settings-title"
               className="text-xl font-semibold tracking-tight"
             >
-              {copy("AI-ассистент ")}
+              {copy("AI-ассистент")}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {copy("Поведение помощника и использование моделей в Asmblyr. ")}
+              {copy("Поведение помощника и использование моделей в Asmblyr.")}
             </p>
           </div>
           <Badge
