@@ -6,6 +6,8 @@ Plugins are npm or workspace packages explicitly listed in the root `asmblyr.plu
 
 Settings → Extensions shows configured packages with search, status and category filters, compatibility, dependencies, capabilities, operation history and settings. Clicking one opens its detail editor. Closing a dirty settings editor requires confirmation; closing is blocked during save. Plugins without configurable parameters still expose their capability view.
 
+The summary shows four counters: installed, active, disabled and problems. Each counter reflects configured packages; no catalog or update counters are shown.
+
 An administrator with `plugins/update` may enable or disable a configured package. The API saves `desiredState` and reports `pendingRestart`; existing routes and hooks remain loaded until Core restarts. Startup reconciles the desired state and reports `actualState`, `lastError`, and the serving Core `instanceId`. A dependency conflict or missing capability approval blocks enablement. No plugin data is deleted on disable. Reading the center requires `plugins/read` or `plugins/update`.
 
 Installation, version updates and uninstallation require a trusted deployment change to the root package allowlist, lockfile and artifacts. Core never installs arbitrary npm packages from an API request. There is no remote marketplace or version feed, so the center shows only the installed package version and cannot claim updates are available.

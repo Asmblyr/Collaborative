@@ -68,13 +68,11 @@ export function PluginsWorkspace({
   );
   const counts = {
     installed: rows.length,
-    available: null,
     active: rows.filter((entry) => entry.loaded).length,
     disabled: rows.filter((entry) => entry.status === "disabled").length,
     failed: rows.filter((entry) =>
       ["incompatible", "failed"].includes(entry.status),
     ).length,
-    updates: null,
   };
 
   return (
@@ -86,15 +84,13 @@ export function PluginsWorkspace({
         )}
       />
       <SettingsReadOnlyNotice readOnly={readOnly} />
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(
           [
             ["Установлено", counts.installed],
-            ["Доступно", counts.available],
             ["Активно", counts.active],
             ["Отключено", counts.disabled],
             ["Проблемы", counts.failed],
-            ["Обновления", counts.updates],
           ] as const
         ).map(([label, count]) => (
           <div
@@ -102,14 +98,7 @@ export function PluginsWorkspace({
             className="rounded-xl border p-4"
           >
             <p className="text-xs text-muted-foreground">{copy(label)}</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">
-              {count ?? "—"}
-            </p>
-            {(label === "Обновления" || label === "Доступно") && (
-              <p className="text-xs text-muted-foreground">
-                {copy("Каталог не подключён")}
-              </p>
-            )}
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{count}</p>
           </div>
         ))}
       </div>
