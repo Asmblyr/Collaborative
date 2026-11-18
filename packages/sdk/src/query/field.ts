@@ -12,13 +12,13 @@ export interface SortRef<Name extends string> {
   readonly name: Name;
   readonly direction: "asc" | "desc";
 }
-interface Scalar<Value> {
+export interface ScalarFieldPredicates<Value> {
   eq(value: Value): Predicate;
   neq(value: Value): Predicate;
   in(values: readonly Value[]): Predicate;
   notIn(values: readonly Value[]): Predicate;
 }
-interface Ordered<Value> {
+export interface OrderedFieldPredicates<Value> {
   gt(value: Value): Predicate;
   gte(value: Value): Predicate;
   lt(value: Value): Predicate;
@@ -26,7 +26,7 @@ interface Ordered<Value> {
   between(low: Value, high: Value): Predicate;
   notBetween(low: Value, high: Value): Predicate;
 }
-interface Text {
+export interface TextFieldPredicates {
   contains(value: string): Predicate;
   notContains(value: string): Predicate;
   containsCase(value: string): Predicate;
@@ -47,11 +47,13 @@ export type QueryField<
   Name extends string,
   Definition extends FieldDefinition,
 > = FieldRef<Value, Name> &
-  (Definition["kind"] extends "none" ? unknown : Scalar<NonNullable<Value>>) &
+  (Definition["kind"] extends "none"
+    ? unknown
+    : ScalarFieldPredicates<NonNullable<Value>>) &
   (Definition["kind"] extends "ordered"
-    ? Ordered<NonNullable<Value>>
+    ? OrderedFieldPredicates<NonNullable<Value>>
     : unknown) &
-  (Definition["kind"] extends "text" ? Text : unknown) &
+  (Definition["kind"] extends "text" ? TextFieldPredicates : unknown) &
   (Definition["kind"] extends "none"
     ? unknown
     : Definition["nullable"] extends true

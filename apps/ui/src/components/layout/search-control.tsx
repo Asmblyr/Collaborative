@@ -21,11 +21,16 @@ import { useUiCopy } from "@/lib/ui-copy";
 export function SearchControl({
   collection,
   localLabel,
+  collections = [],
 }: {
   collection?: string;
   localLabel?: string;
+  collections?: readonly { name: string; displayName?: string | null }[];
 }) {
   const copy = useUiCopy();
+  const collectionTitles = new Map(
+    collections.map((entry) => [entry.name, entry.displayName || entry.name]),
+  );
 
   const scoped = Boolean(collection || localLabel);
   const pathname = usePathname();
@@ -293,9 +298,9 @@ export function SearchControl({
                       <Link
                         key={name}
                         href={`/items/${encodeURIComponent(name)}`}
-                        className="block truncate rounded px-2 py-1.5 font-mono hover:bg-muted"
+                        className="block truncate rounded px-2 py-1.5 hover:bg-muted"
                       >
-                        {displayName || name}
+                        {collectionTitles.get(name) ?? displayName ?? name}
                       </Link>
                     ))}
                 </div>
@@ -309,10 +314,11 @@ export function SearchControl({
                     <Link
                       key={`${item.collection}:${item.id}`}
                       href={itemSearchHref(item.collection, item.id)}
-                      className="flex gap-2 rounded px-2 py-1.5 hover:bg-muted"
+                      className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted"
                     >
-                      <span className="shrink-0 font-mono text-muted-foreground">
-                        {item.collection}
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {collectionTitles.get(item.collection) ??
+                          item.collection}
                       </span>
                       <span className="min-w-0 truncate">{item.label}</span>
                     </Link>

@@ -5,6 +5,7 @@ import type { RealtimeConnectionState } from "@asmblyr-collaborative/contracts";
 import { ApiError } from "@asmblyr-collaborative/sdk";
 import { getRealtimeLocks, subscribeRealtime } from "@/lib/realtime-scope";
 import { useUiCopy } from "@/lib/ui-copy";
+import { createCollectionLiveController } from "./collection-live-controller";
 
 export function useRecordLive(
   collection: string,
@@ -195,39 +196,60 @@ export function useCollectionLive(
   collection: string,
   enabled: boolean,
   onRefresh: () => void,
+  deferred = false,
 ) {
   const refreshRef = useRef(onRefresh);
+  const deferredRef = useRef(deferred);
+  const controllerRef = useRef<ReturnType<
+    typeof createCollectionLiveController
+  > | null>(null);
+
   useEffect(() => {
     refreshRef.current = onRefresh;
   }, [onRefresh]);
+
+  useEffect(() => {
+    deferredRef.current = deferred;
+    if (!deferred) {
+      controllerRef.current?.resume();
+    }
+  }, [deferred]);
 
   useEffect(() => {
     if (!enabled) {
       return;
     }
 
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    const controller = createCollectionLiveController({
+      isHidden: () =>
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden",
+      isDeferred: () => deferredRef.current,
+      onRefresh: () => refreshRef.current(),
+    });
+    controllerRef.current = controller;
+
+    function onVisibilityChange() {
+      if (document.visibilityState !== "hidden") {
+        controller.resume();
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
     const unsubscribe = subscribeRealtime(
       { kind: "collection", collection },
       (event, state) => {
-        if (
-          event?.type === "collection.changed" &&
-          state === "connected" &&
-          !timer
-        ) {
-          timer = setTimeout(() => {
-            timer = null;
-            refreshRef.current();
-          }, 200);
+        if (event?.type === "collection.changed" && state === "connected") {
+          controller.notifyChanged();
         }
       },
     );
 
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       unsubscribe();
-      if (timer) {
-        clearTimeout(timer);
-      }
+      controller.dispose();
+      controllerRef.current = null;
     };
   }, [collection, enabled]);
 }

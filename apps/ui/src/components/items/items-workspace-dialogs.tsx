@@ -7,6 +7,7 @@ import { ItemBulkDialog } from "./item-bulk-dialog";
 import { ItemSelectionBar } from "./item-selection-bar";
 import { TableViewDialog, type TableView } from "./table-view-dialog";
 import { readFilter } from "./item-filter-options";
+import type { PreloadedRecordSnapshot } from "./record-editor-types";
 import type { Collection, ItemPage, ItemValue } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -20,6 +21,7 @@ export function ItemsWorkspaceDialogs({
   confirmDelete,
   pending,
   recordId,
+  initialRecord,
   creating,
   bulkEditing,
   viewEditor,
@@ -53,6 +55,7 @@ export function ItemsWorkspaceDialogs({
   confirmDelete: boolean;
   pending: boolean;
   recordId: string | null;
+  initialRecord?: PreloadedRecordSnapshot | null;
   creating: boolean;
   bulkEditing: boolean;
   viewEditor: boolean;
@@ -166,6 +169,8 @@ export function ItemsWorkspaceDialogs({
           request={{
             collection: collection.name,
             id: recordId,
+            initialRecord:
+              initialRecord?.id === recordId ? initialRecord : undefined,
             onSaved: () => onMessage(copy("Запись обновлена")),
           }}
           catalog={

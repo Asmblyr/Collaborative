@@ -21,12 +21,23 @@ export { pluginCapabilities, parseCapabilities } from "./capabilities.js";
 export type { PluginCapability } from "./capabilities.js";
 export { EndpointError } from "./endpoint-error.js";
 export { defineCollection } from "./collection.js";
-export { useStorage } from "./collection-storage.js";
-export type { CollectionStorage } from "./collection-storage.js";
+export {
+  useStorage,
+  type CollectionListOptions,
+  type CollectionStorage,
+} from "./collection-storage.js";
 export type {
   CollectionRow,
   CollectionCreate,
   CollectionUpdate,
+  CollectionFieldValues,
+  CollectionFieldValue,
+  CollectionFieldInput,
+  CollectionFieldInputs,
+  CollectionRequiredFields,
+  CollectionPrimaryRow,
+  CollectionPrimaryInput,
+  CollectionTimestampRow,
 } from "./collection-types.js";
 export { defineMigration } from "./migration.js";
 export type { MigrationDefinition, MigrationOperation } from "./migration.js";
@@ -62,6 +73,7 @@ export type {
 
 export { defineAction, useActionContext, ActionInputError } from "./action.js";
 export type { ActionContext, PluginAction } from "./action.js";
+export type { ActionContract, ActionInputSchema } from "./action-contract.js";
 export type {
   PersonalConnections,
   GoogleFile,
@@ -71,13 +83,14 @@ export type {
   GoogleCells,
   GoogleWriteInput,
 } from "./connections.js";
-export { AccessGate } from "./access-gate.js";
+export { AccessGate, type AccessMiddleware } from "./access-gate.js";
 export {
   defineModelAnnotation,
   defineModelContext,
   bindModelDefinition,
 } from "./model-context.js";
 export type { ModelAnnotation } from "./model-context.js";
+export type { ModelDefinition } from "./model-schema.js";
 
 /** Endpoints and their action metadata are discovered in server/api. */
 export type PluginDefinition = Readonly<Record<string, never>>;

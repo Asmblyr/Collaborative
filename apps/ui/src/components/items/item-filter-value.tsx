@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { CalendarDays, Plus, X } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
-import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import {
   Popover,
@@ -11,158 +10,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@asmblyr-collaborative/kit/ui/select";
-import {
   hasMultipleValues,
   hasNoValue,
   type FilterCondition,
   type FilterField,
 } from "./item-filter-options";
+import {
+  FilterValueInput,
+  formattedFilterValue,
+} from "./item-filter-value-input";
 import { useUiCopy } from "@/lib/ui-copy";
-import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
-
-function localDatetimeValue(value: string): string {
-  if (!value || !/(?:Z|[+-]\d\d:\d\d)$/.test(value)) return value;
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) return value;
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 19);
-}
-
-function formattedValue(
-  value: string,
-  field: FilterField,
-  copy: UiCopy = originalCopy,
-): string {
-  if (field.options)
-    return (
-      field.options.find((option) => option.value === value)?.label ?? value
-    );
-  if (field.type === "boolean")
-    return value === "true"
-      ? copy("Да")
-      : value === "false"
-        ? copy("Нет")
-        : value;
-  if (field.type === "datetime" && value) {
-    const date = new Date(value);
-    if (!Number.isNaN(date.valueOf()))
-      return date.toLocaleString(copy.locale === "en" ? "en-US" : "ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-  }
-  return value;
-}
-
-function ValueInput({
-  field,
-  value,
-  onChange,
-  label,
-  inline = false,
-  autoFocus = false,
-}: {
-  field: FilterField;
-  value: string;
-  onChange: (value: string) => void;
-  label: string;
-  inline?: boolean;
-  autoFocus?: boolean;
-}) {
-  const copy = useUiCopy();
-
-  if (field.options?.length) {
-    return (
-      <Select
-        value={value}
-        onValueChange={onChange}
-      >
-        <SelectTrigger
-          aria-label={label}
-          className={
-            inline
-              ? "h-8 w-auto max-w-64 border-0 bg-transparent px-2 shadow-none"
-              : "w-full"
-          }
-        >
-          <SelectValue placeholder={copy("выберите…")} />
-        </SelectTrigger>
-        <SelectContent>
-          {field.options.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-            >
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  }
-  if (field.type === "boolean") {
-    return (
-      <Select
-        value={value}
-        onValueChange={onChange}
-      >
-        <SelectTrigger
-          aria-label={label}
-          className={
-            inline
-              ? "h-8 border-0 bg-transparent px-2 shadow-none dark:bg-transparent"
-              : "w-full"
-          }
-        >
-          <SelectValue placeholder={copy("выберите…")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="true">{copy("Да")}</SelectItem>
-          <SelectItem value="false">{copy("Нет")}</SelectItem>
-        </SelectContent>
-      </Select>
-    );
-  }
-  return (
-    <Input
-      autoFocus={autoFocus}
-      aria-label={label}
-      type={
-        field.type === "date"
-          ? "date"
-          : field.type === "datetime"
-            ? "datetime-local"
-            : field.type === "integer"
-              ? "number"
-              : "text"
-      }
-      step={field.type === "datetime" ? 1 : undefined}
-      maxLength={255}
-      placeholder={
-        field.type === "key" && field.keyType === "uuid"
-          ? "UUID…"
-          : copy("значение…")
-      }
-      className={
-        inline
-          ? "h-8 w-24 min-w-20 flex-1 rounded-md border-transparent bg-transparent px-2 shadow-none hover:bg-background/60 focus-visible:bg-background focus-visible:ring-2 dark:bg-transparent"
-          : "w-full"
-      }
-      value={field.type === "datetime" ? localDatetimeValue(value) : value}
-      onChange={(event) => onChange(event.target.value)}
-    />
-  );
-}
 
 export function ItemFilterValue({
   condition,
@@ -181,16 +38,18 @@ export function ItemFilterValue({
   const range = condition.op === "between" || condition.op === "notBetween";
   const complex = multiple || field.type === "datetime";
   const [open, setOpen] = useState(autoFocus && complex);
-  if (hasNoValue(condition.op)) return null;
+  if (hasNoValue(condition.op)) {
+    return null;
+  }
   const scalar = typeof condition.value === "string" ? condition.value : "";
   const values = Array.isArray(condition.value) ? condition.value : [];
   const label = `${copy("Значение для")} ` + field.label;
   const choiceField = ["eq", "neq", "in", "notIn"].includes(condition.op)
     ? field
     : { ...field, options: undefined };
-  if (!complex)
+  if (!complex) {
     return (
-      <ValueInput
+      <FilterValueInput
         field={choiceField}
         value={scalar}
         onChange={onChange}
@@ -199,19 +58,20 @@ export function ItemFilterValue({
         autoFocus={autoFocus}
       />
     );
+  }
 
   const populated = values.filter((value) => value !== "");
   const summary = range
     ? values
-        .map((value) => formattedValue(value, field, copy) || "…")
+        .map((value) => formattedFilterValue(value, field, copy) || "…")
         .join(" — ")
     : multiple
       ? populated
           .slice(0, 2)
-          .map((value) => formattedValue(value, field, copy))
+          .map((value) => formattedFilterValue(value, field, copy))
           .join(", ") +
         (populated.length > 2 ? " +" + (populated.length - 2) : "")
-      : formattedValue(scalar, field, copy);
+      : formattedFilterValue(scalar, field, copy);
   const updateAt = (index: number, value: string) => {
     const next = range
       ? [values[0] ?? "", values[1] ?? ""]
@@ -296,7 +156,7 @@ export function ItemFilterValue({
                 className="block space-y-1.5 text-xs text-muted-foreground"
               >
                 <span>{bound}</span>
-                <ValueInput
+                <FilterValueInput
                   field={field}
                   value={values[index] ?? ""}
                   onChange={(value) => updateAt(index, value)}
@@ -313,7 +173,7 @@ export function ItemFilterValue({
                 key={index}
                 className="flex items-center gap-1.5"
               >
-                <ValueInput
+                <FilterValueInput
                   field={field}
                   value={value}
                   onChange={(next) => updateAt(index, next)}
@@ -348,7 +208,7 @@ export function ItemFilterValue({
             </Button>
           </div>
         ) : (
-          <ValueInput
+          <FilterValueInput
             field={field}
             value={scalar}
             onChange={onChange}

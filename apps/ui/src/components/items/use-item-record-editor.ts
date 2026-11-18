@@ -9,22 +9,19 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
-import { ApiError } from "@asmblyr-collaborative/sdk";
 import { readEditorItem } from "@/lib/item-read";
-import { saveEditorDraft } from "@/lib/item-write";
-import { showToast } from "@/components/ui/toast";
 import { useUiCopy } from "@/lib/ui-copy";
-import { recordLabel } from "./item-label";
 import {
   draftChanges,
-  serializeDraft,
-  withFormValues,
   withRecordSnapshot,
   type RecordDraft,
 } from "./record-draft-model";
-import type { RecordEditorRequest } from "./record-editor-types";
+import type {
+  PreloadedRecordSnapshot,
+  RecordEditorRequest,
+} from "./record-editor-types";
 import type { Collection, Item } from "./types";
-import { rebaseDraft, type ConflictChoices } from "./draft-conflicts";
+import type { ConflictChoices } from "./draft-conflicts";
 import { useDraftConflicts } from "./use-draft-conflicts";
 import {
   createRecordLoadCoordinator,
@@ -35,8 +32,24 @@ import {
   buildRelatedChildRequest,
   buildRelationEditRequest,
   pruneStaleReferenceDraft,
-  stageNestedRecordDraft,
 } from "./stage-record-draft";
+import {
+  applyResolvedRecordConflicts,
+  commitRecordEditorSave,
+} from "./record-editor-save";
+
+export function matchingPreloadedRecord(
+  request: Pick<RecordEditorRequest, "id" | "itemEndpoint" | "initialRecord">,
+): PreloadedRecordSnapshot | null {
+  if (
+    !request.id ||
+    request.itemEndpoint ||
+    request.initialRecord?.id !== request.id
+  ) {
+    return null;
+  }
+  return request.initialRecord;
+}
 
 export function useItemRecordEditor({
   request,
@@ -51,18 +64,32 @@ export function useItemRecordEditor({
 }) {
   const copy = useUiCopy();
   const router = useRouter();
+  const preloaded = matchingPreloadedRecord(request);
+  const initialLoadedKey =
+    preloaded && request.id
+      ? serializeRecordKey(request.collection, request.id, undefined)
+      : null;
 
-  const [item, setItem] = useState<Item | null>(null);
-  const [label, setLabel] = useState(request.title ?? "");
+  const [item, setItem] = useState<Item | null>(() => preloaded?.data ?? null);
+  const [label, setLabel] = useState(
+    () => preloaded?.label ?? request.title ?? "",
+  );
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [revision, setRevision] = useState(0);
   const [formRevision, setFormRevision] = useState(0);
   const conflicts = useDraftConflicts(request.collection);
   const [child, setChild] = useState<RecordEditorRequest | null>(null);
-  const [draft, setDraft] = useState<RecordDraft>(
-    () => request.draft ?? { id: request.id, values: {} },
-  );
+  const [draft, setDraft] = useState<RecordDraft>(() => {
+    const base = request.draft ?? { id: request.id, values: {} };
+    if (!preloaded) {
+      return base;
+    }
+    return {
+      ...withRecordSnapshot(base, preloaded.data, true),
+      collection: request.collection,
+    };
+  });
 
   const dirtyRef = useRef(
     Boolean(
@@ -72,11 +99,12 @@ export function useItemRecordEditor({
   const extraDirtyRef = useRef(Boolean(request.extraDirty));
   const titleRef = useRef(request.title ?? "");
   const copyRef = useRef(copy);
+  const preloadedKeyRef = useRef<string | null>(initialLoadedKey);
   const coordinatorRef = useRef<RecordLoadCoordinator | null>(null);
 
   function getCoordinator(): RecordLoadCoordinator {
     if (!coordinatorRef.current) {
-      coordinatorRef.current = createRecordLoadCoordinator();
+      coordinatorRef.current = createRecordLoadCoordinator(initialLoadedKey);
     }
     return coordinatorRef.current;
   }
@@ -109,6 +137,11 @@ export function useItemRecordEditor({
       recordId,
       request.itemEndpoint,
     );
+
+    if (revision === 0 && preloadedKeyRef.current === recordKey) {
+      preloadedKeyRef.current = null;
+      return;
+    }
 
     void coordinator
       .loadRecord({
@@ -173,162 +206,42 @@ export function useItemRecordEditor({
     }
   }
 
-  async function save(values: Item, close: () => void, keepOpen = false) {
-    const coordinator = getCoordinator();
-    if (!collection || coordinator.isSaving()) {
-      return;
-    }
-
-    setPending(true);
-    setError("");
-    const next = withFormValues(draft, values);
-    setDraft(next);
-
-    try {
-      if (request.onDraft) {
-        const staged = await stageNestedRecordDraft({
-          draft: next,
-          values,
-          item,
-          request,
-          collection,
-          catalog,
-          copy,
-        });
-        request.onDraft(staged);
-        close();
-        return;
-      }
-
-      if (keepOpen) {
-        const outcome = await coordinator.runKeepOpenSave({
-          recordKey: (savedId) =>
-            serializeRecordKey(
-              request.collection,
-              request.id ?? savedId,
-              request.itemEndpoint,
-            ),
-          commit: () =>
-            saveEditorDraft(request.collection, serializeDraft(next)),
-          read: (savedId, signal) =>
-            readEditorItem(
-              request.collection,
-              request.id ?? savedId,
-              signal,
-              request.itemEndpoint,
-            ),
-        });
-
-        if (outcome.kind === "aborted") {
-          return;
-        }
-
-        const targetId = request.id ?? outcome.id;
-        dirtyRef.current = false;
-
-        if (outcome.kind === "reload-failed") {
-          const reloadMessage =
-            outcome.error instanceof Error
-              ? outcome.error.message
-              : copy("Ошибка соединения");
-          flushSync(() => {
-            setItem(null);
-            setDraft({
-              id: targetId,
-              values: {},
-              collection: request.collection,
-              itemEndpoint: request.itemEndpoint,
-            });
-            setFormRevision((value) => value + 1);
-            setError(reloadMessage);
-            setPending(false);
-          });
-          showToast(copy("Запись обновлена"), "success");
-          notifyChanged();
-          return;
-        }
-
-        flushSync(() => {
-          setItem(outcome.result.data);
-          setDraft({
-            ...withRecordSnapshot(
-              { id: targetId, values: {} },
-              outcome.result.data,
-              false,
-            ),
-            collection: request.collection,
-            itemEndpoint: request.itemEndpoint,
-          });
-          setLabel(outcome.result.label ?? request.title ?? "");
-          setFormRevision((value) => value + 1);
-          setError("");
-          setPending(false);
-        });
-        showToast(copy("Запись обновлена"), "success");
-        notifyChanged();
-        return;
-      }
-
-      coordinator.abortActiveLoad();
-      const id = await saveEditorDraft(
-        request.collection,
-        serializeDraft(next),
-      );
-      request.onSaved?.(id);
-      notifyChanged();
-      close();
-    } catch (cause) {
-      if (cause instanceof ApiError && cause.code === "ITEM_CHANGED") {
-        try {
-          await conflicts.inspect(next);
-        } catch (readError) {
-          setError(
-            readError instanceof Error
-              ? readError.message
-              : copy(
-                  "Не удалось загрузить актуальные значения. Черновик сохранён в этом окне.",
-                ),
-          );
-        }
-        return;
-      }
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : copy("Ошибка соединения. Черновик остаётся в этом окне."),
-      );
-    } finally {
-      setPending(false);
-    }
+  function save(values: Item, close: () => void, keepOpen = false) {
+    return commitRecordEditorSave({
+      values,
+      close,
+      keepOpen,
+      coordinator: getCoordinator(),
+      collection,
+      catalog,
+      request,
+      draft,
+      item,
+      copy,
+      conflicts,
+      dirtyRef,
+      setPending,
+      setError,
+      setDraft,
+      setItem,
+      setLabel,
+      setFormRevision,
+      notifyChanged,
+    });
   }
 
   function resolveConflicts(choices: ConflictChoices) {
-    const review = conflicts.review;
-    if (!review) {
-      return;
-    }
-
-    const next = rebaseDraft(
-      request.collection,
-      review.draft,
-      review.snapshots,
+    applyResolvedRecordConflicts({
       choices,
-      (name, preview) => {
-        const schema = catalog.find((entry) => entry.name === name);
-        return schema
-          ? recordLabel(schema, preview)
-          : String(preview.id ?? copy("Запись"));
-      },
+      conflicts,
+      collectionName: request.collection,
+      catalog,
       copy,
-    );
-    const root = review.snapshots.find((snapshot) => snapshot.path === "root");
-    setDraft(next);
-    if (root) {
-      setItem(root.current);
-    }
-    setFormRevision((value) => value + 1);
-    conflicts.clear();
-    setError("");
+      setDraft,
+      setItem,
+      setFormRevision,
+      setError,
+    });
   }
 
   function openRelated(

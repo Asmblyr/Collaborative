@@ -137,6 +137,7 @@ function AdminShellContent({
                       >
                         <SearchControl
                           key={searchScopeKey}
+                          collections={collections}
                           localLabel={
                             pathname === "/files"
                               ? copy("файлах")

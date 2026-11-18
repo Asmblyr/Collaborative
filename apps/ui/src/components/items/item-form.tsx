@@ -1,11 +1,16 @@
 "use client";
 
-import { useLayoutEffect, useId, useState, type FormEvent } from "react";
+import {
+  useLayoutEffect,
+  useId,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import type { OpenRelated } from "./relation-picker";
-import { formDraftPayload, FieldDraftError } from "./form-draft-payload";
 import { ItemFormField } from "./item-form-field";
 import { inputValue } from "./item-input-values";
 import type { Collection, CollectionField, Item, ItemValue } from "./types";
@@ -13,13 +18,18 @@ import { ConfiguredFieldLayout } from "./configured-field-layout";
 import { layoutHasConditions } from "./form-layout-model";
 import type { FormLayout } from "./presentation-types";
 import { ItemFormActions } from "./item-form-actions";
-import type { ReactNode } from "react";
 import {
   fieldIsRequired,
   fieldIsReadonly,
   changeFieldDraft,
   effectiveFieldDraft,
 } from "./field-rule-draft";
+import {
+  changedFieldCount,
+  focusFormField,
+  forcedVisibleFieldNames,
+  submitItemFormDraft,
+} from "./item-form-draft";
 import { useUiCopy } from "@/lib/ui-copy";
 
 interface ItemFormProps {
@@ -85,7 +95,6 @@ export function ItemForm({
   fieldHolders,
 }: ItemFormProps) {
   const copy = useUiCopy();
-
   const formId = useId();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -103,18 +112,9 @@ export function ItemForm({
   const [issue, setIssue] = useState({ field: "", attempt: 0 });
   const [showHidden, setShowHidden] = useState(false);
   const writable = fields.filter(
-    (f) => !readOnlyFields.includes(f.name) && !fieldIsReadonly(f),
+    (field) => !readOnlyFields.includes(field.name) && !fieldIsReadonly(field),
   );
-  function changedFieldCount(candidateValues: Record<string, string>): number {
-    return (
-      writable.filter((field) =>
-        item
-          ? candidateValues[field.name] !== inputValue(field, item)
-          : candidateValues[field.name] !== "",
-      ).length + (!item && manualKey ? 1 : 0)
-    );
-  }
-  const changedCount = changedFieldCount(values);
+  const changedCount = changedFieldCount(writable, values, item, manualKey);
   useLayoutEffect(() => {
     onDirtyChange?.(changedCount);
   }, [changedCount, onDirtyChange]);
@@ -124,126 +124,52 @@ export function ItemForm({
     Boolean(item),
     initialValues,
   );
-  const forced = new Set(
-    showHidden
-      ? fields.map((f) => f.name)
-      : writable
-          .filter(
-            (f) =>
-              !item &&
-              fieldIsRequired(f, conditionValues) &&
-              f.defaultValue === undefined &&
-              !values[f.name],
-          )
-          .map((f) => f.name),
-  );
-  if (issue.field) forced.add(issue.field);
-  function showError(form: HTMLFormElement, message: string, field: string) {
-    setMessage(message);
-    setIssue((v) => ({ field, attempt: v.attempt + 1 }));
-    window.requestAnimationFrame(() => {
-      const block = field
-        ? form.querySelector<HTMLElement>(
-            `[data-form-field="${CSS.escape(field)}"]`,
-          )
-        : form;
-      block?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      block
-        ?.querySelector<HTMLElement>(
-          'input:not([disabled]), textarea:not([disabled]), [role="combobox"], button:not([disabled])',
-        )
-        ?.focus({ preventScroll: true });
-    });
-  }
+  const forced = forcedVisibleFieldNames({
+    fields,
+    writable,
+    values,
+    conditionValues,
+    item,
+    showHidden,
+    issueField: issue.field,
+  });
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    const submitter = (event.nativeEvent as SubmitEvent).submitter;
-    const keepOpen = submitter?.getAttribute("data-keep-open") === "true";
-    onSubmitAttempt?.();
-    if (pending) return;
-    if (uploading) {
-      setMessage(copy("Дождитесь загрузки файлов"));
-      return;
-    }
-    const missingChoice = writable.find(
-      (field) =>
-        fieldIsRequired(field, conditionValues) &&
-        conditionValues[field.name]?.trim() === "",
-    );
-    if (missingChoice) {
-      showError(
-        event.currentTarget,
-        copy("Заполните поле {{value0}}", {
-          value0: missingChoice.presentation?.label || missingChoice.name,
-        }),
-        missingChoice.name,
-      );
-      return;
-    }
-    const changed = writable.filter((field) =>
-      item
-        ? values[field.name] !== inputValue(field, item)
-        : values[field.name] !== "",
-    );
-    const invalid = [
-      ...event.currentTarget.querySelectorAll<
-        HTMLInputElement | HTMLTextAreaElement
-      >("input, textarea"),
-    ].find((el) => {
-      const name =
-        el.closest<HTMLElement>("[data-form-field]")?.dataset.formField;
-      return (
-        !el.disabled &&
-        (!item || changed.some((f) => f.name === name)) &&
-        !el.checkValidity()
-      );
-    });
-    if (invalid) {
-      showError(
-        event.currentTarget,
-        invalid.validationMessage,
-        invalid.closest<HTMLElement>("[data-form-field]")?.dataset.formField ??
-          "",
-      );
-      return;
-    }
-    if (item && changed.length === 0 && !allowUnchanged) {
-      setMessage(copy("Нет изменений"));
-      return;
-    }
-    setMessage("");
-    try {
-      const payload = formDraftPayload(changed, values, copy);
-      if (!item && primaryKey.type === "text") {
-        payload[primaryKey.name] = manualKey;
-      }
-      await onSave(payload, keepOpen);
-    } catch (error) {
-      if (error instanceof FieldDraftError) {
-        showError(event.currentTarget, error.message, error.field);
-        return;
-      }
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : copy("Проверьте значения полей"),
-      );
-    }
+  function showError(form: HTMLFormElement, errorText: string, field: string) {
+    setMessage(errorText);
+    setIssue((prev) => ({ field, attempt: prev.attempt + 1 }));
+    focusFormField(form, field);
   }
 
   return (
     <form
       id={id}
       noValidate
-      onSubmit={submit}
+      onSubmit={(event: FormEvent<HTMLFormElement>) =>
+        submitItemFormDraft({
+          event,
+          pending,
+          uploading,
+          writable,
+          conditionValues,
+          values,
+          item,
+          allowUnchanged,
+          primaryKey,
+          manualKey,
+          copy,
+          onSubmitAttempt,
+          onSave,
+          showError,
+          setMessage,
+        })
+      }
       onFocusCapture={(event) => {
         const field = (event.target as HTMLElement).closest<HTMLElement>(
           "[data-form-field]",
         )?.dataset.formField;
-        if (field && writable.some((entry) => entry.name === field))
+        if (field && writable.some((entry) => entry.name === field)) {
           onFieldFocus?.(field);
+        }
       }}
       onBlurCapture={(event) => {
         const field = (event.target as HTMLElement).closest<HTMLElement>(
@@ -252,7 +178,9 @@ export function ItemForm({
         const next = (
           event.relatedTarget as HTMLElement | null
         )?.closest<HTMLElement>("[data-form-field]")?.dataset.formField;
-        if (field && field !== next) onFieldBlur?.(field);
+        if (field && field !== next) {
+          onFieldBlur?.(field);
+        }
       }}
       className={
         embedded ? "space-y-5" : "space-y-4 rounded-xl border bg-card p-5"
@@ -304,10 +232,12 @@ export function ItemForm({
       <ConfiguredFieldLayout
         fields={[
           ...fields.filter(
-            (f) => !f.presentation?.rules?.hidden || forced.has(f.name),
+            (field) =>
+              !field.presentation?.rules?.hidden || forced.has(field.name),
           ),
           ...aliasFields.filter(
-            (f) => !f.presentation?.rules?.hidden || forced.has(f.name),
+            (field) =>
+              !field.presentation?.rules?.hidden || forced.has(field.name),
           ),
         ]}
         layout={formLayout}
@@ -355,7 +285,9 @@ export function ItemForm({
                   field.name,
                   value,
                 );
-                onDirtyChange?.(changedFieldCount(next));
+                onDirtyChange?.(
+                  changedFieldCount(writable, next, item, manualKey),
+                );
                 setValues(next);
                 for (const candidate of fields) {
                   if (
