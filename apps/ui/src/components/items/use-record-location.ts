@@ -3,38 +3,33 @@
 import { useEffect, useRef, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  pushShallowHistory,
+  replaceShallowHistory,
+  shallowHistoryState,
+  useBrowserPathname,
+} from "@/lib/history-state";
+import {
   collectionHref,
   itemHref,
   recordIdFromPath,
 } from "@/lib/item-location";
 
-function isPlainStateObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 export function mergeRecordHistoryState(
   currentState: unknown,
   returnHref: string,
 ): Record<string, unknown> {
-  if (isPlainStateObject(currentState)) {
-    return { ...currentState, asmblyrRecordReturn: returnHref };
-  }
-  return { asmblyrRecordReturn: returnHref };
+  return shallowHistoryState(currentState, { asmblyrRecordReturn: returnHref });
 }
 
 export function stripRecordHistoryState(
   currentState: unknown,
-): Record<string, unknown> | null {
-  if (!isPlainStateObject(currentState)) {
-    return null;
-  }
-  const rest = { ...currentState };
-  delete rest.asmblyrRecordReturn;
-  return rest;
+): Record<string, unknown> {
+  return shallowHistoryState(currentState, undefined, ["asmblyrRecordReturn"]);
 }
 
 export function useRecordLocation(collection: string) {
-  const pathname = usePathname();
+  const nextPathname = usePathname();
+  const pathname = useBrowserPathname();
   const router = useRouter();
   const [, startTransition] = useTransition();
   const refreshNeeded = useRef(false);
@@ -48,10 +43,19 @@ export function useRecordLocation(collection: string) {
       return;
     }
     refreshNeeded.current = false;
+    const query = new URLSearchParams(window.location.search);
+    query.delete("item");
+    query.delete("panel");
+    query.delete("target");
+    const listHref = `${listPath}${query.size ? `?${query}` : ""}`;
     startTransition(() => {
-      router.refresh();
+      if (recordIdFromPath(nextPathname, collection) !== null) {
+        router.replace(listHref, { scroll: false });
+      } else {
+        router.refresh();
+      }
     });
-  }, [recordId, router, startTransition]);
+  }, [collection, listPath, nextPathname, recordId, router, startTransition]);
 
   function recordChanged() {
     refreshNeeded.current = true;
@@ -64,13 +68,9 @@ export function useRecordLocation(collection: string) {
     query.delete("target");
     const suffix = query.size ? `?${query}` : "";
     const returnHref = `${listPath}${suffix}`;
-    // Next integrates native history with usePathname. Keep the current table,
-    // selection and scroll mounted while preserving Next.js history state.
-    window.history.pushState(
-      mergeRecordHistoryState(window.history.state, returnHref),
-      "",
-      `${itemHref(collection, id)}${suffix}`,
-    );
+    pushShallowHistory(`${itemHref(collection, id)}${suffix}`, {
+      asmblyrRecordReturn: returnHref,
+    });
   }
 
   function closeRecord() {
@@ -89,11 +89,7 @@ export function useRecordLocation(collection: string) {
     if (window.history.state?.asmblyrRecordReturn === listHref) {
       window.history.back();
     } else {
-      window.history.replaceState(
-        stripRecordHistoryState(window.history.state),
-        "",
-        listHref,
-      );
+      replaceShallowHistory(listHref, undefined, ["asmblyrRecordReturn"]);
     }
   }
 

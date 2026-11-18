@@ -72,6 +72,10 @@ export function ItemsWorkspace({
     closeRecord,
     recordChanged,
   } = useRecordLocation(collection.name);
+  const [ssrInitialRecord, setSsrInitialRecord] = useState(initialRecord);
+  if (ssrInitialRecord && recordId !== ssrInitialRecord.id) {
+    setSsrInitialRecord(null);
+  }
   const [creating, setCreating] = useState(false);
   const [bulkEditing, setBulkEditing] = useState(false);
 
@@ -253,7 +257,7 @@ export function ItemsWorkspace({
         confirmDelete={confirmDelete}
         pending={pending}
         recordId={recordId}
-        initialRecord={initialRecord}
+        initialRecord={ssrInitialRecord}
         creating={creating}
         bulkEditing={bulkEditing}
         viewEditor={viewEditor}

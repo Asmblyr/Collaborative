@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { replaceShallowHistory } from "@/lib/history-state";
 import { requestJson } from "@/lib/http-request";
 import { useUiCopy } from "@/lib/ui-copy";
 import { TablePreferenceWriter } from "./table-preference-writer";
@@ -144,6 +145,6 @@ export function useCanonicalTableQuery(canonicalQuery: string | null): void {
       return;
     }
 
-    window.history.replaceState(window.history.state, "", nextHref);
+    replaceShallowHistory(nextHref);
   }, [canonicalQuery]);
 }
