@@ -97,3 +97,53 @@ export function TablePreferencesNotice({
     </div>
   );
 }
+
+const TABLE_QUERY_KEYS = [
+  "page",
+  "limit",
+  "sort",
+  "direction",
+  "q",
+  "filter",
+  "order",
+];
+
+export function resolveCanonicalTableHref(
+  pathname: string,
+  search: string,
+  hash: string,
+  canonicalQuery: string | null | undefined,
+): string | null {
+  if (!canonicalQuery) {
+    return null;
+  }
+
+  const currentParams = new URLSearchParams(search);
+  if (TABLE_QUERY_KEYS.some((key) => currentParams.has(key))) {
+    return null;
+  }
+
+  const merged = new URLSearchParams(canonicalQuery);
+  const activeWorkspace = currentParams.get("workspace");
+  if (activeWorkspace && !merged.has("workspace")) {
+    merged.set("workspace", activeWorkspace);
+  }
+
+  return `${pathname}?${merged}${hash}`;
+}
+
+export function useCanonicalTableQuery(canonicalQuery: string | null): void {
+  useEffect(() => {
+    const nextHref = resolveCanonicalTableHref(
+      window.location.pathname,
+      window.location.search,
+      window.location.hash,
+      canonicalQuery,
+    );
+    if (!nextHref) {
+      return;
+    }
+
+    window.history.replaceState(window.history.state, "", nextHref);
+  }, [canonicalQuery]);
+}

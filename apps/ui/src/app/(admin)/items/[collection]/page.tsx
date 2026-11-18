@@ -5,7 +5,12 @@ import type { TablePreferences } from "@/lib/table-preferences";
 import type { ItemList } from "@/components/items/types";
 import { collectionHref, itemHref } from "@/lib/item-location";
 import { loadCollections } from "@/lib/collections";
-import { coreAddress, requireSession } from "@/lib/session";
+import {
+  coreAddress,
+  loadSessionUser,
+  requestSessionToken,
+  sessionRedirect,
+} from "@/lib/session";
 import type { TableView } from "@/components/items/table-view-dialog";
 import { defaultStateFilter } from "@/components/items/default-state-filter";
 import { getUiCopy } from "@/lib/ui-copy-server";
@@ -41,11 +46,25 @@ export default async function CollectionItemsPage({
   const requested = await searchParams;
   const path = id === undefined ? collectionHref(name) : itemHref(name, id);
   const requestedQuery = new URLSearchParams();
-  for (const [key, value] of Object.entries(requested))
-    if (typeof value === "string") requestedQuery.set(key, value);
-  const { user, token } = await requireSession(
-    `${path}${requestedQuery.size ? `?${requestedQuery}` : ""}`,
-  );
+  for (const [key, value] of Object.entries(requested)) {
+    if (typeof value === "string") {
+      requestedQuery.set(key, value);
+    }
+  }
+  const returnPath = `${path}${requestedQuery.size ? `?${requestedQuery}` : ""}`;
+  const token = await requestSessionToken();
+  if (!token) {
+    sessionRedirect(returnPath);
+  }
+
+  const [user, catalog] = await Promise.all([
+    loadSessionUser(token),
+    loadCollections(token),
+  ]);
+  if (!user) {
+    sessionRedirect(returnPath);
+  }
+
   // Keep previously shared search links working, with one canonical record URL.
   if (typeof requested.item === "string" && requested.item) {
     requestedQuery.delete("item");
@@ -53,11 +72,15 @@ export default async function CollectionItemsPage({
       `${itemHref(name, id ?? requested.item)}${requestedQuery.size ? `?${requestedQuery}` : ""}`,
     );
   }
-  const { data: collections, online } = await loadCollections(token);
-  if (!online)
+
+  const { data: collections, online } = catalog;
+  if (!online) {
     return <LoadError message={copy("Не удалось загрузить коллекции")} />;
+  }
   const collection = collections.find((entry) => entry.name === name);
-  if (!collection) notFound();
+  if (!collection) {
+    notFound();
+  }
 
   let preferences: TablePreferences | null = null;
   let defaultView: TableView | null = null;
@@ -82,12 +105,17 @@ export default async function CollectionItemsPage({
           options,
         ),
       ]);
-      if (response.ok) preferences = (await response.json()).data;
-      if (viewResponse.ok) defaultView = (await viewResponse.json()).data;
+      if (response.ok) {
+        preferences = (await response.json()).data;
+      }
+      if (viewResponse.ok) {
+        defaultView = (await viewResponse.json()).data;
+      }
     } catch {
       /* Table data can load with the default layout. */
     }
   }
+
   let items: ItemList = {
     data: [],
     page: {
@@ -98,8 +126,9 @@ export default async function CollectionItemsPage({
       direction: "asc",
     },
   };
+
   const layoutDefaults = defaultView?.definition;
-  if (preferences && layoutDefaults)
+  if (preferences && layoutDefaults) {
     preferences = {
       ...preferences,
       columns: preferences.columns ?? layoutDefaults.columns,
@@ -107,42 +136,64 @@ export default async function CollectionItemsPage({
         ? { pageSize: layoutDefaults.pageSize, sort: layoutDefaults.sort }
         : {}),
     };
+  }
+
   const { q, filter, canonical } = tableQueryDefaults(
     requested,
     preferences,
     defaultView,
     defaultStateFilter(collection),
   );
-  if (canonical !== null) {
-    redirect(`${path}?${canonical}`);
-  }
+
   if (collection.access.read) {
-    let order = "field";
-    if (q.trim()) {
-      if (typeof requested.order === "string") {
-        order = requested.order;
-      } else if (
-        requested.sort === undefined &&
-        requested.direction === undefined
-      ) {
-        order = "relevance";
-      }
+    const effectiveSort = preferences?.sort ??
+      layoutDefaults?.sort ?? {
+        field: collection.primaryKey.name,
+        direction: "asc" as const,
+      };
+    const effectiveLimit =
+      preferences?.pageSize ?? layoutDefaults?.pageSize ?? 25;
+
+    let order: string = "field";
+    if (canonical !== null) {
+      order = effectiveSort.order ?? "field";
+    } else if (typeof requested.order === "string") {
+      order = requested.order;
+    } else if (
+      q.trim() &&
+      requested.sort === undefined &&
+      requested.direction === undefined
+    ) {
+      order = "relevance";
+    } else if (
+      requested.sort === undefined &&
+      requested.direction === undefined &&
+      effectiveSort.order
+    ) {
+      order = effectiveSort.order;
     }
+
     let itemsResponse: Response;
     try {
       const query = new URLSearchParams({
-        limit: String(preferences?.pageSize ?? 25),
+        limit: String(effectiveLimit),
         order,
-        sort: preferences?.sort.field ?? collection.primaryKey.name,
-        direction: preferences?.sort.direction ?? "asc",
+        sort: effectiveSort.field,
+        direction: effectiveSort.direction,
       });
-      if (q) query.set("q", q);
-      if (filter) query.set("filter", filter);
+      if (q) {
+        query.set("q", q);
+      }
+      if (filter) {
+        query.set("filter", filter);
+      }
       // An explicit empty filter disables the table default, but Core expects
       // either a JSON filter or no parameter at all.
       for (const key of ["page", "limit", "sort", "direction", "q", "order"]) {
         const value = requested[key];
-        if (typeof value === "string") query.set(key, value);
+        if (typeof value === "string") {
+          query.set(key, value);
+        }
       }
       itemsResponse = await fetch(
         coreAddress(`/items/${encodeURIComponent(name)}?${query}`),
@@ -155,8 +206,9 @@ export default async function CollectionItemsPage({
     } catch {
       return <LoadError message={copy("Не удалось загрузить записи")} />;
     }
-    if (!itemsResponse.ok)
+    if (!itemsResponse.ok) {
       return <LoadError message={copy("Не удалось загрузить записи")} />;
+    }
     items = (await itemsResponse.json()) as ItemList;
   }
 
@@ -174,6 +226,7 @@ export default async function CollectionItemsPage({
         preferences={preferences}
         q={q}
         filter={filter}
+        canonicalQuery={canonical}
       />
     </div>
   );

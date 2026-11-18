@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useTransition,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
@@ -13,6 +14,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { requestJson } from "@/lib/http-request";
+import { collectionHref } from "@/lib/item-location";
 import { itemSearchHref, type SearchResults } from "@/lib/search";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -27,7 +29,9 @@ export function SearchControl({
 
   const scoped = Boolean(collection || localLabel);
   const pathname = usePathname();
+  const scopedPath = collection ? collectionHref(collection) : pathname;
   const router = useRouter();
+  const [, startTransition] = useTransition();
   const workspace = useWorkspace();
   const params = useSearchParams();
   const input = useRef<HTMLInputElement>(null);
@@ -63,27 +67,52 @@ export function SearchControl({
   }, []);
 
   useEffect(() => {
-    if (document.activeElement !== input.current) setValue(urlQuery);
+    if (document.activeElement !== input.current) {
+      setValue(urlQuery);
+    }
   }, [urlQuery]);
 
   useEffect(() => {
-    if (!scoped || query === urlQuery) return;
+    if (!scoped || pathname !== scopedPath || query === urlQuery) {
+      return;
+    }
     const timer = window.setTimeout(() => {
       const next = new URLSearchParams(params.toString());
-      if (query) next.set("q", query);
-      else next.delete("q");
+      if (query) {
+        next.set("q", query);
+      } else {
+        next.delete("q");
+      }
       next.delete("page");
-      if (collection && !urlQuery && query) next.set("order", "relevance");
-      if (collection && !query) next.set("order", "field");
-      router.replace(`${pathname}${next.size ? `?${next}` : ""}`, {
-        scroll: false,
+      if (collection && !urlQuery && query) {
+        next.set("order", "relevance");
+      }
+      if (collection && !query) {
+        next.set("order", "field");
+      }
+      startTransition(() => {
+        router.replace(`${scopedPath}${next.size ? `?${next}` : ""}`, {
+          scroll: false,
+        });
       });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [collection, scoped, params, pathname, query, router, urlQuery]);
+  }, [
+    collection,
+    scoped,
+    scopedPath,
+    params,
+    pathname,
+    query,
+    router,
+    startTransition,
+    urlQuery,
+  ]);
 
   useEffect(() => {
-    if (scoped || !query) return;
+    if (scoped || !query) {
+      return;
+    }
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
@@ -113,17 +142,28 @@ export function SearchControl({
     setOpen(false);
     if (scoped) {
       const next = new URLSearchParams(params.toString());
-      if (query) next.set("q", query);
-      else next.delete("q");
+      if (query) {
+        next.set("q", query);
+      } else {
+        next.delete("q");
+      }
       next.delete("page");
-      if (collection && !urlQuery && query) next.set("order", "relevance");
-      if (collection && !query) next.set("order", "field");
-      router.replace(`${pathname}${next.size ? `?${next}` : ""}`, {
-        scroll: false,
+      if (collection && !urlQuery && query) {
+        next.set("order", "relevance");
+      }
+      if (collection && !query) {
+        next.set("order", "field");
+      }
+      startTransition(() => {
+        router.replace(`${scopedPath}${next.size ? `?${next}` : ""}`, {
+          scroll: false,
+        });
       });
     } else {
       const target = `/search${query ? `?q=${encodeURIComponent(query)}` : ""}`;
-      router.push(workspace?.href(target) ?? target);
+      startTransition(() => {
+        router.push(workspace?.href(target) ?? target);
+      });
     }
     input.current?.blur();
   }

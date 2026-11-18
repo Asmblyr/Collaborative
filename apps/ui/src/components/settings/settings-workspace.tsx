@@ -53,7 +53,7 @@ export function SettingsWorkspace({
   useEffect(() => {
     if (requestedTab !== tab) {
       window.history.replaceState(
-        null,
+        window.history.state,
         "",
         settingsTabHref(window.location.href, tab),
       );
@@ -101,7 +101,7 @@ export function SettingsWorkspace({
               setSecurityVisited(true);
             }
             window.history.pushState(
-              null,
+              window.history.state,
               "",
               settingsTabHref(window.location.href, nextTab),
             );
