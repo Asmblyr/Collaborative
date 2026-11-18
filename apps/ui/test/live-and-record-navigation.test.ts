@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import test from "node:test";
 import { createCollectionLiveController } from "../src/components/items/collection-live-controller";
 import {
@@ -10,31 +12,132 @@ import {
   mergeRecordHistoryState,
   stripRecordHistoryState,
 } from "../src/components/items/use-record-location";
+import {
+  isIntraWorkspaceShallowPop,
+  shallowHistoryState,
+} from "../src/lib/history-state";
 import { searchReturnHref } from "../src/lib/search";
 
-test("mergeRecordHistoryState and stripRecordHistoryState preserve Next.js history state", () => {
+function collectSourceFiles(dir: string): string[] {
+  const results: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...collectSourceFiles(fullPath));
+    } else if (
+      entry.isFile() &&
+      (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))
+    ) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+test("shallowHistoryState preserves Next.js __NA/tree while updating record return state", () => {
   const nextInternalState = {
     __NA: true,
-    tree: ["", { children: ["items", {}] }],
-    key: "nav-key-1",
+    __PRIVATE_NEXTJS_INTERNALS_TREE: {
+      tree: ["", { children: ["items", {}] }],
+      renderedSearch: "",
+    },
   };
-  const merged = mergeRecordHistoryState(
+
+  const openState = mergeRecordHistoryState(
     nextInternalState,
-    "/items/articles?page=2",
+    "/items/articles?page=2&workspace=sales",
   );
-  assert.deepEqual(merged, {
+  assert.deepEqual(openState, {
     __NA: true,
-    tree: ["", { children: ["items", {}] }],
-    key: "nav-key-1",
-    asmblyrRecordReturn: "/items/articles?page=2",
+    __PRIVATE_NEXTJS_INTERNALS_TREE: {
+      tree: ["", { children: ["items", {}] }],
+      renderedSearch: "",
+    },
+    asmblyrRecordReturn: "/items/articles?page=2&workspace=sales",
   });
 
-  const stripped = stripRecordHistoryState(merged);
-  assert.deepEqual(stripped, nextInternalState);
-  assert.equal(stripRecordHistoryState(null), null);
-  assert.deepEqual(mergeRecordHistoryState(null, "/items/articles"), {
-    asmblyrRecordReturn: "/items/articles",
-  });
+  const preservedState = shallowHistoryState(openState);
+  assert.deepEqual(preservedState, openState);
+
+  const closedState = stripRecordHistoryState(openState);
+  assert.deepEqual(closedState, nextInternalState);
+
+  assert.deepEqual(
+    shallowHistoryState(null, { asmblyrRecordReturn: "/items/a" }),
+    {
+      __NA: true,
+      asmblyrRecordReturn: "/items/a",
+    },
+  );
+});
+
+test("isIntraWorkspaceShallowPop intercepts only same-table record modals and /settings tabs", () => {
+  assert.equal(
+    isIntraWorkspaceShallowPop(
+      { pathname: "/items/articles/42", search: "?workspace=all&page=2" },
+      { pathname: "/items/articles", search: "?page=2&workspace=all" },
+    ),
+    true,
+  );
+  assert.equal(
+    isIntraWorkspaceShallowPop(
+      { pathname: "/items/articles", search: "?workspace=all" },
+      {
+        pathname: "/items/articles/42",
+        search: "?workspace=all&panel=comments",
+      },
+    ),
+    true,
+  );
+  // Pagination or cross-collection or cross-route Back/Forward must propagate to Next.js
+  assert.equal(
+    isIntraWorkspaceShallowPop(
+      { pathname: "/items/articles", search: "?page=2&workspace=all" },
+      { pathname: "/items/articles", search: "?workspace=all" },
+    ),
+    false,
+  );
+  assert.equal(
+    isIntraWorkspaceShallowPop(
+      { pathname: "/items/articles/42", search: "?workspace=all" },
+      { pathname: "/search", search: "?q=test&workspace=all" },
+    ),
+    false,
+  );
+  assert.equal(
+    isIntraWorkspaceShallowPop(
+      { pathname: "/settings", search: "?tab=profile&workspace=all" },
+      { pathname: "/settings", search: "?tab=appearance&workspace=all" },
+    ),
+    true,
+  );
+  assert.equal(
+    isIntraWorkspaceShallowPop(
+      { pathname: "/settings", search: "?tab=profile&workspace=sales" },
+      { pathname: "/settings", search: "?tab=profile&workspace=all" },
+    ),
+    false,
+  );
+});
+
+test("UI components route shallow URL updates through history-state.ts instead of raw pushState", () => {
+  const srcRoot = path.resolve(import.meta.dirname, "../src");
+  const allowed = new Set([
+    path.normalize("lib/history-state.ts"),
+    path.normalize("components/auth/invitation-form.tsx"),
+  ]);
+  const offenders: string[] = [];
+  for (const filePath of collectSourceFiles(srcRoot)) {
+    const rel = path.relative(srcRoot, filePath);
+    if (allowed.has(rel)) {
+      continue;
+    }
+    const content = readFileSync(filePath, "utf8");
+    if (/history\.(?:pushState|replaceState)\s*\(/.test(content)) {
+      offenders.push(rel);
+    }
+  }
+  assert.deepEqual(offenders, []);
 });
 
 test("preloaded SSR record initializes conflict baseline without disabling subsequent conflict checks", async () => {
@@ -70,7 +173,6 @@ test("preloaded SSR record initializes conflict baseline without disabling subse
   const key = serializeRecordKey("articles", "42");
   const coordinator = createRecordLoadCoordinator(key);
 
-  // Subsequent SSE reload when user already edited the preloaded record -> conflict!
   const conflictOutcome = await coordinator.loadRecord({
     recordKey: key,
     isDirty: () => true,
@@ -78,7 +180,6 @@ test("preloaded SSR record initializes conflict baseline without disabling subse
   });
   assert.deepEqual(conflictOutcome, { kind: "conflict" });
 
-  // Clean background reload updates without resetting initialLoad to true.
   const cleanOutcome = await coordinator.loadRecord({
     recordKey: key,
     isDirty: () => false,
@@ -113,7 +214,6 @@ test("createCollectionLiveController defers refreshes on hidden tab or open moda
     },
   });
 
-  // Active tab & no modal -> coalesces multiple events into 1 refresh.
   controller.notifyChanged();
   controller.notifyChanged();
   assert.equal(refreshes, 0);
@@ -121,14 +221,12 @@ test("createCollectionLiveController defers refreshes on hidden tab or open moda
   scheduled.shift()?.();
   assert.equal(refreshes, 1);
 
-  // Hidden tab -> marks pending without scheduling a timer, flushes once on resume.
   hidden = true;
   controller.notifyChanged();
   controller.notifyChanged();
   assert.equal(scheduled.length, 0);
   assert.equal(refreshes, 1);
 
-  // Still deferred by modal when tab becomes visible -> waits until modal closes too.
   deferred = true;
   hidden = false;
   controller.resume();
@@ -138,7 +236,6 @@ test("createCollectionLiveController defers refreshes on hidden tab or open moda
   controller.resume();
   assert.equal(refreshes, 2);
 
-  // Calling resume again without new events is a no-op.
   controller.resume();
   assert.equal(refreshes, 2);
 });

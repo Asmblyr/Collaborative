@@ -10,7 +10,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import {
+  useBrowserPathname,
+  useBrowserSearchParams,
+} from "@/lib/history-state";
 import { recordIdFromPath } from "@/lib/item-location";
 import { EditorDialog } from "@/components/ui/editor-dialog";
 import { Tabs, TabsContent } from "@asmblyr-collaborative/kit/ui/tabs";
@@ -98,8 +101,8 @@ export function ItemRecordDialog({
     displayName: collection.displayName || collection.name,
   };
   const extensions = useRecordPanels(panelRecord);
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const searchParams = useBrowserSearchParams();
+  const pathname = useBrowserPathname();
   const targetPanel = searchParams.get("panel");
   const targetId = searchParams.get("target");
   const addressedPanel =

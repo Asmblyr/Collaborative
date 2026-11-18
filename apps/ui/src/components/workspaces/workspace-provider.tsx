@@ -1,8 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api-request";
+import {
+  replaceShallowHistory,
+  useBrowserPathname,
+  useBrowserSearchParams,
+} from "@/lib/history-state";
 import type { WorkspaceSnapshot } from "@/lib/workspaces";
 import { useUiCopy } from "@/lib/ui-copy";
 import { workspaceHref, workspaceSelection } from "@/lib/workspace-location";
@@ -12,8 +17,8 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
   const copy = useUiCopy();
 
   const router = useRouter(),
-    pathname = usePathname();
-  const params = useSearchParams();
+    pathname = useBrowserPathname();
+  const params = useBrowserSearchParams();
   const query = params.toString();
   const [snapshot, setSnapshot] = useState(initial),
     [pending, setPending] = useState(false);
@@ -41,9 +46,7 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
   const active = snapshot.workspaces.find((w) => w.id === selection.id) ?? null;
   useEffect(() => {
     if (!new URLSearchParams(window.location.search).has("workspace")) {
-      window.history.replaceState(
-        window.history.state,
-        "",
+      replaceShallowHistory(
         workspaceHref(
           window.location.pathname +
             window.location.search +
@@ -91,9 +94,10 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
             window.location.search +
             window.location.hash
         ) {
-          window.history.pushState(window.history.state, "", href);
+          router.push(href, { scroll: false });
+        } else {
+          router.refresh();
         }
-        router.refresh();
       }
     } catch (reason) {
       setError(

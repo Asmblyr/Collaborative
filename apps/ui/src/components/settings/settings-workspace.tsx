@@ -2,7 +2,11 @@
 
 import { UserRound, ShieldCheck, Palette, AppWindow } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import {
+  pushShallowHistory,
+  replaceShallowHistory,
+  useBrowserSearchParams,
+} from "@/lib/history-state";
 import { settingsTab, settingsTabHref } from "@/lib/settings-location";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
@@ -43,7 +47,7 @@ export function SettingsWorkspace({
 }) {
   const copy = useUiCopy();
   const { t } = useTranslations();
-  const params = useSearchParams();
+  const params = useBrowserSearchParams();
   const requestedTab = params.get("tab");
   const tab = settingsTab(requestedTab);
   const [securityVisited, setSecurityVisited] = useState(tab === "security");
@@ -52,11 +56,7 @@ export function SettingsWorkspace({
   }
   useEffect(() => {
     if (requestedTab !== tab) {
-      window.history.replaceState(
-        window.history.state,
-        "",
-        settingsTabHref(window.location.href, tab),
-      );
+      replaceShallowHistory(settingsTabHref(window.location.href, tab));
     }
   }, [requestedTab, tab]);
   const name = userDisplayName(user);
@@ -100,11 +100,7 @@ export function SettingsWorkspace({
             if (nextTab === "security") {
               setSecurityVisited(true);
             }
-            window.history.pushState(
-              window.history.state,
-              "",
-              settingsTabHref(window.location.href, nextTab),
-            );
+            pushShallowHistory(settingsTabHref(window.location.href, nextTab));
           }}
           className="min-w-0 space-y-5"
         >
