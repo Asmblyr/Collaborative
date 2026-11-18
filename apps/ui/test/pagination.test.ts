@@ -11,7 +11,10 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "../src/components/ui/pagination";
-import { visiblePages } from "../src/components/items/item-pagination";
+import {
+  ItemPagination,
+  visiblePages,
+} from "../src/components/items/item-pagination";
 import { resolveCanonicalTableHref } from "../src/components/items/use-table-query-preferences";
 import { filesPageHref } from "../src/components/files/types";
 
@@ -83,7 +86,54 @@ test("visiblePages renders all pages up to 7 and keeps a fixed 7-slot window abo
   }
 });
 
-test("PaginationLink expands horizontally for multi-digit numbers without fixed size-7 overflow", () => {
+test("PaginationLink and ItemPagination avoid inner scrollbars, active shift, and fixed-width overflow", () => {
+  const markup = renderToStaticMarkup(
+    createElement(
+      TranslationProvider,
+      { locale: "ru" },
+      createElement(ItemPagination, {
+        page: {
+          number: 10000,
+          size: 10,
+          total: "100000",
+          sort: "created_at",
+          direction: "desc",
+        },
+        pathname: "/items/tasks",
+        q: "",
+        filter: "",
+        onPage: () => {},
+        onSize: () => {},
+      }),
+    ),
+  );
+
+  assert.doesNotMatch(markup, /overflow-x-auto/);
+  assert.doesNotMatch(markup, /overflow-y-auto/);
+  assert.match(markup, /flex-wrap/);
+  assert.match(markup, /shrink-0/);
+  assert.match(markup, /size-auto/);
+  assert.match(markup, /min-w-8/);
+  assert.match(markup, /tabular-nums/);
+  assert.match(markup, /draggable="false"/);
+
+  const activeLinkMatch = markup.match(
+    /<a[^>]*aria-current="page"[^>]*class="([^"]*)"/,
+  );
+  assert.ok(activeLinkMatch);
+  const activeClasses = activeLinkMatch[1]!.split(/\s+/);
+  assert.ok(
+    !activeClasses.includes("size-8"),
+    "size-8 must be stripped so multi-digit numbers do not overflow fixed 32px width",
+  );
+  assert.ok(
+    !activeClasses.includes("active:not-aria-[haspopup]:translate-y-px"),
+    "active 1px vertical translation must be stripped so top-edge clicks never miss and scrollHeight never grows",
+  );
+  assert.ok(activeClasses.includes("active:not-aria-[haspopup]:translate-y-0"));
+});
+
+test("PaginationLink supports explicit icon-sm sizing when requested", () => {
   const markup = renderToStaticMarkup(
     createElement(
       TranslationProvider,
@@ -104,8 +154,12 @@ test("PaginationLink expands horizontally for multi-digit numbers without fixed 
             null,
             createElement(
               PaginationLink,
-              { href: "/items/tasks?page=10000", isActive: true },
-              "10000",
+              {
+                href: "/items/tasks?page=100",
+                isActive: true,
+                size: "icon-sm",
+              },
+              "100",
             ),
           ),
           createElement(
@@ -118,21 +172,8 @@ test("PaginationLink expands horizontally for multi-digit numbers without fixed 
     ),
   );
 
-  assert.match(markup, /flex-nowrap/);
-  assert.match(markup, /shrink-0/);
-  assert.match(markup, /size-auto/);
   assert.match(markup, /min-w-7/);
-  assert.match(markup, /tabular-nums/);
-
-  const activeLinkMatch = markup.match(
-    /<a[^>]*aria-current="page"[^>]*class="([^"]*)"/,
-  );
-  assert.ok(activeLinkMatch);
-  const activeClasses = activeLinkMatch[1]!.split(/\s+/);
-  assert.ok(
-    !activeClasses.includes("size-7"),
-    "size-7 must be stripped so multi-digit numbers do not overflow fixed 28px width",
-  );
+  assert.doesNotMatch(markup, /\bsize-7\b/);
 });
 
 test("filesPageHref and resolveCanonicalTableHref preserve clean query contracts", () => {
