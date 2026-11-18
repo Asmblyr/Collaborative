@@ -146,7 +146,6 @@ export function ItemPagination({
             onValueChange={(value) => onSize(Number(value))}
           >
             <SelectTrigger
-              size="sm"
               aria-label={copy("Записей на странице")}
               className="w-20 tabular-nums"
             >
@@ -165,7 +164,7 @@ export function ItemPagination({
           </Select>
         </div>
       </div>
-      <Pagination className="mx-0 w-auto max-w-full justify-start overflow-x-auto">
+      <Pagination className="mx-0 w-auto max-w-full justify-start">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious

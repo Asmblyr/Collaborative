@@ -31,7 +31,7 @@ function PaginationContent({
   return (
     <ul
       data-slot="pagination-content"
-      className={cn("flex flex-row flex-nowrap items-center gap-1", className)}
+      className={cn("flex flex-row flex-wrap items-center gap-1", className)}
       {...props}
     />
   );
@@ -41,7 +41,7 @@ function PaginationItem({ className, ...props }: React.ComponentProps<"li">) {
   return (
     <li
       data-slot="pagination-item"
-      className={cn("shrink-0", className)}
+      className={cn("flex items-center shrink-0", className)}
       {...props}
     />
   );
@@ -49,25 +49,32 @@ function PaginationItem({ className, ...props }: React.ComponentProps<"li">) {
 
 type PaginationLinkProps = React.ComponentProps<"a"> & {
   isActive?: boolean;
-  size?: "default" | "sm" | "icon-sm";
+  size?: "default" | "sm" | "icon" | "icon-sm";
 };
 
 function PaginationLink({
   className,
   isActive,
-  size = "icon-sm",
+  size = "icon",
+  draggable = false,
   ...props
 }: PaginationLinkProps) {
-  const pageNumberSizing =
-    size === "icon-sm" ? "size-auto h-7 min-w-7 px-2 tabular-nums" : undefined;
+  let pageNumberSizing: string | undefined;
+  if (size === "icon") {
+    pageNumberSizing = "size-auto h-8 min-w-8 px-2.5 tabular-nums";
+  } else if (size === "icon-sm") {
+    pageNumberSizing = "size-auto h-7 min-w-7 px-2 tabular-nums";
+  }
 
   return (
     <a
       aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
       data-active={isActive}
+      draggable={draggable}
       className={cn(
         buttonVariants({ variant: isActive ? "outline" : "ghost", size }),
+        "active:not-aria-[haspopup]:translate-y-0",
         pageNumberSizing,
         className,
       )}
@@ -82,8 +89,8 @@ function PaginationPrevious({ className, ...props }: PaginationLinkProps) {
   return (
     <PaginationLink
       aria-label={copy("Предыдущая страница")}
-      size="sm"
-      className={cn("gap-1 px-2", className)}
+      size="default"
+      className={cn("gap-1 px-2.5", className)}
       {...props}
     >
       <ChevronLeftIcon aria-hidden="true" />
@@ -98,8 +105,8 @@ function PaginationNext({ className, ...props }: PaginationLinkProps) {
   return (
     <PaginationLink
       aria-label={copy("Следующая страница")}
-      size="sm"
-      className={cn("gap-1 px-2", className)}
+      size="default"
+      className={cn("gap-1 px-2.5", className)}
       {...props}
     >
       <span className="hidden sm:inline">{copy("Далее")}</span>
@@ -118,7 +125,7 @@ function PaginationEllipsis({
     <span
       aria-hidden="true"
       data-slot="pagination-ellipsis"
-      className={cn("flex size-7 items-center justify-center", className)}
+      className={cn("flex size-8 items-center justify-center", className)}
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
