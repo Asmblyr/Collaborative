@@ -32,13 +32,19 @@ export function recordChoiceColumns(
     .slice(0, 3);
 }
 
+export interface RecordChoiceView {
+  label: string;
+  detail: string;
+  selectedLabel: string;
+}
+
 export function recordChoicePresentation(
   collection: Collection,
   item: Item,
   columns: ItemColumn[],
   labels: Map<string, string>,
   labelField?: string,
-) {
+): RecordChoiceView {
   const id = String(item[collection.primaryKey.name]);
   const field = labelField ?? itemLabelField(collection);
   const allowed = collection.access.read;

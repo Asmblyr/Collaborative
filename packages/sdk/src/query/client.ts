@@ -4,28 +4,32 @@ import { collectionPath, itemListQuery } from "../item-query.js";
 import type { FieldDefinition } from "./definition.js";
 import type { ClientSchema, FieldDefinitions } from "./definition.js";
 import { createCollectionQuery, type CollectionQuery } from "./collection.js";
-type Name<Schema> = Extract<keyof Schema, string>;
-type ReadableName<Schema> = {
-  [Key in Name<Schema>]: [ReadRow<Schema[Key]>] extends [never] ? never : Key;
-}[Name<Schema>];
 export type FluentClient<
   Schema extends object,
   Fields extends FieldDefinitions<Schema>,
-  Aliases extends Record<string, Name<Schema>>,
+  Aliases extends Record<string, Extract<keyof Schema, string>>,
 > = {
   readonly [Alias in keyof Aliases]: CollectionQuery<
     ReadRow<Schema[Aliases[Alias]]>,
     Fields[Aliases[Alias]]
   >;
 } & {
-  collection<Key extends ReadableName<Schema>>(
+  collection<
+    Key extends {
+      [Name in Extract<keyof Schema, string>]: [ReadRow<Schema[Name]>] extends [
+        never,
+      ]
+        ? never
+        : Name;
+    }[Extract<keyof Schema, string>],
+  >(
     name: Key,
   ): CollectionQuery<ReadRow<Schema[Key]>, Fields[Key]>;
 };
 export function createFluentClient<
   Schema extends object,
   Fields extends FieldDefinitions<Schema>,
-  Aliases extends Record<string, Name<Schema>>,
+  Aliases extends Record<string, Extract<keyof Schema, string>>,
   Methods extends object,
 >(
   schema: ClientSchema<Schema, Fields, Aliases, Methods>,

@@ -14,19 +14,22 @@ import {
   type SortRef,
 } from "./field.js";
 import { Predicate, predicateGroup } from "./predicate.js";
-type Names<Row> = Extract<keyof Row, string>;
 export type QueryFields<
   Row,
   Definitions extends Record<string, FieldDefinition>,
 > = {
-  readonly [Name in Names<Row>]: QueryField<Row[Name], Name, Definitions[Name]>;
+  readonly [Name in Extract<keyof Row, string>]: QueryField<
+    Row[Name],
+    Name,
+    Definitions[Name]
+  >;
 };
 export interface CollectionQuery<
   Row,
   Definitions extends Record<string, FieldDefinition>,
-  Selected extends Names<Row> = Names<Row>,
+  Selected extends Extract<keyof Row, string> = Extract<keyof Row, string>,
 > {
-  select<const Field extends Names<Row>>(
+  select<const Field extends Extract<keyof Row, string>>(
     selection: (
       fields: QueryFields<Row, Definitions>,
     ) => readonly FieldRef<unknown, Field>[],
@@ -35,7 +38,9 @@ export interface CollectionQuery<
     predicate: (fields: QueryFields<Row, Definitions>) => Predicate,
   ): CollectionQuery<Row, Definitions, Selected>;
   orderBy(
-    sort: (fields: QueryFields<Row, Definitions>) => SortRef<Names<Row>>,
+    sort: (
+      fields: QueryFields<Row, Definitions>,
+    ) => SortRef<Extract<keyof Row, string>>,
   ): CollectionQuery<Row, Definitions, Selected>;
   orderByRelevance(): CollectionQuery<Row, Definitions, Selected>;
   limit(value: number): CollectionQuery<Row, Definitions, Selected>;

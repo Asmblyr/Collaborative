@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ItemsWorkspace } from "@/components/items/items-workspace";
+import type { PreloadedRecordSnapshot } from "@/components/items/record-editor-types";
 import type { TablePreferences } from "@/lib/table-preferences";
-import type { ItemList } from "@/components/items/types";
+import type { Item, ItemList } from "@/components/items/types";
 import { collectionHref, itemHref } from "@/lib/item-location";
 import { loadCollections } from "@/lib/collections";
 import {
@@ -16,6 +17,7 @@ import { defaultStateFilter } from "@/components/items/default-state-filter";
 import { getUiCopy } from "@/lib/ui-copy-server";
 import { workspaceViewQuery } from "@/lib/workspace-location";
 import { tableQueryDefaults } from "@/lib/table-query-defaults";
+import { loadInitialTableRelationLabels } from "@/lib/table-relation-labels-server";
 
 async function LoadError({ message }: { message: string }) {
   const copy = await getUiCopy();
@@ -145,6 +147,9 @@ export default async function CollectionItemsPage({
     defaultStateFilter(collection),
   );
 
+  let initialRelationLabels: Record<string, string> = {};
+  let initialRecord: PreloadedRecordSnapshot | null = null;
+
   if (collection.access.read) {
     const effectiveSort = preferences?.sort ??
       layoutDefaults?.sort ?? {
@@ -172,6 +177,31 @@ export default async function CollectionItemsPage({
     ) {
       order = effectiveSort.order;
     }
+
+    const recordPromise: Promise<PreloadedRecordSnapshot | null> =
+      id !== undefined
+        ? fetch(
+            coreAddress(
+              `/items/${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+            ),
+            {
+              headers: { authorization: `Bearer ${token}` },
+              cache: "no-store",
+              signal: AbortSignal.timeout(3000),
+            },
+          )
+            .then(async (response) => {
+              if (!response.ok) {
+                return null;
+              }
+              const body = (await response.json()) as {
+                data: Item;
+                label?: string;
+              };
+              return { id, data: body.data, label: body.label };
+            })
+            .catch(() => null)
+        : Promise.resolve(null);
 
     let itemsResponse: Response;
     try {
@@ -210,6 +240,17 @@ export default async function CollectionItemsPage({
       return <LoadError message={copy("Не удалось загрузить записи")} />;
     }
     items = (await itemsResponse.json()) as ItemList;
+
+    [initialRelationLabels, initialRecord] = await Promise.all([
+      loadInitialTableRelationLabels({
+        token,
+        collection,
+        catalog: collections,
+        items: items.data,
+        columns: preferences?.columns ?? layoutDefaults?.columns,
+      }),
+      recordPromise,
+    ]);
   }
 
   return (
@@ -222,6 +263,8 @@ export default async function CollectionItemsPage({
         superuser={user.superuser}
         items={items.data}
         labels={items.labels}
+        initialRelationLabels={initialRelationLabels}
+        initialRecord={initialRecord}
         page={items.page}
         preferences={preferences}
         q={q}

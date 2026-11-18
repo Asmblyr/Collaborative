@@ -25,6 +25,7 @@ interface ItemsTableProps {
   catalog: Collection[];
   items: Item[];
   recordLabels?: Record<string, string>;
+  initialRelationLabels?: Record<string, string>;
   columns: ItemColumn[];
   widths: Record<string, number>;
   page: ItemPage;
@@ -43,6 +44,7 @@ export function ItemsTable({
   catalog,
   items,
   recordLabels,
+  initialRelationLabels,
   columns,
   widths,
   page,
@@ -66,7 +68,12 @@ export function ItemsTable({
     selected.has(itemKey(item)),
   ).length;
   const labelField = itemLabelField(collection);
-  const labels = useTableRelationLabels(catalog, items, columns);
+  const labels = useTableRelationLabels(
+    catalog,
+    items,
+    columns,
+    initialRelationLabels,
+  );
   const columnWidth = (column: ItemColumn) =>
     (Object.hasOwn(widths, column.name) ? widths[column.name] : undefined) ??
     defaultColumnWidth(column, labelField, collection.primaryKey.name);

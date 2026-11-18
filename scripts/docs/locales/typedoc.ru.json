@@ -80,5 +80,9 @@
   "Refresh a plain-text excerpt without delivering a new event.": "Обновляет текст выдержки без доставки нового события.",
   "Full storage row. Datetimes are ISO strings; decimal and bigint precision is preserved.": "Полная строка хранилища. Datetime — ISO-строки; точность decimal/bigint сохраняется.",
   "Endpoints and their action metadata are discovered in server/api.": "Endpoints и метаданные действий обнаруживаются в server/api.",
-  "Trusted server capability: plugin-owned collections only, local names, no SQL or actor override.": "Доверенная серверная возможность: только свои коллекции и локальные имена, без SQL и замены actor."
+  "Trusted server capability: plugin-owned collections only, local names, no SQL or actor override.": "Доверенная серверная возможность: только свои коллекции и локальные имена, без SQL и замены actor.",
+  "Generated JSON only. Safe to import from a plugin's browser entry.": "Только сгенерированный JSON. Безопасно импортировать из браузерной точки входа плагина.",
+  "A registered plugin page that accepts this action's prepared values.": "Зарегистрированная страница плагина, принимающая подготовленные значения этого действия.",
+  "Require a non-empty value in the API, independently of database nullability.": "Требует непустого значения в API независимо от допустимости NULL в БД.",
+  "Whether the physical column permits SQL NULL.": "Допускает ли физический столбец SQL NULL."
 }

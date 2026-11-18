@@ -12,7 +12,14 @@ export {
 } from "./query/definition.js";
 export type { CollectionQuery, QueryFields } from "./query/collection.js";
 export type { FluentClient } from "./query/client.js";
-export type { QueryField, FieldRef, SortRef } from "./query/field.js";
+export type {
+  QueryField,
+  FieldRef,
+  SortRef,
+  ScalarFieldPredicates,
+  OrderedFieldPredicates,
+  TextFieldPredicates,
+} from "./query/field.js";
 export type { Predicate } from "./query/predicate.js";
 export type {
   CollectionSchema,
@@ -20,6 +27,7 @@ export type {
   CreateRow,
   UpdateRow,
   ProfileCreateRow,
+  CommitInput,
 } from "./collection-schema.js";
 export type { PresenceClient } from "./presence.js";
 export type { NotificationsClient } from "./notifications.js";

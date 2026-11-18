@@ -7,35 +7,34 @@ import type {
   Timestamps,
 } from "@asmblyr-collaborative/contracts";
 
-interface FieldDefinitionBase {
+export type CollectionFieldDefinition = {
   readonly type: FieldType;
   /** Require a non-empty value in the API, independently of database nullability. */
   readonly required: boolean;
   /** Whether the physical column permits SQL NULL. */
   readonly nullable: boolean;
   readonly presentation?: Readonly<Partial<FieldPresentation>>;
-}
-
-type TextFieldDefinition = {
-  readonly type: "text" | "email";
-  readonly defaultValue?: string;
-  readonly searchable?: boolean;
-};
-
-type OtherFieldDefinition = { readonly searchable?: never } & (
+} & (
   | {
-      readonly type: "uuid" | "datetime" | "date" | "bigint";
+      readonly type: "text" | "email";
       readonly defaultValue?: string;
+      readonly searchable?: boolean;
     }
-  | { readonly type: "integer"; readonly defaultValue?: number }
-  | { readonly type: "decimal"; readonly defaultValue?: string | number }
-  | { readonly type: "boolean"; readonly defaultValue?: boolean }
-  | { readonly type: "json"; readonly defaultValue?: Exclude<JsonValue, null> }
-  | { readonly type: "file" | "files"; readonly defaultValue?: never }
+  | ({ readonly searchable?: never } & (
+      | {
+          readonly type: "uuid" | "datetime" | "date" | "bigint";
+          readonly defaultValue?: string;
+        }
+      | { readonly type: "integer"; readonly defaultValue?: number }
+      | { readonly type: "decimal"; readonly defaultValue?: string | number }
+      | { readonly type: "boolean"; readonly defaultValue?: boolean }
+      | {
+          readonly type: "json";
+          readonly defaultValue?: Exclude<JsonValue, null>;
+        }
+      | { readonly type: "file" | "files"; readonly defaultValue?: never }
+    ))
 );
-
-export type CollectionFieldDefinition = FieldDefinitionBase &
-  (TextFieldDefinition | OtherFieldDefinition);
 
 export interface CollectionPresentation {
   readonly displayName?: string;

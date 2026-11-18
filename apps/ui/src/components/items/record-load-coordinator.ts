@@ -32,8 +32,10 @@ export interface RecordLoadCoordinator {
   }) => Promise<KeepOpenSaveOutcome<T>>;
 }
 
-export function createRecordLoadCoordinator(): RecordLoadCoordinator {
-  let loadedRecordKey: string | null = null;
+export function createRecordLoadCoordinator(
+  initialLoadedKey: string | null = null,
+): RecordLoadCoordinator {
+  let loadedRecordKey: string | null = initialLoadedKey;
   let loadController: AbortController | null = null;
   let requestSeq = 0;
   let saving = false;

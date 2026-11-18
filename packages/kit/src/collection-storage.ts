@@ -12,15 +12,13 @@ import type {
 } from "./collection-types.js";
 import { collectionRow } from "./storage-row.js";
 
-type ListOptions<Definition extends CollectionDefinition> = Omit<
-  ItemListOptions<keyof CollectionRow<Definition> & string>,
-  "fields"
->;
+export type CollectionListOptions<Definition extends CollectionDefinition> =
+  Omit<ItemListOptions<keyof CollectionRow<Definition> & string>, "fields">;
 
 /** Full rows only. Use raw storage for field projections. */
 export interface CollectionStorage<Definition extends CollectionDefinition> {
   list(
-    options?: ListOptions<Definition>,
+    options?: CollectionListOptions<Definition>,
   ): Promise<ItemListResult<CollectionRow<Definition>>>;
   get(id: string | number): Promise<CollectionRow<Definition>>;
   create(

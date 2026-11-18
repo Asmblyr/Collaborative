@@ -9,14 +9,10 @@ import type { TablePreferences } from "@/lib/table-preferences";
 import { itemsPageHref } from "@/lib/item-location";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { showToast } from "@/components/ui/toast";
-import { useAssistantHost } from "@/components/assistant/assistant-host";
-import { cn } from "@/lib/utils";
-import { ItemEmptyState } from "./item-empty-state";
-import { ItemsWorkspaceToolbar } from "./items-workspace-toolbar";
+import { ItemsWorkspaceCard } from "./items-workspace-card";
 import { ItemsWorkspaceDialogs } from "./items-workspace-dialogs";
-import { ItemPagination } from "./item-pagination";
+import type { PreloadedRecordSnapshot } from "./record-editor-types";
 import { useRecordLocation } from "./use-record-location";
-import { ItemsTable } from "./items-table";
 import { useTableViews } from "./use-table-views";
 import {
   useCanonicalTableQuery,
@@ -25,7 +21,6 @@ import {
 } from "./use-table-query-preferences";
 import { useItemSelection } from "./use-item-selection";
 import { useItemColumns } from "./use-item-columns";
-import { useColumnVisibilityMotion } from "./use-column-visibility-motion";
 import { useCollectionLive } from "./use-record-live";
 import type { Collection, Item, ItemPage } from "./types";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
@@ -38,6 +33,8 @@ export function ItemsWorkspace({
   superuser,
   items,
   labels,
+  initialRelationLabels,
+  initialRecord = null,
   page,
   q,
   filter,
@@ -52,6 +49,8 @@ export function ItemsWorkspace({
   q: string;
   filter: string;
   labels?: Record<string, string>;
+  initialRelationLabels?: Record<string, string>;
+  initialRecord?: PreloadedRecordSnapshot | null;
   preferences: TablePreferences | null;
   superuser: boolean;
   canonicalQuery?: string | null;
@@ -66,7 +65,6 @@ export function ItemsWorkspace({
   const [navigating, startTransition] = useTransition();
   const workspace = useWorkspace();
   const workspaceId = workspace?.active?.id;
-  const assistantAvailable = Boolean(useAssistantHost()?.available);
   const {
     recordId,
     listPath: pathname,
@@ -107,11 +105,6 @@ export function ItemsWorkspace({
   });
 
   const columns = useItemColumns(collection, userId, preferences);
-  const {
-    root: columnRoot,
-    layer: columnLayer,
-    change: changeColumnVisibility,
-  } = useColumnVisibilityMotion();
   const [viewEditor, setViewEditor] = useState(false);
   const queryPreferences = useTableQueryPreferences(
     userId,
@@ -128,11 +121,22 @@ export function ItemsWorkspace({
   });
 
   const canRead = Boolean(collection.access.read);
-  useCollectionLive(collection.name, canRead, () => {
-    startTransition(() => {
-      router.refresh();
-    });
-  });
+  const deferLiveRefresh =
+    creating ||
+    bulkEditing ||
+    viewEditor ||
+    recordId !== null ||
+    selected.size > 0;
+  useCollectionLive(
+    collection.name,
+    canRead,
+    () => {
+      startTransition(() => {
+        router.refresh();
+      });
+    },
+    deferLiveRefresh,
+  );
 
   const itemKey = (item: Item) => String(item[collection.primaryKey.name]);
   const canCreate =
@@ -209,122 +213,35 @@ export function ItemsWorkspace({
           {copy("Просмотр записей недоступен для этой коллекции.")}
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
-          <ItemsWorkspaceToolbar
-            collection={collection}
-            catalog={catalog}
-            userId={userId}
-            hasItems={items.length > 0}
-            page={page}
-            q={q}
-            filter={filter}
-            allColumns={columns.all}
-            visibleColumns={columns.visible}
-            views={views}
-            hasLegacyColumns={columns.hasLegacy}
-            onImportLegacyColumns={columns.importLegacy}
-            onApplyColumnSnapshot={columns.apply}
-            onToggleColumn={(name, show) =>
-              changeColumnVisibility(name, show, () => {
-                columns.toggle(name, show);
-                if (!show && page.sort === name) {
-                  navigate({
-                    number: 1,
-                    sort: collection.primaryKey.name,
-                    direction: "asc",
-                  });
-                }
-              })
-            }
-            onManageViews={() => setViewEditor(true)}
-            onNavigate={navigate}
-            createButton={createButton}
-          />
-          <div
-            ref={columnRoot}
-            aria-busy={navigating || undefined}
-            className={cn(
-              "relative flex min-h-0 flex-1 flex-col overflow-hidden border-t transition-opacity duration-150",
-              navigating && "opacity-65",
-            )}
-          >
-            {items.length === 0 ? (
-              <div className="min-h-0 flex-1 overflow-auto">
-                <ItemEmptyState
-                  filtered={Boolean(q || filter)}
-                  outOfRange={page.total !== "0"}
-                  onCreate={canCreate ? openCreate : undefined}
-                  onReset={() => navigate({ number: 1 }, "", "")}
-                  onFirstPage={() => navigate({ number: 1 })}
-                />
-              </div>
-            ) : (
-              <ItemsTable
-                collection={collection}
-                catalog={catalog}
-                items={items}
-                recordLabels={labels}
-                columns={columns.visible}
-                widths={columns.snapshot.widths ?? {}}
-                page={page}
-                selected={selected}
-                disabled={pending || recordId !== null || creating}
-                onSelect={select}
-                onSelectPage={selectPage}
-                onOpen={(item) => {
-                  openRecord(itemKey(item));
-                  setConfirmDelete(false);
-                  setMessage("");
-                }}
-                onSort={(name) =>
-                  navigate({
-                    number: 1,
-                    sort: name,
-                    order: "field",
-                    direction:
-                      page.order !== "relevance" &&
-                      page.sort === name &&
-                      page.direction === "asc"
-                        ? "desc"
-                        : "asc",
-                  })
-                }
-                onMove={columns.move}
-                onResize={columns.resize}
-              />
-            )}
-            <div
-              ref={columnLayer}
-              aria-hidden="true"
-              inert
-              className="pointer-events-none absolute inset-0 z-30 overflow-hidden"
-            />
-          </div>
-          {collection.mode === "multiple" && (
-            <div
-              className={cn(
-                "shrink-0 border-t px-4 py-3",
-                assistantAvailable && "sm:pr-20",
-              )}
-            >
-              {page.total === "0" ? (
-                <p className="text-sm text-muted-foreground">
-                  {q || filter ? copy("Найдено") : copy("Записей")}: 0
-                </p>
-              ) : (
-                <ItemPagination
-                  page={page}
-                  pathname={pathname}
-                  q={q}
-                  filter={filter}
-                  pending={navigating}
-                  onPage={(number) => navigate({ number })}
-                  onSize={(size) => navigate({ number: 1, size })}
-                />
-              )}
-            </div>
-          )}
-        </div>
+        <ItemsWorkspaceCard
+          collection={collection}
+          catalog={catalog}
+          userId={userId}
+          items={items}
+          labels={labels}
+          initialRelationLabels={initialRelationLabels}
+          page={page}
+          pathname={pathname}
+          q={q}
+          filter={filter}
+          columns={columns}
+          views={views}
+          selected={selected}
+          disabled={pending || recordId !== null || creating}
+          navigating={navigating}
+          canCreate={canCreate}
+          createButton={createButton}
+          onManageViews={() => setViewEditor(true)}
+          onNavigate={navigate}
+          onOpenCreate={openCreate}
+          onSelect={select}
+          onSelectPage={selectPage}
+          onOpenRecord={(item) => {
+            openRecord(itemKey(item));
+            setConfirmDelete(false);
+            setMessage("");
+          }}
+        />
       )}
       <ItemsWorkspaceDialogs
         collection={collection}
@@ -336,6 +253,7 @@ export function ItemsWorkspace({
         confirmDelete={confirmDelete}
         pending={pending}
         recordId={recordId}
+        initialRecord={initialRecord}
         creating={creating}
         bulkEditing={bulkEditing}
         viewEditor={viewEditor}

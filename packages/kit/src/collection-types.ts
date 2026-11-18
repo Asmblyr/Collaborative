@@ -4,7 +4,7 @@ import type {
   CollectionFieldDefinition,
 } from "./collection.js";
 
-interface FieldValues {
+export interface CollectionFieldValues {
   text: string;
   email: string;
   uuid: string;
@@ -19,27 +19,26 @@ interface FieldValues {
   files: string[];
 }
 
-type FieldValue<Field extends CollectionFieldDefinition> =
-  | FieldValues[Field["type"]]
+export type CollectionFieldValue<Field extends CollectionFieldDefinition> =
+  | CollectionFieldValues[Field["type"]]
   | (Field["nullable"] extends true ? null : never);
 
-type InputValue<Field extends CollectionFieldDefinition> =
-  Field["type"] extends "decimal"
-    ? string | number
-    : FieldValues[Field["type"]];
-
-type FieldInput<Field extends CollectionFieldDefinition> =
-  | Exclude<InputValue<Field>, null>
+export type CollectionFieldInput<Field extends CollectionFieldDefinition> =
+  | Exclude<
+      Field["type"] extends "decimal"
+        ? string | number
+        : CollectionFieldValues[Field["type"]],
+      null
+    >
   | (Field extends { nullable: true; required: false } ? null : never);
 
-type PrimaryValue<Definition extends CollectionDefinition> =
-  Definition["primaryKey"]["type"] extends "serial" ? number : string;
-
-type PrimaryRow<Definition extends CollectionDefinition> = {
-  [Name in Definition["primaryKey"]["name"]]: PrimaryValue<Definition>;
+export type CollectionPrimaryRow<Definition extends CollectionDefinition> = {
+  [Name in Definition["primaryKey"]["name"]]: Definition["primaryKey"]["type"] extends "serial"
+    ? number
+    : string;
 };
 
-type TimestampRow<Definition extends CollectionDefinition> =
+export type CollectionTimestampRow<Definition extends CollectionDefinition> =
   (Definition extends {
     timestamps: { createdAt: true };
   }
@@ -51,42 +50,48 @@ type TimestampRow<Definition extends CollectionDefinition> =
 
 /** Full storage row. Datetimes are ISO strings; decimal and bigint precision is preserved. */
 export type CollectionRow<Definition extends CollectionDefinition> = {
-  -readonly [Name in keyof Definition["fields"]]: FieldValue<
+  -readonly [Name in keyof Definition["fields"]]: CollectionFieldValue<
     Definition["fields"][Name]
   >;
-} & PrimaryRow<Definition> &
-  TimestampRow<Definition>;
+} & CollectionPrimaryRow<Definition> &
+  CollectionTimestampRow<Definition>;
 
-type RequiredFields<Definition extends CollectionDefinition> = {
-  [Name in keyof Definition["fields"]]: Definition["fields"][Name] extends {
-    defaultValue: unknown;
-  }
-    ? never
-    : Definition["fields"][Name] extends
-          | { required: true }
-          | { nullable: false }
-      ? Name
-      : never;
-}[keyof Definition["fields"]];
+export type CollectionRequiredFields<Definition extends CollectionDefinition> =
+  {
+    [Name in keyof Definition["fields"]]: Definition["fields"][Name] extends {
+      defaultValue: unknown;
+    }
+      ? never
+      : Definition["fields"][Name] extends
+            | { required: true }
+            | { nullable: false }
+        ? Name
+        : never;
+  }[keyof Definition["fields"]];
 
-type FieldInputs<Definition extends CollectionDefinition> = {
-  -readonly [Name in keyof Definition["fields"]]: FieldInput<
+export type CollectionFieldInputs<Definition extends CollectionDefinition> = {
+  -readonly [Name in keyof Definition["fields"]]: CollectionFieldInput<
     Definition["fields"][Name]
   >;
 };
 
-type PrimaryInput<Definition extends CollectionDefinition> =
+export type CollectionPrimaryInput<Definition extends CollectionDefinition> =
   Definition["primaryKey"]["type"] extends "text"
-    ? PrimaryRow<Definition>
+    ? CollectionPrimaryRow<Definition>
     : Partial<Record<Definition["primaryKey"]["name"], never>>;
 
 export type CollectionCreate<Definition extends CollectionDefinition> = Pick<
-  FieldInputs<Definition>,
-  RequiredFields<Definition>
+  CollectionFieldInputs<Definition>,
+  CollectionRequiredFields<Definition>
 > &
-  Partial<Omit<FieldInputs<Definition>, RequiredFields<Definition>>> &
-  PrimaryInput<Definition>;
+  Partial<
+    Omit<
+      CollectionFieldInputs<Definition>,
+      CollectionRequiredFields<Definition>
+    >
+  > &
+  CollectionPrimaryInput<Definition>;
 
 export type CollectionUpdate<Definition extends CollectionDefinition> = Partial<
-  FieldInputs<Definition>
+  CollectionFieldInputs<Definition>
 >;
