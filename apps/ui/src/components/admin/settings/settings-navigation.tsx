@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WorkspaceLink as Link } from "@/components/workspaces/workspace-link";
 import { usePathname } from "next/navigation";
 import type { SettingsSection } from "@asmblyr-collaborative/contracts";
 import {

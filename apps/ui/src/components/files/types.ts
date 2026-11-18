@@ -38,3 +38,19 @@ export function fileSize(bytes: number, copy: UiCopy = originalCopy) {
       ? copy("{{value0}} КБ", { value0: (bytes / 1024).toFixed(1) })
       : copy("{{value0}} МБ", { value0: (bytes / (1024 * 1024)).toFixed(1) });
 }
+
+export function filesPageHref(
+  page: number | bigint,
+  limit: number,
+  query: string,
+): string {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: String(limit),
+  });
+  if (query) {
+    params.set("q", query);
+  }
+
+  return `/files?${params}`;
+}

@@ -42,7 +42,7 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
   useEffect(() => {
     if (!new URLSearchParams(window.location.search).has("workspace")) {
       window.history.replaceState(
-        null,
+        window.history.state,
         "",
         workspaceHref(
           window.location.pathname +
@@ -91,7 +91,7 @@ function useWorkspaceState(initial: WorkspaceSnapshot) {
             window.location.search +
             window.location.hash
         ) {
-          window.history.pushState(null, "", href);
+          window.history.pushState(window.history.state, "", href);
         }
         router.refresh();
       }

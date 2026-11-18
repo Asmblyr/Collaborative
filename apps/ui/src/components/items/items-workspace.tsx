@@ -2,13 +2,15 @@
 
 import { useLocalizedCatalog } from "./use-localized-catalog";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { TablePreferences } from "@/lib/table-preferences";
 import { itemsPageHref } from "@/lib/item-location";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { showToast } from "@/components/ui/toast";
+import { useAssistantHost } from "@/components/assistant/assistant-host";
+import { cn } from "@/lib/utils";
 import { ItemEmptyState } from "./item-empty-state";
 import { ItemsWorkspaceToolbar } from "./items-workspace-toolbar";
 import { ItemsWorkspaceDialogs } from "./items-workspace-dialogs";
@@ -17,6 +19,7 @@ import { useRecordLocation } from "./use-record-location";
 import { ItemsTable } from "./items-table";
 import { useTableViews } from "./use-table-views";
 import {
+  useCanonicalTableQuery,
   useTableQueryPreferences,
   TablePreferencesNotice,
 } from "./use-table-query-preferences";
@@ -39,6 +42,7 @@ export function ItemsWorkspace({
   q,
   filter,
   preferences,
+  canonicalQuery = null,
 }: {
   collection: Collection;
   catalog: Collection[];
@@ -50,6 +54,7 @@ export function ItemsWorkspace({
   labels?: Record<string, string>;
   preferences: TablePreferences | null;
   superuser: boolean;
+  canonicalQuery?: string | null;
 }) {
   const copy = useUiCopy();
 
@@ -58,8 +63,10 @@ export function ItemsWorkspace({
     catalog.find((entry) => entry.name === sourceCollection.name) ??
     sourceCollection;
   const router = useRouter();
+  const [navigating, startTransition] = useTransition();
   const workspace = useWorkspace();
   const workspaceId = workspace?.active?.id;
+  const assistantAvailable = Boolean(useAssistantHost()?.available);
   const {
     recordId,
     listPath: pathname,
@@ -69,6 +76,8 @@ export function ItemsWorkspace({
   } = useRecordLocation(collection.name);
   const [creating, setCreating] = useState(false);
   const [bulkEditing, setBulkEditing] = useState(false);
+
+  useCanonicalTableQuery(canonicalQuery);
 
   const setMessage = useCallback(
     (text: string, variant: "success" | "error" = "success") => {
@@ -119,7 +128,11 @@ export function ItemsWorkspace({
   });
 
   const canRead = Boolean(collection.access.read);
-  useCollectionLive(collection.name, canRead, () => router.refresh());
+  useCollectionLive(collection.name, canRead, () => {
+    startTransition(() => {
+      router.refresh();
+    });
+  });
 
   const itemKey = (item: Item) => String(item[collection.primaryKey.name]);
   const canCreate =
@@ -141,7 +154,9 @@ export function ItemsWorkspace({
     setCreating(false);
     setSelected(new Set());
     setConfirmDelete(false);
-    router.push(workspace?.href(href) ?? href, { scroll: false });
+    startTransition(() => {
+      router.push(workspace?.href(href) ?? href, { scroll: false });
+    });
   }
 
   function openCreate() {
@@ -227,7 +242,11 @@ export function ItemsWorkspace({
           />
           <div
             ref={columnRoot}
-            className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-t"
+            aria-busy={navigating || undefined}
+            className={cn(
+              "relative flex min-h-0 flex-1 flex-col overflow-hidden border-t transition-opacity duration-150",
+              navigating && "opacity-65",
+            )}
           >
             {items.length === 0 ? (
               <div className="min-h-0 flex-1 overflow-auto">
@@ -282,7 +301,12 @@ export function ItemsWorkspace({
             />
           </div>
           {collection.mode === "multiple" && (
-            <div className="shrink-0 border-t py-3 pl-4 pr-20">
+            <div
+              className={cn(
+                "shrink-0 border-t px-4 py-3",
+                assistantAvailable && "sm:pr-20",
+              )}
+            >
               {page.total === "0" ? (
                 <p className="text-sm text-muted-foreground">
                   {q || filter ? copy("Найдено") : copy("Записей")}: 0
@@ -293,6 +317,7 @@ export function ItemsWorkspace({
                   pathname={pathname}
                   q={q}
                   filter={filter}
+                  pending={navigating}
                   onPage={(number) => navigate({ number })}
                   onSize={(size) => navigate({ number: 1, size })}
                 />

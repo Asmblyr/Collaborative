@@ -1,19 +1,23 @@
 "use client";
 
 import type { SettingsSection } from "@asmblyr-collaborative/contracts";
+import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { useTranslations } from "@asmblyr-collaborative/kit/ui/i18n";
 import { useLocalizedNavigation } from "./use-localized-navigation";
 import { isCollectionPath } from "@/lib/item-location";
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CollectionFolder } from "@/components/items/types";
 import type { SessionUser } from "@/lib/session";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { AccountTheme } from "@/components/settings/account-theme";
 import {
   PluginRegistryProvider,
   usePluginPages,
 } from "@/components/plugins/registry";
+import { NoAccessLayout } from "./no-access-layout";
 import { pageTitle } from "./page-title";
 import { SearchControl } from "@/components/layout/search-control";
 import type { WorkspaceSnapshot } from "@/lib/workspaces";
@@ -37,6 +41,7 @@ function AdminShellContent({
   collections: sourceCollections,
   folders,
   user,
+  noAccess = false,
   defaultOpen,
   workspaces,
   settingsSections,
@@ -45,6 +50,7 @@ function AdminShellContent({
   collections: NavCollection[];
   folders: CollectionFolder[];
   user: SessionUser | null;
+  noAccess?: boolean;
   settingsSections: SettingsSection[];
   defaultOpen: boolean;
   workspaces: WorkspaceSnapshot;
@@ -54,10 +60,45 @@ function AdminShellContent({
   const collections = useLocalizedNavigation(sourceCollections);
   const { t } = useTranslations();
   const pathname = usePathname();
+  const contentScrollRef = useRef<HTMLDivElement>(null);
   const currentCollection = collections.find(({ name }) =>
     isCollectionPath(pathname, name),
   );
   const pluginPage = usePluginPages().find((page) => page.href === pathname);
+
+  useEffect(() => {
+    if (!currentCollection && !window.location.hash) {
+      contentScrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [currentCollection, pathname]);
+
+  if (noAccess) {
+    if (pathname === "/settings") {
+      return (
+        <main className="min-h-dvh px-4 py-6 sm:px-8">
+          <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
+            <Button
+              asChild
+              variant="ghost"
+            >
+              <Link href="/">{copy("← На главную")}</Link>
+            </Button>
+            <LogoutButton />
+          </div>
+          <AccountTheme key={user?.id}>{children}</AccountTheme>
+        </main>
+      );
+    }
+
+    return <NoAccessLayout />;
+  }
+
+  let searchScopeKey = "global";
+  if (currentCollection) {
+    searchScopeKey = `collection:${currentCollection.name}`;
+  } else if (pathname === "/files") {
+    searchScopeKey = "files";
+  }
 
   return (
     <WorkspaceProvider
@@ -75,12 +116,7 @@ function AdminShellContent({
                   user={user}
                   settingsSections={settingsSections}
                 />
-                <SidebarInset
-                  className={cn(
-                    "min-w-0 md:my-2 md:mr-2 md:rounded-lg md:shadow-sm md:ring-1 md:ring-border",
-                    currentCollection && "h-dvh md:h-[calc(100dvh-1rem)]",
-                  )}
-                >
+                <SidebarInset className="h-dvh min-w-0 overflow-hidden md:my-2 md:mr-2 md:h-[calc(100dvh-1rem)] md:rounded-lg md:shadow-sm md:ring-1 md:ring-border">
                   <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b px-4 py-3 sm:flex-nowrap sm:px-6 sm:py-0 md:rounded-t-[inherit]">
                     <SidebarTrigger
                       aria-label={copy("Переключить боковое меню")}
@@ -100,7 +136,7 @@ function AdminShellContent({
                         }
                       >
                         <SearchControl
-                          key={pathname}
+                          key={searchScopeKey}
                           localLabel={
                             pathname === "/files"
                               ? copy("файлах")
@@ -124,9 +160,21 @@ function AdminShellContent({
                     </div>
                   </header>
                   <div
-                    className={`mx-auto w-full max-w-[160rem] flex-1 px-4 py-6 sm:px-6 2xl:px-10 ${currentCollection ? "flex min-h-0 flex-col" : ""}`}
+                    ref={contentScrollRef}
+                    className={cn(
+                      "w-full flex-1",
+                      currentCollection
+                        ? "mx-auto flex min-h-0 max-w-[160rem] flex-col overflow-hidden px-4 py-6 sm:px-6 2xl:px-10"
+                        : "min-h-0 overflow-y-auto",
+                    )}
                   >
-                    {children}
+                    {currentCollection ? (
+                      children
+                    ) : (
+                      <div className="mx-auto w-full max-w-[160rem] px-4 py-6 sm:px-6 2xl:px-10">
+                        {children}
+                      </div>
+                    )}
                   </div>
                 </SidebarInset>
                 {user && <AssistantWidget key={user.id} />}

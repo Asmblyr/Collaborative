@@ -22,33 +22,50 @@ import type { ItemPage } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useWorkspace } from "@/components/workspaces/workspace-provider";
 
-function visiblePages(current: bigint, total: bigint): (bigint | null)[] {
-  if (total <= BigInt(7))
+import { cn } from "@/lib/utils";
+
+export function visiblePages(
+  current: bigint,
+  total: bigint,
+): (bigint | null)[] {
+  if (total <= BigInt(7)) {
     return Array.from({ length: Number(total) }, (_, index) =>
       BigInt(index + 1),
     );
-  const candidates = [
-    BigInt(1),
-    BigInt(2),
-    current - BigInt(1),
-    current,
-    current + BigInt(1),
-    total - BigInt(1),
-    total,
-  ].filter((number) => number >= BigInt(1) && number <= total);
-  const pages = [...new Set(candidates)].sort((a, b) =>
-    a < b ? -1 : a > b ? 1 : 0,
-  );
-  const result: (bigint | null)[] = [];
-  for (const number of pages) {
-    const previous = result[result.length - 1];
-    if (previous !== undefined && previous !== null) {
-      if (number - previous === BigInt(2)) result.push(previous + BigInt(1));
-      else if (number - previous > BigInt(2)) result.push(null);
-    }
-    result.push(number);
   }
-  return result;
+
+  let clamped = current;
+  if (clamped < BigInt(1)) {
+    clamped = BigInt(1);
+  } else if (clamped > total) {
+    clamped = total;
+  }
+
+  if (clamped <= BigInt(4)) {
+    return [BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), null, total];
+  }
+
+  if (clamped >= total - BigInt(3)) {
+    return [
+      BigInt(1),
+      null,
+      total - BigInt(4),
+      total - BigInt(3),
+      total - BigInt(2),
+      total - BigInt(1),
+      total,
+    ];
+  }
+
+  return [
+    BigInt(1),
+    null,
+    clamped - BigInt(1),
+    clamped,
+    clamped + BigInt(1),
+    null,
+    total,
+  ];
 }
 
 export function ItemPagination({
@@ -56,6 +73,8 @@ export function ItemPagination({
   pathname,
   q,
   filter,
+  pending = false,
+  buildHref,
   onPage,
   onSize,
 }: {
@@ -63,6 +82,8 @@ export function ItemPagination({
   pathname: string;
   q: string;
   filter: string;
+  pending?: boolean;
+  buildHref?: (number: bigint) => string;
   onPage: (number: number) => void;
   onSize: (size: number) => void;
 }) {
@@ -79,7 +100,9 @@ export function ItemPagination({
   const end = total < current * size ? total : current * size;
 
   function href(number: bigint): string {
-    const target = itemsPageHref(pathname, { ...page, number }, q, filter);
+    const target = buildHref
+      ? buildHref(number)
+      : itemsPageHref(pathname, { ...page, number }, q, filter);
     return workspace?.href(target) ?? target;
   }
 
@@ -91,31 +114,41 @@ export function ItemPagination({
       event.shiftKey ||
       event.altKey ||
       number > BigInt(Number.MAX_SAFE_INTEGER)
-    )
+    ) {
       return;
+    }
     event.preventDefault();
-    if (number !== current) onPage(Number(number));
+    if (!pending && number !== current) {
+      onPage(Number(number));
+    }
   }
 
   const previousDisabled = current <= BigInt(1);
   const nextDisabled = current >= pages;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm">
+    <div
+      aria-busy={pending || undefined}
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm transition-opacity duration-150",
+        pending && "opacity-60",
+      )}
+    >
       <div className="flex flex-wrap items-center gap-4">
-        <span className="text-muted-foreground">
+        <span className="tabular-nums text-muted-foreground">
           {start.toString()}–{end.toString()} {copy("из")} {page.total}
         </span>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">{copy("На странице")}</span>
           <Select
             value={String(page.size)}
+            disabled={pending}
             onValueChange={(value) => onSize(Number(value))}
           >
             <SelectTrigger
               size="sm"
               aria-label={copy("Записей на странице")}
-              className="w-20"
+              className="w-20 tabular-nums"
             >
               <SelectValue />
             </SelectTrigger>
@@ -137,10 +170,12 @@ export function ItemPagination({
           <PaginationItem>
             <PaginationPrevious
               href={href(previousDisabled ? current : current - BigInt(1))}
-              aria-disabled={previousDisabled}
-              tabIndex={previousDisabled ? -1 : undefined}
+              aria-disabled={previousDisabled || pending}
+              tabIndex={previousDisabled || pending ? -1 : undefined}
               className={
-                previousDisabled ? "pointer-events-none opacity-50" : undefined
+                previousDisabled || pending
+                  ? "pointer-events-none opacity-50"
+                  : undefined
               }
               onClick={(event) => visit(event, current - BigInt(1))}
             />
@@ -153,7 +188,9 @@ export function ItemPagination({
                 <PaginationLink
                   href={href(number)}
                   isActive={number === current}
+                  aria-disabled={pending || undefined}
                   aria-label={copy("Страница {{value0}}", { value0: number })}
+                  className={pending ? "pointer-events-none" : undefined}
                   onClick={(event) => visit(event, number)}
                 >
                   {number.toString()}
@@ -164,10 +201,12 @@ export function ItemPagination({
           <PaginationItem>
             <PaginationNext
               href={href(nextDisabled ? current : current + BigInt(1))}
-              aria-disabled={nextDisabled}
-              tabIndex={nextDisabled ? -1 : undefined}
+              aria-disabled={nextDisabled || pending}
+              tabIndex={nextDisabled || pending ? -1 : undefined}
               className={
-                nextDisabled ? "pointer-events-none opacity-50" : undefined
+                nextDisabled || pending
+                  ? "pointer-events-none opacity-50"
+                  : undefined
               }
               onClick={(event) => visit(event, current + BigInt(1))}
             />

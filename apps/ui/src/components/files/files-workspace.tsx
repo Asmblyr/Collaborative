@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FolderOpen, RefreshCw, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -15,11 +15,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAssistantHost } from "@/components/assistant/assistant-host";
 import { ItemPagination } from "@/components/items/item-pagination";
+import { cn } from "@/lib/utils";
 import { FileEditor } from "./file-editor";
 import { FilePreview } from "./file-preview";
 import { useFileUploads } from "./use-file-uploads";
-import { fileSize, fileStatus, type FilePage, type StoredFile } from "./types";
+import {
+  filesPageHref,
+  fileSize,
+  fileStatus,
+  type FilePage,
+  type StoredFile,
+} from "./types";
+import { useWorkspace } from "@/components/workspaces/workspace-provider";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function FilesWorkspace({
@@ -31,19 +40,18 @@ export function FilesWorkspace({
 }) {
   const copy = useUiCopy();
   const router = useRouter();
+  const workspace = useWorkspace();
+  const [navigating, startTransition] = useTransition();
+  const assistantAvailable = Boolean(useAssistantHost()?.available);
   const input = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<StoredFile | null>(null);
   const [busy, setBusy] = useState(false);
 
   function navigate(page: number, limit = result.meta.limit) {
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: String(limit),
+    const href = filesPageHref(page, limit, query);
+    startTransition(() => {
+      router.push(workspace?.href(href) ?? href, { scroll: false });
     });
-    if (query) {
-      params.set("q", query);
-    }
-    router.push(`/files?${params}`, { scroll: false });
   }
 
   const {
@@ -70,10 +78,18 @@ export function FilesWorkspace({
         <Button
           variant="outline"
           size="icon"
+          disabled={navigating}
           aria-label={copy("Обновить файлы")}
-          onClick={() => router.refresh()}
+          onClick={() => {
+            startTransition(() => {
+              router.refresh();
+            });
+          }}
         >
-          <RefreshCw aria-hidden />
+          <RefreshCw
+            className={navigating ? "animate-spin" : undefined}
+            aria-hidden
+          />
         </Button>
         <Button
           disabled={disabled}
@@ -138,10 +154,17 @@ export function FilesWorkspace({
       )}
       <section
         aria-label={copy("Библиотека файлов")}
+        aria-busy={navigating || undefined}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`overflow-hidden rounded-xl border transition-colors ${dragging ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "bg-card"}`}
+        className={cn(
+          "overflow-hidden rounded-xl border transition-[color,background-color,border-color,opacity] duration-150",
+          dragging
+            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+            : "bg-card",
+          navigating && "opacity-65",
+        )}
       >
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3 text-xs text-muted-foreground">
           <span>
@@ -179,7 +202,11 @@ export function FilesWorkspace({
               <Button
                 className="mt-2"
                 variant="outline"
-                onClick={() => router.push("/files")}
+                onClick={() => {
+                  startTransition(() => {
+                    router.push(workspace?.href("/files") ?? "/files");
+                  });
+                }}
               >
                 {copy("Сбросить поиск")}
               </Button>
@@ -263,7 +290,7 @@ export function FilesWorkspace({
         )}
       </section>
       {result.meta.total > 0 && (
-        <div className="pr-20">
+        <div className={assistantAvailable ? "sm:pr-20" : undefined}>
           <ItemPagination
             page={{
               number: result.meta.page,
@@ -275,6 +302,10 @@ export function FilesWorkspace({
             pathname="/files"
             q={query}
             filter=""
+            pending={navigating}
+            buildHref={(number) =>
+              filesPageHref(number, result.meta.limit, query)
+            }
             onPage={(page) => navigate(page)}
             onSize={(limit) => navigate(1, limit)}
           />
