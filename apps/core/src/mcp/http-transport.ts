@@ -43,6 +43,23 @@ export async function handleMcp(
         "WWW-Authenticate, MCP-Protocol-Version",
       );
   }
+
+  // Stateless JSON transport does not offer standalone GET SSE streams or DELETE sessions.
+  // Forwarding GET to the SDK creates an unbounded SSE ReadableStream that would hang arrayBuffer().
+  if (request.method !== "POST") {
+    return reply
+      .header("Allow", "POST, OPTIONS")
+      .code(405)
+      .send({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Method not allowed.",
+        },
+        id: null,
+      });
+  }
+
   const initialAccess = await connectionAccess(db, connection.id, resource);
   const session = createToolSession(
     db,
@@ -92,8 +109,7 @@ export async function handleMcp(
         headers.set(name, value);
       }
     }
-    const body =
-      request.method === "POST" ? JSON.stringify(request.body) : undefined;
+    const body = JSON.stringify(request.body);
     const response = await transport.handleRequest(
       new Request(resource, { method: request.method, headers, body }),
     );
