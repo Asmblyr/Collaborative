@@ -288,3 +288,80 @@ test("shared MCP writes preserve transactional hooks, rollback and a single audi
   });
   assert.equal(events.length, 1);
 });
+
+test("stateless MCP endpoint returns 405 promptly for GET SSE and DELETE while preserving auth and CORS", async (t) => {
+  const fixture = await mcpFixture(t);
+  const { app } = fixture;
+
+  for (const method of ["GET", "DELETE"] as const) {
+    const unauthorized = await app.inject({
+      method,
+      url: "/mcp",
+      headers: { accept: "text/event-stream" },
+    });
+    assert.equal(unauthorized.statusCode, 401);
+    assert.match(
+      String(unauthorized.headers["www-authenticate"]),
+      /resource_metadata=/,
+    );
+  }
+
+  const auth = await authorize(fixture);
+  const bearer = `Bearer ${auth.tokens.access_token}`;
+
+  const getSse = await app.inject({
+    method: "GET",
+    url: "/mcp",
+    headers: {
+      authorization: bearer,
+      accept: "text/event-stream",
+    },
+  });
+  assert.equal(getSse.statusCode, 405);
+  assert.equal(getSse.headers.allow, "POST, OPTIONS");
+  assert.equal(getSse.headers["cache-control"], "no-store");
+  assert.deepEqual(getSse.json(), {
+    jsonrpc: "2.0",
+    error: {
+      code: -32000,
+      message: "Method not allowed.",
+    },
+    id: null,
+  });
+
+  const del = await app.inject({
+    method: "DELETE",
+    url: "/mcp",
+    headers: { authorization: bearer },
+  });
+  assert.equal(del.statusCode, 405);
+  assert.equal(del.headers.allow, "POST, OPTIONS");
+
+  const foreignOrigin = await app.inject({
+    method: "GET",
+    url: "/mcp",
+    headers: {
+      authorization: bearer,
+      accept: "text/event-stream",
+      origin: "https://unregistered.example",
+    },
+  });
+  assert.equal(foreignOrigin.statusCode, 403);
+
+  const registeredOrigin = await app.inject({
+    method: "GET",
+    url: "/mcp",
+    headers: {
+      authorization: bearer,
+      accept: "text/event-stream",
+      origin: "http://127.0.0.1:43210",
+    },
+  });
+  assert.equal(registeredOrigin.statusCode, 405);
+  assert.equal(registeredOrigin.headers.allow, "POST, OPTIONS");
+  assert.equal(
+    registeredOrigin.headers["access-control-allow-origin"],
+    "http://127.0.0.1:43210",
+  );
+  assert.equal(registeredOrigin.headers.vary, "Origin");
+});
