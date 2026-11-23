@@ -3,7 +3,9 @@ import { issueUserTokens, type TokenPair } from "../tokens.js";
 import { securityEvent } from "../security-events.js";
 import type { SsoProvider } from "./config.js";
 import { SsoError } from "./input.js";
+import type { ExternalProfile } from "./profile.js";
 import type { ExternalIdentity } from "./protocol.js";
+import { autoLinkOrProvision, isUniqueViolation } from "./provisioning.js";
 
 interface IdentityRow extends ExternalIdentity {
   id: string;
@@ -19,8 +21,9 @@ async function lockActiveUser(
     .where({ id: userId })
     .forUpdate()
     .first<{ status: string }>("status");
-  if (user?.status !== "active")
+  if (user?.status !== "active") {
     throw new SsoError("SSO_AUTH_FAILED", "Account is unavailable");
+  }
 }
 
 export async function linkIdentity(
@@ -38,20 +41,24 @@ export async function linkIdentity(
         .where("expires_at", ">", trx.fn.now())
         .forUpdate()
         .first("id");
-      if (!session)
+      if (!session) {
         throw new SsoError(
           "SSO_INVALID_FLOW",
           "The linking session is no longer active",
         );
+      }
       const existing = await trx("public.asmblyr_user_identities")
         .where(identity)
         .first<IdentityRow>();
-      if (existing?.user_id === userId) return;
-      if (existing)
+      if (existing?.user_id === userId) {
+        return;
+      }
+      if (existing) {
         throw new SsoError(
           "SSO_IDENTITY_CONFLICT",
           "This provider account is already linked",
         );
+      }
       await trx("public.asmblyr_user_identities").insert({
         user_id: userId,
         ...identity,
@@ -61,12 +68,7 @@ export async function linkIdentity(
       });
     });
   } catch (error) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "23505"
-    ) {
+    if (isUniqueViolation(error)) {
       throw new SsoError(
         "SSO_IDENTITY_CONFLICT",
         "A provider account is already linked",
@@ -78,18 +80,18 @@ export async function linkIdentity(
 
 export async function loginWithIdentity(
   db: Knex,
+  provider: SsoProvider,
   identity: ExternalIdentity,
+  profile: ExternalProfile,
   userAgent?: string,
 ): Promise<TokenPair> {
   const record = await db("public.asmblyr_user_identities")
     .where(identity)
     .first<IdentityRow>();
   if (!record) {
-    throw new SsoError(
-      "SSO_NOT_LINKED",
-      "Sign in to your existing account and link this provider in your profile",
-    );
+    return autoLinkOrProvision(db, provider, identity, profile, userAgent);
   }
+
   return db.transaction(async (trx) => {
     await lockActiveUser(trx, record.user_id);
     if (
@@ -143,7 +145,9 @@ export async function unlinkIdentity(
     const row = await trx("public.asmblyr_user_identities")
       .where({ id: identityId, user_id: userId })
       .first<IdentityRow>();
-    if (!row) throw new SsoError("SSO_NOT_LINKED", "Identity not found");
+    if (!row) {
+      throw new SsoError("SSO_NOT_LINKED", "Identity not found");
+    }
     const password = await trx("public.asmblyr_password_credentials")
       .where({ user_id: userId })
       .first("user_id");

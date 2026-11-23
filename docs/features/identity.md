@@ -2,7 +2,7 @@
 
 # Users and sign-in
 
-Create the first superuser in the UI with the setup secret. Later users join through invitations or configured SSO. Email is unique, but matching email addresses do not authorize automatic linking of external identities.
+Create the first superuser in the UI with the setup secret. Later users join through invitations or configured SSO. Email is unique; by default, matching email addresses do not authorize automatic linking of external identities unless explicitly enabled per SSO provider.
 
 <a id="профиль-и-дополнительные-поля"></a>
 
@@ -82,7 +82,7 @@ The CLI does not persist the token. Another online request requires sign-in or a
 
 Configured providers support OIDC and OAuth. The provider key determines the public `/sign/sso/<provider>/callback` URL. Core serves `POST /sign/sso/:provider` and its callback, validates browser proof, and creates the session. Programmatic `/auth/sso/:provider/start` and `/callback` endpoints remain available.
 
-OIDC validates discovery, issuer, state, PKCE, and nonce. New providers are linked from an already authenticated account; matching email alone never links accounts. Provider secrets stay in server configuration.
+OIDC validates discovery, issuer, state, PKCE, and nonce. By default, new providers are linked only from an already authenticated account and matching email alone never links accounts. Each provider can optionally enable `AUTH_<ID>_AUTO_LINK_BY_EMAIL=true` (link an existing active account by case-insensitive email and close any pending invitation without overwriting another link for the same provider) and/or `AUTH_<ID>_AUTO_PROVISION=true` (create a new active non-superuser account without a password, populate `first_name` / `last_name` / `display_name` when supplied, and assign `AUTH_<ID>_DEFAULT_POLICIES` by policy name or UUID). Both modes enforce `AUTH_<ID>_REQUIRE_VERIFIED_EMAIL=true` by default (unverified auto-linking is never permitted for existing superusers even if disabled) and optional `AUTH_<ID>_ALLOWED_EMAIL_DOMAINS`. When an OIDC `id_token` omits email or profile claims and auto-link or JIT is enabled, Core fetches the provider's `userinfo` endpoint and verifies that `sub` matches. OAuth2 providers support optional profile property paths (`AUTH_<ID>_EMAIL_KEY`, `EMAIL_VERIFIED_KEY`, `FIRST_NAME_KEY`, `LAST_NAME_KEY`, `DISPLAY_NAME_KEY`) with standard OIDC defaults. Automatic linking (`user.identity_auto_linked`) and provisioning (`user.sso_provisioned`) are recorded in the security audit log, concurrent first sign-ins are serialized atomically, and passwordless SSO accounts cannot unlink their last sign-in method. Provider secrets stay in server configuration.
 
 There is no separate MFA flow, general LDAP/SAML connector, or self-service email password recovery. SMTP is unnecessary for the first beta. The shared credential-endpoint rate limit lives in PostgreSQL; additional route limits are process-local. Core's built-in public listener sees browser connections directly. Behind an external reverse proxy, the shared source limit applies to the proxy address because Core does not trust external forwarded headers.
 

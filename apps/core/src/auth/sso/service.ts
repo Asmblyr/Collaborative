@@ -73,7 +73,7 @@ export class SsoService {
         "Authorization was cancelled by the provider",
       );
     }
-    const identity = await this.protocol.verify(
+    const verified = await this.protocol.verify(
       provider,
       {
         state: input.state,
@@ -81,12 +81,19 @@ export class SsoService {
         nonce: flow.nonce,
       },
       input.query,
+      { fetchProfile: !flow.user_id },
     );
     if (flow.user_id && flow.session_id) {
-      await linkIdentity(db, flow.user_id, flow.session_id, identity);
+      await linkIdentity(db, flow.user_id, flow.session_id, verified.identity);
       return { intent: "link", returnTo: flow.return_to };
     }
-    const tokens = await loginWithIdentity(db, identity, userAgent);
+    const tokens = await loginWithIdentity(
+      db,
+      provider,
+      verified.identity,
+      verified.profile,
+      userAgent,
+    );
     return { intent: "login", returnTo: flow.return_to, tokens };
   }
 }

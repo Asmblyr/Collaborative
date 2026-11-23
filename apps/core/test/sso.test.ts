@@ -91,11 +91,14 @@ test("OIDC validates signed identity and rejects nonce, issuer, audience, expiry
         code: "SSO_AUTH_FAILED",
       });
     } else {
-      assert.deepEqual(await protocol.verify(fake.provider, proof, query), {
+      const verified = await protocol.verify(fake.provider, proof, query);
+      assert.deepEqual(verified.identity, {
         provider: "okkam",
         issuer: fake.provider.issuer,
         subject: "stable-id",
       });
+      assert.equal(verified.profile.email, "same@example.test");
+      assert.equal(verified.profile.emailVerified, true);
     }
   }
   const proof = newProof();
@@ -107,19 +110,46 @@ test("OIDC validates signed identity and rejects nonce, issuer, audience, expiry
   );
 });
 
-test("OAuth2 verifies PKCE and maps the configured stable profile ID", async () => {
-  const fake = await fakeSsoProvider("oauth2");
+test("OAuth2 verifies PKCE and maps the configured stable profile ID and custom profile fields", async () => {
+  const fake = await fakeSsoProvider({
+    driver: "oauth2",
+    env: {
+      AUTH_OKKAM_EMAIL_KEY: "contact.mail",
+      AUTH_OKKAM_EMAIL_VERIFIED_KEY: "contact.verified",
+      AUTH_OKKAM_FIRST_NAME_KEY: "profile.first",
+      AUTH_OKKAM_LAST_NAME_KEY: "profile.last",
+      AUTH_OKKAM_DISPLAY_NAME_KEY: "profile.full_name",
+    },
+  });
   const protocol = new SsoProtocol(fake.transport);
   const proof = newProof();
   const url = await protocol.authorize(fake.provider, proof);
   assert.equal(new URL(url).searchParams.has("nonce"), false);
-  const identity = await protocol.verify(
+  const verified = await protocol.verify(
     fake.provider,
     proof,
-    fake.authorize(url, "12345"),
+    fake.authorize(url, {
+      subject: "12345",
+      oauth2Profile: {
+        account: { id: "12345" },
+        contact: { mail: "  Alice@Corp.Example ", verified: true },
+        profile: {
+          first: "Alice",
+          last: "Smith",
+          full_name: "Alice Smith",
+        },
+      },
+    }),
   );
-  assert.equal(identity.subject, "12345");
-  assert.equal(identity.issuer, fake.provider.issuer);
+  assert.equal(verified.identity.subject, "12345");
+  assert.equal(verified.identity.issuer, fake.provider.issuer);
+  assert.deepEqual(verified.profile, {
+    email: "alice@corp.example",
+    emailVerified: true,
+    firstName: "Alice",
+    lastName: "Smith",
+    displayName: "Alice Smith",
+  });
 });
 
 test("OIDC and OAuth2 support client_secret_post without an Authorization header", async () => {
@@ -128,13 +158,145 @@ test("OIDC and OAuth2 support client_secret_post without an Authorization header
     const protocol = new SsoProtocol(fake.transport);
     const proof = newProof();
     const url = await protocol.authorize(fake.provider, proof);
-    const identity = await protocol.verify(
+    const verified = await protocol.verify(
       fake.provider,
       proof,
       fake.authorize(url, "post-user"),
     );
-    assert.equal(identity.subject, "post-user");
+    assert.equal(verified.identity.subject, "post-user");
   }
+});
+
+test("SSO config defaults auto-link and JIT off and validates domains, policies, booleans, and OAuth2 keys", () => {
+  const base = {
+    AUTH_PROVIDERS: "corp",
+    AUTH_UI_URL: "http://localhost:3000",
+    AUTH_CORP_DRIVER: "openid",
+    AUTH_CORP_ISSUER_URL: "https://idp.example.test",
+    AUTH_CORP_CLIENT_ID: "client-id",
+    AUTH_CORP_CLIENT_SECRET: "client-secret",
+  };
+  const [defaults] = ssoFromEnv(base);
+  assert.equal(defaults.autoLinkByEmail, false);
+  assert.equal(defaults.autoProvision, false);
+  assert.equal(defaults.requireVerifiedEmail, true);
+  assert.deepEqual(defaults.allowedEmailDomains, []);
+  assert.deepEqual(defaults.defaultPolicies, []);
+
+  const [configured] = ssoFromEnv({
+    ...base,
+    AUTH_CORP_AUTO_LINK_BY_EMAIL: "true",
+    AUTH_CORP_AUTO_PROVISION: "TRUE",
+    AUTH_CORP_REQUIRE_VERIFIED_EMAIL: "false",
+    AUTH_CORP_ALLOWED_EMAIL_DOMAINS:
+      "Corp.Example, sub.corp.example, corp.example",
+    AUTH_CORP_DEFAULT_POLICIES: "Employees, Readers, Employees",
+  });
+  assert.equal(configured.autoLinkByEmail, true);
+  assert.equal(configured.autoProvision, true);
+  assert.equal(configured.requireVerifiedEmail, false);
+  assert.deepEqual(configured.allowedEmailDomains, [
+    "corp.example",
+    "sub.corp.example",
+  ]);
+  assert.deepEqual(configured.defaultPolicies, ["Employees", "Readers"]);
+
+  assert.throws(() =>
+    ssoFromEnv({ ...base, AUTH_CORP_AUTO_LINK_BY_EMAIL: "yes" }),
+  );
+  assert.throws(() =>
+    ssoFromEnv({ ...base, AUTH_CORP_ALLOWED_EMAIL_DOMAINS: "@corp.example" }),
+  );
+  assert.throws(() =>
+    ssoFromEnv({ ...base, AUTH_CORP_ALLOWED_EMAIL_DOMAINS: "*.corp.example" }),
+  );
+  assert.throws(() =>
+    ssoFromEnv({ ...base, AUTH_CORP_ALLOWED_EMAIL_DOMAINS: "corp.example," }),
+  );
+  assert.throws(() =>
+    ssoFromEnv({ ...base, AUTH_CORP_DEFAULT_POLICIES: "Employees," }),
+  );
+  assert.throws(() =>
+    ssoFromEnv({
+      ...base,
+      AUTH_CORP_DRIVER: "oauth2",
+      AUTH_CORP_AUTHORIZE_URL: "https://idp.example.test/authorize",
+      AUTH_CORP_ACCESS_URL: "https://idp.example.test/token",
+      AUTH_CORP_PROFILE_URL: "https://idp.example.test/profile",
+      AUTH_CORP_EMAIL_KEY: "bad-key!",
+    }),
+  );
+});
+
+test("OIDC fetches userinfo when id_token is minimal and rejects userinfo subject mismatch", async () => {
+  const fake = await fakeSsoProvider({
+    driver: "openid",
+    advertiseUserInfo: true,
+    env: {
+      AUTH_OKKAM_AUTO_PROVISION: "true",
+    },
+  });
+  const protocol = new SsoProtocol(fake.transport);
+
+  const proof = newProof();
+  const url = await protocol.authorize(fake.provider, proof);
+  const verified = await protocol.verify(
+    fake.provider,
+    proof,
+    fake.authorize(url, {
+      subject: "min-user",
+      idTokenClaims: {},
+      userInfo: {
+        sub: "min-user",
+        email: "Minimal@Corp.Example",
+        email_verified: true,
+        given_name: "Ivan",
+        family_name: "Petrov",
+        name: "Ivan Petrov",
+      },
+    }),
+    { fetchProfile: true },
+  );
+  assert.equal(fake.userInfoCalls(), 1);
+  assert.deepEqual(verified.profile, {
+    email: "minimal@corp.example",
+    emailVerified: true,
+    firstName: "Ivan",
+    lastName: "Petrov",
+    displayName: "Ivan Petrov",
+  });
+
+  // Skip userinfo during explicit account linking
+  const linkProof = newProof();
+  const linkUrl = await protocol.authorize(fake.provider, linkProof);
+  await protocol.verify(
+    fake.provider,
+    linkProof,
+    fake.authorize(linkUrl, { subject: "min-user", idTokenClaims: {} }),
+    { fetchProfile: false },
+  );
+  assert.equal(fake.userInfoCalls(), 1);
+
+  // Reject mismatched sub in userinfo response
+  const mismatchProof = newProof();
+  const mismatchUrl = await protocol.authorize(fake.provider, mismatchProof);
+  await assert.rejects(
+    protocol.verify(
+      fake.provider,
+      mismatchProof,
+      fake.authorize(mismatchUrl, {
+        subject: "expected-sub",
+        idTokenClaims: {},
+        userInfo: {
+          sub: "different-sub",
+          email: "spoof@corp.example",
+          email_verified: true,
+        },
+      }),
+      { fetchProfile: true },
+    ),
+    { code: "SSO_AUTH_FAILED" },
+  );
 });
 
 test("SSO diagnostics retain safe protocol codes without leaking messages, tokens or bodies", () => {
