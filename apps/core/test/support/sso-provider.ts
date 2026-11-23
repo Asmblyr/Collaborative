@@ -3,12 +3,33 @@ import { createHash, randomUUID } from "node:crypto";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { ssoFromEnv } from "../../src/auth/sso/config.js";
 
+export interface FakeSsoOptions {
+  driver?: "openid" | "oauth2";
+  clientAuth?: "client_secret_basic" | "client_secret_post";
+  env?: Record<string, string | undefined>;
+  advertiseUserInfo?: boolean;
+}
+
+export interface FakeAuthorizeOptions {
+  subject?: string;
+  fault?: string;
+  idTokenClaims?: Record<string, unknown>;
+  userInfo?: Record<string, unknown>;
+  oauth2Profile?: Record<string, unknown>;
+}
+
 export async function fakeSsoProvider(
-  driver: "openid" | "oauth2" = "openid",
-  clientAuth:
+  driverOrOptions: "openid" | "oauth2" | FakeSsoOptions = "openid",
+  clientAuthArg:
     | "client_secret_basic"
     | "client_secret_post" = "client_secret_basic",
 ) {
+  const options: FakeSsoOptions =
+    typeof driverOrOptions === "string"
+      ? { driver: driverOrOptions, clientAuth: clientAuthArg }
+      : driverOrOptions;
+  const driver = options.driver ?? "openid";
+  const clientAuth = options.clientAuth ?? "client_secret_basic";
   const issuer = "https://identity.example.test";
   const provider = ssoFromEnv({
     AUTH_PROVIDERS: "okkam",
@@ -23,7 +44,9 @@ export async function fakeSsoProvider(
     AUTH_OKKAM_ACCESS_URL: `${issuer}/token`,
     AUTH_OKKAM_PROFILE_URL: `${issuer}/profile`,
     AUTH_OKKAM_IDENTIFIER_KEY: "account.id",
+    ...options.env,
   })[0];
+
   const { privateKey, publicKey } = await generateKeyPair("RS256");
   const other = await generateKeyPair("RS256");
   const jwk = {
@@ -34,16 +57,36 @@ export async function fakeSsoProvider(
   };
   const codes = new Map<
     string,
-    { nonce: string; challenge: string; subject: string; fault?: string }
+    {
+      nonce: string;
+      challenge: string;
+      subject: string;
+      fault?: string;
+      idTokenClaims?: Record<string, unknown>;
+      userInfo?: Record<string, unknown>;
+      oauth2Profile?: Record<string, unknown>;
+    }
   >();
-  let profileId = "";
+  const tokenProfiles = new Map<
+    string,
+    {
+      subject: string;
+      userInfo?: Record<string, unknown>;
+      oauth2Profile?: Record<string, unknown>;
+    }
+  >();
   let exchanges = 0;
+  let userInfoCalls = 0;
 
   function authorize(
     url: string,
-    subject = "external-user",
+    subjectOrOptions: string | FakeAuthorizeOptions = "external-user",
     fault?: string,
   ): string {
+    const authOptions: FakeAuthorizeOptions =
+      typeof subjectOrOptions === "string"
+        ? { subject: subjectOrOptions, fault }
+        : subjectOrOptions;
     const parameters = new URL(url).searchParams;
     assert.equal(parameters.get("redirect_uri"), provider.callbackUrl);
     assert.equal(parameters.get("code_challenge_method"), "S256");
@@ -51,8 +94,11 @@ export async function fakeSsoProvider(
     codes.set(code, {
       nonce: parameters.get("nonce") ?? "",
       challenge: parameters.get("code_challenge")!,
-      subject,
-      fault,
+      subject: authOptions.subject ?? "external-user",
+      fault: authOptions.fault,
+      idTokenClaims: authOptions.idTokenClaims,
+      userInfo: authOptions.userInfo,
+      oauth2Profile: authOptions.oauth2Profile,
     });
     return new URLSearchParams({
       code,
@@ -69,25 +115,52 @@ export async function fakeSsoProvider(
         authorization_endpoint: `${issuer}/authorize`,
         token_endpoint: `${issuer}/token`,
         jwks_uri: `${issuer}/keys`,
+        ...(options.advertiseUserInfo
+          ? { userinfo_endpoint: `${issuer}/userinfo` }
+          : {}),
         response_types_supported: ["code"],
         subject_types_supported: ["public"],
         id_token_signing_alg_values_supported: ["RS256"],
         code_challenge_methods_supported: ["S256"],
       });
     }
-    if (url.pathname === "/keys") return Response.json({ keys: [jwk] });
-    if (url.pathname === "/profile") {
-      assert.equal(
-        new Headers(init?.headers).get("authorization"),
-        "Bearer provider-token",
-      );
-      return Response.json({
-        account: { id: profileId },
-        email: "same@example.test",
-      });
+    if (url.pathname === "/keys") {
+      return Response.json({ keys: [jwk] });
     }
-    if (url.pathname !== "/token")
+    if (url.pathname === "/userinfo") {
+      userInfoCalls++;
+      const authHeader = new Headers(init?.headers).get("authorization") ?? "";
+      const token = authHeader.startsWith("Bearer ")
+        ? authHeader.slice("Bearer ".length)
+        : "";
+      const entry = tokenProfiles.get(token);
+      assert.ok(entry, "valid userinfo bearer token");
+      return Response.json(
+        entry.userInfo ?? {
+          sub: entry.subject,
+          email: "same@example.test",
+          email_verified: true,
+        },
+      );
+    }
+    if (url.pathname === "/profile") {
+      const authHeader = new Headers(init?.headers).get("authorization") ?? "";
+      const token = authHeader.startsWith("Bearer ")
+        ? authHeader.slice("Bearer ".length)
+        : "";
+      const entry = tokenProfiles.get(token);
+      assert.ok(entry, "valid oauth2 bearer token");
+      return Response.json(
+        entry.oauth2Profile ?? {
+          account: { id: entry.subject },
+          email: "same@example.test",
+          email_verified: true,
+        },
+      );
+    }
+    if (url.pathname !== "/token") {
       throw new Error(`Unexpected provider request: ${url.pathname}`);
+    }
     exchanges++;
     const body = new URLSearchParams(String(init?.body));
     const authorization = new Headers(init?.headers).get("authorization");
@@ -115,17 +188,26 @@ export async function fakeSsoProvider(
         .digest("base64url"),
       pending.challenge,
     );
-    profileId = pending.subject;
-    if (driver === "oauth2")
+    const accessToken = `provider-token-${exchanges}`;
+    tokenProfiles.set(accessToken, {
+      subject: pending.subject,
+      userInfo: pending.userInfo,
+      oauth2Profile: pending.oauth2Profile,
+    });
+    if (driver === "oauth2") {
       return Response.json({
-        access_token: "provider-token",
+        access_token: accessToken,
         token_type: "Bearer",
       });
-    const token = await new SignJWT({
+    }
+    const claims: Record<string, unknown> = {
       nonce: pending.fault === "nonce" ? "wrong" : pending.nonce,
-      email: "same@example.test",
-      email_verified: true,
-    })
+      ...(pending.idTokenClaims ?? {
+        email: "same@example.test",
+        email_verified: true,
+      }),
+    };
+    const token = await new SignJWT(claims)
       .setProtectedHeader({ alg: "RS256", kid: "test-key" })
       .setIssuer(
         pending.fault === "issuer" ? "https://wrong.example.test" : issuer,
@@ -138,10 +220,16 @@ export async function fakeSsoProvider(
       )
       .sign(pending.fault === "signature" ? other.privateKey : privateKey);
     return Response.json({
-      access_token: "provider-token",
+      access_token: accessToken,
       token_type: "Bearer",
       id_token: token,
     });
   };
-  return { provider, transport, authorize, exchanges: () => exchanges };
+  return {
+    provider,
+    transport,
+    authorize,
+    exchanges: () => exchanges,
+    userInfoCalls: () => userInfoCalls,
+  };
 }

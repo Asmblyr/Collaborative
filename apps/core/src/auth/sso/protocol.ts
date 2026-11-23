@@ -2,6 +2,14 @@ import * as oidc from "openid-client";
 import type { SsoProvider } from "./config.js";
 import { SsoError } from "./input.js";
 import { ssoDiagnostic, type SsoDiagnostic } from "./diagnostics.js";
+import {
+  extractExternalProfile,
+  mergeExternalProfiles,
+  needsUserInfoFallback,
+  oidcProfileMapping,
+  readPropertyPath,
+  type ExternalProfile,
+} from "./profile.js";
 
 export interface AuthorizationProof {
   state: string;
@@ -15,16 +23,23 @@ export interface ExternalIdentity {
   subject: string;
 }
 
+export interface VerifiedIdentity {
+  identity: ExternalIdentity;
+  profile: ExternalProfile;
+}
+
+export interface VerifyOptions {
+  fetchProfile?: boolean;
+}
+
 function profileSubject(profile: unknown, key: string): string {
-  let value: unknown = profile;
-  for (const part of key.split(".")) {
-    if (!value || typeof value !== "object" || !Object.hasOwn(value, part)) {
-      throw new Error("Missing stable profile identifier");
-    }
-    value = (value as Record<string, unknown>)[part];
+  let value = readPropertyPath(profile, key);
+  if (value === undefined) {
+    throw new Error("Missing stable profile identifier");
   }
-  if (typeof value === "number" && Number.isSafeInteger(value))
+  if (typeof value === "number" && Number.isSafeInteger(value)) {
     value = String(value);
+  }
   if (
     typeof value !== "string" ||
     !value.length ||
@@ -64,6 +79,7 @@ export class SsoProtocol {
       provider.clientAuth === "client_secret_post"
         ? oidc.ClientSecretPost(provider.clientSecret)
         : oidc.ClientSecretBasic(provider.clientSecret);
+
     let configuration: oidc.Configuration;
     if (provider.driver === "openid") {
       configuration = await oidc.discovery(
@@ -76,8 +92,9 @@ export class SsoProtocol {
           ...(this.transport ? { [oidc.customFetch]: this.transport } : {}),
         },
       );
-      if (configuration.serverMetadata().issuer !== provider.issuer)
+      if (configuration.serverMetadata().issuer !== provider.issuer) {
         throw new Error("Issuer mismatch");
+      }
       oidc.enableNonRepudiationChecks(configuration);
     } else {
       configuration = new oidc.Configuration(
@@ -90,17 +107,22 @@ export class SsoProtocol {
         undefined,
         authenticate,
       );
-      if (this.transport) configuration[oidc.customFetch] = this.transport;
+      if (this.transport) {
+        configuration[oidc.customFetch] = this.transport;
+      }
     }
+
     configuration.timeout = 10;
     const metadata = configuration.serverMetadata();
     for (const value of [
       metadata.authorization_endpoint,
       metadata.token_endpoint,
       metadata.jwks_uri,
+      metadata.userinfo_endpoint,
     ]) {
-      if (value && new URL(value).protocol !== "https:")
+      if (value && new URL(value).protocol !== "https:") {
         throw new Error("Insecure provider endpoint");
+      }
     }
     return configuration;
   }
@@ -122,7 +144,9 @@ export class SsoProtocol {
         ),
         code_challenge_method: "S256",
       };
-      if (provider.driver === "openid") params.nonce = proof.nonce;
+      if (provider.driver === "openid") {
+        params.nonce = proof.nonce;
+      }
       return oidc.buildAuthorizationUrl(configuration, params).href;
     } catch (error) {
       this.reportFailure?.(ssoDiagnostic(provider.id, "authorize", error));
@@ -137,7 +161,8 @@ export class SsoProtocol {
     provider: SsoProvider,
     proof: AuthorizationProof,
     query: string,
-  ): Promise<ExternalIdentity> {
+    options: VerifyOptions = {},
+  ): Promise<VerifiedIdentity> {
     try {
       const configuration = await this.configuration(provider);
       const callback = new URL(provider.callbackUrl);
@@ -153,9 +178,37 @@ export class SsoProtocol {
             : {}),
         },
       );
+
       let subject: string;
+      let profile: ExternalProfile;
+
       if (provider.driver === "openid") {
-        subject = profileSubject(tokens.claims(), "sub");
+        const claims = tokens.claims();
+        subject = profileSubject(claims, "sub");
+        profile = extractExternalProfile(claims, oidcProfileMapping);
+
+        const userInfoEndpoint =
+          configuration.serverMetadata().userinfo_endpoint;
+        if (
+          options.fetchProfile &&
+          needsUserInfoFallback(provider, profile) &&
+          userInfoEndpoint &&
+          tokens.access_token
+        ) {
+          const userInfo = await oidc.fetchUserInfo(
+            configuration,
+            tokens.access_token,
+            subject,
+          );
+          if (profileSubject(userInfo, "sub") !== subject) {
+            throw new Error("Userinfo subject mismatch");
+          }
+          profile = mergeExternalProfiles(
+            profile,
+            extractExternalProfile(userInfo, oidcProfileMapping),
+            provider.requireVerifiedEmail,
+          );
+        }
       } else {
         const response = await (this.transport ?? fetch)(provider.profileUrl, {
           headers: {
@@ -165,10 +218,18 @@ export class SsoProtocol {
           signal: AbortSignal.timeout(10_000),
           redirect: "error",
         });
-        if (!response.ok) throw new Error("Profile request failed");
-        subject = profileSubject(await response.json(), provider.identifierKey);
+        if (!response.ok) {
+          throw new Error("Profile request failed");
+        }
+        const rawProfile = await response.json();
+        subject = profileSubject(rawProfile, provider.identifierKey);
+        profile = extractExternalProfile(rawProfile, provider);
       }
-      return { provider: provider.id, issuer: provider.issuer, subject };
+
+      return {
+        identity: { provider: provider.id, issuer: provider.issuer, subject },
+        profile,
+      };
     } catch (error) {
       this.reportFailure?.(ssoDiagnostic(provider.id, "verify", error));
       // Do not forward upstream errors: they can contain codes, tokens or profile data.
