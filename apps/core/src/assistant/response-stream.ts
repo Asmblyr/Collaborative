@@ -1,5 +1,20 @@
 import type { FastifyReply } from "fastify";
 import type { AssistantStreamEvent } from "@asmblyr-collaborative/contracts";
+import type { AssistantWriteProposalCard } from "./write-proposals.js";
+import type { AssistantFormCard, AssistantRecordCard } from "./widgets.js";
+
+type AnswerStreamEvent = Extract<AssistantStreamEvent, { type: "answer" }>;
+
+export type CoreAssistantStreamEvent =
+  | Exclude<AssistantStreamEvent, { type: "answer" }>
+  | {
+      type: "answer";
+      data: AnswerStreamEvent["data"] & {
+        writeProposals?: AssistantWriteProposalCard[];
+        records?: AssistantRecordCard[];
+        forms?: AssistantFormCard[];
+      };
+    };
 
 export function openResponseStream(
   reply: FastifyReply,
@@ -14,7 +29,7 @@ export function openResponseStream(
     "cache-control": "no-store, no-transform",
     "x-accel-buffering": "no",
   });
-  return (event: AssistantStreamEvent) => {
+  return (event: CoreAssistantStreamEvent) => {
     if (reply.raw.destroyed || reply.raw.writableEnded) return;
     // A slow or disconnected consumer must not accumulate an unbounded event queue.
     reply.raw.write(`${JSON.stringify(event)}\n`);

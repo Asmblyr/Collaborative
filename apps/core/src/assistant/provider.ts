@@ -169,7 +169,9 @@ export function createAssistantProvider(
         answer.calls.every(
           (tool) =>
             tool.name === "present_selection" ||
-            tool.name === "present_plugin_result",
+            tool.name === "present_plugin_result" ||
+            tool.name === "present_record" ||
+            tool.name === "present_form",
         );
       if (text && !presentationOnly) {
         run?.onActivity?.({ kind: "note", text });

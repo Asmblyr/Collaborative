@@ -8,6 +8,7 @@ import {
   deleteConversation,
   listConversations,
   readConversation,
+  renameConversation,
 } from "./history-repository.js";
 
 export function registerAssistantHistoryRoutes(
@@ -49,6 +50,34 @@ export function registerAssistantHistoryRoutes(
         ),
       };
     },
+  );
+  const handleRename = async (
+    request: {
+      headers: { authorization?: string };
+      params: { id: string };
+      body: unknown;
+    },
+    reply: { header: (name: string, value: string) => unknown },
+  ) => {
+    reply.header("Cache-Control", "no-store");
+    const access = await authorize(request.headers.authorization);
+    const body = objectInput(request.body, ["title"]);
+    return {
+      data: await renameConversation(
+        db,
+        access.principal.id,
+        parseId(request.params.id),
+        body.title,
+      ),
+    };
+  };
+  app.patch<{ Params: { id: string } }>(
+    "/assistant/conversations/:id",
+    handleRename,
+  );
+  app.patch<{ Params: { id: string } }>(
+    "/assistant/sessions/:id",
+    handleRename,
   );
   app.delete<{ Params: { id: string } }>(
     "/assistant/conversations/:id",

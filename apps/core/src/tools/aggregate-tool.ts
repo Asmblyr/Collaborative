@@ -5,7 +5,7 @@ import { listCollections } from "../collections/catalog-repository.js";
 import { itemReadQuery } from "../items/read-query.js";
 import { plainFilter } from "../items/filter-wire.js";
 import { applyTerms } from "../terms/filters.js";
-import { mcpCatalog } from "./collection-scope.js";
+import { isRowScopedRead, mcpCatalog } from "./collection-scope.js";
 import { parseAggregateInput } from "./aggregate-input.js";
 import { authorizeAggregateFields } from "./aggregate-fields.js";
 import { aggregateQuery } from "./aggregate-query.js";
@@ -93,6 +93,7 @@ export async function executeAggregateTool(
         }
         return { ...group, selectable };
       });
+      const rowScoped = isRowScopedRead(access, name);
       return {
         collection: name,
         collectionId,
@@ -112,6 +113,7 @@ export async function executeAggregateTool(
         page: input.page,
         size: input.limit,
         orderBy: input.orderBy,
+        ...(rowScoped ? { rowScoped: true } : {}),
         semantics:
           "count(null field) counts rows; count(field)/count_distinct ignore NULL. sum/avg/min/max ignore NULL and return NULL when there are no values. Group NULL is separate from an empty string. Metrics cover all matching records, not just a data page. hasMore refers to groups, not records.",
       };

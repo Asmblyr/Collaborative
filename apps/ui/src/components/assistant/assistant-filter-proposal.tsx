@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, ListFilter, LoaderCircle } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { describeFilter } from "@/components/items/item-filter-description";
@@ -9,6 +9,13 @@ import {
   type FilterProposal,
 } from "./assistant-context-types";
 import { useAssistantContext } from "./assistant-context";
+import { useAssistantHost } from "./assistant-host";
+import {
+  collectionFilterMetadata,
+  isNarrowViewport,
+  normalizeFilterGroup,
+} from "./assistant-filter-format";
+import { useAssistantCatalog } from "./use-assistant-catalog";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function AssistantFilterProposal({
@@ -19,6 +26,18 @@ export function AssistantFilterProposal({
   const copy = useUiCopy();
 
   const page = useAssistantContext();
+  const host = useAssistantHost();
+  const catalog = useAssistantCatalog(
+    proposal.workspaceId ?? page?.context?.workspaceId ?? null,
+  );
+  const metadata = useMemo(
+    () => collectionFilterMetadata(proposal.collection, catalog),
+    [proposal.collection, catalog],
+  );
+  const formattedFilter = useMemo(
+    () => normalizeFilterGroup(proposal.filter),
+    [proposal.filter],
+  );
   const collectionName =
     page?.collectionDisplayName(proposal.collection) ||
     proposal.collectionDisplayName ||
@@ -34,6 +53,9 @@ export function AssistantFilterProposal({
     try {
       await page!.apply(proposal);
       setApplied(true);
+      if (isNarrowViewport()) {
+        host?.setOpen(false);
+      }
     } catch (failure) {
       setError(
         failure instanceof Error
@@ -51,8 +73,13 @@ export function AssistantFilterProposal({
         {copy("Фильтр ·")} {collectionName}
       </p>
       <p className="max-h-36 overflow-auto whitespace-pre-wrap break-words leading-5 text-muted-foreground">
-        {proposal.filter.children.length
-          ? describeFilter(proposal.filter, undefined, undefined, copy)
+        {formattedFilter.children.length
+          ? describeFilter(
+              formattedFilter,
+              metadata.labels,
+              metadata.choices,
+              copy,
+            )
           : copy("Все записи без фильтра")}
       </p>
       <p className="text-[11px] leading-4 text-muted-foreground">

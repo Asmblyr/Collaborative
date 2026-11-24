@@ -69,6 +69,7 @@ export async function handleMcp(
     {
       mutations,
       source: connection.id,
+      channel: "mcp",
       schemas: {
         async load(collection) {
           const row = await db("public.asmblyr_mcp_schemas")

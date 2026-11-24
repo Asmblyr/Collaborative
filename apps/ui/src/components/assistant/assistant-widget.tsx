@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
 import {
@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Popover as PopoverPrimitive } from "radix-ui";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import {
   Tooltip,
@@ -30,6 +31,7 @@ import { useUiCopy } from "@/lib/ui-copy";
 import { showAssistantWidget } from "./assistant-status-state";
 import { AssistantAvailability } from "./assistant-availability";
 import { AssistantIconButton } from "./assistant-icon-button";
+import { useAssistantSkills } from "./use-assistant-skills";
 
 export function AssistantWidget() {
   const copy = useUiCopy();
@@ -44,6 +46,9 @@ export function AssistantWidget() {
     setAvailable,
   } = host;
   const [historyOpen, setHistoryOpen] = useState(false);
+  const skillMenuOpenRef = useRef(false);
+  const historyEditingRef = useRef(false);
+  const reloadSkillsRef = useRef<() => void>(() => {});
   const page = useAssistantContext();
   const context = host.host?.context ??
     page?.context ?? { page: "home", workspaceId: null };
@@ -51,11 +56,21 @@ export function AssistantWidget() {
   const container = host.host?.container
     .firstElementChild as HTMLElement | null;
   const dataAccess = { enabled: dataEnabled, workspaceId: context.workspaceId };
-  const assistant = useAssistant(
-    open,
-    contextEnabled ? context : null,
-    dataAccess,
+  const activeContext = contextEnabled ? context : null;
+  const assistant = useAssistant(open, activeContext, dataAccess, () =>
+    reloadSkillsRef.current(),
   );
+  const skillsState = useAssistantSkills({
+    enabled:
+      open &&
+      assistant.status.available &&
+      assistant.availability.phase !== "denied",
+    collection: activeContext?.collection ?? null,
+    workspaceId: activeContext?.workspaceId ?? null,
+  });
+  useEffect(() => {
+    reloadSkillsRef.current = skillsState.reload;
+  }, [skillsState.reload]);
   const visible = showAssistantWidget(assistant.availability, open);
   useEffect(() => {
     setAvailable(visible);
@@ -76,50 +91,59 @@ export function AssistantWidget() {
       <div
         className={
           container
-            ? "fixed bottom-[calc(7.5rem+env(safe-area-inset-bottom))] right-4 z-40 sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:right-6"
-            : "fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 sm:right-6"
+            ? "pointer-events-none fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 sm:right-6"
+            : "fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-3 z-40 sm:bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:right-5"
         }
       >
         <Popover
           open={open}
           onOpenChange={setOpen}
         >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  data-thinking={assistant.pending}
-                  className="assistant-launcher relative isolate size-12 rounded-2xl border-foreground/15 bg-popover text-popover-foreground shadow-lg"
-                  aria-label={launcherLabel}
-                >
-                  <span
-                    className="assistant-launcher-glow"
-                    aria-hidden="true"
-                  />
-                  {open ? (
-                    <ChevronDown className="size-5" />
-                  ) : (
-                    <Sparkles className="size-5" />
-                  )}
-                  {assistant.availability.failure && !open && (
-                    <CircleAlert
-                      className="absolute -right-1 -top-1 size-4 rounded-full bg-popover text-destructive"
+          {container ? (
+            <PopoverPrimitive.Anchor asChild>
+              <span
+                aria-hidden="true"
+                className="block size-0"
+              />
+            </PopoverPrimitive.Anchor>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    data-thinking={assistant.pending}
+                    className="assistant-launcher relative isolate size-11 rounded-2xl border-foreground/15 bg-popover text-popover-foreground shadow-lg"
+                    aria-label={launcherLabel}
+                  >
+                    <span
+                      className="assistant-launcher-glow"
                       aria-hidden="true"
                     />
-                  )}
-                </Button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent
-              side="left"
-              portalContainer={container}
-            >
-              {copy("Ассистент")}
-            </TooltipContent>
-          </Tooltip>
+                    {open ? (
+                      <ChevronDown className="size-5" />
+                    ) : (
+                      <Sparkles className="size-5" />
+                    )}
+                    {assistant.availability.failure && !open && (
+                      <CircleAlert
+                        className="absolute -right-1 -top-1 size-4 rounded-full bg-popover text-destructive"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent
+                side="left"
+                portalContainer={container}
+              >
+                {copy("Ассистент")}
+              </TooltipContent>
+            </Tooltip>
+          )}
           <AssistantPanel
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
@@ -131,6 +155,9 @@ export function AssistantWidget() {
             onInteractOutside={(event) => event.preventDefault()}
             onEscapeKeyDown={(event) => {
               event.preventDefault();
+              if (skillMenuOpenRef.current || historyEditingRef.current) {
+                return;
+              }
               setOpen(false);
             }}
           >
@@ -149,15 +176,23 @@ export function AssistantWidget() {
                     id={titleId}
                     tabIndex={-1}
                     className="truncate text-sm font-semibold outline-none"
-                    title={`${copy("Ассистент Asmblyr")} `}
+                    title={
+                      assistant.history.conversation?.title?.trim() ||
+                      copy("Ассистент Asmblyr")
+                    }
                   >
-                    {copy("Ассистент Asmblyr")}
+                    {assistant.history.conversation?.title?.trim() ||
+                      copy("Ассистент Asmblyr")}
                   </h2>
                   <p
                     id={descriptionId}
                     className="truncate text-xs text-muted-foreground"
                   >
-                    {assistant.status.model}
+                    {assistant.history.conversation?.title?.trim()
+                      ? assistant.status.model
+                        ? `${copy("Ассистент Asmblyr")} · ${assistant.status.model}`
+                        : copy("Ассистент Asmblyr")
+                      : assistant.status.model}
                   </p>
                 </div>
               </div>
@@ -226,8 +261,12 @@ export function AssistantWidget() {
                     }
                   });
                 }}
+                onRename={(id, title) => assistant.history.rename(id, title)}
                 onDelete={(id) => void assistant.history.remove(id)}
                 onMore={() => void assistant.history.loadMore()}
+                onEditingChange={(editing) => {
+                  historyEditingRef.current = editing;
+                }}
               />
             ) : (
               <>
@@ -283,9 +322,18 @@ export function AssistantWidget() {
                   sendEnabled={assistant.sendEnabled}
                   error={assistant.error ?? assistant.history.error}
                   onRetry={assistant.retry}
+                  onRegenerate={assistant.regenerate}
                   errorSummary={assistant.errorSummary}
                   maxLength={assistant.status.limits?.maxMessageChars ?? 8000}
-                  welcomeContext={contextEnabled ? context : null}
+                  welcomeContext={activeContext}
+                  skills={skillsState.skills}
+                  skillsLoading={skillsState.loading}
+                  currentCollection={activeContext?.collection ?? null}
+                  selectedSkill={assistant.selectedSkill}
+                  onSelectSkill={assistant.setSelectedSkill}
+                  onSkillMenuOpenChange={(menuIsOpen) => {
+                    skillMenuOpenRef.current = menuIsOpen;
+                  }}
                   contextControl={
                     <AssistantContextControl
                       context={context}

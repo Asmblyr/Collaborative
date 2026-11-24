@@ -1,5 +1,6 @@
 import { objectInput, InputError } from "../shared/input.js";
 import { parseId } from "../policies/validation.js";
+import { parseSkillSlug } from "../skills/validation.js";
 import {
   parseAssistantContext,
   type AssistantContext,
@@ -17,6 +18,7 @@ export interface ConversationSubmission {
   content: string;
   context: AssistantContext | null;
   dataAccess?: AssistantDataAccess;
+  skillSlug?: string | null;
   settings: unknown;
 }
 
@@ -33,6 +35,7 @@ export function parseConversationSubmission(
     "context",
     "settings",
     "dataAccess",
+    "skillSlug",
   ]);
   if (
     typeof body.content !== "string" ||
@@ -44,12 +47,17 @@ export function parseConversationSubmission(
   }
   const context = parseAssistantContext(body.context);
   const dataAccess = parseAssistantDataAccess(body.dataAccess, context);
+  const skillSlug =
+    body.skillSlug === undefined || body.skillSlug === null
+      ? null
+      : parseSkillSlug(body.skillSlug);
   return {
     conversationId: parseId(body.conversationId),
     messageId: parseId(body.messageId),
     content: body.content.trim(),
     context,
     ...(dataAccess ? { dataAccess } : {}),
+    ...(skillSlug ? { skillSlug } : {}),
     settings: body.settings,
   };
 }

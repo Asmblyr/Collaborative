@@ -18,13 +18,16 @@ export function AssistantRecordButton({
     return null;
   }
 
-  const label = copy("Спросить об этой записи");
+  const label = assistant.open
+    ? copy("Свернуть ассистента")
+    : copy("Спросить об этой записи");
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant={assistant.open ? "secondary" : "ghost"}
       size="icon-sm"
       aria-label={label}
+      aria-expanded={assistant.open}
       title={label}
       disabled={disabled}
       onClick={assistant.askRecord}

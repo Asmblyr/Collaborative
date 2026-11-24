@@ -8,6 +8,7 @@ import type {
   AssistantTurnSummary,
   AssistantActivity,
 } from "@asmblyr-collaborative/contracts";
+import { InputError } from "../shared/input.js";
 import { AssistantProviderError } from "./provider.js";
 
 export interface ConversationRow {
@@ -159,6 +160,41 @@ export async function readConversation(
       })),
       nextCursor: messages.length > 100 ? String(messages[99].sequence) : null,
     };
+  });
+}
+
+export function parseConversationTitle(value: unknown): string {
+  if (typeof value !== "string" || value.includes("\0")) {
+    throw new InputError(
+      "Expected a session title between 1 and 120 characters",
+    );
+  }
+  const trimmed = value.trim();
+  if (trimmed.length < 1 || trimmed.length > 120) {
+    throw new InputError(
+      "Expected a session title between 1 and 120 characters",
+    );
+  }
+  return trimmed;
+}
+
+export async function renameConversation(
+  db: Knex,
+  owner: string,
+  id: string,
+  titleInput: unknown,
+): Promise<AssistantConversation> {
+  const title = parseConversationTitle(titleInput);
+  return db.transaction(async (trx) => {
+    await ownedConversation(trx, owner, id, true);
+    const [updated] = await conversationTable(trx)
+      .where({ id, user_id: owner })
+      .update({
+        title,
+        updated_at: new Date(),
+      })
+      .returning("*");
+    return conversationValue(updated);
   });
 }
 

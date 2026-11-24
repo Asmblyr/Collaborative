@@ -1,4 +1,5 @@
 import { aggregateProperties } from "./aggregate-definition.js";
+import { directoryToolDefinitions } from "./directory-tools.js";
 import { writeToolDefinitions } from "./write-definitions.js";
 
 export interface ToolDefinition {
@@ -79,6 +80,7 @@ function define(
 
 export const toolDefinitions: ToolDefinition[] = [
   ...writeToolDefinitions,
+  ...directoryToolDefinitions,
   define(
     "list_collections",
     "Find collections readable by the current user and enabled for MCP. Returns only names and descriptions, no records. Search matches technical and display names. Hidden navigation and workspaces do not grant or revoke access.",
@@ -94,8 +96,44 @@ export const toolDefinitions: ToolDefinition[] = [
   ),
   define(
     "describe_collection",
-    "Read permitted fields, types, M2O/O2M/M2M references, relatedRead hints for to-many records, filter paths (one relation level), and configured business terms with their meanings and filters. Call once per collection in this turn before reading its data or validating filters. Reuse the returned schema. A partial result is not the full schema.",
+    "Read permitted fields, types, M2O/O2M/M2M references, relatedRead hints for to-many records, filter paths (one relation level), configured business terms with their meanings and filters, and available collection skills (slug, title, description). Call once per collection in this turn before reading its data or validating filters. Reuse the returned schema. A partial result is not the full schema.",
     { collection },
+  ),
+  define(
+    "list_skills",
+    "Discover active assistant skills (business workflows and instructions) visible to the current user. Returns compact metadata (slug, title, description, examples, scope, collections) without full markdown instructions. Pass collection=null for all visible skills.",
+    {
+      collection: {
+        type: ["string", "null"],
+        maxLength: 63,
+        description:
+          "Optional technical collection name to filter and prioritize skills bound to that collection. Pass null for all visible skills.",
+      },
+      workspace: {
+        type: ["string", "null"],
+        maxLength: 120,
+        description:
+          "Optional workspace UUID or name to filter skills. Pass null for all workspaces.",
+      },
+      q: {
+        type: ["string", "null"],
+        maxLength: 200,
+        description:
+          'Optional search text matching slug, title, description, examples, or bound collection names. Pass null or "" for no search.',
+      },
+    },
+  ),
+  define(
+    "read_skill",
+    "Load full Markdown instructions, starter examples, and permitted related glossary terms for a visible assistant skill by slug. Call after finding a relevant skill in availableSkills, describe_collection.skills, or list_skills.",
+    {
+      slug: {
+        type: "string",
+        maxLength: 64,
+        description:
+          "Skill slug from availableSkills, describe_collection.skills, or list_skills.",
+      },
+    },
   ),
   define(
     "search_items",

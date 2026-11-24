@@ -85,7 +85,7 @@ test("official SDK discovers OAuth, dynamically registers, obtains consent and e
   );
   assert.ok(tokens?.access_token);
   const client = await sdk(fixture, tokens.access_token);
-  assert.equal((await client.client.listTools()).tools.length, 7);
+  assert.equal((await client.client.listTools()).tools.length, 12);
   await client.client.close();
   const origin = { origin: "https://unregistered.example" };
   const challenge = await fixture.app.inject({

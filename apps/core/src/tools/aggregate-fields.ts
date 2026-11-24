@@ -3,7 +3,7 @@ import {
   resolveFilterField,
   type FilterFieldType,
 } from "../items/filter-fields.js";
-import { ItemError } from "../items/validation.js";
+import { ToolArgumentError } from "./errors.js";
 import type { CollectionData } from "./collection-data.js";
 import type { AggregateInput, AggregateOperation } from "./aggregate-input.js";
 
@@ -12,9 +12,12 @@ export function aggregateOperationsFor(
   type: FilterFieldType,
 ): AggregateOperation[] {
   const operations: AggregateOperation[] = ["count", "count_distinct"];
-  if (["integer", "bigint", "decimal"].includes(type))
+  if (["integer", "bigint", "decimal"].includes(type)) {
     operations.push("sum", "avg", "min", "max");
-  if (type === "datetime" || type === "date") operations.push("min", "max");
+  }
+  if (type === "datetime" || type === "date") {
+    operations.push("min", "max");
+  }
   return operations;
 }
 
@@ -35,10 +38,17 @@ export function authorizeAggregateFields(
     );
   const groupTypes = input.groupBy.map((field) => resolve(field).type);
   for (const metric of input.metrics) {
-    if (metric.field === null) continue;
+    if (metric.field === null) {
+      continue;
+    }
     const field = resolve(metric.field);
     if (!aggregateOperationsFor(field.type).includes(metric.operation)) {
-      throw new ItemError("Unsupported aggregate for field type", 400);
+      throw new ToolArgumentError(
+        "INVALID_ARGUMENTS",
+        "Use only operations listed under aggregation.operations for that field in describe_collection.",
+        ["metrics"],
+        'Invalid argument "metrics": unsupported aggregate operation for field type.',
+      );
     }
   }
   return groupTypes;

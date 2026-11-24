@@ -26,6 +26,7 @@ export function createToolExecutor(
   signal: AbortSignal,
 ) {
   const failed = new Set<string>();
+  const schemaRequired = new Set<string>();
   let finalize = false;
   return {
     get finalize() {
@@ -56,7 +57,7 @@ export function createToolExecutor(
         .update("\0")
         .update(invalid ? raw : normalized)
         .digest("hex");
-      if (failed.has(fingerprint)) {
+      if (failed.has(fingerprint) || schemaRequired.has(fingerprint)) {
         finalize = true;
         return {
           code: "REPEATED_TOOL_ERROR",
@@ -74,8 +75,13 @@ export function createToolExecutor(
         : ((await run?.tools?.execute(tool.name, args, signal)) ??
           unavailableToolResult);
       signal.throwIfAborted();
-      if (toolDiagnosticCode(result)) {
+      const diagnosticCode = toolDiagnosticCode(result);
+      if (diagnosticCode === "SCHEMA_REQUIRED") {
+        schemaRequired.add(fingerprint);
+      } else if (diagnosticCode) {
         failed.add(fingerprint);
+      } else if (tool.name === "describe_collection") {
+        schemaRequired.clear();
       }
       return result;
     },

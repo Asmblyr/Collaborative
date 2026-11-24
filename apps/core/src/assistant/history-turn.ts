@@ -47,6 +47,7 @@ export async function beginSavedTurn(
           content: input.content,
           context: input.context,
           ...(input.dataAccess ? { dataAccess: input.dataAccess } : {}),
+          ...(input.skillSlug ? { skillSlug: input.skillSlug } : {}),
           settings: input.settings,
         }),
       )

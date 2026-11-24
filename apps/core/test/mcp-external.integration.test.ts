@@ -44,7 +44,7 @@ test("external MCP uses user OAuth, official SDK, live ACL and the same data/wri
     listed.tools.map((tool) => tool.name),
     internal.definitions.map((tool) => tool.name),
   );
-  assert.equal(listed.tools.length, 10);
+  assert.equal(listed.tools.length, 15);
   assert.equal(
     (
       await external.tool("read_item", {

@@ -17,6 +17,14 @@ export function relationDescriptions(
     if (!relation) {
       return undefined;
     }
+    if (relation.kind === "m2o" && relation.collection === "@users") {
+      return {
+        kind: relation.kind,
+        collection: "@users",
+        displayName: "@users",
+        primaryKey: relation.primaryKey,
+      };
+    }
     const target = data.catalog.find(
       (entry) => entry.name === relation.collection,
     );

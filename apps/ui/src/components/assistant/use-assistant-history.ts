@@ -10,6 +10,7 @@ import type {
 
 import { apiRequest } from "@/lib/api-request";
 import { requestErrorMessage } from "@/lib/http-request";
+import { applyConversationRename } from "./assistant-history-messages";
 
 async function historyRequest<T>(
   path: string,
@@ -186,6 +187,34 @@ export function useAssistantHistory(
     }
   }
 
+  async function rename(
+    id: string,
+    title: string,
+  ): Promise<
+    | { ok: true; conversation: AssistantConversation }
+    | { ok: false; error: string }
+  > {
+    try {
+      const updated = await apiRequest<AssistantConversation>(
+        `/api/assistant/conversations/${encodeURIComponent(id)}`,
+        "PATCH",
+        { title },
+      );
+      setItems((previous) => applyConversationRename(previous, updated));
+      if (current.current?.id === id) {
+        current.current = updated;
+        setConversation(updated);
+      }
+      setError(null);
+      return { ok: true, conversation: updated };
+    } catch (failure) {
+      return {
+        ok: false,
+        error: requestErrorMessage(failure, "Не удалось переименовать сессию."),
+      };
+    }
+  }
+
   return {
     conversation,
     items,
@@ -205,6 +234,7 @@ export function useAssistantHistory(
     select: loadConversation,
     create,
     ensure: async (signal?: AbortSignal) => current.current ?? create(signal),
+    rename,
     remove,
     update(receipt: AssistantConversationReceipt) {
       if (current.current?.id === receipt.id) {

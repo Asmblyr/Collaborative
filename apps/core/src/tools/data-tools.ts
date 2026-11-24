@@ -11,7 +11,7 @@ import { itemReadQuery } from "../items/read-query.js";
 import { plainFilter } from "../items/filter-wire.js";
 import { parseItemId } from "../items/validation.js";
 import { parseDataToolInput, type DataTool } from "./data-tool-input.js";
-import { mcpCatalog } from "./collection-scope.js";
+import { isRowScopedRead, mcpCatalog } from "./collection-scope.js";
 import { toolReadContext } from "./read-context.js";
 import { applyTerms } from "../terms/filters.js";
 
@@ -137,6 +137,7 @@ export async function executeDataTool(
         order: options.order,
         direction: options.direction,
       };
+      const rowScoped = isRowScopedRead(access, name);
       signal?.throwIfAborted();
       if (tool === "count_items") {
         const count = await query
@@ -149,6 +150,7 @@ export async function executeDataTool(
           conditions,
           ...selection,
           count: count?.total ?? "0",
+          ...(rowScoped ? { rowScoped: true } : {}),
         };
       }
       // Qualify source columns: ORDER BY an output alias would sort the text
@@ -181,6 +183,7 @@ export async function executeDataTool(
         direction: options.direction,
         hasMore: rows.length > options.limit,
         pageLimit: 50,
+        ...(rowScoped ? { rowScoped: true } : {}),
       };
     },
     { readOnly: true },

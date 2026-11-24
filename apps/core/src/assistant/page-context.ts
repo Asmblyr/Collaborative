@@ -8,6 +8,32 @@ import { ItemError } from "../items/validation.js";
 import { collectionData } from "../tools/collection-data.js";
 import { executeDataTool } from "../tools/data-tools.js";
 import type { AssistantContext } from "./context-input.js";
+import { formatAssistantDate } from "./instructions.js";
+
+export interface AssistantUserIdentity {
+  id: string;
+  displayName: string | null;
+}
+
+export async function currentUserIdentity(
+  db: Knex,
+  access: Access,
+): Promise<AssistantUserIdentity> {
+  const row = await db("public.asmblyr_users")
+    .where({ id: access.principal.id })
+    .first<{
+      display_name?: string | null;
+      first_name?: string | null;
+      last_name?: string | null;
+    }>("display_name", "first_name", "last_name");
+  const displayName =
+    row?.display_name?.trim() ||
+    [row?.first_name?.trim(), row?.last_name?.trim()]
+      .filter(Boolean)
+      .join(" ") ||
+    null;
+  return { id: access.principal.id, displayName };
+}
 
 export async function pageSnapshot(
   db: Knex,
@@ -22,9 +48,12 @@ export async function pageSnapshot(
   if (context.workspaceId && !workspace) {
     throw new ItemError("Workspace not found", 404);
   }
+  const { currentDate, timeZone } = formatAssistantDate();
   const snapshot = {
     page: context.page,
     workspace: workspace ? { id: workspace.id, name: workspace.name } : null,
+    currentDate,
+    timeZone,
   };
   if (!context.collection || (!context.table && !context.record)) {
     return { snapshot, collectionId: null, enabled: true };

@@ -119,7 +119,7 @@ test("assistant data tools share query semantics, enforce projections and relati
       { page: "settings", workspaceId: null },
       reload,
     ))!;
-    assert.equal(fromSettings.definitions.length, 8);
+    assert.equal(fromSettings.definitions.length, 14);
     await fromSettings.close?.();
     const tools = (await createContextTools(db, access, context, reload))!;
     assert.ok("error" in (await tools.execute("search_items", search)));

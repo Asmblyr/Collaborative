@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, RefreshCw } from "lucide-react";
 import { MessageFooter } from "@/components/ui/message";
 import { useUiCopy } from "@/lib/ui-copy";
 import { AssistantIconButton } from "./assistant-icon-button";
@@ -14,8 +14,12 @@ type CopyResult = {
 
 export function AssistantCopyAnswer({
   message,
+  onRegenerate,
+  regenerateDisabled = false,
 }: {
   message: AssistantMessage;
+  onRegenerate?: () => void;
+  regenerateDisabled?: boolean;
 }) {
   const copy = useUiCopy();
   const [result, setResult] = useState<CopyResult | null>(null);
@@ -30,11 +34,21 @@ export function AssistantCopyAnswer({
     return () => window.clearTimeout(timeout);
   }, [result]);
 
-  if (
-    message.role !== "assistant" ||
-    message.streaming ||
-    !message.content.trim()
-  ) {
+  if (message.role !== "assistant" || message.streaming) {
+    return null;
+  }
+
+  const trimmedContent = message.content.trim();
+  const isStatusPlaceholder =
+    (Boolean(message.cancelled) &&
+      trimmedContent === copy("Запрос остановлен.")) ||
+    (Boolean(message.failed) &&
+      trimmedContent === copy("Не удалось завершить ответ."));
+  const canCopy = Boolean(trimmedContent) && !isStatusPlaceholder;
+  const showRegenerate = Boolean(
+    onRegenerate && !message.cancelled && !message.failed,
+  );
+  if (!canCopy && !showRegenerate) {
     return null;
   }
 
@@ -63,21 +77,37 @@ export function AssistantCopyAnswer({
   }
 
   return (
-    <MessageFooter className="gap-2">
-      <AssistantIconButton
-        label={label}
-        size="icon-xs"
-        disabled={state === "copying"}
-        onClick={() => void copyAnswer()}
-      >
-        {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-      </AssistantIconButton>
-      <span
-        role="status"
-        className={failed ? "font-normal" : "sr-only"}
-      >
-        {feedback}
-      </span>
+    <MessageFooter className="gap-1">
+      {canCopy && (
+        <AssistantIconButton
+          label={label}
+          size="icon-xs"
+          disabled={state === "copying"}
+          onClick={() => void copyAnswer()}
+        >
+          {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+        </AssistantIconButton>
+      )}
+      {showRegenerate && (
+        <AssistantIconButton
+          label={
+            copy.locale.startsWith("en") ? "Regenerate" : "Перегенерировать"
+          }
+          size="icon-xs"
+          disabled={regenerateDisabled}
+          onClick={onRegenerate}
+        >
+          <RefreshCw aria-hidden="true" />
+        </AssistantIconButton>
+      )}
+      {canCopy && (
+        <span
+          role="status"
+          className={failed ? "font-normal" : "sr-only"}
+        >
+          {feedback}
+        </span>
+      )}
     </MessageFooter>
   );
 }
