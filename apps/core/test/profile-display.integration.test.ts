@@ -69,7 +69,7 @@ test("profile display discloses only explicitly configured rooted values without
   });
   assert.equal(JSON.stringify(own).includes("Must not escape"), false);
   await call("GET", `/items/${collection}`, undefined, 403, 1);
-  await call("GET", "/users/references", undefined, 403, 1);
+  await call("GET", "/users", undefined, 403, 1);
   await call("GET", `/users/${admin.id}/profile-display`, undefined, 403, 1);
   await call("GET", "/users/profile-display", undefined, 403, 1);
   await call("GET", "/users/profile-display/sources", undefined, 403, 1);

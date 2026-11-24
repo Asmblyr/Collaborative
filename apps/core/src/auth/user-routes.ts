@@ -1,14 +1,30 @@
 import type { FastifyInstance } from "fastify";
 import type { Knex } from "knex";
 import {
+  loadSettingsAccess,
   requireSettingsSection,
   requireSettingsRead,
 } from "../settings/access.js";
-import { inviteUser, listUsers, renewInvitation } from "./invitations.js";
+import { AccessDeniedError } from "../permissions/access.js";
+import {
+  inviteUser,
+  inviteUsersBulk,
+  listUsers,
+  listUsersDirectory,
+  renewInvitation,
+} from "./invitations.js";
 import { getUserAccess } from "./user-access.js";
-import { parseInvite, parseUserId } from "./validation.js";
+import {
+  parseBulkInviteInput,
+  parseInviteInput,
+  parseUserId,
+  parseUsersListQuery,
+  parseUserStatus,
+} from "./validation.js";
+import { setUserStatus } from "./user-status.js";
 import { requireSettingsAdministrator } from "../settings/admin-access.js";
 import { replaceUserDelegation } from "../policies/delegation-repository.js";
+import { replaceUserPolicies } from "../policies/assignment-repository.js";
 import { parsePolicyIds } from "../policies/assignment-validation.js";
 import { createRecoveryLink } from "./link-login.js";
 import { authenticateAccess } from "./tokens.js";
@@ -47,17 +63,68 @@ export function registerUserRoutes(
       requireSettingsRead(db(), request, "users", "policies"),
   };
 
-  app.get("/users", reader, async (_request, reply) =>
-    reply
+  app.get("/users", reader, async (request, reply) => {
+    const directoryQuery = parseUsersListQuery(request.query);
+    if (directoryQuery) {
+      return reply
+        .header("Cache-Control", "no-store")
+        .send(await listUsersDirectory(db(), directoryQuery));
+    }
+    return reply
       .header("Cache-Control", "no-store")
-      .send({ data: await listUsers(db()) }),
-  );
-  app.post("/users", admin, async (request, reply) =>
-    reply
+      .send({ data: await listUsers(db()) });
+  });
+  app.post("/users", async (request, reply) => {
+    const actor = await requireSettingsSection(db(), request, "users");
+    const { email, policyId } = parseInviteInput(request.body);
+    return reply
       .header("Cache-Control", "no-store")
       .code(201)
-      .send({ data: await inviteUser(db(), parseInvite(request.body)) }),
-  );
+      .send({
+        data: await inviteUser(db(), email, { actorId: actor.id, policyId }),
+      });
+  });
+  app.post("/invitations", async (request, reply) => {
+    const actor = await requireSettingsSection(db(), request, "users");
+    const body = request.body;
+    if (
+      body &&
+      typeof body === "object" &&
+      !Array.isArray(body) &&
+      "emails" in body
+    ) {
+      const { emails, policyId } = parseBulkInviteInput(body);
+      return reply
+        .header("Cache-Control", "no-store")
+        .code(201)
+        .send({
+          data: await inviteUsersBulk(db(), emails, {
+            actorId: actor.id,
+            policyId,
+          }),
+        });
+    }
+    const { email, policyId } = parseInviteInput(body);
+    return reply
+      .header("Cache-Control", "no-store")
+      .code(201)
+      .send({
+        data: await inviteUser(db(), email, { actorId: actor.id, policyId }),
+      });
+  });
+  app.post("/invitations/bulk", async (request, reply) => {
+    const actor = await requireSettingsSection(db(), request, "users");
+    const { emails, policyId } = parseBulkInviteInput(request.body);
+    return reply
+      .header("Cache-Control", "no-store")
+      .code(201)
+      .send({
+        data: await inviteUsersBulk(db(), emails, {
+          actorId: actor.id,
+          policyId,
+        }),
+      });
+  });
   app.post<{ Params: { id: string } }>(
     "/users/:id/recovery",
     {
@@ -85,6 +152,20 @@ export function registerUserRoutes(
         data: await getUserAccess(db(), parseUserId(request.params.id)),
       }),
   );
+  app.patch<{ Params: { id: string } }>(
+    "/users/:id/status",
+    async (request, reply) => {
+      const actor = await requireSettingsSection(db(), request, "users");
+      return reply.header("Cache-Control", "no-store").send({
+        data: await setUserStatus(
+          db(),
+          actor,
+          parseUserId(request.params.id),
+          parseUserStatus(request.body),
+        ),
+      });
+    },
+  );
   app.post<{ Params: { id: string } }>(
     "/users/:id/invitation",
     admin,
@@ -97,6 +178,31 @@ export function registerUserRoutes(
           actor.id,
         ),
       });
+    },
+  );
+  app.put<{ Params: { id: string } }>(
+    "/users/:id/policies",
+    async (request, reply) => {
+      const access = await loadSettingsAccess(
+        db(),
+        request.headers.authorization,
+      );
+      if (
+        !access.user.superuser &&
+        (!access.editableSections.includes("policies") ||
+          !access.sections.includes("users"))
+      ) {
+        throw new AccessDeniedError();
+      }
+      const policyIds = await replaceUserPolicies(
+        db(),
+        parseUserId(request.params.id),
+        parsePolicyIds(request.body, "policyIds"),
+        access.user.id,
+      );
+      return reply
+        .header("Cache-Control", "no-store")
+        .send({ data: { policyIds } });
     },
   );
   app.put<{ Params: { id: string } }>(

@@ -29,6 +29,7 @@ export interface AccessUser {
   firstName: string | null;
   lastName: string | null;
   displayName: string | null;
+  description?: string | null;
   avatarId: string | null;
   pictureUrl: string | null;
   lastLoginAt: string | null;
@@ -40,7 +41,21 @@ export interface AccessUser {
   hasPassword: boolean;
   invitationPending?: boolean;
   hasDelegation: boolean;
+  department?: string | null;
   policyIds: string[];
+}
+
+export interface UsersDirectoryMeta {
+  total: number;
+  page: number;
+  limit: number;
+  statusCounts: {
+    all: number;
+    active: number;
+    disabled: number;
+    invited: number;
+  };
+  departments: string[];
 }
 
 export interface Policy {

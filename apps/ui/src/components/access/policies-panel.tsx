@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PolicyEditorDialog } from "./policy-editor-dialog";
+import { accessText } from "./access-helpers";
 import type { AccessUser, Permission, Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -74,62 +75,88 @@ export function PoliciesPanel({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {policies.map((policy) => (
-            <TableRow key={policy.id}>
-              <TableCell className="font-medium">{policy.name}</TableCell>
-              <TableCell>
-                {
-                  new Set(
-                    permissions
-                      .filter(
-                        (permission) =>
-                          "collection" in permission &&
-                          permission.policyIds.includes(policy.id),
-                      )
-                      .flatMap((permission) =>
-                        "collection" in permission
-                          ? [permission.collection]
+          {policies.map((policy) => {
+            const isOutsideDelegation =
+              !readOnly &&
+              !canManagePolicies &&
+              !delegatablePolicyIds.includes(policy.id);
+            return (
+              <TableRow key={policy.id}>
+                <TableCell>
+                  <div className="font-medium">{policy.name}</div>
+                  {isOutsideDelegation && (
+                    <div className="text-xs text-muted-foreground">
+                      {accessText(
+                        copy.locale,
+                        "Вне вашего набора делегирования",
+                        "Outside your delegation set",
+                      )}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {
+                    new Set(
+                      permissions
+                        .filter(
+                          (permission) =>
+                            "collection" in permission &&
+                            permission.policyIds.includes(policy.id),
+                        )
+                        .flatMap((permission) =>
+                          "collection" in permission
+                            ? [permission.collection]
+                            : [],
+                        ),
+                    ).size
+                  }
+                </TableCell>
+                <TableCell>
+                  {
+                    new Set(
+                      permissions.flatMap((permission) =>
+                        "section" in permission &&
+                        permission.policyIds.includes(policy.id)
+                          ? [permission.section]
                           : [],
                       ),
-                  ).size
-                }
-              </TableCell>
-              <TableCell>
-                {
-                  new Set(
-                    permissions.flatMap((permission) =>
-                      "section" in permission &&
-                      permission.policyIds.includes(policy.id)
-                        ? [permission.section]
-                        : [],
-                    ),
-                  ).size
-                }
-              </TableCell>
-              <TableCell>
-                {
-                  users.filter((user) => user.policyIds.includes(policy.id))
-                    .length
-                }
-              </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSelection(policy.id)}
-                >
-                  {readOnly
-                    ? copy("Посмотреть")
-                    : canManagePolicies
-                      ? copy("Настроить")
-                      : delegatablePolicyIds.includes(policy.id)
-                        ? copy("Назначить")
-                        : copy("Посмотреть")}
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+                    ).size
+                  }
+                </TableCell>
+                <TableCell>
+                  {
+                    users.filter((user) => user.policyIds.includes(policy.id))
+                      .length
+                  }
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    title={
+                      isOutsideDelegation
+                        ? accessText(
+                            copy.locale,
+                            "Вне вашего набора делегирования",
+                            "Outside your delegation set",
+                          )
+                        : undefined
+                    }
+                    onClick={() => setSelection(policy.id)}
+                  >
+                    {readOnly
+                      ? copy("Посмотреть")
+                      : canManagePolicies
+                        ? copy("Настроить")
+                        : delegatablePolicyIds.includes(policy.id)
+                          ? copy("Назначить")
+                          : copy("Посмотреть")}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       {policies.length === 0 && (

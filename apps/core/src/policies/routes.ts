@@ -25,6 +25,7 @@ import {
   renamePolicy,
 } from "./repository.js";
 import { parseId, parseName } from "./validation.js";
+import { previewPolicyCondition } from "./condition-preview.js";
 import { policyApplicationCatalog } from "../oauth/policy-access.js";
 
 interface PolicyParams {
@@ -65,6 +66,12 @@ export function registerPolicyRoutes(
   app.get("/policies/applications", reader, async () => ({
     data: await policyApplicationCatalog(db()),
   }));
+  app.post("/settings/policies/preview-condition", async (request, reply) => {
+    const actor = await requireSettingsRead(db(), request, "policies");
+    return reply.header("Cache-Control", "no-store").send({
+      data: await previewPolicyCondition(db(), actor, request.body),
+    });
+  });
   app.post("/policies", admin, async (request, reply) =>
     reply.code(201).send({
       data: hasPolicyConfiguration(request.body)

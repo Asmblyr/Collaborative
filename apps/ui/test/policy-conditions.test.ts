@@ -39,6 +39,7 @@ const collection: PolicyCollection = {
     },
     { name: "price", type: "decimal" },
     { name: "enabled", type: "boolean" },
+    { name: "title", type: "text" },
   ],
 };
 
@@ -121,5 +122,53 @@ test("permission hints and validation stay specific to the schema and operand ty
       fields,
     ),
     false,
+  );
+  assert.equal(
+    conditionIsValid(
+      {
+        logic: "and",
+        children: [
+          {
+            field: "title",
+            op: "eq",
+            value: { kind: "literal", value: "" },
+          },
+        ],
+      },
+      fields,
+    ),
+    false,
+  );
+  assert.equal(
+    conditionIsValid(
+      {
+        logic: "and",
+        children: [
+          {
+            field: "title",
+            op: "eq",
+            value: { kind: "literal", value: "   " },
+          },
+        ],
+      },
+      fields,
+    ),
+    false,
+  );
+  assert.equal(
+    conditionIsValid(
+      {
+        logic: "and",
+        children: [
+          {
+            field: "title",
+            op: "eq",
+            value: { kind: "literal", value: "Важно" },
+          },
+        ],
+      },
+      fields,
+    ),
+    true,
   );
 });

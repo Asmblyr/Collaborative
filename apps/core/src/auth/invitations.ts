@@ -1,9 +1,16 @@
 import { createHash, randomBytes } from "node:crypto";
 import argon2 from "argon2";
 import type { Knex } from "knex";
-import { requireManagedInvitation } from "../policies/delegation-access.js";
+import {
+  requireDelegatedPolicies,
+  requireManagedInvitation,
+} from "../policies/delegation-access.js";
+import { PolicyNotFoundError } from "../policies/validation.js";
+import { securityEvent } from "./security-events.js";
+import { listAllUsers, listUsersDirectory } from "./user-directory.js";
 import {
   AuthConflictError,
+  AuthInputError,
   InvalidCredentialsError,
   UserNotFoundError,
   normalizedEmail,
@@ -16,72 +23,68 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+export { listUsersDirectory };
+
 export async function listUsers(database: Knex) {
-  const users = await database("asmblyr_users as usr")
-    .withSchema("public")
-    .leftJoin(
-      "asmblyr_password_credentials as credential",
-      "credential.user_id",
-      "usr.id",
-    )
-    .select<
-      {
-        id: string;
-        email: string;
-        status: string;
-        superuser: boolean;
-        created_at: Date;
-        firstName: string | null;
-        lastName: string | null;
-        displayName: string | null;
-        avatarId: string | null;
-        pictureUrl: string | null;
-        lastLoginAt: Date | null;
-        lastActiveAt: Date | null;
-        hasPassword: boolean;
-        hasDelegation: boolean;
-      }[]
-    >(
-      "usr.id",
-      "usr.email",
-      "usr.status",
-      "usr.superuser",
-      "usr.created_at",
-      "usr.first_name as firstName",
-      "usr.last_name as lastName",
-      "usr.display_name as displayName",
-      "usr.avatar_id as avatarId",
-      "usr.picture_url as pictureUrl",
-      "usr.last_login_at as lastLoginAt",
-      "usr.last_active_at as lastActiveAt",
-      database.raw("credential.user_id IS NOT NULL AS ??", ["hasPassword"]),
-      database.raw(
-        "EXISTS (SELECT 1 FROM public.asmblyr_user_invitations WHERE user_id = usr.id AND consumed_at IS NULL) AS ??",
-        ["invitationPending"],
-      ),
-      database.raw(
-        "EXISTS (SELECT 1 FROM public.asmblyr_user_policy_delegations WHERE user_id = usr.id) AS ??",
-        ["hasDelegation"],
-      ),
-    )
-    .orderBy("usr.email");
-  const assignments = await database("asmblyr_user_policies")
-    .withSchema("public")
-    .select<{ user_id: string; policy_id: string }[]>("user_id", "policy_id");
-  return users.map((user) => ({
-    ...user,
-    policyIds: assignments
-      .filter((assignment) => assignment.user_id === user.id)
-      .map((assignment) => assignment.policy_id),
-  }));
+  return listAllUsers(database);
 }
 
-export async function inviteUser(database: Knex, emailInput: unknown) {
+export interface InviteUserOptions {
+  actorId?: string;
+  policyId?: string | null;
+}
+
+export interface BulkInviteCreatedItem {
+  email: string;
+  userId: string;
+  invitationToken: string;
+  expiresAt: string;
+  policyId: string | null;
+}
+
+export interface BulkInviteSkippedItem {
+  email: string;
+  reason: "invalid_email" | "duplicate_in_batch" | "already_exists";
+  message: string;
+}
+
+export interface BulkInviteResult {
+  created: BulkInviteCreatedItem[];
+  skipped: BulkInviteSkippedItem[];
+  policyId: string | null;
+}
+
+async function authorizeStarterPolicy(
+  transaction: Knex,
+  policyId: string,
+  actorId?: string,
+): Promise<void> {
+  if (actorId) {
+    await requireDelegatedPolicies(transaction, actorId, "users", [policyId]);
+  }
+  const policy = await transaction("public.asmblyr_policies")
+    .where({ id: policyId })
+    .forShare()
+    .first("id");
+  if (!policy) {
+    throw new PolicyNotFoundError();
+  }
+}
+
+export async function inviteUser(
+  database: Knex,
+  emailInput: unknown,
+  options: InviteUserOptions = {},
+) {
   const email = normalizedEmail(emailInput);
+  const policyId = options.policyId ?? null;
   const token = `asm_inv_${randomBytes(32).toString("base64url")}`;
   const expiresAt = new Date(Date.now() + invitationLifetimeMs);
   try {
     const user = await database.transaction(async (transaction) => {
+      if (policyId) {
+        await authorizeStarterPolicy(transaction, policyId, options.actorId);
+      }
       const [created] = await transaction("asmblyr_users")
         .withSchema("public")
         .insert({ email, superuser: false })
@@ -95,9 +98,29 @@ export async function inviteUser(database: Knex, emailInput: unknown) {
           token_hash: hashToken(token),
           expires_at: expiresAt,
         });
+      if (policyId) {
+        await transaction("public.asmblyr_user_policies")
+          .insert({ policy_id: policyId, user_id: created.id })
+          .onConflict()
+          .ignore();
+        if (options.actorId) {
+          await securityEvent(
+            transaction,
+            options.actorId,
+            "policy.user_assigned",
+            policyId,
+            { userId: created.id },
+          );
+        }
+      }
       return created;
     });
-    return { user, invitationToken: token, expiresAt: expiresAt.toISOString() };
+    return {
+      user,
+      invitationToken: token,
+      expiresAt: expiresAt.toISOString(),
+      ...(policyId ? { policyId } : {}),
+    };
   } catch (error) {
     if (
       typeof error === "object" &&
@@ -109,6 +132,78 @@ export async function inviteUser(database: Knex, emailInput: unknown) {
     }
     throw error;
   }
+}
+
+export async function inviteUsersBulk(
+  database: Knex,
+  emailsInput: string[],
+  options: InviteUserOptions = {},
+): Promise<BulkInviteResult> {
+  const policyId = options.policyId ?? null;
+  if (policyId) {
+    await database.transaction(async (transaction) => {
+      await authorizeStarterPolicy(transaction, policyId, options.actorId);
+    });
+  }
+
+  const created: BulkInviteCreatedItem[] = [];
+  const skipped: BulkInviteSkippedItem[] = [];
+  const seen = new Set<string>();
+
+  for (const rawEntry of emailsInput) {
+    const raw = rawEntry.trim();
+    if (!raw) {
+      continue;
+    }
+    let email: string;
+    try {
+      email = normalizedEmail(raw);
+    } catch (error) {
+      if (error instanceof AuthInputError) {
+        skipped.push({
+          email: raw,
+          reason: "invalid_email",
+          message: "Некорректный формат электронной почты.",
+        });
+        continue;
+      }
+      throw error;
+    }
+    if (seen.has(email)) {
+      skipped.push({
+        email,
+        reason: "duplicate_in_batch",
+        message: "Адрес повторяется в списке приглашений.",
+      });
+      continue;
+    }
+    seen.add(email);
+    try {
+      const invited = await inviteUser(database, email, {
+        actorId: options.actorId,
+        policyId,
+      });
+      created.push({
+        email: invited.user.email,
+        userId: invited.user.id,
+        invitationToken: invited.invitationToken,
+        expiresAt: invited.expiresAt,
+        policyId,
+      });
+    } catch (error) {
+      if (error instanceof AuthConflictError) {
+        skipped.push({
+          email,
+          reason: "already_exists",
+          message: "Пользователь с такой электронной почтой уже существует.",
+        });
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return { created, skipped, policyId };
 }
 
 export async function renewInvitation(
