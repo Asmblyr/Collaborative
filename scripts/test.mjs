@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { readdir, readFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
@@ -9,21 +10,58 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const core = path.join(root, "apps/core");
 const require = createRequire(path.join(core, "package.json"));
 
+function parseShard(argv, env) {
+  const flag = argv.find((arg) => arg.startsWith("--shard="));
+  const raw = flag ? flag.slice("--shard=".length) : env.TEST_SHARD;
+  if (!raw) return null;
+  const match = /^(\d+)\/(\d+)$/.exec(raw.trim());
+  if (!match) {
+    throw new Error(`Invalid shard "${raw}"; expected i/N (1-indexed)`);
+  }
+  const index = Number(match[1]);
+  const total = Number(match[2]);
+  if (index < 1 || total < 1 || index > total) {
+    throw new Error(`Shard "${raw}" out of range (1 <= i <= N)`);
+  }
+  return { index, total };
+}
+
+function defaultConcurrency(files) {
+  const override = process.env.TEST_CONCURRENCY;
+  if (override) {
+    const parsed = Number(override);
+    if (Number.isInteger(parsed) && parsed >= 1) return parsed;
+  }
+  const hasIntegration = files.some((name) =>
+    name.endsWith(".integration.test.ts"),
+  );
+  if (hasIntegration) return 1;
+  return Math.max(1, Math.min(4, os.availableParallelism()));
+}
+
 async function executeTests(app, files, environment = {}) {
   if (!files.length) return;
 
+  const concurrency = defaultConcurrency(files);
+  const compileCache =
+    process.env.NODE_COMPILE_CACHE ??
+    path.join(os.tmpdir(), "asmblyr-node-compile-cache");
   const child = spawn(
     process.execPath,
     [
       require.resolve("tsx/cli"),
       ...(app === "ui" ? ["--tsconfig", "tsconfig.test.json"] : []),
       "--test",
-      "--test-concurrency=1",
+      `--test-concurrency=${concurrency}`,
       ...files,
     ],
     {
       cwd: path.join(root, "apps", app),
-      env: { ...process.env, ...environment },
+      env: {
+        ...process.env,
+        NODE_COMPILE_CACHE: compileCache,
+        ...environment,
+      },
       stdio: "inherit",
       windowsHide: true,
     },
@@ -162,9 +200,11 @@ async function main() {
   ];
   if (!suites.includes(suite)) throw new Error(`Unknown suite: ${suite}`);
 
+  const shard = parseShard(process.argv.slice(2), process.env);
+
   if (suite !== "ui-unit") {
     const files = await testFiles("core");
-    const selected = files.filter((name) => {
+    let selected = files.filter((name) => {
       if (suite === "core-deployment")
         return /test\/(?:browser-|public-server|replica-state|assistant-stream|plugin-actions)/.test(
           name,
@@ -327,6 +367,11 @@ async function main() {
         );
       return true;
     });
+    if (shard) {
+      selected = selected.filter(
+        (_, index) => index % shard.total === shard.index - 1,
+      );
+    }
     const settingsIndex = selected.indexOf(
       "test/integrations.integration.test.ts",
     );
@@ -337,20 +382,33 @@ async function main() {
         executeTests("core", installationTests, environment),
       );
     }
-    if (selected.some((name) => name.endsWith(".integration.test.ts"))) {
+    const unitFiles = selected.filter(
+      (name) => !name.endsWith(".integration.test.ts"),
+    );
+    const integrationFiles = selected.filter((name) =>
+      name.endsWith(".integration.test.ts"),
+    );
+    if (unitFiles.length) {
+      await executeTests("core", unitFiles);
+    }
+    if (integrationFiles.length) {
       await withTestDatabase((environment) =>
-        executeTests("core", selected, {
+        executeTests("core", integrationFiles, {
           ...environment,
           ...(suite === "core-visual" ? { ASMBLYR_VISUAL_TEST: "1" } : {}),
           ...(suite === "core-lavinmq" ? { ASMBLYR_LAVINMQ_TEST: "1" } : {}),
         }),
       );
-    } else {
-      await executeTests("core", selected);
     }
   }
   if (suite === "all" || suite === "ui-unit") {
-    await executeTests("ui", await testFiles("ui"));
+    let uiFiles = await testFiles("ui");
+    if (shard && suite === "ui-unit") {
+      uiFiles = uiFiles.filter(
+        (_, index) => index % shard.total === shard.index - 1,
+      );
+    }
+    await executeTests("ui", uiFiles);
   }
 }
 

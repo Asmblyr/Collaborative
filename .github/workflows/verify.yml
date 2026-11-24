@@ -15,9 +15,116 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  plan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      checks: read
+    outputs:
+      run_verify: ${{ steps.decide.outputs.run_verify }}
+    steps:
+      - name: Determine whether full verification is required
+        id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          run_verify=true
+          if [[ "$GITHUB_REPOSITORY" == "Asmblyr/Collaborative" && "$GITHUB_REF" == refs/tags/v* ]]; then
+            passed="$(
+              curl --fail --silent --show-error \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs?check_name=verify&status=completed&per_page=20" \
+              | jq '[.check_runs[] | select(.conclusion == "success")] | length'
+            )"
+            if [[ "${passed:-0}" -gt 0 ]]; then
+              run_verify=false
+            fi
+          fi
+          echo "run_verify=${run_verify}" >> "$GITHUB_OUTPUT"
+          echo "Full verification required for \`${GITHUB_SHA}\`: \`${run_verify}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  checks-and-unit:
+    needs: plan
+    if: needs.plan.outputs.run_verify == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+      - name: Install pnpm
+        run: npm install --global pnpm@11.13.1
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build workspace packages and examples
+        run: pnpm build:packages && pnpm build:examples
+      - name: Static checks
+        run: pnpm publication:check && pnpm format:check && pnpm -r typecheck && pnpm -r lint
+      - name: Package and unit tests
+        run: >-
+          pnpm --filter @asmblyr-collaborative/sdk test &&
+          pnpm --filter @asmblyr-collaborative/cli test &&
+          node scripts/test.mjs core-unit &&
+          node scripts/test.mjs ui-unit
+
+  build-and-packages:
+    needs: plan
+    if: needs.plan.outputs.run_verify == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+      - name: Install pnpm
+        run: npm install --global pnpm@11.13.1
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build apps and packages
+        run: pnpm build
+      - name: Check package archives and clean consumer
+        run: pnpm packages:check
+      - name: Build docs
+        run: pnpm docs:build
+
+  core-integration:
+    needs: plan
+    if: needs.plan.outputs.run_verify == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
     services:
       postgres:
         image: postgres:17-alpine
@@ -42,24 +149,49 @@ jobs:
         with:
           node-version: "22"
           package-manager-cache: false
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
       - name: Install pnpm
         run: npm install --global pnpm@11.13.1
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Check
-        run: pnpm check
-      - name: Build
-        run: pnpm build
-      - name: Check package archives and clean consumer
-        run: pnpm packages:check
+      - name: Build workspace packages and examples
+        run: pnpm build:packages && pnpm build:examples
+      - name: Core integration tests (shard ${{ matrix.shard }}/6)
+        run: node scripts/test.mjs core-integration --shard=${{ matrix.shard }}/6
+
+  verify:
+    needs: [plan, checks-and-unit, build-and-packages, core-integration]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify all required checks succeeded
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ needs.plan.outputs.run_verify }}" == "false" ]]; then
+            echo "Skipped: commit ${GITHUB_SHA} already passed verify."
+            exit 0
+          fi
+          for result in \
+            "${{ needs.checks-and-unit.result }}" \
+            "${{ needs.build-and-packages.result }}" \
+            "${{ needs.core-integration.result }}"; do
+            if [[ "$result" != "success" ]]; then
+              echo "Verification failed (job result: $result)"
+              exit 1
+            fi
+          done
 
   container:
-    needs: verify
+    needs: plan
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: write
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -68,6 +200,7 @@ jobs:
         with:
           node-version: "22"
           package-manager-cache: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       - name: Install Helm
         shell: bash
         run: |
@@ -84,26 +217,95 @@ jobs:
           set -euo pipefail
           core_version="$(node -p "require('./apps/core/package.json').version")"
           core_version="${core_version%%+*}+sha.${GITHUB_SHA}"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          cache_branch="pr"
+          cache_mode="min"
+          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+            cache_branch="main"
+            cache_mode="max"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             core_version="${GITHUB_REF_NAME#v}"
+            cache_branch="tag-${GITHUB_REF_NAME}"
+            cache_mode="max"
           fi
           for component in core ui; do
-            docker build --target "$component" --build-arg DEPLOYMENT_VERSION="$GITHUB_SHA" \
+            cache_args=(--cache-from "type=gha,scope=container-${component}-main")
+            if [[ "$component" == "ui" ]]; then
+              cache_args+=(--cache-from "type=gha,scope=container-core-main")
+            fi
+            if [[ "$cache_branch" != "main" ]]; then
+              cache_args+=(--cache-from "type=gha,scope=container-${component}-${cache_branch}")
+            fi
+            cache_args+=(--cache-to "type=gha,mode=${cache_mode},scope=container-${component}-${cache_branch}")
+            docker buildx build --load --target "$component" \
+              --build-arg DEPLOYMENT_VERSION="$GITHUB_SHA" \
               --build-arg ASMBLYR_CORE_VERSION="$core_version" \
               --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
               --label org.opencontainers.image.revision="$GITHUB_SHA" \
               --label org.opencontainers.image.licenses=MIT \
+              "${cache_args[@]}" \
               --tag "asmblyr-collaborative-$component:ci" .
           done
       - name: Check split containers with disposable PostgreSQL
         run: node scripts/test.mjs container-split asmblyr-collaborative-core:ci asmblyr-collaborative-ui:ci
       - name: Validate chart and routing
         run: node scripts/chart-check.mjs
+
+  publish:
+    needs: [verify, container]
+    if: >-
+      github.repository == 'Asmblyr/Collaborative' &&
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Install Helm
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -O https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz
+          curl --fail --silent --show-error -O https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz.sha256sum
+          sha256sum --check helm-v4.2.3-linux-amd64.tar.gz.sha256sum
+          tar -xzf helm-v4.2.3-linux-amd64.tar.gz
+          sudo install linux-amd64/helm /usr/local/bin/helm
+          rm -rf linux-amd64 helm-v4.2.3-linux-amd64.tar.gz*
+      - name: Load verified Core and UI images from BuildKit cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          core_version="$(node -p "require('./apps/core/package.json').version")"
+          core_version="${core_version%%+*}+sha.${GITHUB_SHA}"
+          cache_branch="main"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            core_version="${GITHUB_REF_NAME#v}"
+            cache_branch="tag-${GITHUB_REF_NAME}"
+          fi
+          for component in core ui; do
+            cache_args=(--cache-from "type=gha,scope=container-${component}-${cache_branch}")
+            if [[ "$cache_branch" != "main" ]]; then
+              cache_args+=(--cache-from "type=gha,scope=container-${component}-main")
+            fi
+            docker buildx build --load --target "$component" \
+              --build-arg DEPLOYMENT_VERSION="$GITHUB_SHA" \
+              --build-arg ASMBLYR_CORE_VERSION="$core_version" \
+              --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
+              --label org.opencontainers.image.revision="$GITHUB_SHA" \
+              --label org.opencontainers.image.licenses=MIT \
+              "${cache_args[@]}" \
+              --tag "asmblyr-collaborative-$component:ci" .
+          done
       - name: Publish verified image pair and chart
-        if: >-
-          github.repository == 'Asmblyr/Collaborative' &&
-          github.event_name != 'pull_request' &&
-          (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash scripts/container/publish.sh
