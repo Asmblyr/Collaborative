@@ -322,7 +322,6 @@ export async function syncSsoAvatar(
       () => reject(new Error("SSO avatar sync timed out")),
       deadlineMs,
     );
-    timer.unref();
   });
 
   const syncPromise = performAvatarSync(options);

@@ -207,7 +207,6 @@ export async function fetchSsoAvatar(
   const timeoutMs = options.timeoutMs ?? AVATAR_FETCH_TIMEOUT_MS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  timer.unref();
 
   try {
     let currentUrl = initialUrl;

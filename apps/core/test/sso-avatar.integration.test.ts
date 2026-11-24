@@ -73,10 +73,12 @@ async function runSsoLogin(
   fake: Awaited<ReturnType<typeof fakeSsoProvider>>,
   options: FakeAuthorizeOptions,
 ) {
+  const remoteAddress = "198.51.100.42";
   const browserToken = randomBytes(32).toString("base64url");
   const start = await app.inject({
     method: "POST",
     url: "/auth/sso/okkam/start",
+    remoteAddress,
     payload: {
       browserToken,
       intent: "login",
@@ -89,6 +91,7 @@ async function runSsoLogin(
   return app.inject({
     method: "POST",
     url: "/auth/sso/okkam/callback",
+    remoteAddress,
     payload: { browserToken, query },
   });
 }
