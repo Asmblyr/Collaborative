@@ -1,11 +1,15 @@
 import type { Knex } from "knex";
-import { issueUserTokens, type TokenPair } from "../tokens.js";
+import { issueUserTokens } from "../tokens.js";
 import { securityEvent } from "../security-events.js";
 import type { SsoProvider } from "./config.js";
 import { SsoError } from "./input.js";
 import type { ExternalProfile } from "./profile.js";
 import type { ExternalIdentity } from "./protocol.js";
-import { autoLinkOrProvision, isUniqueViolation } from "./provisioning.js";
+import {
+  autoLinkOrProvision,
+  isUniqueViolation,
+  type SsoLoginResult,
+} from "./provisioning.js";
 
 interface IdentityRow extends ExternalIdentity {
   id: string;
@@ -84,7 +88,7 @@ export async function loginWithIdentity(
   identity: ExternalIdentity,
   profile: ExternalProfile,
   userAgent?: string,
-): Promise<TokenPair> {
+): Promise<SsoLoginResult> {
   const record = await db("public.asmblyr_user_identities")
     .where(identity)
     .first<IdentityRow>();
@@ -108,7 +112,7 @@ export async function loginWithIdentity(
     await securityEvent(trx, record.user_id, "user.sso_login", record.user_id, {
       provider: identity.provider,
     });
-    return tokens;
+    return { userId: record.user_id, tokens };
   });
 }
 

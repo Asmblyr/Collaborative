@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type { Knex } from "knex";
+import type { FileStorage } from "../../files/storage/types.js";
+import type { RuntimeSource } from "../../shared/runtime-source.js";
 import type { SsoService } from "../sso/service.js";
 import { parseSsoCallback, safeReturnTo, SsoError } from "../sso/input.js";
 import { credentialRateLimit } from "../rate-limit.js";
@@ -17,6 +19,7 @@ export function registerBrowserSso(
   database: Knex | null,
   sso: SsoService,
   config: BrowserConfig,
+  storage?: RuntimeSource<FileStorage>,
 ): void {
   app.register(async (scope) => {
     scope.addContentTypeParser(
@@ -103,8 +106,9 @@ export function registerBrowserSso(
         reply
           .header("Cache-Control", "no-store")
           .header("Referrer-Policy", "no-referrer");
-        for (const cookie of [name, intent])
+        for (const cookie of [name, intent]) {
           setCookie(reply, config, cookie, "", 0, `/sign/sso/${provider}`);
+        }
         try {
           const input = parseSsoCallback({
             browserToken: cookieValue(request, name),
@@ -116,6 +120,15 @@ export function registerBrowserSso(
             input,
             request.headers.authorization,
             request.headers["user-agent"],
+            {
+              storage,
+              requestId: request.id,
+              onAvatarError: (providerId, reason) =>
+                app.log.warn(
+                  { provider: providerId, reason },
+                  "SSO avatar sync skipped",
+                ),
+            },
           );
           if (result.intent === "login") {
             await startBrowserSession(db(), result.tokens, reply, config);

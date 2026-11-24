@@ -206,7 +206,7 @@ export function createApp({
   const assistantSource = integrationRuntime?.assistant ?? assistant;
   registerCredentialLimits(app, database);
   registerBrowserRoutes(app, database, browser, passkeys);
-  registerBrowserSso(app, database, sso, browser);
+  registerBrowserSso(app, database, sso, browser, storageSource);
   registerBrowserGoogle(app, database, google, browser);
   registerCliRoutes(app, database, passkeys.origin);
   const actions = new PluginActions(
@@ -270,7 +270,7 @@ export function createApp({
   registerFilterPresetRoutes(app, database);
   registerAuthRoutes(app, database, setupToken);
   registerPasskeyRoutes(app, database, passkeys, sso.providers);
-  registerSsoRoutes(app, database, sso);
+  registerSsoRoutes(app, database, sso, storageSource);
   registerOAuthRoutes(app, database, oauth);
   registerUserRoutes(app, database);
   registerProfileRoutes(app, database);

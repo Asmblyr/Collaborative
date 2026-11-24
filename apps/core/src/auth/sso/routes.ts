@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Knex } from "knex";
+import type { FileStorage } from "../../files/storage/types.js";
+import type { RuntimeSource } from "../../shared/runtime-source.js";
 import { credentialRateLimit } from "../rate-limit.js";
 import { authenticateAccess } from "../tokens.js";
 import { parseUserId } from "../validation.js";
@@ -11,12 +13,14 @@ export function registerSsoRoutes(
   app: FastifyInstance,
   database: Knex | null,
   sso: SsoService,
+  storage?: RuntimeSource<FileStorage>,
 ): void {
   function db(): Knex {
-    if (!database)
+    if (!database) {
       throw Object.assign(new Error("Database is not configured"), {
         statusCode: 503,
       });
+    }
     return database;
   }
   app.get("/auth/providers", async (_request, reply) =>
@@ -49,6 +53,15 @@ export function registerSsoRoutes(
         parseSsoCallback(request.body),
         request.headers.authorization,
         request.headers["user-agent"],
+        {
+          storage,
+          requestId: request.id,
+          onAvatarError: (providerId, reason) =>
+            app.log.warn(
+              { provider: providerId, reason },
+              "SSO avatar sync skipped",
+            ),
+        },
       ),
   );
   app.get("/users/me/identities", async (request, reply) => {

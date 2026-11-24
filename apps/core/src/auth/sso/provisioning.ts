@@ -83,6 +83,11 @@ async function assignDefaultPolicies(
   return policyIds;
 }
 
+export interface SsoLoginResult {
+  userId: string;
+  tokens: TokenPair;
+}
+
 async function resolveInTransaction(
   trx: Knex.Transaction,
   provider: SsoProvider,
@@ -90,7 +95,7 @@ async function resolveInTransaction(
   profile: ExternalProfile,
   email: string,
   userAgent?: string,
-): Promise<TokenPair> {
+): Promise<SsoLoginResult> {
   await trx.raw("SELECT pg_advisory_xact_lock(?::bigint)", [
     advisoryLockKey(email),
   ]);
@@ -104,7 +109,7 @@ async function resolveInTransaction(
     await securityEvent(trx, linked.user_id, "user.sso_login", linked.user_id, {
       provider: identity.provider,
     });
-    return tokens;
+    return { userId: linked.user_id, tokens };
   }
 
   const existingUser = await trx("public.asmblyr_users")
@@ -157,7 +162,7 @@ async function resolveInTransaction(
       existingUser.id,
       { provider: identity.provider },
     );
-    return tokens;
+    return { userId: existingUser.id, tokens };
   }
 
   if (!provider.autoProvision) {
@@ -193,7 +198,7 @@ async function resolveInTransaction(
   await securityEvent(trx, created.id, "user.sso_login", created.id, {
     provider: identity.provider,
   });
-  return tokens;
+  return { userId: created.id, tokens };
 }
 
 export async function autoLinkOrProvision(
@@ -202,7 +207,7 @@ export async function autoLinkOrProvision(
   identity: ExternalIdentity,
   profile: ExternalProfile,
   userAgent?: string,
-): Promise<TokenPair> {
+): Promise<SsoLoginResult> {
   if (!provider.autoLinkByEmail && !provider.autoProvision) {
     throw notLinkedError();
   }

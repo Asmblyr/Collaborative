@@ -1,5 +1,8 @@
 import type { Knex } from "knex";
+import type { FileStorage } from "../../files/storage/types.js";
+import type { RuntimeSource } from "../../shared/runtime-source.js";
 import { authenticateAccess, type TokenPair } from "../tokens.js";
+import { syncSsoAvatar, type AvatarFetcher } from "./avatar-sync.js";
 import type { SsoProvider } from "./config.js";
 import { consumeFlow, findFlow, newProof, saveFlow } from "./flows.js";
 import { linkIdentity, loginWithIdentity } from "./identities.js";
@@ -10,19 +13,27 @@ export type SsoResult =
   | { intent: "link"; returnTo: string }
   | { intent: "login"; returnTo: string; tokens: TokenPair };
 
+export interface SsoCompleteContext {
+  storage?: RuntimeSource<FileStorage>;
+  requestId?: string;
+  onAvatarError?: (providerId: string, reason: string) => void;
+}
+
 export class SsoService {
   constructor(
     readonly providers: SsoProvider[],
     private readonly protocol = new SsoProtocol(),
+    private readonly avatarFetcher?: AvatarFetcher,
   ) {}
 
   private provider(id: string): SsoProvider {
     const provider = this.providers.find((entry) => entry.id === id);
-    if (!provider)
+    if (!provider) {
       throw new SsoError(
         "SSO_UNKNOWN_PROVIDER",
         "Sign-in provider is not configured",
       );
+    }
     return provider;
   }
 
@@ -50,6 +61,7 @@ export class SsoService {
     input: SsoCallback,
     authorization?: string,
     userAgent?: string,
+    context: SsoCompleteContext = {},
   ): Promise<SsoResult> {
     const provider = this.provider(id);
     const pending = await findFlow(db, provider, input);
@@ -87,13 +99,26 @@ export class SsoService {
       await linkIdentity(db, flow.user_id, flow.session_id, verified.identity);
       return { intent: "link", returnTo: flow.return_to };
     }
-    const tokens = await loginWithIdentity(
+    const login = await loginWithIdentity(
       db,
       provider,
       verified.identity,
       verified.profile,
       userAgent,
     );
-    return { intent: "login", returnTo: flow.return_to, tokens };
+    if (provider.avatarSync !== "off" && verified.profile.picture) {
+      await syncSsoAvatar({
+        db,
+        provider,
+        userId: login.userId,
+        picture: verified.profile.picture,
+        accessToken: verified.accessToken,
+        storage: context.storage,
+        requestId: context.requestId,
+        fetcher: this.avatarFetcher,
+        onError: context.onAvatarError,
+      });
+    }
+    return { intent: "login", returnTo: flow.return_to, tokens: login.tokens };
   }
 }

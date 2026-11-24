@@ -5,6 +5,7 @@ import { ssoDiagnostic, type SsoDiagnostic } from "./diagnostics.js";
 import {
   extractExternalProfile,
   mergeExternalProfiles,
+  needsPictureUserInfo,
   needsUserInfoFallback,
   oidcProfileMapping,
   readPropertyPath,
@@ -26,6 +27,7 @@ export interface ExternalIdentity {
 export interface VerifiedIdentity {
   identity: ExternalIdentity;
   profile: ExternalProfile;
+  accessToken?: string;
 }
 
 export interface VerifyOptions {
@@ -189,25 +191,38 @@ export class SsoProtocol {
 
         const userInfoEndpoint =
           configuration.serverMetadata().userinfo_endpoint;
-        if (
+        const needsIdentity =
+          options.fetchProfile && needsUserInfoFallback(provider, profile);
+        const needsPicture =
           options.fetchProfile &&
-          needsUserInfoFallback(provider, profile) &&
+          !needsIdentity &&
+          needsPictureUserInfo(provider, profile);
+
+        if (
+          (needsIdentity || needsPicture) &&
           userInfoEndpoint &&
           tokens.access_token
         ) {
-          const userInfo = await oidc.fetchUserInfo(
-            configuration,
-            tokens.access_token,
-            subject,
-          );
-          if (profileSubject(userInfo, "sub") !== subject) {
-            throw new Error("Userinfo subject mismatch");
+          try {
+            const userInfo = await oidc.fetchUserInfo(
+              configuration,
+              tokens.access_token,
+              subject,
+            );
+            if (profileSubject(userInfo, "sub") !== subject) {
+              throw new Error("Userinfo subject mismatch");
+            }
+            profile = mergeExternalProfiles(
+              profile,
+              extractExternalProfile(userInfo, oidcProfileMapping),
+              provider.requireVerifiedEmail,
+            );
+          } catch (error) {
+            if (needsIdentity) {
+              throw error;
+            }
+            this.reportFailure?.(ssoDiagnostic(provider.id, "verify", error));
           }
-          profile = mergeExternalProfiles(
-            profile,
-            extractExternalProfile(userInfo, oidcProfileMapping),
-            provider.requireVerifiedEmail,
-          );
         }
       } else {
         const response = await (this.transport ?? fetch)(provider.profileUrl, {
@@ -226,9 +241,18 @@ export class SsoProtocol {
         profile = extractExternalProfile(rawProfile, provider);
       }
 
+      const accessToken =
+        options.fetchProfile &&
+        provider.avatarSync !== "off" &&
+        provider.avatarSendToken &&
+        tokens.access_token
+          ? tokens.access_token
+          : undefined;
+
       return {
         identity: { provider: provider.id, issuer: provider.issuer, subject },
         profile,
+        ...(accessToken ? { accessToken } : {}),
       };
     } catch (error) {
       this.reportFailure?.(ssoDiagnostic(provider.id, "verify", error));

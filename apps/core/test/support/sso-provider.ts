@@ -15,6 +15,7 @@ export interface FakeAuthorizeOptions {
   fault?: string;
   idTokenClaims?: Record<string, unknown>;
   userInfo?: Record<string, unknown>;
+  userInfoStatus?: number;
   oauth2Profile?: Record<string, unknown>;
 }
 
@@ -64,6 +65,7 @@ export async function fakeSsoProvider(
       fault?: string;
       idTokenClaims?: Record<string, unknown>;
       userInfo?: Record<string, unknown>;
+      userInfoStatus?: number;
       oauth2Profile?: Record<string, unknown>;
     }
   >();
@@ -72,6 +74,7 @@ export async function fakeSsoProvider(
     {
       subject: string;
       userInfo?: Record<string, unknown>;
+      userInfoStatus?: number;
       oauth2Profile?: Record<string, unknown>;
     }
   >();
@@ -98,6 +101,7 @@ export async function fakeSsoProvider(
       fault: authOptions.fault,
       idTokenClaims: authOptions.idTokenClaims,
       userInfo: authOptions.userInfo,
+      userInfoStatus: authOptions.userInfoStatus,
       oauth2Profile: authOptions.oauth2Profile,
     });
     return new URLSearchParams({
@@ -135,6 +139,9 @@ export async function fakeSsoProvider(
         : "";
       const entry = tokenProfiles.get(token);
       assert.ok(entry, "valid userinfo bearer token");
+      if (entry.userInfoStatus && entry.userInfoStatus >= 400) {
+        return new Response("userinfo error", { status: entry.userInfoStatus });
+      }
       return Response.json(
         entry.userInfo ?? {
           sub: entry.subject,
@@ -192,6 +199,7 @@ export async function fakeSsoProvider(
     tokenProfiles.set(accessToken, {
       subject: pending.subject,
       userInfo: pending.userInfo,
+      userInfoStatus: pending.userInfoStatus,
       oauth2Profile: pending.oauth2Profile,
     });
     if (driver === "oauth2") {
