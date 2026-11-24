@@ -40,6 +40,18 @@ export function ItemFormField({
 }) {
   const copy = useUiCopy();
 
+  const selectShowsDefault =
+    !readonly &&
+    !item &&
+    field.defaultValue !== undefined &&
+    (field.type === "boolean" ||
+      (field.presentation?.interface === "select" &&
+        Boolean(
+          field.presentation.options?.some(
+            (option) => String(option.value) === String(field.defaultValue),
+          ),
+        )));
+
   return (
     <>
       <Label
@@ -102,7 +114,7 @@ export function ItemFormField({
           {copy("Время UTC, без пересчёта из часового пояса устройства.")}
         </p>
       )}
-      {!item && field.defaultValue !== undefined && (
+      {!item && field.defaultValue !== undefined && !selectShowsDefault && (
         <p className="text-xs text-muted-foreground">
           {copy("По умолчанию:")}{" "}
           {field.presentation?.options?.find(

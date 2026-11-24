@@ -19,6 +19,31 @@ import type { ItemColumn } from "./use-item-columns";
 import { useUiCopy } from "@/lib/ui-copy";
 import { defaultColumnWidth } from "./column-width";
 import { ColumnResizeHandle } from "./column-resize-handle";
+import { formatNumericValue } from "./value-format";
+
+const NUMERIC_TYPES = new Set(["integer", "bigint", "decimal"]);
+
+function isNumericColumn(column: ItemColumn, primaryKeyName: string): boolean {
+  if (column.name === primaryKeyName) {
+    return false;
+  }
+
+  if (!NUMERIC_TYPES.has(column.type)) {
+    return false;
+  }
+
+  if (
+    column.relation ||
+    column.presentation?.sensitive ||
+    column.presentation?.extension ||
+    column.presentation?.options?.length ||
+    column.presentation?.display?.kind === "status"
+  ) {
+    return false;
+  }
+
+  return true;
+}
 
 interface ItemsTableProps {
   collection: Collection;
@@ -123,7 +148,7 @@ export function ItemsTable({
           <TableRow className="hover:bg-transparent">
             <TableHead
               scope="col"
-              className="sticky top-0 left-0 z-30 bg-card px-4"
+              className="sticky top-0 left-0 z-30 border-r border-border/60 bg-card px-4"
             >
               <Checkbox
                 aria-label={copy("Выбрать все записи на странице")}
@@ -138,94 +163,102 @@ export function ItemsTable({
                 onCheckedChange={(checked) => onSelectPage(checked === true)}
               />
             </TableHead>
-            {columns.map((column) => (
-              <TableHead
-                key={column.name}
-                scope="col"
-                draggable
-                data-column={column.name}
-                aria-sort={
-                  (page.order ?? "field") === "field" &&
-                  page.sort === column.name
-                    ? page.direction === "asc"
-                      ? "ascending"
-                      : "descending"
-                    : "none"
-                }
-                onDragStart={(event) => {
-                  event.dataTransfer.effectAllowed = "move";
-                  event.dataTransfer.setData("text/plain", column.name);
-                  dragged.current = column.name;
-                }}
-                onDragEnd={() => {
-                  dragged.current = null;
-                  setDrop(null);
-                }}
-                onDragOver={(event) => over(event, column.name)}
-                onDragLeave={() => setDrop(null)}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (dragged.current)
-                    onMove(dragged.current, column.name, drop?.after);
-                  dragged.current = null;
-                  setDrop(null);
-                }}
-                className={`group sticky top-0 z-20 bg-card px-3 text-xs text-muted-foreground ${
-                  drop?.name === column.name
-                    ? drop.after
-                      ? "border-r-2 border-r-primary"
-                      : "border-l-2 border-l-primary"
-                    : ""
-                }`}
-              >
-                <div className="flex min-w-0 items-center gap-1">
-                  <button
-                    type="button"
-                    onKeyDown={(event) => keyboardMove(event, column.name)}
-                    aria-label={copy(
-                      "Переместить столбец {{value0}}. Используйте стрелки влево и вправо.",
-                      { value0: column.label },
-                    )}
-                    className="shrink-0 cursor-grab rounded p-1 text-muted-foreground opacity-40 hover:bg-muted group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
+            {columns.map((column) => {
+              const numeric = isNumericColumn(
+                column,
+                collection.primaryKey.name,
+              );
+              return (
+                <TableHead
+                  key={column.name}
+                  scope="col"
+                  draggable
+                  data-column={column.name}
+                  aria-sort={
+                    (page.order ?? "field") === "field" &&
+                    page.sort === column.name
+                      ? page.direction === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", column.name);
+                    dragged.current = column.name;
+                  }}
+                  onDragEnd={() => {
+                    dragged.current = null;
+                    setDrop(null);
+                  }}
+                  onDragOver={(event) => over(event, column.name)}
+                  onDragLeave={() => setDrop(null)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (dragged.current)
+                      onMove(dragged.current, column.name, drop?.after);
+                    dragged.current = null;
+                    setDrop(null);
+                  }}
+                  className={`group sticky top-0 z-20 bg-card px-3 text-xs text-muted-foreground ${
+                    drop?.name === column.name
+                      ? drop.after
+                        ? "border-r-2 border-r-primary"
+                        : "border-l-2 border-l-primary"
+                      : ""
+                  }`}
+                >
+                  <div
+                    className={`flex min-w-0 items-center gap-1 ${numeric ? "justify-end" : ""}`}
                   >
-                    <GripVertical
-                      className="size-3.5"
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onSort(column.name)}
-                    className="flex min-w-0 items-center gap-1 rounded px-1 py-1 text-left hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-                    aria-label={copy("Сортировать по {{value0}}", {
-                      value0: column.label,
-                    })}
-                    title={column.name}
-                  >
-                    <span className="truncate">{column.label}</span>
-                    {(page.order ?? "field") === "field" &&
-                      page.sort === column.name &&
-                      (page.direction === "asc" ? (
-                        <ArrowUp
-                          className="size-3"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <ArrowDown
-                          className="size-3"
-                          aria-hidden="true"
-                        />
-                      ))}
-                  </button>
-                </div>
-                <ColumnResizeHandle
-                  name={column.name}
-                  label={column.label}
-                  width={columnWidth(column)}
-                  onResize={onResize}
-                />
-              </TableHead>
-            ))}
+                    <button
+                      type="button"
+                      onKeyDown={(event) => keyboardMove(event, column.name)}
+                      aria-label={copy(
+                        "Переместить столбец {{value0}}. Используйте стрелки влево и вправо.",
+                        { value0: column.label },
+                      )}
+                      className="shrink-0 cursor-grab rounded p-1 text-muted-foreground opacity-40 hover:bg-muted group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
+                    >
+                      <GripVertical
+                        className="size-3.5"
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSort(column.name)}
+                      className={`flex min-w-0 items-center gap-1 rounded px-1 py-1 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring ${numeric ? "text-right" : "text-left"}`}
+                      aria-label={copy("Сортировать по {{value0}}", {
+                        value0: column.label,
+                      })}
+                      title={column.name}
+                    >
+                      <span className="truncate">{column.label}</span>
+                      {(page.order ?? "field") === "field" &&
+                        page.sort === column.name &&
+                        (page.direction === "asc" ? (
+                          <ArrowUp
+                            className="size-3"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <ArrowDown
+                            className="size-3"
+                            aria-hidden="true"
+                          />
+                        ))}
+                    </button>
+                  </div>
+                  <ColumnResizeHandle
+                    name={column.name}
+                    label={column.label}
+                    width={columnWidth(column)}
+                    onResize={onResize}
+                  />
+                </TableHead>
+              );
+            })}
             <TableHead
               aria-hidden="true"
               className="sticky top-0 bg-card p-0"
@@ -244,7 +277,7 @@ export function ItemsTable({
                   value0: recordLabels?.[id] ?? recordLabel(collection, item),
                   value1: id,
                 })}
-                className="cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
+                className="group/row cursor-pointer focus-visible:outline-2 focus-visible:outline-ring"
                 onClick={() => {
                   if (!disabled) onOpen(item);
                 }}
@@ -257,7 +290,11 @@ export function ItemsTable({
                 }}
               >
                 <TableCell
-                  className={`sticky left-0 z-10 px-4 ${selected.has(id) ? "bg-muted" : "bg-card"}`}
+                  className={`sticky left-0 z-10 border-r border-border/60 px-4 transition-colors ${
+                    selected.has(id)
+                      ? "bg-muted"
+                      : "bg-card group-hover/row:bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))]"
+                  }`}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <Checkbox
@@ -273,30 +310,53 @@ export function ItemsTable({
                     }
                   />
                 </TableCell>
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.name}
-                    data-column={column.name}
-                    className="overflow-hidden px-4 py-3"
-                  >
-                    <ItemTableValue
-                      column={column}
-                      value={item[column.name]}
-                      primary={column.name === collection.primaryKey.name}
-                      emphasized={column.name === labelField}
-                      relationLabel={
-                        column.relation?.kind === "m2o"
-                          ? labels.get(
-                              JSON.stringify([
-                                column.relation.collection,
-                                String(item[column.name]),
-                              ]),
-                            )
-                          : undefined
-                      }
-                    />
-                  </TableCell>
-                ))}
+                {columns.map((column) => {
+                  const numeric = isNumericColumn(
+                    column,
+                    collection.primaryKey.name,
+                  );
+                  const cellValue = item[column.name];
+                  const defaultFormattedNumber =
+                    numeric &&
+                    !column.presentation?.display &&
+                    (typeof cellValue === "string" ||
+                      typeof cellValue === "number")
+                      ? formatNumericValue(cellValue, copy.locale)
+                      : null;
+                  return (
+                    <TableCell
+                      key={column.name}
+                      data-column={column.name}
+                      className={`overflow-hidden px-4 py-3 ${numeric ? "text-right tabular-nums" : ""}`}
+                    >
+                      {defaultFormattedNumber !== null ? (
+                        <span
+                          title={defaultFormattedNumber}
+                          className={`block truncate tabular-nums ${column.name === labelField ? "font-medium" : ""}`}
+                        >
+                          {defaultFormattedNumber}
+                        </span>
+                      ) : (
+                        <ItemTableValue
+                          column={column}
+                          value={cellValue}
+                          primary={column.name === collection.primaryKey.name}
+                          emphasized={column.name === labelField}
+                          relationLabel={
+                            column.relation?.kind === "m2o"
+                              ? labels.get(
+                                  JSON.stringify([
+                                    column.relation.collection,
+                                    String(cellValue),
+                                  ]),
+                                )
+                              : undefined
+                          }
+                        />
+                      )}
+                    </TableCell>
+                  );
+                })}
                 <TableCell
                   aria-hidden="true"
                   className="p-0"

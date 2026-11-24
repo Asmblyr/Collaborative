@@ -53,19 +53,24 @@ export function AppearanceSettings() {
               { id: "dark", Icon: Moon },
               { id: "system", Icon: Monitor },
             ] as const
-          ).map(({ id, Icon }) => (
-            <Button
-              key={id}
-              variant={mounted && theme === id ? "secondary" : "outline"}
-              size="sm"
-              disabled={!ready}
-              aria-pressed={mounted && theme === id}
-              onClick={() => saveTheme(id)}
-            >
-              <Icon className="size-4" />
-              {t(`appearance.${id}`)}
-            </Button>
-          ))}
+          ).map(({ id, Icon }) => {
+            const active = mounted && theme === id;
+            return (
+              <Button
+                key={id}
+                variant="outline"
+                size="sm"
+                disabled={!ready}
+                aria-pressed={active}
+                onClick={() => saveTheme(id)}
+                className="aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-foreground aria-pressed:ring-1 aria-pressed:ring-primary/30"
+              >
+                <Icon className="size-4" />
+                {t(`appearance.${id}`)}
+                {active && <Check className="size-3.5 text-primary" />}
+              </Button>
+            );
+          })}
         </div>
       </div>
       <div className="space-y-2">
@@ -91,7 +96,7 @@ export function AppearanceSettings() {
                 {swatches[id].map((color) => (
                   <span
                     key={color}
-                    className="size-4 rounded-full ring-2 ring-card"
+                    className="size-4 rounded-full border border-border ring-2 ring-card"
                     style={{ backgroundColor: color }}
                   />
                 ))}

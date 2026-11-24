@@ -91,93 +91,110 @@ export function ItemRecordDataSection({
 }) {
   const copy = useUiCopy();
 
+  const liveDotClass =
+    live.state === "connected"
+      ? "bg-emerald-500"
+      : live.state === "offline"
+        ? "bg-destructive"
+        : "bg-amber-500";
+  const liveLabel =
+    live.state === "connected"
+      ? copy("В сети")
+      : live.state === "reconnecting"
+        ? copy("Переподключение…")
+        : live.state === "offline"
+          ? copy("Нет соединения")
+          : copy("Подключение…");
+
   return (
     <TabsContent
       value="data"
       forceMount
       hidden={hidden}
-      className="space-y-7"
+      className="space-y-6"
     >
       {conflictReview}
-      <div
-        role="status"
-        className="text-xs text-muted-foreground"
-      >
-        {live.state === "connected"
-          ? copy("В сети")
-          : live.state === "reconnecting"
-            ? copy("Переподключение…")
-            : live.state === "offline"
-              ? copy("Нет соединения")
-              : copy("Подключение…")}
-        {live.notice && (
-          <span className="ml-2 text-amber-600 dark:text-amber-400">
-            {live.notice}
+      <div className="space-y-3">
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+        >
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/40 px-2.5 py-0.5 font-medium text-foreground/80">
+            <span
+              aria-hidden="true"
+              className={`size-1.5 rounded-full ${liveDotClass}`}
+            />
+            {liveLabel}
           </span>
+          {live.notice && (
+            <span className="text-amber-600 dark:text-amber-400">
+              {live.notice}
+            </span>
+          )}
+        </div>
+        {collection.sourceKind === "materialized-view" ? (
+          <MaterializedRecordCard
+            collection={collection}
+            fields={fields}
+            sourceFields={sourceFields}
+            item={item}
+            catalog={catalog}
+            onOpenRelated={onOpenRelated}
+          />
+        ) : (
+          <ItemForm
+            key={`${id}:${formRevision}`}
+            id={formId}
+            hideActions
+            fields={fields}
+            aliasFields={aliasFields}
+            renderAlias={(field) => (
+              <ItemAliasField
+                field={field}
+                collection={collection}
+                catalog={catalog}
+                itemId={id}
+                draft={draft}
+                onDraftChange={onDraftChange}
+                onEdit={onEditRelation}
+                busy={busy || Boolean(conflictReview)}
+                container={portalContainer}
+              />
+            )}
+            formLayout={collection.formLayout}
+            readOnlyFields={readOnlyFieldNames}
+            catalog={catalog}
+            onOpenRelated={onOpenRelated}
+            embedded
+            primaryKey={collection.primaryKey}
+            item={item}
+            pending={pending || Boolean(conflictReview)}
+            initialValues={draft.values}
+            allowUnchanged={
+              relationChanges > 0 || Boolean(draftMode && totalDraftChanges > 0)
+            }
+            onReferenceChange={onReferenceChange}
+            onFieldFocus={live.focus}
+            onFieldBlur={live.blur}
+            fieldHolders={Object.fromEntries(
+              Object.entries(live.holders)
+                .filter(([, holder]) => holder.id !== live.selfId)
+                .map(([field, holder]) => [field, holder.displayName]),
+            )}
+            portalContainer={portalContainer}
+            onBusyChange={onUploadingChange}
+            onDirtyChange={(count) => {
+              onChangedCount(count);
+              onDirtyChange?.(
+                count > 0 || draftChanges(draft) > 0 || extensionsDirty || busy,
+              );
+            }}
+            onSubmitAttempt={onSubmitAttempt}
+            onSave={onSave}
+            onCancel={onCancel}
+          />
         )}
       </div>
-      {collection.sourceKind === "materialized-view" ? (
-        <MaterializedRecordCard
-          collection={collection}
-          fields={fields}
-          sourceFields={sourceFields}
-          item={item}
-          catalog={catalog}
-          onOpenRelated={onOpenRelated}
-        />
-      ) : (
-        <ItemForm
-          key={`${id}:${formRevision}`}
-          id={formId}
-          hideActions
-          fields={fields}
-          aliasFields={aliasFields}
-          renderAlias={(field) => (
-            <ItemAliasField
-              field={field}
-              collection={collection}
-              catalog={catalog}
-              itemId={id}
-              draft={draft}
-              onDraftChange={onDraftChange}
-              onEdit={onEditRelation}
-              busy={busy || Boolean(conflictReview)}
-              container={portalContainer}
-            />
-          )}
-          formLayout={collection.formLayout}
-          readOnlyFields={readOnlyFieldNames}
-          catalog={catalog}
-          onOpenRelated={onOpenRelated}
-          embedded
-          primaryKey={collection.primaryKey}
-          item={item}
-          pending={pending || Boolean(conflictReview)}
-          initialValues={draft.values}
-          allowUnchanged={
-            relationChanges > 0 || Boolean(draftMode && totalDraftChanges > 0)
-          }
-          onReferenceChange={onReferenceChange}
-          onFieldFocus={live.focus}
-          onFieldBlur={live.blur}
-          fieldHolders={Object.fromEntries(
-            Object.entries(live.holders)
-              .filter(([, holder]) => holder.id !== live.selfId)
-              .map(([field, holder]) => [field, holder.displayName]),
-          )}
-          portalContainer={portalContainer}
-          onBusyChange={onUploadingChange}
-          onDirtyChange={(count) => {
-            onChangedCount(count);
-            onDirtyChange?.(
-              count > 0 || draftChanges(draft) > 0 || extensionsDirty || busy,
-            );
-          }}
-          onSubmitAttempt={onSubmitAttempt}
-          onSave={onSave}
-          onCancel={onCancel}
-        />
-      )}
       {message && (
         <p
           role="alert"

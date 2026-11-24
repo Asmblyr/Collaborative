@@ -178,6 +178,10 @@ export function AccountTheme({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function useOptionalAccountTheme() {
+  return useContext(Context);
+}
+
 export function useAccountTheme() {
   const context = useContext(Context);
   if (!context) {

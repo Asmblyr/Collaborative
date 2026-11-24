@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -17,6 +18,17 @@ import { requestJson } from "@/lib/http-request";
 import { collectionHref } from "@/lib/item-location";
 import { itemSearchHref, type SearchResults } from "@/lib/search";
 import { useUiCopy } from "@/lib/ui-copy";
+
+const subscribe = () => () => {};
+
+function readShortcutLabel(): string {
+  const platform =
+    (navigator as Navigator & { userAgentData?: { platform?: string } })
+      .userAgentData?.platform ??
+    navigator.platform ??
+    navigator.userAgent;
+  return /mac|iphone|ipad|ipod/i.test(platform) ? "⌘K" : "Ctrl+K";
+}
 
 export function SearchControl({
   collection,
@@ -45,6 +57,11 @@ export function SearchControl({
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchResults | null>(null);
   const [error, setError] = useState(false);
+  const shortcutLabel = useSyncExternalStore(
+    subscribe,
+    readShortcutLabel,
+    () => "Ctrl+K",
+  );
   const query = value.trim();
   const urlQuery = params.get("q") ?? "";
 
@@ -248,19 +265,15 @@ export function SearchControl({
           maxLength={100}
           autoComplete="off"
           className={
-            scoped && query
-              ? "pl-9 pr-16"
-              : !scoped && !value
-                ? "pl-9 sm:pr-14"
-                : "pl-9"
+            scoped && query ? "pl-9 pr-16" : !value ? "pl-9 sm:pr-16" : "pl-9"
           }
         />
-        {!scoped && !value && (
+        {!value && (
           <kbd
             aria-hidden="true"
             className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-block"
           >
-            ⌘K
+            {shortcutLabel}
           </kbd>
         )}
       </form>

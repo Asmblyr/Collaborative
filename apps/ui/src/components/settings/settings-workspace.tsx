@@ -77,8 +77,8 @@ export function SettingsWorkspace({
                 referrerPolicy="no-referrer"
               />
             )}
-            <AvatarFallback className="bg-primary/10 text-xl font-medium text-primary">
-              {name.slice(0, 1).toUpperCase()}
+            <AvatarFallback className="bg-muted text-xl font-medium text-foreground ring-1 ring-inset ring-border">
+              {name.slice(0, 1).toLocaleUpperCase()}
             </AvatarFallback>
           </Avatar>
           <h2 className="break-words font-semibold">{name}</h2>
@@ -139,7 +139,7 @@ export function SettingsWorkspace({
             forceMount
             className="rounded-xl border bg-card p-5 data-[state=inactive]:hidden sm:p-6"
           >
-            <h2 className="mb-1 font-semibold">{t("settings.personal")}</h2>
+            <h2 className="mb-1 font-semibold">{t("settings.profile")}</h2>
             <p className="mb-6 text-sm text-muted-foreground">
               {t("settings.personalHint")}
             </p>

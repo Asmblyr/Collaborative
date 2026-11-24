@@ -8,7 +8,7 @@ import { ItemSelectionBar } from "./item-selection-bar";
 import { TableViewDialog, type TableView } from "./table-view-dialog";
 import { readFilter } from "./item-filter-options";
 import type { PreloadedRecordSnapshot } from "./record-editor-types";
-import type { Collection, ItemPage, ItemValue } from "./types";
+import type { Collection, Item, ItemPage, ItemValue } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function ItemsWorkspaceDialogs({
@@ -23,6 +23,8 @@ export function ItemsWorkspaceDialogs({
   recordId,
   initialRecord,
   creating,
+  createKey,
+  createInitialValues,
   bulkEditing,
   viewEditor,
   views,
@@ -57,6 +59,8 @@ export function ItemsWorkspaceDialogs({
   recordId: string | null;
   initialRecord?: PreloadedRecordSnapshot | null;
   creating: boolean;
+  createKey?: number;
+  createInitialValues?: Item;
   bulkEditing: boolean;
   viewEditor: boolean;
   views: TableView[];
@@ -155,8 +159,10 @@ export function ItemsWorkspaceDialogs({
       )}
       {creating && (
         <ItemEditorDialog
+          key={`create:${collection.name}:${createKey ?? 0}`}
           request={{
             collection: collection.name,
+            initialValues: createInitialValues,
             onSaved: () => onMessage(copy("Запись создана")),
           }}
           catalog={catalog}

@@ -67,7 +67,7 @@ export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
                       alt=""
                     />
                   )}
-                  <AvatarFallback className="bg-muted text-[10px] font-medium">
+                  <AvatarFallback className="bg-muted text-[10px] font-medium text-foreground ring-1 ring-inset ring-border">
                     {initials || copy("У")}
                   </AvatarFallback>
                 </Avatar>
@@ -91,7 +91,7 @@ export function PresenceAvatars({ scope }: { scope: PresenceScope | null }) {
               aria-label={copy("Ещё участников: {{value0}}", {
                 value0: remaining,
               })}
-              className="relative flex size-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-medium outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring"
+              className="relative flex size-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-medium text-foreground ring-1 ring-inset ring-border outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring"
             >
               +{remaining}
             </button>

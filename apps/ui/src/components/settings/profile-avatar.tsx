@@ -11,6 +11,7 @@ import { useUiCopy } from "@/lib/ui-copy";
 export function ProfileAvatar({
   avatarId,
   pictureUrl,
+  displayName,
   canUpload,
   canChoose,
   disabled,
@@ -20,6 +21,7 @@ export function ProfileAvatar({
 }: {
   avatarId: string | null;
   pictureUrl: string | null;
+  displayName?: string;
   canUpload: boolean;
   canChoose: boolean;
   disabled: boolean;
@@ -31,6 +33,7 @@ export function ProfileAvatar({
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | undefined>();
+  const initial = displayName?.trim().slice(0, 1).toLocaleUpperCase();
   async function upload(file: File) {
     if (file.size > 2 * 1024 * 1024) {
       setError(copy("Изображение должно быть не больше 2 МБ"));
@@ -82,11 +85,13 @@ export function ProfileAvatar({
             alt=""
             referrerPolicy="no-referrer"
           />
-          <AvatarFallback>
-            <UserRound
-              aria-hidden="true"
-              className="size-6"
-            />
+          <AvatarFallback className="bg-muted text-xl font-medium text-foreground ring-1 ring-inset ring-border">
+            {initial || (
+              <UserRound
+                aria-hidden="true"
+                className="size-6 text-muted-foreground"
+              />
+            )}
           </AvatarFallback>
         </Avatar>
         {canUpload && (

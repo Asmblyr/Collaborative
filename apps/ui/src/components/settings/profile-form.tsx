@@ -11,6 +11,7 @@ import type { Collection } from "@/components/items/types";
 import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
 import { useEditorState } from "@/components/ui/editor-lifecycle";
 import { apiRequest } from "@/lib/api-request";
+import { userDisplayName } from "@/lib/user-profile";
 import { useUiCopy } from "@/lib/ui-copy";
 import { ProfileAvatar } from "./profile-avatar";
 import { ProfileExtensionFields } from "./profile-extension-fields";
@@ -97,6 +98,7 @@ export function ProfileForm({
           <ProfileAvatar
             avatarId={avatarId}
             pictureUrl={form.user.pictureUrl}
+            displayName={userDisplayName(form.user)}
             canUpload={Boolean(form.canEditAvatar && !readOnly)}
             canChoose={canChooseAvatar && form.canEditAvatar && !readOnly}
             disabled={pending || uploading || readOnly || !form.canEditAvatar}
