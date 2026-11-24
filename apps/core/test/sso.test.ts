@@ -119,6 +119,7 @@ test("OAuth2 verifies PKCE and maps the configured stable profile ID and custom 
       AUTH_OKKAM_FIRST_NAME_KEY: "profile.first",
       AUTH_OKKAM_LAST_NAME_KEY: "profile.last",
       AUTH_OKKAM_DISPLAY_NAME_KEY: "profile.full_name",
+      AUTH_OKKAM_PICTURE_KEY: "profile.avatar",
     },
   });
   const protocol = new SsoProtocol(fake.transport);
@@ -137,6 +138,7 @@ test("OAuth2 verifies PKCE and maps the configured stable profile ID and custom 
           first: "Alice",
           last: "Smith",
           full_name: "Alice Smith",
+          avatar: "https://cdn.corp.example/avatars/alice.png",
         },
       },
     }),
@@ -149,6 +151,7 @@ test("OAuth2 verifies PKCE and maps the configured stable profile ID and custom 
     firstName: "Alice",
     lastName: "Smith",
     displayName: "Alice Smith",
+    picture: "https://cdn.corp.example/avatars/alice.png",
   });
 });
 
@@ -264,6 +267,7 @@ test("OIDC fetches userinfo when id_token is minimal and rejects userinfo subjec
     firstName: "Ivan",
     lastName: "Petrov",
     displayName: "Ivan Petrov",
+    picture: null,
   });
 
   // Skip userinfo during explicit account linking

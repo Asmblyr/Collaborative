@@ -1,3 +1,5 @@
+export type SsoAvatarSyncMode = "off" | "if_empty" | "sync";
+
 interface ProviderSettings {
   id: string;
   label: string;
@@ -12,6 +14,9 @@ interface ProviderSettings {
   requireVerifiedEmail: boolean;
   allowedEmailDomains: string[];
   defaultPolicies: string[];
+  avatarSync: SsoAvatarSyncMode;
+  avatarFallbackUrl: boolean;
+  avatarSendToken: boolean;
 }
 
 export interface OAuth2ProfileMapping {
@@ -20,6 +25,7 @@ export interface OAuth2ProfileMapping {
   firstNameKey: string;
   lastNameKey: string;
   displayNameKey: string;
+  pictureKey: string;
 }
 
 export type SsoProvider = ProviderSettings &
@@ -79,6 +85,26 @@ function booleanEnv(
     return false;
   }
   throw new Error(`${name} must be true or false`);
+}
+
+function avatarSyncEnv(
+  env: NodeJS.ProcessEnv,
+  name: string,
+): SsoAvatarSyncMode {
+  const raw = env[name]?.trim();
+  if (!raw) {
+    return "off";
+  }
+
+  const normalized = raw.toLowerCase();
+  if (
+    normalized === "off" ||
+    normalized === "if_empty" ||
+    normalized === "sync"
+  ) {
+    return normalized;
+  }
+  throw new Error(`${name} must be off, if_empty or sync`);
 }
 
 function domainListEnv(env: NodeJS.ProcessEnv, name: string): string[] {
@@ -204,6 +230,9 @@ export function ssoFromEnv(env: NodeJS.ProcessEnv): SsoProvider[] {
       ),
       allowedEmailDomains: domainListEnv(env, prefix + "ALLOWED_EMAIL_DOMAINS"),
       defaultPolicies: policyListEnv(env, prefix + "DEFAULT_POLICIES"),
+      avatarSync: avatarSyncEnv(env, prefix + "AVATAR_SYNC"),
+      avatarFallbackUrl: booleanEnv(env, prefix + "AVATAR_FALLBACK_URL", false),
+      avatarSendToken: booleanEnv(env, prefix + "AVATAR_SEND_TOKEN", false),
     };
 
     if (driver === "oauth2") {
@@ -232,6 +261,7 @@ export function ssoFromEnv(env: NodeJS.ProcessEnv): SsoProvider[] {
           prefix + "DISPLAY_NAME_KEY",
           "name",
         ),
+        pictureKey: propertyPathEnv(env, prefix + "PICTURE_KEY", "picture"),
         authorizeUrl: endpoint(
           required("AUTHORIZE_URL"),
           prefix + "AUTHORIZE_URL",

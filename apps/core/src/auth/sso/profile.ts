@@ -7,6 +7,7 @@ export interface ExternalProfile {
   firstName: string | null;
   lastName: string | null;
   displayName: string | null;
+  picture: string | null;
 }
 
 export const oidcProfileMapping: OAuth2ProfileMapping = {
@@ -15,10 +16,13 @@ export const oidcProfileMapping: OAuth2ProfileMapping = {
   firstNameKey: "given_name",
   lastNameKey: "family_name",
   displayNameKey: "name",
+  pictureKey: "picture",
 };
 
-const NAME_CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
 const MAX_NAME_LENGTH = 120;
+const MAX_PICTURE_URL_LENGTH = 2048;
+const MAX_DATA_URI_LENGTH = 2_900_000;
 
 export function readPropertyPath(source: unknown, path: string): unknown {
   let value: unknown = source;
@@ -32,7 +36,7 @@ export function readPropertyPath(source: unknown, path: string): unknown {
 }
 
 function sanitizeName(value: unknown): string | null {
-  if (typeof value !== "string" || NAME_CONTROL_CHARS.test(value)) {
+  if (typeof value !== "string" || CONTROL_CHARS.test(value)) {
     return null;
   }
 
@@ -41,6 +45,21 @@ function sanitizeName(value: unknown): string | null {
     return null;
   }
   return trimmed.slice(0, MAX_NAME_LENGTH).trim() || null;
+}
+
+function sanitizePicture(value: unknown): string | null {
+  if (typeof value !== "string" || CONTROL_CHARS.test(value)) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith("data:")) {
+    return trimmed.length <= MAX_DATA_URI_LENGTH ? trimmed : null;
+  }
+  return trimmed.length <= MAX_PICTURE_URL_LENGTH ? trimmed : null;
 }
 
 function parseOptionalEmail(value: unknown): string | undefined {
@@ -65,6 +84,7 @@ export function extractExternalProfile(
     firstName: sanitizeName(readPropertyPath(source, mapping.firstNameKey)),
     lastName: sanitizeName(readPropertyPath(source, mapping.lastNameKey)),
     displayName: sanitizeName(readPropertyPath(source, mapping.displayNameKey)),
+    picture: sanitizePicture(readPropertyPath(source, mapping.pictureKey)),
   };
 }
 
@@ -92,6 +112,7 @@ export function mergeExternalProfiles(
     firstName: primary.firstName ?? fallback.firstName,
     lastName: primary.lastName ?? fallback.lastName,
     displayName: primary.displayName ?? fallback.displayName,
+    picture: primary.picture ?? fallback.picture,
   };
 }
 
@@ -118,6 +139,13 @@ export function needsUserInfoFallback(
     return true;
   }
   return false;
+}
+
+export function needsPictureUserInfo(
+  provider: SsoProvider,
+  profile: ExternalProfile,
+): boolean {
+  return provider.avatarSync !== "off" && !profile.picture;
 }
 
 export function eligibleEmailForSso(
