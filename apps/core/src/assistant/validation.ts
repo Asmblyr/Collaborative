@@ -2,6 +2,7 @@ import { AuthInputError } from "../auth/validation.js";
 import { objectInput } from "../shared/input.js";
 import type { AssistantConfig, ReasoningEffort } from "./config.js";
 import type { AssistantDataAccess } from "@asmblyr-collaborative/contracts";
+import { isValidSkillSlug } from "../skills/validation.js";
 import { parseAssistantDataAccess } from "./data-access.js";
 import {
   parseAssistantContext,
@@ -18,6 +19,7 @@ export interface AssistantInput {
   thinking: boolean;
   context?: AssistantContext | null;
   dataAccess?: AssistantDataAccess;
+  skillSlug?: string | null;
   /** Server-derived conversation memory; never accepted from request JSON. */
   memory?: string;
 }
@@ -26,6 +28,20 @@ export const assistantLimits = {
   maxMessageChars: 8000,
   maxConversationChars: 32000,
 };
+
+function parseOptionalSkillSlug(value: unknown): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new AuthInputError("Invalid skill slug");
+  }
+  const slug = value.trim();
+  if (!isValidSkillSlug(slug)) {
+    throw new AuthInputError("Invalid skill slug");
+  }
+  return slug;
+}
 
 export function parseAssistantInput(
   value: unknown,
@@ -36,6 +52,7 @@ export function parseAssistantInput(
     "settings",
     "context",
     "dataAccess",
+    "skillSlug",
   ]);
   if (
     !Array.isArray(body.messages) ||
@@ -90,11 +107,13 @@ export function parseAssistantInput(
     throw new AuthInputError("Unsupported thinking setting");
   const context = parseAssistantContext(body.context);
   const dataAccess = parseAssistantDataAccess(body.dataAccess, context);
+  const skillSlug = parseOptionalSkillSlug(body.skillSlug);
   return {
     messages,
     reasoningEffort: reasoningEffort as ReasoningEffort | null,
     thinking,
     ...(body.context === undefined ? {} : { context }),
     ...(dataAccess ? { dataAccess } : {}),
+    ...(skillSlug ? { skillSlug } : {}),
   };
 }

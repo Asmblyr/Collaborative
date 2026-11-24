@@ -5,6 +5,7 @@ import type {
   AssistantConversationReceipt,
   AssistantActivity,
 } from "@asmblyr-collaborative/contracts";
+import type { AssistantAnswerPayload } from "./assistant-types";
 import { originalCopy, type UiCopy } from "@/lib/ui-copy-types";
 
 export class AssistantResponseError extends Error {
@@ -166,7 +167,7 @@ export class AssistantRequest {
           this.text = event.data.content;
           this.activity = event.data.activity ?? this.activity;
           this.activityDraft = "";
-          return event.data;
+          return event.data as AssistantAnswerPayload;
         } else if (event.type === "error") {
           this.activity = event.activity ?? this.activity;
           if (event.activity) {

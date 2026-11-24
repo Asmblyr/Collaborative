@@ -27,7 +27,7 @@ test("assistant discovers and reads through MCP from another page, journals call
       assert.equal(body.tools, undefined);
       assert.equal(results.length, 0);
     } else {
-      assert.equal(body.tools.length, 8);
+      assert.equal(body.tools.length, 14);
       if (step === 0) {
         call = {
           name: "list_collections",

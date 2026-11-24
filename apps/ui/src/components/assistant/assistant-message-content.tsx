@@ -1,3 +1,12 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -10,6 +19,86 @@ import {
 } from "@/components/ui/table";
 import { useUiCopy } from "@/lib/ui-copy";
 
+function AssistantMarkdownTable({ children }: { children?: ReactNode }) {
+  const copy = useUiCopy();
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({
+    left: false,
+    right: false,
+  });
+
+  const syncScroll = useCallback(() => {
+    const element = scrollerRef.current;
+    if (!element) {
+      return;
+    }
+
+    const left = element.scrollLeft > 2;
+    const right =
+      element.scrollWidth - element.clientWidth - element.scrollLeft > 2;
+    setScrollState((previous) =>
+      previous.left === left && previous.right === right
+        ? previous
+        : { left, right },
+    );
+  }, []);
+
+  useEffect(() => {
+    syncScroll();
+    const element = scrollerRef.current;
+    if (!element || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(syncScroll);
+    observer.observe(element);
+    if (element.firstElementChild) {
+      observer.observe(element.firstElementChild);
+    }
+    return () => observer.disconnect();
+  }, [syncScroll, children]);
+
+  return (
+    <div className="max-w-full overflow-hidden rounded-lg border bg-background/50 shadow-xs">
+      <div className="relative max-w-full">
+        <Table
+          containerProps={{
+            ref: scrollerRef,
+            role: "region",
+            "aria-label": copy("Таблица"),
+            tabIndex: 0,
+            onScroll: syncScroll,
+            className:
+              "max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+          }}
+          className="w-full min-w-full text-xs leading-5 [overflow-wrap:anywhere]"
+        >
+          {children}
+        </Table>
+        {scrollState.left && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-background/95 to-transparent"
+          />
+        )}
+        {scrollState.right && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background/95 to-transparent"
+          />
+        )}
+      </div>
+      {scrollState.right && (
+        <div className="border-t bg-muted/35 px-2.5 py-1 text-right text-[10px] leading-4 text-muted-foreground">
+          {copy.locale.startsWith("en")
+            ? "Scroll table right →"
+            : "Прокрутите таблицу вправо →"}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AssistantMessageContent({
   content,
   compact = false,
@@ -17,8 +106,6 @@ export function AssistantMessageContent({
   content: string;
   compact?: boolean;
 }) {
-  const copy = useUiCopy();
-
   return (
     <div
       className={`min-w-0 [overflow-wrap:anywhere] ${compact ? "space-y-2 text-xs leading-5 text-muted-foreground" : "space-y-3 text-sm leading-6"}`}
@@ -37,20 +124,7 @@ export function AssistantMessageContent({
           h2: ({ children }) => <h3 className="font-semibold">{children}</h3>,
           h3: ({ children }) => <h3 className="font-semibold">{children}</h3>,
           table: ({ children }) => (
-            <div className="max-w-full overflow-hidden rounded-lg border bg-background/40">
-              <Table
-                containerProps={{
-                  role: "region",
-                  "aria-label": copy("Таблица"),
-                  tabIndex: 0,
-                  className:
-                    "max-w-full overscroll-x-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                }}
-                className="w-max min-w-full text-xs leading-5 [overflow-wrap:normal]"
-              >
-                {children}
-              </Table>
-            </div>
+            <AssistantMarkdownTable>{children}</AssistantMarkdownTable>
           ),
           thead: ({ children }) => (
             <TableHeader className="bg-muted/60">{children}</TableHeader>
@@ -62,7 +136,7 @@ export function AssistantMessageContent({
           th: ({ children, style }) => (
             <TableHead
               style={style}
-              className="h-auto px-2.5 py-2 text-xs"
+              className="h-auto min-w-[4.5rem] max-w-44 whitespace-normal break-words px-2 py-1.5 text-[11px] font-medium"
             >
               {children}
             </TableHead>
@@ -70,7 +144,7 @@ export function AssistantMessageContent({
           td: ({ children, style }) => (
             <TableCell
               style={style}
-              className="max-w-64 whitespace-normal px-2.5 py-2 align-top"
+              className="min-w-[4.5rem] max-w-48 whitespace-normal break-words px-2 py-1.5 align-top"
             >
               {children}
             </TableCell>

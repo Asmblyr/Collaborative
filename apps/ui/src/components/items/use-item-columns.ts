@@ -11,6 +11,7 @@ import type {
 } from "@/lib/table-preferences";
 import { isColumnWidth } from "@asmblyr-collaborative/contracts";
 import { reconcileColumns as reconcile } from "./column-state";
+import { defaultHiddenColumnNames } from "./table-column-defaults";
 import {
   subscribeColumns,
   readColumns,
@@ -63,8 +64,12 @@ export function useItemColumns(
     () => availableColumns(collection, locale),
     [collection, locale],
   );
+  const defaultHidden = useMemo(
+    () => defaultHiddenColumnNames(collection.primaryKey, available),
+    [collection.primaryKey, available],
+  );
   const names = available.map((column) => column.name);
-  const state = reconcile(raw, names);
+  const state = reconcile(raw, names, defaultHidden);
   const byName = new Map(available.map((column) => [column.name, column]));
 
   function toggle(name: string, show: boolean) {
@@ -119,7 +124,7 @@ export function useItemColumns(
       saveColumns(
         storageKey,
         endpoint,
-        reconcile(JSON.stringify(columns), names),
+        reconcile(JSON.stringify(columns), names, defaultHidden),
         copy,
       ),
     all: state.order.map((name) => byName.get(name)!).filter(Boolean),
@@ -134,6 +139,11 @@ export function useItemColumns(
     hasLegacy: Boolean(legacy),
     retry: () => saveColumns(storageKey, endpoint, state, copy),
     importLegacy: () =>
-      saveColumns(storageKey, endpoint, reconcile(legacy, names), copy),
+      saveColumns(
+        storageKey,
+        endpoint,
+        reconcile(legacy, names, defaultHidden),
+        copy,
+      ),
   };
 }

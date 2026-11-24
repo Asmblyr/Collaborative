@@ -2,11 +2,15 @@
 
 import { useLocalizedCatalog } from "./use-localized-catalog";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { TablePreferences } from "@/lib/table-preferences";
 import { itemsPageHref } from "@/lib/item-location";
+import {
+  ASSISTANT_FORM_PREFILL_EVENT,
+  consumeFormPrefill,
+} from "@/components/assistant/assistant-form-handoff";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { showToast } from "@/components/ui/toast";
 import { ItemsWorkspaceCard } from "./items-workspace-card";
@@ -77,6 +81,10 @@ export function ItemsWorkspace({
     setSsrInitialRecord(null);
   }
   const [creating, setCreating] = useState(false);
+  const [createPrefill, setCreatePrefill] = useState<{
+    key: number;
+    values?: Item;
+  }>({ key: 0 });
   const [bulkEditing, setBulkEditing] = useState(false);
 
   useCanonicalTableQuery(canonicalQuery);
@@ -148,6 +156,31 @@ export function ItemsWorkspace({
     Boolean(collection.access.create) &&
     (collection.mode === "multiple" || page.total === "0");
 
+  useEffect(() => {
+    if (!canCreate || recordId !== null) {
+      return;
+    }
+    const applyPrefill = () => {
+      const prefill = consumeFormPrefill(collection.name);
+      if (!prefill) {
+        return;
+      }
+      setCreatePrefill((previous) => ({
+        key: previous.key + 1,
+        values: prefill,
+      }));
+      setCreating(true);
+      setConfirmDelete(false);
+    };
+    const handleEvent = () => applyPrefill();
+    const timer = window.setTimeout(applyPrefill, 0);
+    window.addEventListener(ASSISTANT_FORM_PREFILL_EVENT, handleEvent);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(ASSISTANT_FORM_PREFILL_EVENT, handleEvent);
+    };
+  }, [canCreate, collection.name, recordId, setConfirmDelete]);
+
   function navigate(
     changes: Partial<ItemPage>,
     nextFilter = filter,
@@ -160,6 +193,7 @@ export function ItemsWorkspace({
       nextFilter,
     );
     setCreating(false);
+    setCreatePrefill((previous) => ({ key: previous.key, values: undefined }));
     setSelected(new Set());
     setConfirmDelete(false);
     startTransition(() => {
@@ -168,6 +202,10 @@ export function ItemsWorkspace({
   }
 
   function openCreate() {
+    setCreatePrefill((previous) => ({
+      key: previous.key + 1,
+      values: undefined,
+    }));
     setCreating(true);
     setConfirmDelete(false);
     setMessage("");
@@ -259,6 +297,8 @@ export function ItemsWorkspace({
         recordId={recordId}
         initialRecord={ssrInitialRecord}
         creating={creating}
+        createKey={createPrefill.key}
+        createInitialValues={createPrefill.values}
         bulkEditing={bulkEditing}
         viewEditor={viewEditor}
         views={views}
@@ -280,7 +320,13 @@ export function ItemsWorkspace({
         }}
         onCloseViewEditor={() => setViewEditor(false)}
         onReloadViews={reloadViews}
-        onCloseCreate={() => setCreating(false)}
+        onCloseCreate={() => {
+          setCreating(false);
+          setCreatePrefill((previous) => ({
+            key: previous.key,
+            values: undefined,
+          }));
+        }}
         onCloseRecord={closeRecord}
         onRecordChanged={recordChanged}
         onMessage={setMessage}

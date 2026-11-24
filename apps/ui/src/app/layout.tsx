@@ -1,29 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
-import { cn } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { themeStyles, type ThemeStyle } from "@asmblyr-collaborative/contracts";
 import { AppearanceProvider } from "@/components/settings/appearance-provider";
 import { Toaster } from "@/components/ui/toast";
-
-const geist = localFont({
-  src: "./fonts/geist-latin.woff2",
-  variable: "--font-sans",
-  weight: "100 900",
-  display: "swap",
-  adjustFontFallback: false,
-  fallback: [
-    "Segoe UI Variable Text",
-    "Segoe UI",
-    "-apple-system",
-    "BlinkMacSystemFont",
-    "Roboto",
-    "Helvetica Neue",
-    "sans-serif",
-  ],
-});
 
 export const metadata: Metadata = {
   title: "Asmblyr",
@@ -50,7 +31,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       data-style={style}
-      className={cn("font-sans antialiased", geist.variable)}
+      className="font-sans antialiased"
       suppressHydrationWarning
     >
       <body>

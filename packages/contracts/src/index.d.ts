@@ -352,6 +352,22 @@ export * from "./monitoring.js";
 export * from "./tags.js";
 export * from "./profile-display.js";
 export type {
+  AssistantSkillStatus,
+  AssistantSkillScope,
+  AssistantSkillAudience,
+  AssistantSkillChannel,
+  AssistantSkillCollectionRef,
+  AssistantSkillPolicyRef,
+  AssistantSkillCoverage,
+  AssistantSkill,
+  AssistantSkillInput,
+  AssistantSkillSummary,
+  AssistantSkillRelatedTerm,
+  AssistantSkillDetail,
+  AssistantSkillAdminMeta,
+  AssistantSkillAdminListResult,
+} from "./skills.js";
+export type {
   SystemCollectionName,
   SystemCollectionRelation,
   SystemCollectionField,

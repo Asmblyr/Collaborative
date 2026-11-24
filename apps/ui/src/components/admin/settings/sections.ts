@@ -46,6 +46,12 @@ export const settingsCatalog: readonly {
     group: "Возможности",
   },
   {
+    id: "skills",
+    title: "Умения ассистента",
+    description: "Корпоративные сценарии и инструкции для ассистента и MCP.",
+    group: "Возможности",
+  },
+  {
     id: "services",
     title: "Сервисные аккаунты",
     description:

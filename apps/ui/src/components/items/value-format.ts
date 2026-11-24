@@ -2,6 +2,25 @@ import type { ValueDisplay } from "./presentation-types";
 import type { UiLocale } from "@asmblyr-collaborative/contracts";
 
 // Decimal values remain strings: no conversion through IEEE-754, even for rounding.
+export function trimTrailingDecimalZeros(value: string): string {
+  const match = /^(-?\d+)\.(\d+)$/.exec(value);
+  if (!match) {
+    return value;
+  }
+
+  const [, integer, fraction] = match;
+  if (/^0+$/.test(fraction)) {
+    return integer === "-0" ? "0" : integer;
+  }
+
+  if (fraction.length <= 2) {
+    return value;
+  }
+
+  const trimmed = fraction.replace(/0+$/, "");
+  return `${integer}.${trimmed}`;
+}
+
 export function formatExactNumber(
   value: string | number,
   decimals: number,
@@ -19,6 +38,16 @@ export function formatExactNumber(
   const separator = locale === "en" ? "," : "\u00a0";
   const decimalSeparator = locale === "en" ? "." : ",";
   return `${scaled === BigInt(0) ? "" : sign}${grouping ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, separator) : whole}${decimals ? `${decimalSeparator}${digits.slice(-decimals)}` : ""}`;
+}
+
+export function formatNumericValue(
+  value: string | number,
+  locale: UiLocale = "ru",
+): string {
+  const normalized = trimTrailingDecimalZeros(String(value));
+  const dotIndex = normalized.indexOf(".");
+  const decimals = dotIndex === -1 ? 0 : normalized.length - dotIndex - 1;
+  return formatExactNumber(normalized, decimals, true, locale);
 }
 
 export function formattedValue(

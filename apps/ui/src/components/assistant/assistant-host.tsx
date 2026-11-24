@@ -38,8 +38,12 @@ function useHostState() {
   }, []);
 
   function askRecord() {
-    setContextEnabled(true);
-    setOpen(true);
+    setOpen((previous) => {
+      if (!previous) {
+        setContextEnabled(true);
+      }
+      return !previous;
+    });
   }
 
   return {

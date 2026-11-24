@@ -936,7 +936,7 @@
     "access": "Текущий пользователь, подписанные cookies взаимодействия OAuth и совпадающий Origin; идентификатор пользователя должен совпадать с сессией"
   },
   "GET /users/references": {
-    "access": "Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены",
+    "access": "Активная человеческая сессия; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены",
     "public": false
   },
   "GET /system-collections/users/form": {
@@ -1021,6 +1021,62 @@
   },
   "DELETE /users/me/mcp-connections/:id": {
     "access": "Active human session; revoke only own MCP connection and all its access/refresh credentials immediately.",
+    "public": false
+  },
+  "PATCH /assistant/conversations/:id": {
+    "access": "Активный человек с доступом к чату; переименовывает только собственную сессию",
+    "public": false
+  },
+  "PATCH /assistant/sessions/:id": {
+    "access": "Активный человек с доступом к чату; переименовывает только собственную сессию",
+    "public": false
+  },
+  "GET /assistant/skills": {
+    "access": "Активный человек с доступом к ассистенту; только навыки, доступные пользователю по правам коллекций и политикам",
+    "public": false
+  },
+  "POST /assistant/write-proposals/:id/confirm": {
+    "access": "Активный человек с доступом к ассистенту; однократное подтверждение собственного предложения записи с перепроверкой текущих прав",
+    "public": false
+  },
+  "POST /assistant/write-proposals/:id/reject": {
+    "access": "Активный человек с доступом к ассистенту; отклонение собственного ожидающего предложения записи",
+    "public": false
+  },
+  "POST /invitations": {
+    "access": "Человек: superuser ИЛИ users/update; приглашение одного или нескольких пользователей с необязательной политикой из разрешённого набора",
+    "public": false
+  },
+  "POST /invitations/bulk": {
+    "access": "Человек: superuser ИЛИ users/update; массовое приглашение пользователей с необязательной политикой из разрешённого набора",
+    "public": false
+  },
+  "POST /settings/policies/preview-condition": {
+    "access": "Человек: policies/read ИЛИ update; superuser bypass; предпросмотр числа подходящих строк для условия политики без раскрытия данных записей",
+    "public": false
+  },
+  "GET /settings/skills": {
+    "access": "Человек: skills/read ИЛИ update; superuser bypass",
+    "public": false
+  },
+  "POST /settings/skills": {
+    "access": "Человек: skills/update; superuser bypass",
+    "public": false
+  },
+  "PUT /settings/skills/:id": {
+    "access": "Человек: skills/update; superuser bypass",
+    "public": false
+  },
+  "DELETE /settings/skills/:id": {
+    "access": "Человек: skills/update; superuser bypass",
+    "public": false
+  },
+  "PUT /users/:id/policies": {
+    "access": "Человек: superuser ИЛИ policies/update с чтением users; атомарная замена политик пользователя в разрешённом наборе без изменения себя и superuser",
+    "public": false
+  },
+  "PATCH /users/:id/status": {
+    "access": "Человек: superuser ИЛИ users/update; активация или отключение другого пользователя без изменения себя и superuser, с отзывом сессий при отключении",
     "public": false
   }
 }

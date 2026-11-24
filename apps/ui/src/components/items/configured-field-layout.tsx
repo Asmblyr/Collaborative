@@ -26,6 +26,7 @@ export function ConfiguredFieldLayout({
   reveal,
   revealAttempt = 0,
   plainGroups = false,
+  tabVariant = "underline",
   children,
 }: {
   layout?: FormLayout | null;
@@ -35,6 +36,7 @@ export function ConfiguredFieldLayout({
   reveal?: string;
   revealAttempt?: number;
   plainGroups?: boolean;
+  tabVariant?: "underline" | "pills";
   children: (field: CollectionField) => ReactNode;
 }) {
   const copy = useUiCopy();
@@ -99,12 +101,22 @@ export function ConfiguredFieldLayout({
         >
           <TabsList
             aria-label={copy("Вкладки формы")}
-            className="h-auto max-w-full flex-wrap justify-start gap-1"
+            data-variant={tabVariant}
+            className={
+              tabVariant === "underline"
+                ? "flex h-auto w-full max-w-full flex-wrap justify-start gap-1 rounded-none border-b border-border bg-transparent p-0 text-muted-foreground"
+                : "h-auto max-w-full flex-wrap justify-start gap-1"
+            }
           >
             {form.tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
+                className={
+                  tabVariant === "underline"
+                    ? "-mb-px rounded-none rounded-t-md border-b-2 border-transparent bg-transparent px-3 py-2 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:bg-muted/40 hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:hover:bg-muted/30"
+                    : undefined
+                }
               >
                 {tab.label}
               </TabsTrigger>

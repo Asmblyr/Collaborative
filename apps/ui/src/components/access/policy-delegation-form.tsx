@@ -1,17 +1,25 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
+import { AlertTriangle } from "lucide-react";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { accessRequest } from "@/lib/access-request";
-import type { Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
+import {
+  accessText,
+  localizeAccessError,
+  matchesAccessSearch,
+} from "./access-helpers";
+import type { Policy } from "./types";
 
 export function PolicyDelegationForm({
   userId,
   policies,
   initialIds,
+  delegatingPolicyIds = [],
   editable,
   onDirty,
   onBusy,
@@ -20,6 +28,7 @@ export function PolicyDelegationForm({
   userId: string;
   policies: Policy[];
   initialIds: string[];
+  delegatingPolicyIds?: string[];
   editable: boolean;
   onDirty: (dirty: boolean) => void;
   onBusy: (busy: boolean) => void;
@@ -67,18 +76,23 @@ export function PolicyDelegationForm({
       onDirty(false);
       setMessage(copy("Разрешённый набор сохранён"));
     } catch (cause) {
-      setError((cause as Error).message);
+      setError(localizeAccessError((cause as Error).message));
     } finally {
       setPending(false);
       onBusy(false);
     }
   }
 
+  const delegatingSet = new Set(delegatingPolicyIds);
+  const escalatedPolicies = policies.filter(
+    (policy) => selected.includes(policy.id) && delegatingSet.has(policy.id),
+  );
   const shown = policies.filter(
     (policy) =>
-      policy.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()) &&
+      matchesAccessSearch([policy.name], search) &&
       (editable || selected.includes(policy.id)),
   );
+
   return (
     <section className="space-y-3">
       <div>
@@ -101,20 +115,52 @@ export function PolicyDelegationForm({
             onChange={(event) => setSearch(event.target.value)}
           />
         )}
-        <div className="max-h-60 overflow-y-auto rounded-lg border divide-y">
+        {editable && escalatedPolicies.length > 0 && (
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-200"
+          >
+            <AlertTriangle
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+            />
+            <p className="leading-relaxed">
+              {accessText(
+                copy.locale,
+                `Внимание: в набор делегирования включена политика с правами управления доступом (${escalatedPolicies.map((policy) => policy.name).join(", ")}). Это позволяет передавать административные права другим пользователям и создаёт риск повышения привилегий.`,
+                `Warning: the delegation set includes a policy with access management permissions (${escalatedPolicies.map((policy) => policy.name).join(", ")}). This allows granting administrative rights to others and creates a privilege escalation risk.`,
+              )}
+            </p>
+          </div>
+        )}
+        <div className="max-h-60 divide-y overflow-y-auto rounded-lg border">
           {shown.map((policy) => (
             <label
               key={policy.id}
-              className="flex items-center gap-3 px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
             >
-              <Checkbox
-                checked={selected.includes(policy.id)}
-                disabled={!editable || pending}
-                onCheckedChange={(checked) =>
-                  toggle(policy.id, checked === true)
-                }
-              />
-              <span className="min-w-0 break-words">{policy.name}</span>
+              <span className="flex min-w-0 items-center gap-3">
+                <Checkbox
+                  checked={selected.includes(policy.id)}
+                  disabled={!editable || pending}
+                  onCheckedChange={(checked) =>
+                    toggle(policy.id, checked === true)
+                  }
+                />
+                <span className="min-w-0 break-words">{policy.name}</span>
+              </span>
+              {delegatingSet.has(policy.id) && (
+                <Badge
+                  variant="outline"
+                  className="shrink-0 text-[11px]"
+                >
+                  {accessText(
+                    copy.locale,
+                    "Управление доступом",
+                    "Access management",
+                  )}
+                </Badge>
+              )}
             </label>
           ))}
           {!shown.length && (

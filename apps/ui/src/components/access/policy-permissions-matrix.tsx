@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Settings2, X } from "lucide-react";
+import { Plus, Settings2, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { PolicyActionDialog } from "./policy-action-dialog";
-import type { DraftGrant } from "./policy-draft";
+import { conditionSummary, permissionFields } from "./policy-condition-model";
+import {
+  isSimpleUnconditionalGrant,
+  toggleUnconditionalGrant,
+  type DraftGrant,
+} from "./policy-draft";
+import { accessText, matchesAccessSearch } from "./access-helpers";
 import { actionName, type Action, type PolicyCollection } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 
@@ -34,9 +40,7 @@ export function PolicyPermissionsMatrix({
     index: number;
   } | null>(null);
   const visible = collections.filter((collection) =>
-    [collection.name, collection.displayName ?? ""].some((name) =>
-      name.toLowerCase().includes(query.toLowerCase().trim()),
-    ),
+    matchesAccessSearch([collection.name, collection.displayName], query),
   );
   function open(
     collection: PolicyCollection,
@@ -58,13 +62,43 @@ export function PolicyPermissionsMatrix({
     const next = grants.filter((_entry, index) => index !== editing.index);
     onChange(grant ? [...next, grant] : next);
   }
+  function quickToggle(collection: PolicyCollection, action: Action) {
+    if (collection.sourceKind === "materialized-view" && action !== "read") {
+      return;
+    }
+    if (readOnly) {
+      open(collection, action);
+      return;
+    }
+    const result = toggleUnconditionalGrant(grants, collection.name, action);
+    if (result.kind === "toggled") {
+      onChange(result.grants);
+    } else {
+      open(collection, action);
+    }
+  }
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="font-semibold">{copy("Доступ к коллекциям")}</h3>
           <p className="text-xs text-muted-foreground">
-            {copy("Выберите действие, чтобы настроить записи и поля.")}
+            {readOnly
+              ? copy("Выберите действие, чтобы настроить записи и поля.")
+              : copy(
+                  "Нажмите действие для быстрого переключения «Все записи» или значок настройки для условий и полей.",
+                )}
+          </p>
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span
+              aria-hidden="true"
+              className="inline-block size-2 rounded-full bg-primary"
+            />
+            {accessText(
+              copy.locale,
+              "Точка рядом с действием означает доступ по условию.",
+              "A dot next to an action indicates conditional row-level access.",
+            )}
           </p>
         </div>
         <Input
@@ -107,33 +141,91 @@ export function PolicyPermissionsMatrix({
                       const rules = active.filter(
                         (entry) => entry.action === action,
                       );
+                      const isEnabled = rules.length > 0;
+                      const isConditional = rules.some(
+                        (rule) => rule.rowFilter,
+                      );
+                      const isSimpleToggle =
+                        !readOnly &&
+                        (rules.length === 0 ||
+                          (rules.length === 1 &&
+                            isSimpleUnconditionalGrant(rules[0])));
                       return (
-                        <Button
+                        <div
                           key={action}
-                          type="button"
-                          size="sm"
-                          variant={rules.length ? "default" : "outline"}
-                          className="h-8 rounded-full px-3 text-xs"
-                          aria-haspopup="dialog"
-                          aria-label={copy("{{value0}}: {{value1}}{{value2}}", {
-                            value0: collection.name,
-                            value1: copy(actionName[action]),
-                            value2: rules.length
-                              ? ` ${copy("включено")}`
-                              : ` ${copy("выключено")}`,
-                          })}
-                          title={
-                            rules.some((rule) => rule.rowFilter)
-                              ? copy("Доступ по условию")
-                              : copy("Настроить доступ")
-                          }
-                          onClick={() => open(collection, action)}
+                          className={`inline-flex items-center rounded-full border transition-colors ${
+                            isEnabled
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input bg-background text-foreground"
+                          }`}
                         >
-                          {copy(actionName[action])}
-                          {rules.some((rule) => rule.rowFilter) && (
-                            <span className="size-1.5 rounded-full bg-current opacity-70" />
+                          <button
+                            type="button"
+                            className={`inline-flex h-8 items-center gap-1.5 rounded-l-full pl-3 ${
+                              readOnly ? "rounded-r-full pr-3" : "pr-2"
+                            } text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                              isEnabled
+                                ? "hover:bg-primary/90"
+                                : "hover:bg-accent hover:text-accent-foreground"
+                            }`}
+                            aria-pressed={
+                              isSimpleToggle ? isEnabled : undefined
+                            }
+                            aria-haspopup={
+                              isSimpleToggle ? undefined : "dialog"
+                            }
+                            aria-label={copy(
+                              "{{value0}}: {{value1}}{{value2}}",
+                              {
+                                value0: collection.name,
+                                value1: copy(actionName[action]),
+                                value2: isEnabled
+                                  ? ` ${copy("включено")}`
+                                  : ` ${copy("выключено")}`,
+                              },
+                            )}
+                            title={
+                              isConditional
+                                ? copy("Доступ по условию")
+                                : isSimpleToggle
+                                  ? isEnabled
+                                    ? copy("Выключить «Все записи»")
+                                    : copy("Включить «Все записи»")
+                                  : copy("Настроить доступ")
+                            }
+                            onClick={() => quickToggle(collection, action)}
+                          >
+                            {copy(actionName[action])}
+                            {isConditional && (
+                              <span className="size-1.5 rounded-full bg-current opacity-70" />
+                            )}
+                          </button>
+                          {!readOnly && (
+                            <button
+                              type="button"
+                              className={`inline-flex h-8 items-center justify-center rounded-r-full border-l px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                                isEnabled
+                                  ? "border-primary-foreground/20 hover:bg-primary/80"
+                                  : "border-border hover:bg-accent hover:text-accent-foreground"
+                              }`}
+                              aria-haspopup="dialog"
+                              aria-label={copy(
+                                "Настроить условия и поля: {{value0}} — {{value1}}",
+                                {
+                                  value0: collection.name,
+                                  value1: copy(actionName[action]),
+                                },
+                              )}
+                              title={copy("Условия и поля")}
+                              onClick={() => open(collection, action)}
+                            >
+                              <SlidersHorizontal
+                                aria-hidden="true"
+                                className="size-3"
+                              />
+                            </button>
                           )}
-                        </Button>
+                        </div>
                       );
                     })}
                   <Button
@@ -197,56 +289,69 @@ export function PolicyPermissionsMatrix({
               {actions
                 .filter((action) => {
                   const rules = active.filter((rule) => rule.action === action);
-                  const canAddRule =
-                    !readOnly &&
-                    rules.some(
-                      (rule) =>
-                        Boolean(rule.rowFilter) || !rule.fields.includes("*"),
-                    );
-                  return rules.length > 1 || canAddRule;
+                  const hasScopedRule = rules.some(
+                    (rule) =>
+                      Boolean(rule.rowFilter) || !rule.fields.includes("*"),
+                  );
+                  return rules.length > 1 || hasScopedRule;
                 })
-                .map((action) => (
-                  <div
-                    key={action}
-                    className="flex flex-wrap items-center gap-1 px-4 pb-3 text-xs text-muted-foreground"
-                  >
-                    <span>{copy(actionName[action])}:</span>
-                    {grants
-                      .flatMap((grant, index) =>
-                        grant.collection === collection.name &&
-                        grant.action === action
-                          ? [{ grant, index }]
-                          : [],
-                      )
-                      .map(({ grant, index }, number) => (
+                .map((action) => {
+                  const collectionFields = permissionFields(collection, copy);
+                  return (
+                    <div
+                      key={action}
+                      className="flex flex-wrap items-center gap-1 px-4 pb-3 text-xs text-muted-foreground"
+                    >
+                      <span>{copy(actionName[action])}:</span>
+                      {grants
+                        .flatMap((grant, index) =>
+                          grant.collection === collection.name &&
+                          grant.action === action
+                            ? [{ grant, index }]
+                            : [],
+                        )
+                        .map(({ grant, index }, number) => {
+                          const preview = grant.rowFilter
+                            ? conditionSummary(
+                                grant.rowFilter,
+                                collectionFields,
+                                copy,
+                              )
+                            : copy("Все записи");
+                          const fieldsHint =
+                            action !== "delete" && !grant.fields.includes("*")
+                              ? ` · ${accessText(copy.locale, `полей: ${grant.fields.length}`, `fields: ${grant.fields.length}`)}`
+                              : "";
+                          const fullSummary = `${copy("Правило")} ${number + 1} · ${preview}${fieldsHint}`;
+                          return (
+                            <Button
+                              key={index}
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              title={fullSummary}
+                              className="h-7 max-w-full text-xs"
+                              onClick={() => open(collection, action, index)}
+                            >
+                              <span className="truncate">{fullSummary}</span>
+                            </Button>
+                          );
+                        })}
+                      {!readOnly && (
                         <Button
-                          key={index}
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => open(collection, action, index)}
+                          className="h-7 px-2 text-xs"
+                          onClick={() => open(collection, action, -1)}
                         >
-                          {copy("Правило")} {number + 1} ·{" "}
-                          {grant.rowFilter
-                            ? copy("По условию")
-                            : copy("Все записи")}
+                          <Plus className="size-3" />
+                          {copy("Правило")}
                         </Button>
-                      ))}
-                    {!readOnly && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => open(collection, action, -1)}
-                      >
-                        <Plus className="size-3" />
-                        {copy("Правило")}
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           );
         })}

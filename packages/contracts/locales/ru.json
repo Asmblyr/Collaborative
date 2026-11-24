@@ -54,6 +54,7 @@
   "admin.policies": "Политики доступа",
   "admin.plugins": "Расширения",
   "admin.assistant": "AI-ассистент",
+  "admin.skills": "Умения ассистента",
   "admin.terms": "Термины",
   "admin.services": "Сервисные аккаунты",
   "admin.oauth": "OAuth-приложения",

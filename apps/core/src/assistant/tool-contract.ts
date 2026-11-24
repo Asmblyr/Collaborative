@@ -6,6 +6,8 @@ import type {
   AssistantActivity,
 } from "@asmblyr-collaborative/contracts";
 import type { AssistantPluginResult } from "@asmblyr-collaborative/contracts";
+import type { AssistantWriteProposalCard } from "./write-proposals.js";
+import type { AssistantFormCard, AssistantRecordCard } from "./widgets.js";
 import {
   filterDescription,
   toolDefinitions,
@@ -23,6 +25,9 @@ export interface AssistantTools {
   proposals: FilterProposal[];
   selections?: AssistantSelection[];
   pluginResults?: AssistantPluginResult[];
+  writeProposals?: AssistantWriteProposalCard[];
+  records?: AssistantRecordCard[];
+  forms?: AssistantFormCard[];
   execute(name: string, args: unknown, signal?: AbortSignal): Promise<object>;
   close?(): Promise<void>;
 }
@@ -36,12 +41,27 @@ export interface AssistantRun {
   remainingModelCalls?(): number;
 }
 
+const collectionToolsWithoutPageDefault = new Set([
+  "list_skills",
+  "read_skill",
+  "my_permissions",
+  "list_users",
+  "list_policies",
+  "present_record",
+  "present_form",
+  "propose_write",
+]);
+
 export function assistantToolDefinitions(
   definitions: ToolDefinition[],
   hasTable: boolean,
 ): AssistantToolDefinition[] {
   const tools = definitions.map((definition) => {
-    if (!hasTable || !definition.parameters.properties.collection)
+    if (
+      !hasTable ||
+      !definition.parameters.properties.collection ||
+      collectionToolsWithoutPageDefault.has(definition.name)
+    )
       return definition;
     return {
       ...definition,
@@ -79,6 +99,121 @@ export function assistantToolDefinitions(
       additionalProperties: false,
     },
   });
+  if (definitions.some((definition) => definition.name === "read_item")) {
+    tools.push({
+      name: "present_record",
+      description:
+        "Show an interactive Open record card for a single readable record by collection and primary key ID. Server verifies read/row permissions and loads a safe title and up to 4 readable summary fields. Pass summary=null when no extra caption is needed. Does not navigate until the user clicks.",
+      parameters: {
+        type: "object",
+        properties: {
+          collection: {
+            type: "string",
+            maxLength: 63,
+            description: "Technical collection name.",
+          },
+          id: {
+            type: "string",
+            minLength: 1,
+            maxLength: 255,
+            description: "Primary key ID of the record.",
+          },
+          summary: {
+            type: ["string", "null"],
+            maxLength: 300,
+            description: "Optional short caption for the card, or null.",
+          },
+        },
+        required: ["collection", "id", "summary"],
+        additionalProperties: false,
+      },
+    });
+  }
+  if (definitions.some((definition) => definition.name === "create_item")) {
+    tools.push({
+      name: "present_form",
+      description:
+        "Show an Open creation form card for a collection the user can create records in, optionally prefilled with valid writable field values. Unwritable or unknown fields are stripped server-side. Does not save anything until the user opens and submits the form.",
+      parameters: {
+        type: "object",
+        properties: {
+          collection: {
+            type: "string",
+            maxLength: 63,
+            description: "Technical collection name.",
+          },
+          values: {
+            type: ["object", "null"],
+            additionalProperties: true,
+            maxProperties: 50,
+            description:
+              "Optional dictionary of prefilled writable field values, or null.",
+          },
+          summary: {
+            type: ["string", "null"],
+            maxLength: 300,
+            description: "Optional short caption for the form card, or null.",
+          },
+        },
+        required: ["collection", "values", "summary"],
+        additionalProperties: false,
+      },
+    });
+  }
+  if (
+    definitions.some(
+      (definition) =>
+        definition.name === "create_item" || definition.name === "update_item",
+    )
+  ) {
+    tools.push({
+      name: "propose_write",
+      description:
+        "Prepare an interactive confirmation card with a field-by-field diff for creating or updating one record. Validates permissions, field types, and current values without modifying data yet. The write executes only after the user clicks Confirm.",
+      parameters: {
+        type: "object",
+        properties: {
+          collection: {
+            type: "string",
+            maxLength: 63,
+            description: "Technical collection name.",
+          },
+          operation: {
+            type: "string",
+            enum: ["create", "update"],
+            description: "Mutation type: create or update.",
+          },
+          id: {
+            type: ["string", "null"],
+            maxLength: 255,
+            description:
+              'Record primary key ID for "update"; must be null for "create".',
+          },
+          values: {
+            type: "object",
+            additionalProperties: true,
+            maxProperties: 50,
+            description: "Field values to create or update (1-50 fields).",
+          },
+          expectedValues: {
+            type: ["object", "null"],
+            additionalProperties: true,
+            maxProperties: 50,
+            description:
+              'Optional optimistic concurrency snapshot for "update" (auto-loaded from live record if null); must be null for "create".',
+          },
+          summary: {
+            type: ["string", "null"],
+            maxLength: 300,
+            description:
+              "Optional short summary describing the proposed write.",
+          },
+        },
+        required: ["collection", "operation", "values"],
+        additionalProperties: false,
+      },
+    });
+  }
   if (hasTable) {
     tools.push({
       name: "propose_filter",

@@ -16,11 +16,13 @@ export class ToolArgumentError extends Error {
     readonly code: "INVALID_ARGUMENTS" | "SCHEMA_REQUIRED",
     readonly hint: string,
     readonly argumentNames?: string[],
+    message?: string,
   ) {
     super(
-      code === "SCHEMA_REQUIRED"
-        ? "Collection schema is required."
-        : "Invalid tool arguments.",
+      message ??
+        (code === "SCHEMA_REQUIRED"
+          ? "Collection schema is required."
+          : "Invalid tool arguments."),
     );
   }
 }
@@ -35,7 +37,7 @@ export function toolErrorResult(error: unknown): object {
     return {
       code: "PERMISSION_DENIED",
       error:
-        "Недостаточно прав для этого действия или данные недоступны для MCP.",
+        "Недостаточно прав для этого действия или доступ к этим данным ограничен.",
       hint: "Do not retry this operation or infer unavailable fields or records.",
     };
   }

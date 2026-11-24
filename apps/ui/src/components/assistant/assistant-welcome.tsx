@@ -18,18 +18,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@asmblyr-collaborative/kit/ui/card";
+import type { AssistantSkillSummary } from "@asmblyr-collaborative/contracts";
 import { useUiCopy } from "@/lib/ui-copy";
 import type { PageContext } from "./assistant-context-types";
 import { AssistantConnections } from "./assistant-connections";
+import { collectWelcomeSkillExamples } from "./assistant-skills-state";
 
 export function AssistantWelcome({
   context,
   onPrompt,
+  skills = [],
+  onSkillExample,
 }: {
   context: PageContext | null;
   onPrompt: (prompt: string) => void;
+  skills?: readonly AssistantSkillSummary[];
+  onSkillExample?: (skill: AssistantSkillSummary, prompt: string) => void;
 }) {
   const copy = useUiCopy();
+  const skillExamples = collectWelcomeSkillExamples(
+    skills,
+    context?.collection,
+    6,
+  );
   let actions;
   if (context?.record) {
     actions = [
@@ -152,6 +163,45 @@ export function AssistantWelcome({
             />
           </Button>
         ))}
+        {skillExamples.length > 0 && (
+          <div className="pt-2.5">
+            <div className="mb-1.5 flex items-center gap-1.5 border-t border-border/50 pt-2.5 text-[11px] font-medium text-muted-foreground">
+              <Sparkles
+                className="size-3 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              <span>{copy("Примеры умений")}</span>
+            </div>
+            <div className="space-y-1.5">
+              {skillExamples.map(({ skill, prompt }) => (
+                <button
+                  key={`${skill.slug}:${prompt}`}
+                  type="button"
+                  className="group flex w-full flex-col items-start gap-0.5 rounded-lg border border-border/55 bg-background/50 px-2.5 py-2 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => {
+                    if (onSkillExample) {
+                      onSkillExample(skill, prompt);
+                    } else {
+                      onPrompt(prompt);
+                    }
+                  }}
+                >
+                  <span className="inline-flex max-w-full items-center gap-1.5 text-[11px]">
+                    <span className="shrink-0 font-mono font-medium text-primary">
+                      /{skill.slug}
+                    </span>
+                    <span className="truncate text-muted-foreground">
+                      {skill.title}
+                    </span>
+                  </span>
+                  <span className="line-clamp-2 text-xs leading-4 text-foreground">
+                    {prompt}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="bg-background/30 py-2">
         <AssistantConnections showLabel />

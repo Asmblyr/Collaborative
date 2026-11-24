@@ -49,6 +49,7 @@ import { registerMcpRoutes } from "./mcp/routes.js";
 import type { AssistantService } from "./assistant/service.js";
 import { registerSettingsAccessRoutes } from "./settings/access-routes.js";
 import { registerSettingsRoutes } from "./settings/routes.js";
+import { registerSkillRoutes } from "./skills/routes.js";
 import { registerTermRoutes } from "./terms/routes.js";
 import { registerSsoRoutes } from "./auth/sso/routes.js";
 import { SsoService } from "./auth/sso/service.js";
@@ -325,6 +326,7 @@ export function createApp({
     registryInstanceId,
   );
   registerTermRoutes(app, database);
+  registerSkillRoutes(app, database, google);
 
   app.get("/health", async () => ({ status: "ok", service: "core" }));
 

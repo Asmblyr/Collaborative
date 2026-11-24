@@ -27,6 +27,7 @@ test("page-free tools preserve ACL/MCP checks, require an explicit collection an
   try {
     assert.deepEqual(tools.context, {
       workspace: null,
+      currentUser: { id: access.principal.id, displayName: null },
       pageContextProvided: false,
       dataAccessEnabled: true,
     });

@@ -1,31 +1,33 @@
 "use client";
 
-import { policySettingsDraft } from "./policy-settings-draft";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
-import { PolicySettingsPermissions } from "./policy-settings-permissions";
-import { useState, type FormEvent } from "react";
-import type { PolicyCollection } from "./types";
-import { EditorDialog } from "@/components/ui/editor-dialog";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
+import { Input } from "@asmblyr-collaborative/kit/ui/input";
+import { Label } from "@asmblyr-collaborative/kit/ui/label";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@asmblyr-collaborative/kit/ui/tabs";
-import { PolicyUsersPicker } from "./policy-users-picker";
-import { Input } from "@asmblyr-collaborative/kit/ui/input";
-import { Label } from "@asmblyr-collaborative/kit/ui/label";
-import { policyDraft } from "./policy-draft";
-import { PolicyPermissionsMatrix } from "./policy-permissions-matrix";
-import { accessRequest } from "@/lib/access-request";
-import { type AccessUser, type Permission, type Policy } from "./types";
-import { useUiCopy } from "@/lib/ui-copy";
+import { EditorDialog } from "@/components/ui/editor-dialog";
 import { showToast } from "@/components/ui/toast";
+import { accessRequest } from "@/lib/access-request";
+import { useUiCopy } from "@/lib/ui-copy";
+import { AccessConfirmDialog } from "./access-confirm-dialog";
+import { accessText, localizeAccessError } from "./access-helpers";
 import {
   PolicyApplications,
   usePolicyApplications,
 } from "./policy-applications";
+import { conditionIsValid, permissionFields } from "./policy-condition-model";
+import { policyDraft } from "./policy-draft";
+import { PolicyPermissionsMatrix } from "./policy-permissions-matrix";
+import { policySettingsDraft } from "./policy-settings-draft";
+import { PolicySettingsPermissions } from "./policy-settings-permissions";
+import { PolicyUsersPicker } from "./policy-users-picker";
+import type { AccessUser, Permission, Policy, PolicyCollection } from "./types";
 
 export function PolicyEditorDialog({
   open,
@@ -51,6 +53,8 @@ export function PolicyEditorDialog({
   onChange: () => Promise<void>;
 }) {
   const copy = useUiCopy();
+  const formId = useId();
+  const closeRef = useRef<() => void>(() => onClose());
   const applications = usePolicyApplications(open, policy?.id);
 
   const [name, setName] = useState(policy?.name ?? "");
@@ -60,6 +64,9 @@ export function PolicyEditorDialog({
   const [sections, setSections] = useState(() =>
     policySettingsDraft(policy?.id, permissions),
   );
+  const assignedUsersCount = policy
+    ? users.filter((user) => user.policyIds.includes(policy.id)).length
+    : 0;
   const [userIds, setUserIds] = useState(() =>
     users
       .filter((user) => policy && user.policyIds.includes(policy.id))
@@ -67,9 +74,29 @@ export function PolicyEditorDialog({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [initialDraft] = useState(() =>
     JSON.stringify({ name, grants, sections, userIds }),
   );
+
+  function findInvalidGrantCollection(): string | null {
+    for (const grant of grants) {
+      if (!grant.rowFilter) {
+        continue;
+      }
+      const collection = collections.find(
+        (entry) => entry.name === grant.collection,
+      );
+      if (!collection) {
+        continue;
+      }
+      const fields = permissionFields(collection, copy);
+      if (!conditionIsValid(grant.rowFilter, fields)) {
+        return collection.displayName || collection.name;
+      }
+    }
+    return null;
+  }
 
   async function save(event: FormEvent<HTMLFormElement>, close: () => void) {
     event.preventDefault();
@@ -80,6 +107,21 @@ export function PolicyEditorDialog({
     ) {
       return;
     }
+
+    if (!assignmentOnly) {
+      const invalidCollection = findInvalidGrantCollection();
+      if (invalidCollection) {
+        setError(
+          accessText(
+            copy.locale,
+            `В правиле «По условию» для коллекции «${invalidCollection}» не заполнены обязательные значения.`,
+            `A conditional rule for collection "${invalidCollection}" has incomplete required values.`,
+          ),
+        );
+        return;
+      }
+    }
+
     setBusy(true);
     setError("");
     try {
@@ -103,34 +145,27 @@ export function PolicyEditorDialog({
       showToast(copy("Настройки сохранены"), "success");
       close();
     } catch (cause) {
-      setError((cause as Error).message);
+      setError(localizeAccessError((cause as Error).message));
     } finally {
       setBusy(false);
     }
   }
 
-  async function remove(close: () => void) {
-    if (
-      readOnly ||
-      assignmentOnly ||
-      !policy ||
-      !window.confirm(
-        copy("Удалить политику «{{value0}}» и её назначения?", {
-          value0: policy.name,
-        }),
-      )
-    ) {
+  async function confirmRemove() {
+    if (readOnly || assignmentOnly || !policy || busy) {
       return;
     }
     setBusy(true);
     setError("");
     try {
       await accessRequest(`/policies/${policy.id}`, "DELETE");
+      setConfirmDeleteOpen(false);
       await onChange();
       showToast(copy("Политика удалена"), "success");
-      close();
+      closeRef.current();
     } catch (cause) {
-      setError((cause as Error).message);
+      setConfirmDeleteOpen(false);
+      setError(localizeAccessError((cause as Error).message));
     } finally {
       setBusy(false);
     }
@@ -138,7 +173,11 @@ export function PolicyEditorDialog({
 
   function assign(userId: string, checked: boolean) {
     setUserIds((current) =>
-      checked ? [...current, userId] : current.filter((id) => id !== userId),
+      checked
+        ? current.includes(userId)
+          ? current
+          : [...current, userId]
+        : current.filter((id) => id !== userId),
     );
   }
 
@@ -151,7 +190,7 @@ export function PolicyEditorDialog({
       onChange={assign}
     />
   );
-  const permissionFields = (
+  const permissionFieldsView = (
     <>
       <PolicySettingsPermissions
         selected={sections}
@@ -167,6 +206,19 @@ export function PolicyEditorDialog({
       />
     </>
   );
+
+  const deleteDescription =
+    assignedUsersCount > 0
+      ? accessText(
+          copy.locale,
+          `Сейчас эта политика назначена пользователям: ${assignedUsersCount}. После удаления все её назначения будут сняты, а права перестанут действовать.`,
+          `This policy is currently assigned to ${assignedUsersCount} user(s). Deleting it will revoke all assignments and permissions.`,
+        )
+      : accessText(
+          copy.locale,
+          "Сейчас эта политика никому не назначена. Удалить политику безвозвратно?",
+          "This policy is not assigned to anyone. Delete it permanently?",
+        );
 
   return (
     <EditorDialog
@@ -190,10 +242,55 @@ export function PolicyEditorDialog({
         applications.dirty
       }
       onClose={onClose}
+      footer={(requestClose, close) => {
+        closeRef.current = close;
+        return (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {policy && !readOnly && !assignmentOnly ? (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={busy}
+                onClick={() => setConfirmDeleteOpen(true)}
+              >
+                {copy("Удалить политику")}
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={requestClose}
+              >
+                {readOnly ? copy("Закрыть") : copy("Отмена")}
+              </Button>
+              {!readOnly && (
+                <Button
+                  type="submit"
+                  form={formId}
+                  disabled={
+                    busy ||
+                    !name.trim() ||
+                    (!assignmentOnly &&
+                      (applications.loading || Boolean(applications.error)))
+                  }
+                >
+                  {busy ? copy("Сохранение…") : copy("Сохранить")}
+                </Button>
+              )}
+            </div>
+          </div>
+        );
+      }}
     >
-      {(container, close, requestClose) => (
+      {(container, close) => (
         <PortalContainerContext.Provider value={container}>
           <form
+            id={formId}
             onSubmit={(event) => save(event, close)}
             className="space-y-8 pb-4"
           >
@@ -220,6 +317,15 @@ export function PolicyEditorDialog({
                   {copy("Повторить")}
                 </Button>
               </div>
+            )}
+            {assignmentOnly && readOnly && (
+              <p className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                {accessText(
+                  copy.locale,
+                  "Вне вашего набора делегирования — доступен только просмотр прав и назначений.",
+                  "Outside your delegation set — view-only access to permissions and assignments.",
+                )}
+              </p>
             )}
             {assignmentOnly && !readOnly && (
               <p className="text-xs text-muted-foreground">
@@ -269,7 +375,7 @@ export function PolicyEditorDialog({
                   forceMount
                   className="space-y-6 data-[state=inactive]:hidden"
                 >
-                  {permissionFields}
+                  {permissionFieldsView}
                   <PolicyApplications
                     state={applications}
                     disabled
@@ -296,7 +402,7 @@ export function PolicyEditorDialog({
                   value="permissions"
                   className="space-y-6"
                 >
-                  {permissionFields}
+                  {permissionFieldsView}
                 </TabsContent>
                 <TabsContent value="applications">
                   <PolicyApplications
@@ -307,45 +413,27 @@ export function PolicyEditorDialog({
                 <TabsContent value="users">{usersPicker}</TabsContent>
               </Tabs>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5">
-              {policy && !readOnly && !assignmentOnly ? (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => remove(close)}
-                >
-                  {copy("Удалить политику")}
-                </Button>
-              ) : (
-                <span />
-              )}
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={requestClose}
-                >
-                  {readOnly ? copy("Закрыть") : copy("Отмена")}
-                </Button>
-                {!readOnly && (
-                  <Button
-                    type="submit"
-                    disabled={
-                      busy ||
-                      !name.trim() ||
-                      (!assignmentOnly &&
-                        (applications.loading || Boolean(applications.error)))
-                    }
-                  >
-                    {busy ? copy("Сохранение…") : copy("Сохранить")}
-                  </Button>
-                )}
-              </div>
-            </div>
           </form>
+          {policy && (
+            <AccessConfirmDialog
+              open={confirmDeleteOpen}
+              title={accessText(
+                copy.locale,
+                `Удалить политику «${policy.name}»?`,
+                `Delete policy "${policy.name}"?`,
+              )}
+              description={deleteDescription}
+              confirmLabel={
+                busy
+                  ? accessText(copy.locale, "Удаление…", "Deleting…")
+                  : copy("Удалить политику")
+              }
+              destructive
+              busy={busy}
+              onConfirm={confirmRemove}
+              onCancel={() => setConfirmDeleteOpen(false)}
+            />
+          )}
         </PortalContainerContext.Provider>
       )}
     </EditorDialog>

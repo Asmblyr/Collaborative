@@ -42,6 +42,7 @@ test("settings grants are shared, isolated by section and revoked without a new 
         .where({ id: resources.serviceId })
         .delete();
     }
+    await db("public.asmblyr_settings").where({ key: "assistant" }).delete();
     await db("public.asmblyr_policies").whereIn("id", policyIds).delete();
     await db("public.asmblyr_security_events")
       .whereIn("actor_id", ids)
@@ -105,6 +106,7 @@ test("settings grants are shared, isolated by section and revoked without a new 
     services: "/service-accounts",
     oauth: "/oauth-apps/status",
     files: "/files",
+    skills: "/settings/skills",
   };
   for (const path of Object.values(paths)) {
     assert.equal((await call("GET", path)).statusCode, 403, path);

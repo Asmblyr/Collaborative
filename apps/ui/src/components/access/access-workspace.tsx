@@ -12,6 +12,7 @@ import { accessRequest } from "@/lib/access-request";
 import { type AccessUser, type Permission, type Policy } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
 import { useLocalizedCatalog } from "@/components/items/use-localized-catalog";
+import { localizeAccessError } from "./access-helpers";
 
 export function AccessWorkspace({
   readOnly = false,
@@ -86,7 +87,7 @@ export function AccessWorkspace({
           role="alert"
           className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
         >
-          {copy(message)}
+          {copy(localizeAccessError(message))}
         </p>
       )}
       {section === "users" && (

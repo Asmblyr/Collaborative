@@ -17,6 +17,8 @@ import { loadAssistantDefaults } from "./settings-repository.js";
 import { createAssistantJournal } from "./telemetry/journal.js";
 import { createContextTools, validateFilterProposal } from "./context-tools.js";
 import { validateSelection } from "./selections.js";
+import { SessionSchemaCache } from "./session-schema-cache.js";
+import { WriteProposalStore } from "./write-proposals.js";
 import { openResponseStream } from "./response-stream.js";
 import { AssistantRequests } from "./requests.js";
 import { registerAssistantHistoryRoutes } from "./history-routes.js";
@@ -47,6 +49,8 @@ export function registerAssistantRoutes(
   const requests = new AssistantRequests(database, () =>
     app.log.warn("Assistant cancellation check failed"),
   );
+  const schemaCache = new SessionSchemaCache();
+  const writeProposals = new WriteProposalStore();
   app.addHook("preClose", async () => requests.close());
   const journal = database
     ? createAssistantJournal(database, (id) =>
@@ -146,12 +150,15 @@ export function registerAssistantRoutes(
                 ...(submission.dataAccess
                   ? { dataAccess: submission.dataAccess }
                   : {}),
+                ...(submission.skillSlug
+                  ? { skillSlug: submission.skillSlug }
+                  : {}),
               }
             : request.body,
           controller.signal,
           defaults,
           journal,
-          (context, dataAccess) =>
+          (context, dataAccess, skillSlug) =>
             createContextTools(
               database!,
               access,
@@ -161,6 +168,12 @@ export function registerAssistantRoutes(
               google,
               dataAccess,
               mutations,
+              skillSlug,
+              {
+                sessionId: savedTurn?.conversationId ?? null,
+                schemaCache,
+                writeProposals,
+              },
             ),
           (progress) => emit?.({ type: "progress", progress }),
           emit
@@ -311,6 +324,33 @@ export function registerAssistantRoutes(
       const access = await authorize(request.headers.authorization);
       return {
         data: await validateFilterProposal(database!, access, request.body),
+      };
+    },
+  );
+
+  app.post<{ Params: { id: string } }>(
+    "/assistant/write-proposals/:id/confirm",
+    async (request, reply) => {
+      reply.header("Cache-Control", "no-store");
+      const access = await authorize(request.headers.authorization);
+      return {
+        data: await writeProposals.confirm(
+          database!,
+          access,
+          request.params.id,
+          mutations,
+        ),
+      };
+    },
+  );
+
+  app.post<{ Params: { id: string } }>(
+    "/assistant/write-proposals/:id/reject",
+    async (request, reply) => {
+      reply.header("Cache-Control", "no-store");
+      const access = await authorize(request.headers.authorization);
+      return {
+        data: writeProposals.reject(access, request.params.id),
       };
     },
   );

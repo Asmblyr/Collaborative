@@ -179,16 +179,7 @@ export function conditionIsValid(
           return value !== "" && !Number.isNaN(Date.parse(value));
         if (field.type === "key" && field.keyType === "uuid")
           return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
-        return (
-          ![
-            "contains",
-            "startsWith",
-            "endsWith",
-            "notContains",
-            "notStartsWith",
-            "notEndsWith",
-          ].includes(child.op) || Boolean(value.trim())
-        );
+        return Boolean(value.trim());
       })
     );
   });

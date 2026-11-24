@@ -66,3 +66,36 @@ export function policyDraft(
       a.action.localeCompare(b.action),
   );
 }
+
+export function isSimpleUnconditionalGrant(grant: DraftGrant): boolean {
+  return !grant.rowFilter && grant.fields.includes("*");
+}
+
+export function toggleUnconditionalGrant(
+  grants: DraftGrant[],
+  collection: string,
+  action: Action,
+): { kind: "toggled"; grants: DraftGrant[] } | { kind: "open_dialog" } {
+  const matching = grants.filter(
+    (grant) => grant.collection === collection && grant.action === action,
+  );
+  if (matching.length === 0) {
+    return {
+      kind: "toggled",
+      grants: [
+        ...grants,
+        { collection, action, fields: ["*"], rowFilter: null },
+      ],
+    };
+  }
+  if (matching.length === 1 && isSimpleUnconditionalGrant(matching[0])) {
+    return {
+      kind: "toggled",
+      grants: grants.filter(
+        (grant) =>
+          !(grant.collection === collection && grant.action === action),
+      ),
+    };
+  }
+  return { kind: "open_dialog" };
+}

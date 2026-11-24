@@ -1,6 +1,6 @@
 # Матрица HTTP-маршрутов
 
-Сгенерировано из Core и проверенного каталога доступа. 256 деклараций.
+Сгенерировано из Core и проверенного каталога доступа. 270 деклараций.
 
 Это описание границ; их исполнение проверяют интеграционные тесты. Динамические маршруты плагинов и внутренние endpoints oidc-provider не перечисляются отдельно.
 
@@ -12,11 +12,16 @@
 | `POST /assistant/conversations` | Активный человек с доступом к чату; создаёт собственную сессию с пустым контекстом | `apps/core/src/assistant/history-routes.ts` |
 | `DELETE /assistant/conversations/:id` | Активный человек с доступом к чату; только собственная неактивная сессия | `apps/core/src/assistant/history-routes.ts` |
 | `GET /assistant/conversations/:id` | Активный человек с доступом к чату; только собственная история, включая superuser | `apps/core/src/assistant/history-routes.ts` |
+| `PATCH /assistant/conversations/:id` | Активный человек с доступом к чату; переименовывает только собственную сессию | `apps/core/src/assistant/history-routes.ts` |
 | `POST /assistant/filter/validate` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
 | `POST /assistant/messages` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
 | `POST /assistant/messages/:id/cancel` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
 | `POST /assistant/selection/validate` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
+| `PATCH /assistant/sessions/:id` | Активный человек с доступом к чату; переименовывает только собственную сессию | `apps/core/src/assistant/history-routes.ts` |
+| `GET /assistant/skills` | Активный человек с доступом к ассистенту; только навыки, доступные пользователю по правам коллекций и политикам | `apps/core/src/skills/routes.ts` |
 | `GET /assistant/status` | Человек: superuser ИЛИ хотя бы один grant read/create/update; инструменты проверяют права отдельно | `apps/core/src/assistant/routes.ts` |
+| `POST /assistant/write-proposals/:id/confirm` | Активный человек с доступом к ассистенту; однократное подтверждение собственного предложения записи с перепроверкой текущих прав | `apps/core/src/assistant/routes.ts` |
+| `POST /assistant/write-proposals/:id/reject` | Активный человек с доступом к ассистенту; отклонение собственного ожидающего предложения записи | `apps/core/src/assistant/routes.ts` |
 | `POST /auth/browser/google/start` | Активный пользователь, точный Origin AUTH_UI_URL; proof в HttpOnly cookie. | `apps/core/src/auth/browser/google.ts` |
 | `POST /auth/browser/invitations/claim` | Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию. | `apps/core/src/auth/browser/routes.ts` |
 | `POST /auth/browser/login` | Точный Origin AUTH_UI_URL; credential rate limits для входа. HttpOnly session cookie; выход идемпотентен, отзывает только текущую сессию. | `apps/core/src/auth/browser/routes.ts` |
@@ -92,6 +97,8 @@
 | `PATCH /folders/:id` | Человек: superuser; системная и plugin-owned структура дополнительно защищена | `apps/core/src/collections/routes.ts` |
 | `PATCH /folders/:id/order` | Человек: superuser; системная и plugin-owned структура дополнительно защищена | `apps/core/src/collections/routes.ts` |
 | `GET /health` | Публичная проверка процесса | `apps/core/src/app.ts` |
+| `POST /invitations` | Человек: superuser ИЛИ users/update; приглашение одного или нескольких пользователей с необязательной политикой из разрешённого набора | `apps/core/src/auth/user-routes.ts` |
+| `POST /invitations/bulk` | Человек: superuser ИЛИ users/update; массовое приглашение пользователей с необязательной политикой из разрешённого набора | `apps/core/src/auth/user-routes.ts` |
 | `GET /item-events/:collection` | Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно | `apps/core/src/items/routes.ts` |
 | `GET /items/:collection` | Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно | `apps/core/src/items/routes.ts` |
 | `PATCH /items/:collection` | Активный principal; действие и поля коллекции, связанные данные и история проверяются отдельно | `apps/core/src/items/routes.ts` |
@@ -192,6 +199,11 @@
 | `GET /settings/plugins` | Человек: plugins/read ИЛИ update; superuser bypass | `apps/core/src/plugins/settings-routes.ts` |
 | `GET /settings/plugins/:namespace` | Человек: plugins/read ИЛИ update; superuser bypass | `apps/core/src/plugins/settings-routes.ts` |
 | `PUT /settings/plugins/:namespace` | Человек: plugins/update; superuser bypass | `apps/core/src/plugins/settings-routes.ts` |
+| `POST /settings/policies/preview-condition` | Человек: policies/read ИЛИ update; superuser bypass; предпросмотр числа подходящих строк для условия политики без раскрытия данных записей | `apps/core/src/policies/routes.ts` |
+| `GET /settings/skills` | Человек: skills/read ИЛИ update; superuser bypass | `apps/core/src/skills/routes.ts` |
+| `POST /settings/skills` | Человек: skills/update; superuser bypass | `apps/core/src/skills/routes.ts` |
+| `DELETE /settings/skills/:id` | Человек: skills/update; superuser bypass | `apps/core/src/skills/routes.ts` |
+| `PUT /settings/skills/:id` | Человек: skills/update; superuser bypass | `apps/core/src/skills/routes.ts` |
 | `GET /settings/terms` | Человек: terms/read ИЛИ update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `POST /settings/terms` | Человек: terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `PUT /settings/terms/:id` | Человек: terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
@@ -221,10 +233,12 @@
 | `GET /users/:id/form` | Active human session with users/read; safe profile and existing virtual grants. Raw custom columns require a superuser. | `apps/core/src/auth/user-form-routes.ts` |
 | `PATCH /users/:id/form` | Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected. | `apps/core/src/auth/user-form-routes.ts` |
 | `POST /users/:id/invitation` | Человек: superuser ИЛИ users/update; повторное приглашение только в пределах разрешённого набора, без доступа к аккаунтам с собственным делегированием | `apps/core/src/auth/user-routes.ts` |
+| `PUT /users/:id/policies` | Человек: superuser ИЛИ policies/update с чтением users; атомарная замена политик пользователя в разрешённом наборе без изменения себя и superuser | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/profile` | Активный пользователь с users/read; публичные сведения профиля без credentials | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/profile` | Активный пользователь с users/update; только поля профиля, без изменения статуса и привилегий | `apps/core/src/auth/profile-extension-routes.ts` |
 | `GET /users/:id/profile-display` | Активный человек с users/read или superuser; настроенная проекция профиля целевого пользователя | `apps/core/src/auth/profile-display-routes.ts` |
 | `POST /users/:id/recovery` | Свежий человек-superuser; только другой активный обычный пользователь. Одноразовая ссылка на 30 минут, аудит; не делегируется | `apps/core/src/auth/user-routes.ts` |
+| `PATCH /users/:id/status` | Человек: superuser ИЛИ users/update; активация или отключение другого пользователя без изменения себя и superuser, с отзывом сессий при отключении | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/me` | Человек, только собственный профиль/ресурс; workspace дополнительно проверяет видимость | `apps/core/src/auth/profile-routes.ts` |
 | `PATCH /users/me` | Active human session; own non-avatar profile fields need explicit field write grants or users/update. Own avatar remains freely editable. Credentials, email and privileges remain protected. | `apps/core/src/auth/profile-routes.ts` |
 | `POST /users/me/avatar` | Собственная человеческая сессия; приватное растровое изображение до 2 MiB, настроенное файловое хранилище и credential rate limit | `apps/core/src/auth/profile-avatar-routes.ts` |
@@ -257,7 +271,7 @@
 | `GET /users/profile-display/sources` | Только human superuser; разрешённые пользовательские поля и пути M2O, без данных записей | `apps/core/src/auth/profile-display-routes.ts` |
 | `GET /users/profile-extension` | Активный пользователь с users/read; имя выбранной коллекции и ключа | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PUT /users/profile-extension` | Только human superuser; связывает обычную UUID-коллекцию, не выдаёт права и не удаляет данные | `apps/core/src/auth/profile-extension-routes.ts` |
-| `GET /users/references` | Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены | `apps/core/src/auth/user-routes.ts` |
+| `GET /users/references` | Активная человеческая сессия; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены | `apps/core/src/auth/user-routes.ts` |
 | `GET /workspaces` | Человек; только пространства с доступными коллекциями (superuser видит все) | `apps/core/src/workspaces/routes.ts` |
 | `POST /workspaces` | Человек: superuser | `apps/core/src/workspaces/routes.ts` |
 | `DELETE /workspaces/:id` | Человек: superuser | `apps/core/src/workspaces/routes.ts` |

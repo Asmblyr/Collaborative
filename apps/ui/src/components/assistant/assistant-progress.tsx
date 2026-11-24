@@ -11,6 +11,7 @@ import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import { useUiCopy } from "@/lib/ui-copy";
 import { AssistantUsageSummary } from "./assistant-usage-summary";
 import { AssistantMessageContent } from "./assistant-message-content";
+import { normalizeStreamingMarkdown } from "./assistant-markdown-preview";
 
 export function AssistantProgress({
   activity = [],
@@ -44,6 +45,8 @@ export function AssistantProgress({
     ? Math.max(0, Math.floor((now - (startedAt ?? now)) / 1000))
     : Math.round((summary?.durationMs ?? 0) / 1000);
 
+  const previewDraft = draft ? normalizeStreamingMarkdown(draft) : "";
+
   if (working) {
     const notes = activity.filter((entry) => entry.kind === "note");
     return (
@@ -70,10 +73,13 @@ export function AssistantProgress({
             compact
           />
         ))}
-        {draft && (
-          <p className="line-clamp-4 whitespace-pre-wrap [overflow-wrap:anywhere]">
-            {draft}
-          </p>
+        {previewDraft && (
+          <div className="max-h-28 overflow-hidden [mask-image:linear-gradient(to_bottom,black_75%,transparent)]">
+            <AssistantMessageContent
+              content={previewDraft}
+              compact
+            />
+          </div>
         )}
         <p
           role="status"
@@ -87,7 +93,7 @@ export function AssistantProgress({
       </div>
     );
   }
-  if (!activity.length && !draft && !summary) {
+  if (!activity.length && !previewDraft && !summary) {
     return null;
   }
   return (
@@ -111,10 +117,11 @@ export function AssistantProgress({
             />
           ),
         )}
-        {draft && (
-          <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">
-            {draft}
-          </p>
+        {previewDraft && (
+          <AssistantMessageContent
+            content={previewDraft}
+            compact
+          />
         )}
         {summary && (
           <div className="border-t pt-3">

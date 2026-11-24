@@ -21,8 +21,13 @@ test("internal MCP discovers permitted collections and external HTTP requires it
     assert.deepEqual(
       client.definitions.map((tool) => tool.name),
       [
+        "my_permissions",
+        "list_users",
+        "list_policies",
         "list_collections",
         "describe_collection",
+        "list_skills",
+        "read_skill",
         "search_items",
         "read_item",
         "count_items",

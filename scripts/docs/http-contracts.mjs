@@ -73,6 +73,7 @@ const settingsSectionList = {
       "services",
       "oauth",
       "files",
+      "skills",
     ],
   },
 };

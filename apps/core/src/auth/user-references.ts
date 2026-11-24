@@ -1,23 +1,18 @@
 import type { Knex } from "knex";
 import type { Principal } from "./principal.js";
 import { AccessDeniedError } from "../permissions/access.js";
-import { effectiveSettingsAccess } from "../settings/access.js";
 import { ItemError, parseItemId } from "../items/validation.js";
 import { objectInput } from "../shared/input.js";
 
+export function normalizeSearchText(value: string): string {
+  return value.trim().toLowerCase().replaceAll("ё", "е");
+}
+
 export async function requireUserReferenceRead(
-  db: Knex,
+  _db: Knex,
   principal: Principal,
 ): Promise<void> {
   if (principal.kind !== "user") {
-    throw new AccessDeniedError();
-  }
-  if (
-    !principal.superuser &&
-    !(await effectiveSettingsAccess(db, principal.id)).sections.includes(
-      "users",
-    )
-  ) {
     throw new AccessDeniedError();
   }
 }
@@ -57,8 +52,10 @@ export async function listUserReferences(
   } else {
     rows.where("status", "active");
   }
-  if (typeof query.q === "string" && query.q.trim()) {
-    const search = `%${query.q.trim().replace(/[\\%_]/g, "\\$&")}%`;
+  const normalizedQuery =
+    typeof query.q === "string" ? normalizeSearchText(query.q) : "";
+  if (normalizedQuery) {
+    const search = `%${normalizedQuery.replace(/[\\%_]/g, "\\$&")}%`;
     rows.where((builder) => {
       for (const column of [
         "email",
@@ -66,8 +63,15 @@ export async function listUserReferences(
         "first_name",
         "last_name",
       ]) {
-        builder.orWhereILike(column, search);
+        builder.orWhereRaw(
+          `replace(lower(coalesce(??, '')), 'ё', 'е') like ? escape '\\'`,
+          [column, search],
+        );
       }
+      builder.orWhereRaw(
+        `replace(lower(concat_ws(' ', coalesce(first_name, ''), coalesce(last_name, ''))), 'ё', 'е') like ? escape '\\'`,
+        [search],
+      );
     });
   }
   const [users, count] = await Promise.all([

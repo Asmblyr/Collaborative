@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import type { PermissionFilter } from "@asmblyr-collaborative/contracts";
 import { PortalContainerContext } from "@asmblyr-collaborative/kit/ui/portal-container";
+import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { Button } from "@asmblyr-collaborative/kit/ui/button";
 import {
   Select,
@@ -12,6 +14,7 @@ import {
   SelectValue,
 } from "@asmblyr-collaborative/kit/ui/select";
 import { EditorDialog } from "@/components/ui/editor-dialog";
+import { accessRequest } from "@/lib/access-request";
 import { PolicyConditionGroup } from "./policy-condition-group";
 import {
   conditionIsValid,
@@ -20,6 +23,7 @@ import {
   permissionFields,
 } from "./policy-condition-model";
 import { PolicyFieldsForm } from "./policy-fields-form";
+import { accessText } from "./access-helpers";
 import { type DraftGrant } from "./policy-draft";
 import { actionName, type Action, type PolicyCollection } from "./types";
 import { useUiCopy } from "@/lib/ui-copy";
@@ -57,7 +61,51 @@ export function PolicyActionDialog({
   };
   const [filter, setFilter] = useState<PermissionFilter>(initialFilter);
   const [editFields, setEditFields] = useState(false);
+  const [preview, setPreview] = useState<{
+    matchingCount: number;
+    totalCount: number;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+  const [previewNonce, setPreviewNonce] = useState(0);
   const valid = mode !== "condition" || conditionIsValid(filter, available);
+  const filterKey = JSON.stringify(filter);
+
+  useEffect(() => {
+    if (mode !== "condition" || !valid) {
+      return;
+    }
+    const controller = new AbortController();
+    const parsedFilter = JSON.parse(filterKey) as PermissionFilter;
+    const timer = window.setTimeout(() => {
+      setPreviewLoading(true);
+      setPreviewError(false);
+      accessRequest<{
+        data: { matchingCount: number; totalCount: number };
+      }>(
+        "/settings/policies/preview-condition",
+        "POST",
+        { collection: collection.name, condition: parsedFilter },
+        controller.signal,
+      )
+        .then((result) => {
+          if (!controller.signal.aborted) {
+            setPreview(result.data);
+            setPreviewLoading(false);
+          }
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setPreviewError(true);
+            setPreviewLoading(false);
+          }
+        });
+    }, 350);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [mode, valid, collection.name, filterKey, previewNonce]);
   const dirty =
     mode !== initialMode ||
     JSON.stringify(fields) !== JSON.stringify(initial?.fields ?? ["*"]) ||
@@ -140,13 +188,59 @@ export function PolicyActionDialog({
                     onChange={setFilter}
                   />
                 </fieldset>
-                <div className="border-t pt-3 text-sm text-muted-foreground">
-                  {valid
-                    ? conditionSummary(filter, available, copy)
-                    : copy(
-                        "Заполните значения условий, чтобы применить правило.",
-                      )}
-                </div>
+                {valid ? (
+                  <div className="mt-3 space-y-2 border-t pt-3">
+                    <div className="text-sm text-muted-foreground">
+                      {conditionSummary(filter, available, copy)}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant="secondary"
+                        role="status"
+                        className="gap-1.5 font-normal tabular-nums"
+                      >
+                        {previewLoading
+                          ? copy("Оцениваем охват условия…")
+                          : previewError
+                            ? copy("Не удалось рассчитать охват условия")
+                            : preview
+                              ? copy(
+                                  "Охват условия: затронет {{value0}} из {{value1}} записей",
+                                  {
+                                    value0: preview.matchingCount,
+                                    value1: preview.totalCount,
+                                  },
+                                )
+                              : copy("Оцениваем охват условия…")}
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="size-6"
+                        disabled={previewLoading}
+                        aria-label={copy("Обновить охват условия")}
+                        title={copy("Обновить охват условия")}
+                        onClick={() => setPreviewNonce((n) => n + 1)}
+                      >
+                        <RefreshCw
+                          className={`size-3 ${previewLoading ? "animate-spin" : ""}`}
+                        />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p
+                    role="alert"
+                    className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                  >
+                    {accessText(
+                      copy.locale,
+                      "Заполните все обязательные значения условий, чтобы применить правило.",
+                      "Fill in all required condition values to apply this rule.",
+                    )}
+                  </p>
+                )}
               </div>
             )}
             {mode === "all" && (

@@ -84,6 +84,13 @@ export function RelationPicker({
             }
             disabled={disabled || filter === null}
             candidateFilter={filter}
+            emptyMessage={
+              systemUser
+                ? copy.locale === "en"
+                  ? "Disabled users are hidden and cannot be newly assigned."
+                  : "Отключённые пользователи скрыты из выбора — их нельзя назначать заново."
+                : undefined
+            }
             portalContainer={portalContainer}
             onCreate={
               target.access.create && !target.profileExtension && onOpen

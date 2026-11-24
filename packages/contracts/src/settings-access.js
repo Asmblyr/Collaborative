@@ -7,4 +7,5 @@ export const settingsSections = Object.freeze([
   "services",
   "oauth",
   "files",
+  "skills",
 ]);

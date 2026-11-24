@@ -1,7 +1,7 @@
 import type { Knex } from "knex";
 import { grantFor, type Access } from "../permissions/access.js";
 import { objectInput } from "../shared/input.js";
-import { ItemError } from "../items/validation.js";
+import { ToolArgumentError } from "./errors.js";
 import { parseToolSearch } from "./search-input.js";
 
 interface CatalogQuery {
@@ -17,20 +17,37 @@ interface CollectionSummary {
 
 function parseCatalogQuery(args: unknown): CatalogQuery {
   const body = objectInput(args, ["q", "page", "limit"]);
-  const q = parseToolSearch(body.q);
+  const q = parseToolSearch(body.q === undefined ? null : body.q);
+  const page = body.page === undefined || body.page === null ? 1 : body.page;
+  const limit =
+    body.limit === undefined || body.limit === null ? 20 : body.limit;
   if (
-    typeof body.page !== "number" ||
-    !Number.isInteger(body.page) ||
-    body.page < 1 ||
-    body.page > 50 ||
-    typeof body.limit !== "number" ||
-    !Number.isInteger(body.limit) ||
-    body.limit < 1 ||
-    body.limit > 20
+    typeof page !== "number" ||
+    !Number.isInteger(page) ||
+    page < 1 ||
+    page > 50
   ) {
-    throw new ItemError("Invalid collection query", 400);
+    throw new ToolArgumentError(
+      "INVALID_ARGUMENTS",
+      'Fix argument "page": expected an integer between 1 and 50.',
+      ["page"],
+      'Invalid argument "page": expected an integer between 1 and 50.',
+    );
   }
-  return { q: q.trim(), page: body.page, limit: body.limit };
+  if (
+    typeof limit !== "number" ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 20
+  ) {
+    throw new ToolArgumentError(
+      "INVALID_ARGUMENTS",
+      'Fix argument "limit": expected an integer between 1 and 20.',
+      ["limit"],
+      'Invalid argument "limit": expected an integer between 1 and 20.',
+    );
+  }
+  return { q: q.trim(), page, limit };
 }
 
 export async function discoverCollections(

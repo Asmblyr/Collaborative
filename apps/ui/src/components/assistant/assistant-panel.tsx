@@ -126,7 +126,8 @@ export function AssistantPanel({
         type="button"
         aria-label={copy("Изменить размер панели общения")}
         aria-describedby={hintId}
-        className="absolute left-0.5 top-0.5 z-10 inline-flex size-6 touch-none cursor-nwse-resize select-none items-center justify-center border-0 bg-transparent p-0 text-muted-foreground/40 outline-none transition-colors hover:text-muted-foreground focus-visible:text-foreground focus-visible:[&_svg]:stroke-[2]"
+        title={copy("Изменить размер панели общения")}
+        className="absolute left-0.5 top-0.5 z-10 inline-flex size-6 touch-none cursor-nwse-resize select-none items-center justify-center rounded-tl-2xl rounded-br-lg border-0 bg-transparent p-0 text-muted-foreground/65 outline-none transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:bg-muted focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:[&_svg]:stroke-[2]"
         onPointerDown={start}
         onPointerMove={move}
         onPointerUp={end}
@@ -139,15 +140,16 @@ export function AssistantPanel({
       >
         <svg
           viewBox="0 0 24 24"
-          className="size-6"
+          className="size-5"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="1.75"
           strokeLinecap="round"
           aria-hidden="true"
           focusable="false"
         >
-          <path d="M5 14a9 9 0 0 1 9-9" />
+          <path d="M4.5 14.5a10 10 0 0 1 10-10" />
+          <path d="M8.5 14.5a6 6 0 0 1 6-6" />
         </svg>
       </button>
       <span

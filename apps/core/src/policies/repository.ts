@@ -51,7 +51,10 @@ export async function getPolicy(database: Knex, id: string) {
     .join("asmblyr_users as usr", "usr.id", "assignment.user_id")
     .where("assignment.policy_id", id)
     .select("usr.id", "usr.email")
-    .orderBy("usr.email");
+    .orderByRaw(
+      "replace(lower(coalesce(nullif(btrim(usr.display_name), ''), nullif(btrim(concat_ws(' ', usr.first_name, usr.last_name)), ''), usr.email)), 'ё', 'е') asc",
+    )
+    .orderBy("usr.email", "asc");
   return {
     ...policy,
     permissions,

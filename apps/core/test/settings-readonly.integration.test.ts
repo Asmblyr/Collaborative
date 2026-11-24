@@ -51,8 +51,17 @@ test("read-only settings allow inspection and reject every management mutation",
   });
   const users = [randomUUID(), randomUUID()];
   const policies: string[] = [];
-  const resources: { serviceId?: string; applicationId?: string } = {};
+  const resources: {
+    serviceId?: string;
+    applicationId?: string;
+    skillId?: string;
+  } = {};
   t.after(async () => {
+    if (resources.skillId) {
+      await db("public.asmblyr_assistant_skills")
+        .where({ id: resources.skillId })
+        .delete();
+    }
     if (resources.serviceId) {
       await db("public.asmblyr_service_accounts")
         .where({ id: resources.serviceId })
@@ -149,10 +158,26 @@ test("read-only settings allow inspection and reject every management mutation",
   const applicationId = application.json().data.application.id;
   resources.applicationId = applicationId;
   const termId = (await call("GET", "/settings/terms", 0)).json().data[0].id;
+  const createdSkill = await call("POST", "/settings/skills", 0, {
+    slug: `readonly_${randomUUID().replaceAll("-", "").slice(0, 8)}`,
+    title: "Read-only fixture skill",
+    description: "Fixture skill for read-only test",
+    instructions: "Follow instructions.",
+    examples: [],
+    scope: "global",
+    audience: "all",
+    status: "draft",
+    exposeToMcp: false,
+    collections: [],
+    policyIds: [],
+  });
+  assert.equal(createdSkill.statusCode, 201, createdSkill.body);
+  const skillId = createdSkill.json().data.id as string;
+  resources.skillId = skillId;
   const snapshot = (
     await call("GET", "/settings/plugins/readonlytest", 0)
   ).json().data;
-  const paths: Record<SettingsSection, string[]> = {
+  const paths: Partial<Record<SettingsSection, string[]>> = {
     users: ["/users", `/users/${users[1]}/access`],
     policies: [
       "/policies",
@@ -164,6 +189,7 @@ test("read-only settings allow inspection and reject every management mutation",
     plugins: ["/settings/plugins", "/settings/plugins/readonlytest"],
     assistant: ["/settings/assistant", "/settings/assistant/telemetry"],
     terms: ["/settings/terms"],
+    skills: ["/settings/skills"],
     services: ["/service-accounts", `/service-accounts/${serviceId}`],
     oauth: ["/oauth-apps/status", "/oauth-apps", "/settings/options/users"],
   };
@@ -211,6 +237,9 @@ test("read-only settings allow inspection and reject every management mutation",
     ],
     ["POST", "/settings/terms", { name: "Blocked" }],
     ["PUT", `/settings/terms/${termId}`, { name: "Blocked" }],
+    ["POST", "/settings/skills", { slug: "blocked" }],
+    ["PUT", `/settings/skills/${skillId}`, { slug: "blocked" }],
+    ["DELETE", `/settings/skills/${skillId}`],
     ["POST", "/service-accounts", { name: "Blocked" }],
     ["PUT", `/service-accounts/${serviceId}`, { name: "Blocked" }],
     ["POST", `/service-accounts/${serviceId}/keys`, { name: "Blocked" }],

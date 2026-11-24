@@ -1,8 +1,10 @@
 import type { Knex } from "knex";
 import { AccessDeniedError } from "../permissions/access.js";
+import { effectiveSettingsAccess } from "../settings/access.js";
 import { requireDelegatedPolicies } from "./delegation-access.js";
 import { PolicyNotFoundError } from "./validation.js";
 import { securityEvent } from "../auth/security-events.js";
+import { UserNotFoundError } from "../auth/validation.js";
 
 async function authorizeChanges(
   transaction: Knex,
@@ -112,5 +114,106 @@ export async function replacePolicyUsers(
     await securityEvent(transaction, actorId, "policy.users_set", policyId, {
       userIds,
     });
+  });
+}
+
+export async function replaceUserPolicies(
+  database: Knex,
+  userId: string,
+  requestedPolicyIds: string[],
+  actorId: string,
+): Promise<string[]> {
+  return database.transaction(async (transaction) => {
+    const actor = await transaction("public.asmblyr_users")
+      .where({ id: actorId, status: "active" })
+      .forShare()
+      .first<{ superuser: boolean }>("superuser");
+    if (!actor) {
+      throw new AccessDeniedError();
+    }
+    const target = await transaction("public.asmblyr_users")
+      .where({ id: userId })
+      .forUpdate()
+      .first<{ id: string; superuser: boolean }>("id", "superuser");
+    if (!target) {
+      throw new UserNotFoundError();
+    }
+
+    let nextPolicyIds: string[];
+    if (actor.superuser) {
+      nextPolicyIds = [...new Set(requestedPolicyIds)];
+    } else {
+      const access = await effectiveSettingsAccess(transaction, actorId);
+      if (
+        !access.editableSections.includes("policies") ||
+        !access.sections.includes("users") ||
+        target.superuser ||
+        target.id === actorId
+      ) {
+        throw new AccessDeniedError();
+      }
+      const allowed = await transaction(
+        "public.asmblyr_user_policy_delegations",
+      )
+        .where({ user_id: actorId })
+        .forShare()
+        .pluck<string[]>("policy_id");
+      const allowedSet = new Set(allowed);
+      const current = await transaction("public.asmblyr_user_policies")
+        .where({ user_id: userId })
+        .pluck<string[]>("policy_id");
+      const currentSet = new Set(current);
+
+      // Reject adding any policy outside the manager's delegation set.
+      if (
+        requestedPolicyIds.some(
+          (id) => !allowedSet.has(id) && !currentSet.has(id),
+        )
+      ) {
+        throw new AccessDeniedError();
+      }
+
+      // Automatically preserve any out-of-scope policies the target already holds.
+      const preservedOutOfScope = current.filter((id) => !allowedSet.has(id));
+      const desiredInScope = requestedPolicyIds.filter((id) =>
+        allowedSet.has(id),
+      );
+      nextPolicyIds = [...new Set([...preservedOutOfScope, ...desiredInScope])];
+    }
+
+    if (nextPolicyIds.length) {
+      const existingPolicies = await transaction("public.asmblyr_policies")
+        .whereIn("id", nextPolicyIds)
+        .forShare()
+        .pluck<string[]>("id");
+      if (existingPolicies.length !== nextPolicyIds.length) {
+        throw new PolicyNotFoundError();
+      }
+    }
+
+    if (nextPolicyIds.length) {
+      await transaction("public.asmblyr_user_policies")
+        .where({ user_id: userId })
+        .whereNotIn("policy_id", nextPolicyIds)
+        .delete();
+      await transaction("public.asmblyr_user_policies")
+        .insert(
+          nextPolicyIds.map((policyId) => ({
+            policy_id: policyId,
+            user_id: userId,
+          })),
+        )
+        .onConflict()
+        .ignore();
+    } else {
+      await transaction("public.asmblyr_user_policies")
+        .where({ user_id: userId })
+        .delete();
+    }
+
+    await securityEvent(transaction, actorId, "user.policies_set", userId, {
+      policyIds: nextPolicyIds,
+    });
+    return nextPolicyIds;
   });
 }

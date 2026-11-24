@@ -215,7 +215,7 @@
   "Public CLI discovery; configured admin consent URL only. No credential.": "Public CLI discovery; configured admin consent URL only. No credential.",
   "Active human session approves a 60-second one-use PKCE S256 code for an exact loopback callback.": "Active human session approves a 60-second one-use PKCE S256 code for an exact loopback callback.",
   "One-use code + PKCE verifier + exact callback. Issues 10-minute schema:read access only; rate-limited.": "One-use code + PKCE verifier + exact callback. Issues 10-minute schema:read access only; rate-limited.",
-  "Человеческая сессия: superuser или чтение раздела users; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены": "Human session: superuser or users-section read; only user IDs/labels with bounded search/pagination; service keys forbidden",
+  "Активная человеческая сессия; только ID и подпись пользователя, ограниченные поиск и пагинация; сервисные ключи запрещены": "Active human session; only user IDs/labels with bounded search/pagination; service keys forbidden",
   "Человек: plugins/read либо update; superuser bypass; только настроенные пакеты": "Human with plugins/read or update; superuser bypass; configured packages only",
   "Человек: plugins/read либо update; superuser bypass": "Human with plugins/read or update; superuser bypass",
   "Человек: plugins/read либо update; только установленная версия": "Human with plugins/read or update; installed version only",
@@ -223,5 +223,16 @@
   "Человек: plugins/update; superuser bypass; сохраняет желаемое состояние до перезапуска": "Human with plugins/update; superuser bypass; saves desired state until restart",
   "Успех; private, no-store": "Success; private, no-store",
   "Ошибка авторизации, проверки или конфликта": "Authorization, validation, or conflict error",
-  "Base64url идентификатор имени пакета": "Base64url identifier of the package name"
+  "Base64url идентификатор имени пакета": "Base64url identifier of the package name",
+  "Активный человек с доступом к чату; переименовывает только собственную сессию": "Active human with chat access; renames own conversation only",
+  "Активный человек с доступом к ассистенту; только навыки, доступные пользователю по правам коллекций и политикам": "Active human with assistant access; only skills visible to the caller under collection grants and policy restrictions",
+  "Активный человек с доступом к ассистенту; однократное подтверждение собственного предложения записи с перепроверкой текущих прав": "Active human with assistant access; one-time confirmation of own write proposal with live permission recheck",
+  "Активный человек с доступом к ассистенту; отклонение собственного ожидающего предложения записи": "Active human with assistant access; rejects own pending write proposal",
+  "Человек: superuser ИЛИ users/update; приглашение одного или нескольких пользователей с необязательной политикой из разрешённого набора": "Human superuser OR users/update; invites one or more users with an optional policy within the allowed set",
+  "Человек: superuser ИЛИ users/update; массовое приглашение пользователей с необязательной политикой из разрешённого набора": "Human superuser OR users/update; bulk-invites users with an optional policy within the allowed set",
+  "Человек: policies/read ИЛИ update; superuser bypass; предпросмотр числа подходящих строк для условия политики без раскрытия данных записей": "Human with policies/read or update; superuser bypass; previews matching row count for a policy condition without exposing record data",
+  "Человек: skills/read ИЛИ update; superuser bypass": "Human with skills/read or update; superuser bypass",
+  "Человек: skills/update; superuser bypass": "Human with skills/update; superuser bypass",
+  "Человек: superuser ИЛИ policies/update с чтением users; атомарная замена политик пользователя в разрешённом наборе без изменения себя и superuser": "Human superuser OR policies/update with users read; atomically replaces a user's policies within the allowed set without changing self or superusers",
+  "Человек: superuser ИЛИ users/update; активация или отключение другого пользователя без изменения себя и superuser, с отзывом сессий при отключении": "Human superuser OR users/update; activates or disables another user without changing self or superusers, revoking active sessions on deactivation"
 }

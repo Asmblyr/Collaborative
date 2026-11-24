@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@asmblyr-collaborative/kit/ui/input";
 import { Textarea } from "@asmblyr-collaborative/kit/ui/textarea";
 import { Checkbox } from "@asmblyr-collaborative/kit/ui/checkbox";
@@ -20,6 +21,7 @@ import { RepeaterInput } from "./repeater-input";
 import { TagsInput } from "./tags-input";
 import { UrlFieldInput } from "./url-field-input";
 import { PresentedValue } from "./presented-value";
+import { trimTrailingDecimalZeros } from "./value-format";
 import { useUiCopy } from "@/lib/ui-copy";
 
 export function BuiltinFieldInput({
@@ -53,6 +55,7 @@ export function BuiltinFieldInput({
 
   const presentation = field.presentation;
   const canChooseFiles = useFileLibraryAccess();
+  const [lastDecimalEdit, setLastDecimalEdit] = useState<string | null>(null);
   if (presentation?.sensitive)
     return (
       <Input
@@ -281,12 +284,22 @@ export function BuiltinFieldInput({
         onChange={(event) => onChange(event.target.value)}
       />
     );
+  const inputText =
+    field.type === "decimal" && value !== lastDecimalEdit
+      ? trimTrailingDecimalZeros(value)
+      : value;
+
   return (
     <Input
       id={id}
       aria-label={presentation?.label || field.name}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
+      value={inputText}
+      onChange={(event) => {
+        if (field.type === "decimal") {
+          setLastDecimalEdit(event.target.value);
+        }
+        onChange(event.target.value);
+      }}
       disabled={disabled}
       required={required}
       placeholder={presentation?.placeholder}

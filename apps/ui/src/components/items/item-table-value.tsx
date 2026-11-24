@@ -1,10 +1,11 @@
 "use client";
 
-import { Paperclip, Link2 } from "lucide-react";
+import { Paperclip, Link2, UserRound } from "lucide-react";
 import { Badge } from "@asmblyr-collaborative/kit/ui/badge";
 import { displayValue } from "./item-display";
 import type { ItemValue } from "./types";
 import type { ItemColumn } from "./use-item-columns";
+import { extractUserInitials } from "./user-avatar-initials";
 import sanitizeHtml from "sanitize-html";
 import { decodeHTML } from "entities";
 import { safeContentUrl } from "./content-value";
@@ -140,6 +141,36 @@ export function ItemTableValue({
     );
   if (column.type === "boolean")
     return <Badge variant={value ? "secondary" : "outline"}>{text}</Badge>;
+  if (
+    column.relation?.kind === "m2o" &&
+    column.relation.collection === "@users"
+  ) {
+    const initials = relationLabel ? extractUserInitials(relationLabel) : "";
+    const displayLabel = relationLabel ?? compactKey(text);
+    return (
+      <span
+        className="flex min-w-0 items-center gap-2 text-foreground"
+        title={relationLabel ? `${relationLabel} (${text})` : text}
+      >
+        <span
+          aria-hidden="true"
+          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-foreground ring-1 ring-inset ring-border select-none"
+        >
+          {initials || (
+            <UserRound
+              aria-hidden="true"
+              className="size-3 text-muted-foreground"
+            />
+          )}
+        </span>
+        <span
+          className={`truncate ${relationLabel ? "" : "font-mono text-xs text-muted-foreground"}`}
+        >
+          {displayLabel}
+        </span>
+      </span>
+    );
+  }
   if (column.relation)
     return (
       <span

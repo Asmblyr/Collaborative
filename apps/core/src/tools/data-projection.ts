@@ -1,5 +1,5 @@
-import { ItemError } from "../items/validation.js";
 import type { collectionSchema } from "../items/schema-repository.js";
+import { ToolArgumentError } from "./errors.js";
 
 type CollectionSchema = Awaited<ReturnType<typeof collectionSchema>>;
 
@@ -23,7 +23,12 @@ export function dataProjection(
     const isKnown = fields.has(field) || isCreatedAt || isUpdatedAt;
 
     if (!isReadable || !isKnown) {
-      throw new ItemError("Invalid data tool arguments", 400);
+      throw new ToolArgumentError(
+        "INVALID_ARGUMENTS",
+        'Every entry in "fields" must be a readable physical field from describe_collection (readableValue=true), the primary key, or an available timestamp. Do not pass wildcards, nested paths, or to-many alias fields.',
+        ["fields"],
+        'Invalid argument "fields": contains an unknown or unreadable field.',
+      );
     }
   }
 

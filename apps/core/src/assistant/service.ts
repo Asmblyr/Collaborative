@@ -66,6 +66,7 @@ export class AssistantService {
     resolveTools?: (
       context: AssistantContext | null,
       dataAccess?: AssistantDataAccess,
+      skillSlug?: string | null,
     ) => Promise<AssistantTools | undefined>,
     onProgress?: (progress: AssistantProgress) => void,
     onText?: AssistantRun["onText"],
@@ -114,7 +115,11 @@ export class AssistantService {
     try {
       checkAssistantSignal(timeout, signal);
       tools = resolveTools
-        ? await resolveTools(input.context ?? null, input.dataAccess)
+        ? await resolveTools(
+            input.context ?? null,
+            input.dataAccess,
+            input.skillSlug ?? null,
+          )
         : undefined;
       const turnId = randomUUID();
       const metrics = new AssistantTurnMetrics(turnId, this.config.model);
@@ -223,6 +228,11 @@ export class AssistantService {
           ...(tools?.connectionWrites?.length
             ? { connectionWrites: tools.connectionWrites }
             : {}),
+          ...(tools?.writeProposals?.length
+            ? { writeProposals: tools.writeProposals }
+            : {}),
+          ...(tools?.records?.length ? { records: tools.records } : {}),
+          ...(tools?.forms?.length ? { forms: tools.forms } : {}),
         };
       } catch (error) {
         try {
