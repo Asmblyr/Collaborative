@@ -643,6 +643,39 @@
         },
         "x-contract-level": "documented",
         "x-source": "apps/core/src/assistant/history-routes.ts"
+      },
+      "patch": {
+        "tags": [
+          "assistant"
+        ],
+        "operationId": "patch__assistant_conversations_id",
+        "summary": "PATCH /assistant/conversations/:id",
+        "description": "Активный человек с доступом к чату; переименовывает только собственную сессию. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/assistant/history-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/assistant/history-routes.ts"
       }
     },
     "/assistant/filter/validate": {
@@ -1373,6 +1406,67 @@
         "x-source": "apps/core/src/assistant/routes.ts"
       }
     },
+    "/assistant/sessions/{id}": {
+      "patch": {
+        "tags": [
+          "assistant"
+        ],
+        "operationId": "patch__assistant_sessions_id",
+        "summary": "PATCH /assistant/sessions/:id",
+        "description": "Активный человек с доступом к чату; переименовывает только собственную сессию. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/assistant/history-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/assistant/history-routes.ts"
+      }
+    },
+    "/assistant/skills": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "operationId": "get__assistant_skills",
+        "summary": "GET /assistant/skills",
+        "description": "Активный человек с доступом к ассистенту; только навыки, доступные пользователю по правам коллекций и политикам. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/skills/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/skills/routes.ts"
+      }
+    },
     "/assistant/status": {
       "get": {
         "tags": [
@@ -1390,6 +1484,76 @@
           }
         ],
         "parameters": [],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/assistant/routes.ts"
+      }
+    },
+    "/assistant/write-proposals/{id}/confirm": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "operationId": "post__assistant_write_proposals_id_confirm",
+        "summary": "POST /assistant/write-proposals/:id/confirm",
+        "description": "Активный человек с доступом к ассистенту; однократное подтверждение собственного предложения записи с перепроверкой текущих прав. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/assistant/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/assistant/routes.ts"
+      }
+    },
+    "/assistant/write-proposals/{id}/reject": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "operationId": "post__assistant_write_proposals_id_reject",
+        "summary": "POST /assistant/write-proposals/:id/reject",
+        "description": "Активный человек с доступом к ассистенту; отклонение собственного ожидающего предложения записи. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/assistant/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
@@ -5551,6 +5715,58 @@
         "x-source": "apps/core/src/app.ts"
       }
     },
+    "/invitations": {
+      "post": {
+        "tags": [
+          "invitations"
+        ],
+        "operationId": "post__invitations",
+        "summary": "POST /invitations",
+        "description": "Человек: superuser ИЛИ users/update; приглашение одного или нескольких пользователей с необязательной политикой из разрешённого набора. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/auth/user-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/auth/user-routes.ts"
+      }
+    },
+    "/invitations/bulk": {
+      "post": {
+        "tags": [
+          "invitations"
+        ],
+        "operationId": "post__invitations_bulk",
+        "summary": "POST /invitations/bulk",
+        "description": "Человек: superuser ИЛИ users/update; массовое приглашение пользователей с необязательной политикой из разрешённого набора. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/auth/user-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/auth/user-routes.ts"
+      }
+    },
     "/item-events/{collection}": {
       "get": {
         "tags": [
@@ -9683,6 +9899,7 @@
                               "/admin/settings/policies",
                               "/admin/settings/services",
                               "/admin/settings/assistant",
+                              "/admin/settings/skills",
                               "/admin/settings/plugins",
                               "/admin/settings/terms",
                               "/admin/settings/oauth",
@@ -9692,6 +9909,7 @@
                               "/system-settings/policies",
                               "/system-settings/services",
                               "/system-settings/assistant",
+                              "/system-settings/skills",
                               "/system-settings/plugins",
                               "/system-settings/terms",
                               "/system-settings/oauth"
@@ -10910,7 +11128,8 @@
                               "terms",
                               "services",
                               "oauth",
-                              "files"
+                              "files",
+                              "skills"
                             ]
                           }
                         },
@@ -10925,7 +11144,8 @@
                               "terms",
                               "services",
                               "oauth",
-                              "files"
+                              "files",
+                              "skills"
                             ]
                           }
                         },
@@ -14698,6 +14918,150 @@
         "x-source": "apps/core/src/plugins/settings-routes.ts"
       }
     },
+    "/settings/policies/preview-condition": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "post__settings_policies_preview_condition",
+        "summary": "POST /settings/policies/preview-condition",
+        "description": "Человек: policies/read ИЛИ update; superuser bypass; предпросмотр числа подходящих строк для условия политики без раскрытия данных записей. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/policies/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/policies/routes.ts"
+      }
+    },
+    "/settings/skills": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "get__settings_skills",
+        "summary": "GET /settings/skills",
+        "description": "Человек: skills/read ИЛИ update; superuser bypass. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/skills/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/skills/routes.ts"
+      },
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "post__settings_skills",
+        "summary": "POST /settings/skills",
+        "description": "Человек: skills/update; superuser bypass. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/skills/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/skills/routes.ts"
+      }
+    },
+    "/settings/skills/{id}": {
+      "delete": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "delete__settings_skills_id",
+        "summary": "DELETE /settings/skills/:id",
+        "description": "Человек: skills/update; superuser bypass. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/skills/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/skills/routes.ts"
+      },
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "operationId": "put__settings_skills_id",
+        "summary": "PUT /settings/skills/:id",
+        "description": "Человек: skills/update; superuser bypass. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/skills/routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/skills/routes.ts"
+      }
+    },
     "/settings/terms": {
       "get": {
         "tags": [
@@ -18261,6 +18625,41 @@
         "x-source": "apps/core/src/auth/user-routes.ts"
       }
     },
+    "/users/{id}/policies": {
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "put__users_id_policies",
+        "summary": "PUT /users/:id/policies",
+        "description": "Человек: superuser ИЛИ policies/update с чтением users; атомарная замена политик пользователя в разрешённом наборе без изменения себя и superuser. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/auth/user-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
+        "x-source": "apps/core/src/auth/user-routes.ts"
+      }
+    },
     "/users/{id}/profile": {
       "get": {
         "tags": [
@@ -18922,6 +19321,41 @@
           }
         },
         "x-contract-level": "documented",
+        "x-source": "apps/core/src/auth/user-routes.ts"
+      }
+    },
+    "/users/{id}/status": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "patch__users_id_status",
+        "summary": "PATCH /users/:id/status",
+        "description": "Человек: superuser ИЛИ users/update; активация или отключение другого пользователя без изменения себя и superuser, с отзывом сессий при отключении. Схемы тела и ответа пока не детализированы; см. реализацию обработчика. Источник: apps/core/src/auth/user-routes.ts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "browserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Контракт ответа смотрите в обработчике; эта операция описана на уровне маршрута и доступа."
+          }
+        },
+        "x-contract-level": "route-only",
         "x-source": "apps/core/src/auth/user-routes.ts"
       }
     },

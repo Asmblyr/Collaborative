@@ -1,6 +1,6 @@
 # HTTP route matrix
 
-Generated from Core and the reviewed access catalog. 256 declarations.
+Generated from Core and the reviewed access catalog. 270 declarations.
 
 This describes access boundaries; integration tests verify enforcement. Dynamic plugin routes and internal oidc-provider endpoints are not listed individually.
 
@@ -12,11 +12,16 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `POST /assistant/conversations` | Active human with chat access; creates an own conversation with empty context | `apps/core/src/assistant/history-routes.ts` |
 | `DELETE /assistant/conversations/:id` | Active human with chat access; own idle conversation only | `apps/core/src/assistant/history-routes.ts` |
 | `GET /assistant/conversations/:id` | Active human with chat access; own history only, including for superusers | `apps/core/src/assistant/history-routes.ts` |
+| `PATCH /assistant/conversations/:id` | Active human with chat access; renames own conversation only | `apps/core/src/assistant/history-routes.ts` |
 | `POST /assistant/filter/validate` | Human: superuser OR at least one read/create/update grant; tools authorize separately | `apps/core/src/assistant/routes.ts` |
 | `POST /assistant/messages` | Human: superuser OR at least one read/create/update grant; tools authorize separately | `apps/core/src/assistant/routes.ts` |
 | `POST /assistant/messages/:id/cancel` | Human: superuser OR at least one read/create/update grant; tools authorize separately | `apps/core/src/assistant/routes.ts` |
 | `POST /assistant/selection/validate` | Human: superuser OR at least one read/create/update grant; tools authorize separately | `apps/core/src/assistant/routes.ts` |
+| `PATCH /assistant/sessions/:id` | Active human with chat access; renames own conversation only | `apps/core/src/assistant/history-routes.ts` |
+| `GET /assistant/skills` | Active human with assistant access; only skills visible to the caller under collection grants and policy restrictions | `apps/core/src/skills/routes.ts` |
 | `GET /assistant/status` | Human: superuser OR at least one read/create/update grant; tools authorize separately | `apps/core/src/assistant/routes.ts` |
+| `POST /assistant/write-proposals/:id/confirm` | Active human with assistant access; one-time confirmation of own write proposal with live permission recheck | `apps/core/src/assistant/routes.ts` |
+| `POST /assistant/write-proposals/:id/reject` | Active human with assistant access; rejects own pending write proposal | `apps/core/src/assistant/routes.ts` |
 | `POST /auth/browser/google/start` | Active user, exact AUTH_UI_URL Origin; proof in an HttpOnly cookie. | `apps/core/src/auth/browser/google.ts` |
 | `POST /auth/browser/invitations/claim` | Exact AUTH_UI_URL Origin; credential rate limits for sign-in. HttpOnly session cookie; logout is idempotent and revokes only the current session. | `apps/core/src/auth/browser/routes.ts` |
 | `POST /auth/browser/login` | Exact AUTH_UI_URL Origin; credential rate limits for sign-in. HttpOnly session cookie; logout is idempotent and revokes only the current session. | `apps/core/src/auth/browser/routes.ts` |
@@ -92,6 +97,8 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `PATCH /folders/:id` | Human superuser; system and plugin-owned structure has additional protection | `apps/core/src/collections/routes.ts` |
 | `PATCH /folders/:id/order` | Human superuser; system and plugin-owned structure has additional protection | `apps/core/src/collections/routes.ts` |
 | `GET /health` | Public process liveness check | `apps/core/src/app.ts` |
+| `POST /invitations` | Human superuser OR users/update; invites one or more users with an optional policy within the allowed set | `apps/core/src/auth/user-routes.ts` |
+| `POST /invitations/bulk` | Human superuser OR users/update; bulk-invites users with an optional policy within the allowed set | `apps/core/src/auth/user-routes.ts` |
 | `GET /item-events/:collection` | Active principal; collection action/fields, related data, and history checked separately | `apps/core/src/items/routes.ts` |
 | `GET /items/:collection` | Active principal; collection action/fields, related data, and history checked separately | `apps/core/src/items/routes.ts` |
 | `PATCH /items/:collection` | Active principal; collection action/fields, related data, and history checked separately | `apps/core/src/items/routes.ts` |
@@ -192,6 +199,11 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `GET /settings/plugins` | Human with plugins/read or update; superuser bypass | `apps/core/src/plugins/settings-routes.ts` |
 | `GET /settings/plugins/:namespace` | Human with plugins/read or update; superuser bypass | `apps/core/src/plugins/settings-routes.ts` |
 | `PUT /settings/plugins/:namespace` | Human with plugins/update; superuser bypass | `apps/core/src/plugins/settings-routes.ts` |
+| `POST /settings/policies/preview-condition` | Human with policies/read or update; superuser bypass; previews matching row count for a policy condition without exposing record data | `apps/core/src/policies/routes.ts` |
+| `GET /settings/skills` | Human with skills/read or update; superuser bypass | `apps/core/src/skills/routes.ts` |
+| `POST /settings/skills` | Human with skills/update; superuser bypass | `apps/core/src/skills/routes.ts` |
+| `DELETE /settings/skills/:id` | Human with skills/update; superuser bypass | `apps/core/src/skills/routes.ts` |
+| `PUT /settings/skills/:id` | Human with skills/update; superuser bypass | `apps/core/src/skills/routes.ts` |
 | `GET /settings/terms` | Human with terms/read or update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `POST /settings/terms` | Human with terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
 | `PUT /settings/terms/:id` | Human with terms/update; superuser bypass | `apps/core/src/terms/routes.ts` |
@@ -221,10 +233,12 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `GET /users/:id/form` | Active human session with users/read; safe profile and existing virtual grants. Raw custom columns require a superuser. | `apps/core/src/auth/user-form-routes.ts` |
 | `PATCH /users/:id/form` | Active human session with users/update; safe native profile writes. Custom-column writes require a superuser. Credentials and privileges are protected. | `apps/core/src/auth/user-form-routes.ts` |
 | `POST /users/:id/invitation` | Human superuser OR users/update; re-invitation within the allowed set only, excluding accounts with their own delegation | `apps/core/src/auth/user-routes.ts` |
+| `PUT /users/:id/policies` | Human superuser OR policies/update with users read; atomically replaces a user's policies within the allowed set without changing self or superusers | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/:id/profile` | Active user with users/read; public profile information without credentials | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PATCH /users/:id/profile` | Active user with users/update; profile fields only, without status/privilege changes | `apps/core/src/auth/profile-extension-routes.ts` |
 | `GET /users/:id/profile-display` | Active human with users/read or superuser; configured target-user profile projection | `apps/core/src/auth/profile-display-routes.ts` |
 | `POST /users/:id/recovery` | Fresh human superuser; another active ordinary user only. One-time 30-minute recovery link, audited and not delegated | `apps/core/src/auth/user-routes.ts` |
+| `PATCH /users/:id/status` | Human superuser OR users/update; activates or disables another user without changing self or superusers, revoking active sessions on deactivation | `apps/core/src/auth/user-routes.ts` |
 | `GET /users/me` | Human, own profile/resource only; workspace additionally checks visibility | `apps/core/src/auth/profile-routes.ts` |
 | `PATCH /users/me` | Active human session; own non-avatar profile fields need explicit field write grants or users/update. Own avatar remains freely editable. Credentials, email and privileges remain protected. | `apps/core/src/auth/profile-routes.ts` |
 | `POST /users/me/avatar` | Own human session; private raster image up to 2 MiB, configured storage, and credential rate limit | `apps/core/src/auth/profile-avatar-routes.ts` |
@@ -257,7 +271,7 @@ This describes access boundaries; integration tests verify enforcement. Dynamic 
 | `GET /users/profile-display/sources` | Human superuser only; permitted custom fields and M2O paths without record data | `apps/core/src/auth/profile-display-routes.ts` |
 | `GET /users/profile-extension` | Active user with users/read; selected collection/key names | `apps/core/src/auth/profile-extension-routes.ts` |
 | `PUT /users/profile-extension` | Human superuser only; binds an ordinary UUID collection without granting access or deleting data | `apps/core/src/auth/profile-extension-routes.ts` |
-| `GET /users/references` | Human session: superuser or users-section read; only user IDs/labels with bounded search/pagination; service keys forbidden | `apps/core/src/auth/user-routes.ts` |
+| `GET /users/references` | Active human session; only user IDs/labels with bounded search/pagination; service keys forbidden | `apps/core/src/auth/user-routes.ts` |
 | `GET /workspaces` | Human; workspaces containing accessible collections only (superusers see all) | `apps/core/src/workspaces/routes.ts` |
 | `POST /workspaces` | Human superuser | `apps/core/src/workspaces/routes.ts` |
 | `DELETE /workspaces/:id` | Human superuser | `apps/core/src/workspaces/routes.ts` |
