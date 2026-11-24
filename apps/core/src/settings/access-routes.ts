@@ -1,6 +1,7 @@
 import { listCollections } from "../collections/catalog-repository.js";
 import type { FastifyInstance } from "fastify";
 import type { Knex } from "knex";
+import { AccessDeniedError } from "../permissions/access.js";
 import { loadSettingsAccess, requireSettingsRead } from "./access.js";
 
 export function registerSettingsAccessRoutes(
@@ -72,11 +73,34 @@ export function registerSettingsAccessRoutes(
   // Selectors need only IDs and labels, not access to another administration section.
   app.get("/settings/options/policies", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
-    await requireSettingsRead(db(), request, "users", "policies", "services");
+    const access = await loadSettingsAccess(
+      db(),
+      request.headers.authorization,
+    );
+    if (
+      !(["users", "policies", "services", "skills"] as const).some((section) =>
+        access.sections.includes(section),
+      )
+    ) {
+      throw new AccessDeniedError();
+    }
+    const query = db()("public.asmblyr_policies")
+      .select<{ id: string; name: string }[]>("id", "name")
+      .orderBy("name");
+    const delegatableOnly =
+      request.query !== null &&
+      typeof request.query === "object" &&
+      "delegatable" in request.query &&
+      ((request.query as Record<string, unknown>).delegatable === "1" ||
+        (request.query as Record<string, unknown>).delegatable === "true");
+    if (delegatableOnly && !access.user.superuser) {
+      query.whereIn("id", access.delegatablePolicyIds);
+    }
     return {
-      data: await db()("public.asmblyr_policies")
-        .select("id", "name")
-        .orderBy("name"),
+      data: await query,
+      delegatablePolicyIds: access.user.superuser
+        ? null
+        : access.delegatablePolicyIds,
     };
   });
 

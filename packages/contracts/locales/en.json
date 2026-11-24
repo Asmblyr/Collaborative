@@ -54,6 +54,7 @@
   "admin.policies": "Access policies",
   "admin.plugins": "Extensions",
   "admin.assistant": "AI assistant",
+  "admin.skills": "Assistant skills",
   "admin.terms": "Glossary",
   "admin.services": "Service accounts",
   "admin.oauth": "OAuth applications",

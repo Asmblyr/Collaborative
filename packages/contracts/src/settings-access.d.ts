@@ -6,7 +6,8 @@ export type SettingsSection =
   | "terms"
   | "services"
   | "oauth"
-  | "files";
+  | "files"
+  | "skills";
 
 export const settingsSections: readonly SettingsSection[];
 

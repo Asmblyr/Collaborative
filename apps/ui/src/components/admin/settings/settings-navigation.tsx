@@ -9,6 +9,7 @@ import {
   Puzzle,
   Sparkles,
   BookOpen,
+  Wand2,
   KeyRound,
   AppWindow,
   LayoutGrid,
@@ -39,6 +40,7 @@ const icons = {
   plugins: Puzzle,
   assistant: Sparkles,
   terms: BookOpen,
+  skills: Wand2,
   services: KeyRound,
   oauth: AppWindow,
 };

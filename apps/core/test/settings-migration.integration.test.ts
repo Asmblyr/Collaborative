@@ -16,9 +16,11 @@ test("settings migration preserves existing writers and refuses to discard read-
   const db = knex({ client: "pg", connection: process.env.DATABASE_URL });
   const tx = await db.transaction();
   try {
-    // This historical migration predates the files section. Its rollback fixture
+    // This historical migration predates the files and skills sections. Its rollback fixture
     // excludes newer grants inside the disposable transaction only.
-    await tx("public.asmblyr_permissions").where({ section: "files" }).delete();
+    await tx("public.asmblyr_permissions")
+      .whereIn("section", ["files", "skills"])
+      .delete();
     // Exercise the old schema and upgrade inside a disposable transaction.
     await tx("public.asmblyr_permissions")
       .whereNotNull("section")

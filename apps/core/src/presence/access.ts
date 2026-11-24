@@ -23,6 +23,7 @@ const sections: Partial<Record<string, SettingsSection[]>> = {
   "/system-settings/policies": ["policies"],
   "/system-settings/services": ["services"],
   "/system-settings/assistant": ["assistant"],
+  "/system-settings/skills": ["skills"],
   "/system-settings/plugins": ["plugins"],
   "/system-settings/terms": ["terms"],
   "/system-settings/oauth": ["oauth"],
